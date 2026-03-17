@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-noto-serif: 'Noto Serif SC', serif;
+  --font-inter: 'Inter', sans-serif;
+}
+
+body {
+  background-color: #0a0f1e;
+  color: white;
+  font-family: var(--font-inter), sans-serif;
+}
+
+@layer utilities {
+  .glass-card {
+    background: rgba(17, 29, 53, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(212, 168, 83, 0.2);
+  }
+  
+  .gold-gradient {
+    background: linear-gradient(135deg, #d4a853, #e8c278, #b8893a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}

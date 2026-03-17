@@ -1,0 +1,15 @@
+services:
+  chinese-divination:
+    build: .
+    container_name: chinese-divination
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - PORT=8094
+      - HOSTNAME=0.0.0.0
+      - DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/divination_db
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-xuanji-secret-change-in-production}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:8094}
+      - NODE_ENV=production
+    restart: unless-stopped
