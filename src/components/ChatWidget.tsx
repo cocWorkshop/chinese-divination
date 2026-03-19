@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import { useLang } from './LanguageContext'
 import MysticalLoader from './MysticalLoader'
+import { reportError } from '@/lib/errorReporter'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -48,9 +49,12 @@ export default function ChatWidget() {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: `${lang === 'en' ? 'Error' : '錯誤'}：${data.error || (lang === 'en' ? 'Please try again' : '請稍後再試')}` }])
+        reportError({ endpoint: '/api/chat', status: res.status, error: data.error || 'Unknown', context: 'chat widget' })
       }
-    } catch {
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Network error'
       setMessages(prev => [...prev, { role: 'assistant', content: lang === 'en' ? 'Network error, please check your connection.' : '網路錯誤，請檢查連接後重試。' }])
+      reportError({ endpoint: '/api/chat', error: msg, context: 'chat widget' })
     }
     setLoading(false)
   }
@@ -70,21 +74,22 @@ export default function ChatWidget() {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="w-80 sm:w-96 rounded-2xl border border-gold/30 bg-navy-950/95 backdrop-blur-md shadow-2xl flex flex-col overflow-hidden"
-            style={{ height: '480px' }}
+            className="w-[calc(100vw-2rem)] sm:w-96 max-w-96 rounded-2xl border shadow-2xl flex flex-col overflow-hidden"
+            style={{ height: 'min(480px, calc(100vh - 120px))', backgroundColor: 'var(--card-bg)', backdropFilter: 'blur(12px)', borderColor: 'var(--border-gold)' }}
           >
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gold/20 flex items-center justify-between bg-navy-900/80">
+            <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-gold)', backgroundColor: 'var(--accent-bg)' }}>
               <div className="flex items-center gap-2">
-                <span className="text-gold text-lg">☯</span>
+                <span className="text-lg" style={{ color: 'var(--gold)' }}>☯</span>
                 <div>
-                  <div className="text-gold font-serif text-sm">{lang === 'en' ? 'Xuanji Assistant' : '玄機助手'}</div>
-                  <div className="text-white/40 text-xs">{lang === 'en' ? 'Divination Q&A' : '命理問答'}</div>
+                  <div className="font-serif text-sm" style={{ color: 'var(--gold)' }}>{lang === 'en' ? 'Xuanji Assistant' : '玄機助手'}</div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{lang === 'en' ? 'Divination Q&A' : '命理問答'}</div>
                 </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white/40 hover:text-gold transition-colors text-lg"
+                className="hover:opacity-80 transition-colors text-lg"
+                style={{ color: 'var(--text-muted)' }}
               >
                 ✕
               </button>
@@ -95,10 +100,11 @@ export default function ChatWidget() {
               {!session ? (
                 <div className="h-full flex flex-col items-center justify-center text-center gap-3">
                   <div className="text-4xl">☯</div>
-                  <p className="text-white/60 text-sm">{lang === 'en' ? 'Please sign in to use the assistant' : '請登入後使用命理問答'}</p>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{lang === 'en' ? 'Please sign in to use the assistant' : '請登入後使用命理問答'}</p>
                   <a
                     href="/login"
-                    className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold hover:bg-gold/80 transition-colors"
+                    className="px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-80 transition-colors"
+                    style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
                   >
                     {lang === 'en' ? 'Sign In' : '登入帳號'}
                   </a>
@@ -106,7 +112,7 @@ export default function ChatWidget() {
               ) : (
                 <>
                   {messages.length === 0 && (
-                    <div className="text-center text-white/40 text-xs py-4">
+                    <div className="text-center text-xs py-4" style={{ color: 'var(--text-muted)' }}>
                       <div className="text-2xl mb-2">☯</div>
                       <p>{lang === 'en' ? 'Hello, I am the Xuanji divination assistant' : '您好，我是玄機命理助手'}</p>
                       <p>{lang === 'en' ? 'Ask me anything about your readings' : '可以問我關於您命盤的任何問題'}</p>
@@ -115,16 +121,18 @@ export default function ChatWidget() {
                   {messages.map((msg, i) => (
                     <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       {msg.role === 'assistant' && (
-                        <div className="w-7 h-7 rounded-full bg-gold/20 flex items-center justify-center flex-shrink-0 text-gold text-xs mt-0.5">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs mt-0.5" style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.2)', color: 'var(--gold)' }}>
                           ☯
                         </div>
                       )}
                       <div
                         className={`max-w-[80%] rounded-xl px-3 py-2 text-sm leading-relaxed ${
-                          msg.role === 'user'
-                            ? 'bg-gold text-navy-950 rounded-br-sm'
-                            : 'bg-navy-800 text-white/80 border border-gold/10 rounded-bl-sm'
+                          msg.role === 'user' ? 'rounded-br-sm' : 'rounded-bl-sm'
                         }`}
+                        style={msg.role === 'user'
+                          ? { backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }
+                          : { backgroundColor: 'var(--accent-bg)', color: 'var(--text-secondary)', border: '1px solid var(--border-gold)' }
+                        }
                       >
                         {msg.content}
                       </div>
@@ -132,10 +140,10 @@ export default function ChatWidget() {
                   ))}
                   {loading && (
                     <div className="flex gap-2 justify-start">
-                      <div className="w-7 h-7 rounded-full bg-gold/20 flex items-center justify-center flex-shrink-0 text-gold text-xs">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs" style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.2)', color: 'var(--gold)' }}>
                         ☯
                       </div>
-                      <div className="bg-navy-800 border border-gold/10 rounded-xl rounded-bl-sm px-4 py-2">
+                      <div className="rounded-xl rounded-bl-sm px-4 py-2" style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--border-gold)' }}>
                         <MysticalLoader lang={lang} variant="chat" />
                       </div>
                     </div>
@@ -147,7 +155,7 @@ export default function ChatWidget() {
 
             {/* Input */}
             {session && (
-              <div className="border-t border-gold/20 bg-navy-900/80">
+              <div className="border-t" style={{ borderColor: 'var(--border-gold)', backgroundColor: 'var(--accent-bg)' }}>
                 <div className="flex gap-2 p-3">
                   <input
                     type="text"
@@ -155,18 +163,20 @@ export default function ChatWidget() {
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={lang === 'en' ? 'Ask about your destiny...' : '問問命理...'}
-                    className="flex-1 bg-navy-800 border border-gold/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-gold/50 transition-colors placeholder-white/30"
+                    className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors"
+                    style={{ backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-gold)', color: 'var(--text-primary)' }}
                     disabled={loading}
                   />
                   <button
                     onClick={sendMessage}
                     disabled={loading || !input.trim()}
-                    className="px-3 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold hover:bg-gold/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="px-3 py-2 rounded-lg text-sm font-semibold hover:opacity-80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
                   >
                     {lang === 'en' ? 'Send' : '發送'}
                   </button>
                 </div>
-                <div className="px-3 pb-2 text-white/25 text-xs text-center">
+                <div className="px-3 pb-2 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
                   {lang === 'en' ? 'Conversation highlights are auto-saved to your profile' : '對話要點將自動保存至您的檔案'}
                 </div>
               </div>
@@ -178,13 +188,14 @@ export default function ChatWidget() {
       {/* Toggle Button */}
       <div className="relative">
         {!isOpen && (
-          <div className="absolute -top-8 right-0 bg-navy-800 text-gold text-xs px-2 py-1 rounded whitespace-nowrap border border-gold/20 pointer-events-none opacity-0 group-hover:opacity-100">
+          <div className="absolute -top-8 right-0 text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100" style={{ backgroundColor: 'var(--bg-surface)', color: 'var(--gold)', border: '1px solid var(--border-gold)' }}>
             {lang === 'en' ? 'Divination Q&A' : '命理問答'}
           </div>
         )}
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-14 h-14 rounded-full bg-gold text-navy-950 text-2xl shadow-lg hover:bg-gold/90 transition-colors flex items-center justify-center"
+          className="w-14 h-14 rounded-full text-2xl shadow-lg hover:opacity-90 transition-colors flex items-center justify-center"
+          style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
           animate={!isOpen ? { boxShadow: ['0 0 0 0 rgba(212,168,83,0.4)', '0 0 0 12px rgba(212,168,83,0)', '0 0 0 0 rgba(212,168,83,0)'] } : {}}
           transition={{ repeat: Infinity, duration: 2 }}
           title={lang === 'en' ? 'Divination Q&A' : '命理問答'}

@@ -68,7 +68,7 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <motion.div
-          animate={{ rotate: -360 }}
+          animate={{ rotate: 360 }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
         >
           <span className="text-5xl text-gold drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]">☯</span>
@@ -87,7 +87,7 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
         {/* Outer ring with trigram symbols */}
         <motion.div
           className="absolute inset-0"
-          animate={{ rotate: 360 }}
+          animate={{ rotate: -360 }}
           transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
         >
           {['☰', '☱', '☲', '☳', '☴', '☵', '☶', '☷'].map((trigram, i) => (
@@ -110,7 +110,7 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
         {/* Inner yin-yang */}
         <motion.div
           className="absolute inset-6 flex items-center justify-center"
-          animate={{ rotate: -360 }}
+          animate={{ rotate: 360 }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
         >
           <span className="text-5xl text-gold drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]">☯</span>

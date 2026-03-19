@@ -19,10 +19,10 @@ const energyColor: Record<string, string> = {
 }
 
 const accordionSections = [
-  { key: 'overall', label: '整体格局', icon: '🏯' },
-  { key: 'wealth', label: '财位分析', icon: '💰' },
+  { key: 'overall', label: '整體格局', icon: '🏯' },
+  { key: 'wealth', label: '財位分析', icon: '💰' },
   { key: 'health', label: '健康能量', icon: '🌿' },
-  { key: 'relationships', label: '人际感情', icon: '💕' },
+  { key: 'relationships', label: '人際感情', icon: '💕' },
 ]
 
 const DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
@@ -135,7 +135,7 @@ export default function FengshuiResult({ data }: { data: Record<string, unknown>
               {openSection === s.key && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                   <div className="px-5 pb-4 text-white/70 text-sm leading-relaxed border-t border-gold/10 pt-3 whitespace-pre-wrap">
-                    {d.sections?.[s.key as keyof typeof d.sections] || '暂无内容'}
+                    {d.sections?.[s.key as keyof typeof d.sections] || '暫無內容'}
                   </div>
                 </motion.div>
               )}
@@ -147,7 +147,7 @@ export default function FengshuiResult({ data }: { data: Record<string, unknown>
       {/* Key Advice */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <h3 className="text-gold font-serif mb-3">核心建议</h3>
+          <h3 className="text-gold font-serif mb-3">核心建議</h3>
           <div className="grid gap-3">
             {d.keyAdvice.map((advice, i) => (
               <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">

@@ -9,6 +9,7 @@ interface UserRow {
   name: string | null
   isAdmin: boolean
   isPaid: boolean
+  role: string
   hourlyQuota: number
   bonusModel1: number
   bonusModel2: number
@@ -119,14 +120,16 @@ export default function AdminUsers() {
                   </button>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <button
-                    onClick={() => update(u.id, { isPaid: !u.isPaid })}
-                    className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-                      u.isPaid ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30' : 'bg-white/10 text-white/50 hover:bg-white/20'
-                    }`}
+                  <select
+                    value={u.role || 'free'}
+                    onChange={e => update(u.id, { role: e.target.value })}
+                    className="px-2 py-0.5 rounded text-xs font-medium bg-navy-800 border border-gold/20 text-white/80 focus:outline-none focus:border-gold/50 cursor-pointer"
                   >
-                    {u.isPaid ? '💎 Paid' : 'Free'}
-                  </button>
+                    <option value="free">Free</option>
+                    <option value="paid">💎 Paid</option>
+                    <option value="premium">✦ Premium</option>
+                    <option value="admin">🔑 Admin</option>
+                  </select>
                 </td>
                 <td className="px-4 py-3 text-center text-white/70">{u._count.readings}</td>
                 <td className="px-4 py-3 text-center">
@@ -154,7 +157,7 @@ export default function AdminUsers() {
                     </div>
                   ) : (
                     <button
-                      onClick={() => { setGrantingId(u.id); setGrantM1(0); setGrantM2(0) }}
+                      onClick={() => { setGrantingId(u.id); setGrantM1(u.bonusModel1); setGrantM2(u.bonusModel2) }}
                       className="text-white/50 hover:text-gold text-xs transition-colors"
                     >
                       ⚡{u.bonusModel1} 🌟{u.bonusModel2} <span className="text-white/30">✎</span>

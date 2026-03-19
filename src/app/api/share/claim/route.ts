@@ -14,23 +14,29 @@ export async function POST(req: NextRequest) {
   if (link.used) return NextResponse.json({ error: 'Already claimed' }, { status: 409 })
   if (link.userId === session.user.id) return NextResponse.json({ error: 'Cannot claim own link' }, { status: 400 })
 
-  const bonusSetting = await prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } })
-  const bonus = parseInt(bonusSetting?.value ?? '20')
+  const [bonusSetting, bonus2Setting] = await Promise.all([
+    prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } }),
+    prisma.adminSetting.findUnique({ where: { key: 'shareBonusModel2' } }),
+  ])
+  const bonus1 = parseInt(bonusSetting?.value ?? '20')
+  const bonus2 = parseInt(bonus2Setting?.value ?? '0')
 
-  await prisma.$transaction([
+  const ops = [
     prisma.shareLink.update({
       where: { code },
       data: { used: true, usedBy: session.user.id, usedAt: new Date() },
     }),
     prisma.user.update({
       where: { id: session.user.id },
-      data: { bonusModel1: { increment: bonus } },
+      data: { bonusModel1: { increment: bonus1 }, ...(bonus2 > 0 && { bonusModel2: { increment: bonus2 } }) },
     }),
     prisma.user.update({
       where: { id: link.userId },
-      data: { bonusModel1: { increment: bonus } },
+      data: { bonusModel1: { increment: bonus1 }, ...(bonus2 > 0 && { bonusModel2: { increment: bonus2 } }) },
     }),
-  ])
+  ]
 
-  return NextResponse.json({ success: true, bonusReceived: bonus })
+  await prisma.$transaction(ops)
+
+  return NextResponse.json({ success: true, bonusModel1: bonus1, bonusModel2: bonus2 })
 }

@@ -20,7 +20,7 @@ const outcomeColor: Record<string, string> = {
 }
 
 const accordionSections = [
-  { key: 'situation', label: '当前局势', icon: '⚡' },
+  { key: 'situation', label: '當前局勢', icon: '⚡' },
   { key: 'trend', label: '事态走向', icon: '🔮' },
   { key: 'timing', label: '最佳时机', icon: '⏰' },
   { key: 'strategy', label: '行动策略', icon: '🎯' },
@@ -79,7 +79,7 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
                   className="overflow-hidden"
                 >
                   <div className="px-5 pb-4 text-white/70 text-sm leading-relaxed border-t border-gold/10 pt-3 whitespace-pre-wrap">
-                    {d.sections?.[s.key as keyof typeof d.sections] || '暂无内容'}
+                    {d.sections?.[s.key as keyof typeof d.sections] || '暫無內容'}
                   </div>
                 </motion.div>
               )}
@@ -109,7 +109,7 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
       {/* Key Advice */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <h3 className="text-gold font-serif mb-3">核心建议</h3>
+          <h3 className="text-gold font-serif mb-3">核心建議</h3>
           <div className="grid gap-3">
             {d.keyAdvice.map((advice, i) => (
               <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">

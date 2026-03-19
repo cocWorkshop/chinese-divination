@@ -235,6 +235,34 @@ export interface PillarData {
   tenGods: { stem: string; god: string }[]
 }
 
+export interface DaYunPillar {
+  stem: string
+  branch: string
+  nayin: string
+  startAge: number    // age when this Da Yun starts
+  startYear: number   // calendar year
+  endAge: number
+  endYear: number
+}
+
+export interface XiaoYunPillar {
+  stem: string
+  branch: string
+  age: number
+  year: number
+}
+
+export interface QiYunInfo {
+  direction: '顺排' | '逆排'
+  startAge: number           // e.g. 1.25 means 1 year 3 months
+  startAgeLabel: string      // e.g. "1歲3個月"
+  startYear: number
+  startMonth: number
+  nearestJieQi: string       // name of the jie qi
+  nearestJieQiDate: string   // date of the jie qi
+  daysDiff: number           // days between birth and jie qi
+}
+
 export interface BaziChart {
   yearPillar: PillarData
   monthPillar: PillarData
@@ -255,6 +283,220 @@ export interface BaziChart {
     shichen: string
     shichenChanged: boolean
   }
+  daYun: DaYunPillar[]
+  xiaoYun: XiaoYunPillar[]
+  qiYun: QiYunInfo
+}
+
+// 60 Jiazi cycle for Da Yun calculation
+const JIAZI_CYCLE: string[] = []
+for (let i = 0; i < 60; i++) {
+  JIAZI_CYCLE.push(STEMS[i % 10] + BRANCHES[i % 12])
+}
+
+function getJiaziIndex(stem: string, branch: string): number {
+  const gz = stem + branch
+  return JIAZI_CYCLE.indexOf(gz)
+}
+
+function getNextJiazi(stem: string, branch: string, offset: number): { stem: string; branch: string } {
+  const idx = getJiaziIndex(stem, branch)
+  let newIdx = (idx + offset) % 60
+  if (newIdx < 0) newIdx += 60
+  return { stem: JIAZI_CYCLE[newIdx][0], branch: JIAZI_CYCLE[newIdx][1] }
+}
+
+/**
+ * Determine Da Yun direction
+ * Year stem index: 甲=0(阳), 乙=1(阴), 丙=2(阳), 丁=3(阴), ...
+ * Even index (0,2,4,6,8) = 阳, Odd index (1,3,5,7,9) = 阴
+ * 阳男/阴女 → 顺排 (forward), 阴男/阳女 → 逆排 (backward)
+ */
+function getDaYunDirection(yearStem: string, gender: 'male' | 'female'): '顺排' | '逆排' {
+  const stemIdx = (STEMS as readonly string[]).indexOf(yearStem)
+  const isYangStem = stemIdx % 2 === 0 // 甲丙戊庚壬 = 阳
+  const isMale = gender === 'male'
+
+  // 阳男/阴女 → 顺排, 阴男/阳女 → 逆排
+  if ((isYangStem && isMale) || (!isYangStem && !isMale)) {
+    return '顺排'
+  }
+  return '逆排'
+}
+
+/**
+ * Calculate Qi Yun (起运) age
+ * 顺排: count from birth to next 节气 (jie, not zhong qi)
+ * 逆排: count from birth to previous 节气
+ * Conversion: 3 days = 1 year, 1 day = 4 months, 2 hours (1 shichen) = 10 days
+ */
+function calculateQiYun(
+  birthYear: number, birthMonth: number, birthDay: number,
+  birthHour: number, direction: '顺排' | '逆排'
+): { startAge: number; startAgeLabel: string; jieQiName: string; jieQiDate: string; daysDiff: number; startYear: number; startMonth: number } {
+  const solar = Solar.fromYmdHms(birthYear, birthMonth, birthDay, birthHour, 0, 0)
+  const lunar = solar.getLunar()
+
+  // 节气 (Jie) are the odd-numbered ones in the 24 solar terms sequence
+  // lunar-typescript: use getJieQiTable() or iterate
+  // We need to find the nearest Jie (not Zhong) before and after birth
+
+  // The 12 Jie qi (节): 立春,惊蛰,清明,立夏,芒种,小暑,立秋,白露,寒露,立冬,大雪,小寒
+  const JIE_QI_NAMES = ['立春','惊蛰','清明','立夏','芒种','小暑','立秋','白露','寒露','立冬','大雪','小寒']
+
+  // Get jie qi table from lunar-typescript
+  const jieQiTable = lunar.getJieQiTable()
+
+  // Convert birth to timestamp for comparison
+  const birthDate = new Date(birthYear, birthMonth - 1, birthDay, birthHour, 0, 0)
+  const birthTs = birthDate.getTime()
+
+  // Collect all jie qi (节, not 中气) with their dates
+  const jieQiList: { name: string; date: Date; ts: number }[] = []
+
+  for (const [name, jqSolar] of Object.entries(jieQiTable)) {
+    if (!JIE_QI_NAMES.includes(name)) continue
+    const d = new Date(jqSolar.getYear(), jqSolar.getMonth() - 1, jqSolar.getDay(),
+      jqSolar.getHour(), jqSolar.getMinute(), jqSolar.getSecond())
+    jieQiList.push({ name, date: d, ts: d.getTime() })
+  }
+
+  // We might need to check adjacent years too for edge cases
+  // Get previous and next year's jie qi
+  for (const offsetYear of [-1, 1]) {
+    const adjSolar = Solar.fromYmdHms(birthYear + offsetYear, birthMonth, birthDay, birthHour, 0, 0)
+    const adjLunar = adjSolar.getLunar()
+    const adjTable = adjLunar.getJieQiTable()
+    for (const [name, jqSolar] of Object.entries(adjTable)) {
+      if (!JIE_QI_NAMES.includes(name)) continue
+      const d = new Date(jqSolar.getYear(), jqSolar.getMonth() - 1, jqSolar.getDay(),
+        jqSolar.getHour(), jqSolar.getMinute(), jqSolar.getSecond())
+      // Avoid duplicates
+      if (!jieQiList.some(j => Math.abs(j.ts - d.getTime()) < 86400000)) {
+        jieQiList.push({ name, date: d, ts: d.getTime() })
+      }
+    }
+  }
+
+  // Sort by timestamp
+  jieQiList.sort((a, b) => a.ts - b.ts)
+
+  let targetJieQi: { name: string; date: Date; ts: number } | null = null
+
+  if (direction === '顺排') {
+    // Find next jie qi after birth
+    for (const jq of jieQiList) {
+      if (jq.ts > birthTs) {
+        targetJieQi = jq
+        break
+      }
+    }
+  } else {
+    // Find previous jie qi before birth
+    for (let i = jieQiList.length - 1; i >= 0; i--) {
+      if (jieQiList[i].ts < birthTs) {
+        targetJieQi = jieQiList[i]
+        break
+      }
+    }
+  }
+
+  if (!targetJieQi) {
+    // Fallback
+    return { startAge: 3, startAgeLabel: '3歲', jieQiName: '未知', jieQiDate: '', daysDiff: 9, startYear: birthYear + 3, startMonth: birthMonth }
+  }
+
+  // Calculate difference in days and hours
+  const diffMs = Math.abs(targetJieQi.ts - birthTs)
+  const totalHours = diffMs / (1000 * 60 * 60)
+  const totalDays = totalHours / 24
+
+  // Convert: 3 days = 1 year, 1 day = 4 months, 2 hours = 10 days
+  // More precisely: totalDays / 3 = years (with remainder)
+  const years = Math.floor(totalDays / 3)
+  const remainDays = totalDays - years * 3
+  const months = Math.floor(remainDays * 4) // 1 day = 4 months
+  const remainHours = (remainDays - months / 4) * 24
+  const extraDays = Math.floor(remainHours / 2 * 10 / 24) // rough
+
+  const startAge = years + months / 12
+  let startAgeLabel = `${years}歲`
+  if (months > 0) startAgeLabel += `${months}個月`
+
+  // Calculate start year and month
+  const startYear = birthYear + years
+  const startMonth = ((birthMonth - 1 + months) % 12) + 1
+  const actualStartYear = startMonth <= birthMonth && months > 0 ? startYear + 1 : startYear
+
+  const jieQiDateStr = `${targetJieQi.date.getFullYear()}-${String(targetJieQi.date.getMonth() + 1).padStart(2, '0')}-${String(targetJieQi.date.getDate()).padStart(2, '0')}`
+
+  return {
+    startAge,
+    startAgeLabel,
+    jieQiName: targetJieQi.name,
+    jieQiDate: jieQiDateStr,
+    daysDiff: Math.round(totalDays * 10) / 10,
+    startYear: actualStartYear,
+    startMonth,
+  }
+}
+
+/**
+ * Calculate Da Yun (大运) - 8 pillars, each 10 years
+ */
+function calculateDaYun(
+  monthStem: string, monthBranch: string,
+  direction: '顺排' | '逆排',
+  qiYunStartAge: number, birthYear: number
+): DaYunPillar[] {
+  const result: DaYunPillar[] = []
+  const step = direction === '顺排' ? 1 : -1
+
+  for (let i = 1; i <= 8; i++) {
+    const pillar = getNextJiazi(monthStem, monthBranch, step * i)
+    const gz = pillar.stem + pillar.branch
+    const startAge = Math.floor(qiYunStartAge) + (i - 1) * 10
+    const endAge = startAge + 9
+    const startYear = birthYear + startAge
+    const endYear = birthYear + endAge
+
+    result.push({
+      stem: pillar.stem,
+      branch: pillar.branch,
+      nayin: NAYIN[gz] || '',
+      startAge,
+      startYear,
+      endAge,
+      endYear,
+    })
+  }
+
+  return result
+}
+
+/**
+ * Calculate Xiao Yun (小运) - from hour pillar, until Da Yun starts
+ */
+function calculateXiaoYun(
+  hourStem: string, hourBranch: string,
+  direction: '顺排' | '逆排',
+  qiYunStartAge: number, birthYear: number
+): XiaoYunPillar[] {
+  const result: XiaoYunPillar[] = []
+  const step = direction === '顺排' ? 1 : -1
+  const maxAge = Math.floor(qiYunStartAge) // only before qi yun starts
+
+  for (let i = 1; i <= Math.max(maxAge, 1); i++) {
+    const pillar = getNextJiazi(hourStem, hourBranch, step * i)
+    result.push({
+      stem: pillar.stem,
+      branch: pillar.branch,
+      age: i,
+      year: birthYear + i,
+    })
+  }
+
+  return result
 }
 
 export function calculateBazi(
@@ -408,6 +650,12 @@ export function calculateBazi(
   // Shen Sha
   const shenSha = calculateShenSha(yBranch, dBranch, dStem, mBranch, hBranch)
 
+  // Da Yun (大运) and Qi Yun (起运)
+  const daYunDirection = getDaYunDirection(yStem, gender)
+  const qiYunResult = calculateQiYun(year, month, day, solarHour, daYunDirection)
+  const daYun = calculateDaYun(mStem, mBranch, daYunDirection, qiYunResult.startAge, year)
+  const xiaoYun = calculateXiaoYun(hStem, hBranch, daYunDirection, qiYunResult.startAge, year)
+
   return {
     yearPillar,
     monthPillar,
@@ -431,6 +679,18 @@ export function calculateBazi(
       longitude,
       shichen: actualBranch + '时',
       shichenChanged,
+    },
+    daYun,
+    xiaoYun,
+    qiYun: {
+      direction: daYunDirection,
+      startAge: qiYunResult.startAge,
+      startAgeLabel: qiYunResult.startAgeLabel,
+      startYear: qiYunResult.startYear,
+      startMonth: qiYunResult.startMonth,
+      nearestJieQi: qiYunResult.jieQiName,
+      nearestJieQiDate: qiYunResult.jieQiDate,
+      daysDiff: qiYunResult.daysDiff,
     },
   }
 }

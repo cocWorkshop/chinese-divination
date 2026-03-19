@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       skip: (page - 1) * limit,
       take: limit,
       select: {
-        id: true, email: true, name: true, isAdmin: true, isPaid: true,
+        id: true, email: true, name: true, isAdmin: true, isPaid: true, role: true,
         hourlyQuota: true, bonusModel1: true, bonusModel2: true,
         createdAt: true, language: true,
         _count: { select: { readings: true } },

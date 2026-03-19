@@ -1,3 +1,6 @@
+// Allow long-running LLM calls (up to 10 minutes)
+export const maxDuration = 600
+
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
@@ -6,6 +9,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkModelLimit, incrementModelUsage } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
+import { logLlmCall } from '@/lib/llmLogger'
 
 const refFileMap: Record<string, string> = {
   bazi: 'bazi.md',
@@ -29,7 +33,14 @@ const schemas: Record<string, object> = {
     fiveElements: { metal: 0, wood: 0, water: 0, fire: 0, earth: 0 },
     luckyElements: ['喜用五行'],
     avoidElements: ['忌神五行'],
-    sections: { overview: '整体命格分析(100+字)', career: '事业运势(100+字)', marriage: '婚姻感情(100+字)', wealth: '财运分析(100+字)', health: '健康运势(100+字)', periods: '大运流年分析(100+字)' },
+    sections: {
+      overview: '命主性格与出身分析(150+字)：日主强弱、性格特征、家庭出身、六亲关系',
+      career: '事业官运分析(150+字)：适合行业、发展方向、贵人运',
+      marriage: '婚姻感情分析(150+字)：配偶特征、婚姻质量、感情运势',
+      wealth: '财运分析(150+字)：正财偏财、理财建议、财运高峰期',
+      health: '健康分析(100+字)：易患疾病、养生建议',
+      daYunDetail: '大运精批(300+字)：逐个分析每步大运（共8步），点出每步大运的重点领域和需注意的流年。格式：每步大运单独一段，标注起止年份',
+    },
     keyAdvice: ['建议一', '建议二', '建议三'],
     luckyInfo: { numbers: [1, 2], colors: ['颜色'], directions: ['方位'] },
   },
@@ -104,7 +115,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { type, inputData, language, question, saveProfile, saveHistory, modelTier: rawModelTier } = await req.json()
+    const { type, inputData, language, question, saveProfile, saveHistory, modelTier: rawModelTier, targetType: rawTargetType, familyMemberId, newFamilyMember } = await req.json()
+    const targetType = rawTargetType === 'family' ? 'family' : 'self'
     const modelTier = (rawModelTier === 'model2' ? 'model2' : 'model1') as 'model1' | 'model2'
 
     if (!type || !inputData) {
@@ -141,6 +153,92 @@ export async function POST(req: NextRequest) {
         },
         { status: 429 }
       )
+    }
+
+    // Handle family member
+    let resolvedFamilyMemberId: string | null = null
+    let targetPersonInfo = ''
+    if (targetType === 'family') {
+      if (newFamilyMember?.relation) {
+        // Create new family member
+        const created = await prisma.familyMember.create({
+          data: {
+            userId: session.user.id,
+            relation: newFamilyMember.relation,
+            name: newFamilyMember.name || null,
+            birthDate: inputData.birthDate || null,
+            birthTime: inputData.birthTime || null,
+            birthPlace: inputData.birthPlace || null,
+            gender: inputData.gender || null,
+          },
+        })
+        resolvedFamilyMemberId = created.id
+        const relationLabel: Record<string, string> = { spouse: '配偶', father: '父亲', mother: '母亲', son: '儿子', daughter: '女儿', brother: '兄弟', sister: '姐妹', friend: '朋友', other: '其他' }
+        targetPersonInfo = `此次预测对象为用户的${relationLabel[created.relation] || created.relation}${created.name ? `（${created.name}）` : ''}`
+      } else if (familyMemberId) {
+        // Verify existing family member belongs to user
+        const member = await prisma.familyMember.findFirst({ where: { id: familyMemberId, userId: session.user.id } })
+        if (!member) {
+          return NextResponse.json({ error: 'Family member not found' }, { status: 404 })
+        }
+        resolvedFamilyMemberId = member.id
+        const relationLabel: Record<string, string> = { spouse: '配偶', father: '父亲', mother: '母亲', son: '儿子', daughter: '女儿', brother: '兄弟', sister: '姐妹', friend: '朋友', other: '其他' }
+        targetPersonInfo = `此次预测对象为用户的${relationLabel[member.relation] || member.relation}${member.name ? `（${member.name}）` : ''}`
+      }
+    }
+
+    // BaZi Cache: check for existing reading with same birth data
+    if (type === 'bazi' && inputData.birthDate && inputData.birthTime && inputData.gender) {
+      const cacheWhere: Record<string, unknown> = {
+        userId: session.user.id,
+        type: 'bazi',
+        targetType,
+        deletedAt: null,
+      }
+      if (targetType === 'family' && resolvedFamilyMemberId) {
+        cacheWhere.familyMemberId = resolvedFamilyMemberId
+      } else if (targetType === 'self') {
+        cacheWhere.familyMemberId = null
+      }
+
+      const existingReadings = await prisma.reading.findMany({
+        where: cacheWhere,
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      })
+
+      for (const existing of existingReadings) {
+        const existingInput = existing.inputData as Record<string, unknown>
+        if (
+          existingInput.birthDate === inputData.birthDate &&
+          existingInput.birthTime === inputData.birthTime &&
+          existingInput.gender === inputData.gender
+        ) {
+          // Found a cached reading
+          if (shouldSaveHistory) {
+            // Create a new reading record pointing to same result
+            const newReading = await prisma.reading.create({
+              data: {
+                userId: session.user.id,
+                type,
+                modelTier,
+                question: question || null,
+                inputData,
+                result: existing.result,
+                language: language || 'zh-TW',
+                targetType,
+                familyMemberId: resolvedFamilyMemberId,
+              },
+            })
+            return NextResponse.json({ reading: { ...newReading, result: existing.result }, saved: true, cached: true })
+          }
+          return NextResponse.json({
+            reading: { id: null, result: existing.result, type, createdAt: existing.createdAt },
+            saved: false,
+            cached: true,
+          })
+        }
+      }
     }
 
     const refFileName = refFileMap[type] || 'others.md'
@@ -181,26 +279,50 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
           inputData.birthPlace || '',
           inputData.gender || 'male'
         )
-        userMessage = `请为我进行八字命理分析。
-
-## 程序预计算的四柱命盘（请校验）
-${JSON.stringify(baziChart, null, 2)}
+        userMessage = `请为我进行八字命理精批。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+## 程序预计算的四柱命盘与大运（已验证准确，请直接使用）
+${JSON.stringify({
+  fourPillars: { year: baziChart.yearPillar, month: baziChart.monthPillar, day: baziChart.dayPillar, hour: baziChart.hourPillar },
+  dayMaster: baziChart.dayMaster,
+  fiveElements: baziChart.fiveElements,
+  strength: baziChart.strength,
+  strengthLabel: baziChart.strengthLabel,
+  luckyElements: baziChart.luckyElements,
+  avoidElements: baziChart.avoidElements,
+  shenSha: baziChart.shenSha,
+  qiYun: baziChart.qiYun,
+  daYun: baziChart.daYun,
+}, null, 2)}
 
 ## 用户输入
-${JSON.stringify(inputData, null, 2)}
-${question ? `\n特别关注：${question}` : ''}
+- 出生日期：${inputData.birthDate}
+- 出生时辰：${inputData.birthTime}
+- 出生地：${inputData.birthPlace || '未提供'}
+- 性别：${inputData.gender}
+${inputData.birthEnvironment ? `- 出生地环境：${inputData.birthEnvironment}` : ''}
+${question ? `- 特别关注：${question}` : ''}
 
-请基于以上命盘数据，填写以下JSON结构中的sections、keyAdvice和luckyInfo部分。
-四柱数据(pillars, dayMaster, fiveElements等)请以程序计算结果为准，除非你发现明显错误。
-重点放在解读分析上，每个section至少100字。`
+## 解盘要求
+你是资深命理师，请基于以上命盘进行精批。重点：
+1. **overview**：命主性格、出身家庭、六亲关系（150字以上）
+2. **career**：事业方向、适合行业、贵人运（150字以上）
+3. **marriage**：配偶特征、婚姻质量、感情运势（150字以上）
+4. **wealth**：正财偏财分析、理财建议（150字以上）
+5. **health**：易患疾病、养生注意（100字以上）
+6. **daYunDetail**：逐步精批每个10年大运（共${baziChart.daYun.length}步），标注每步大运起止年份，点出重点领域和需要注意的流年（300字以上）
+
+四柱和大运数据以程序计算结果为准，你只负责解盘分析。`
       } catch (e) {
         console.error('BaZi calculation error:', e)
         userMessage = `请为我进行${type}分析。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 输入信息：${JSON.stringify(inputData, null, 2)}
 ${question ? `特别关注：${question}` : ''}`
       }
     } else {
       userMessage = `请为我进行${type}分析。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 输入信息：${JSON.stringify(inputData, null, 2)}
 ${question ? `特别关注：${question}` : ''}`
     }
@@ -212,68 +334,182 @@ ${question ? `特别关注：${question}` : ''}`
       )
     }
 
-    const client = new OpenAI({
-      baseURL: 'https://openrouter.ai/api/v1',
-      apiKey: process.env.OPENROUTER_API_KEY,
-      timeout: 120000,
-      defaultHeaders: {
-        'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:8094',
-        'X-Title': 'Xuanji Divination',
-      },
-    })
-
     // Get model name from admin settings
     const modelKey = modelTier === 'model2' ? 'model2Name' : 'model1Name'
     const modelSetting = await prisma.adminSetting.findUnique({ where: { key: modelKey } })
     const modelName = modelSetting?.value || 'anthropic/claude-3-5-haiku'
 
+    const isLocalProxy = modelName === 'local/claude-proxy'
+    const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'http://127.0.0.1:8095'
+
+    // Read configurable timeout and max tokens
+    const [timeoutSetting, maxTokensSetting] = await Promise.all([
+      prisma.adminSetting.findUnique({ where: { key: 'llmTimeoutSeconds' } }),
+      prisma.adminSetting.findUnique({ where: { key: 'llmMaxTokens' } }),
+    ])
+    const llmTimeoutMs = (parseInt(timeoutSetting?.value || '240', 10) || 240) * 1000
+    const llmMaxTokens = parseInt(maxTokensSetting?.value || '8192', 10) || 8192
+
     let resultText: string
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 120000)
-    try {
-      const completion = await client.chat.completions.create({
-        model: modelName,
-        max_tokens: 4096,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
-        ],
-      }, { signal: controller.signal as AbortSignal })
-      clearTimeout(timeoutId)
-      resultText = completion.choices[0]?.message?.content || ''
-    } catch (apiErr: unknown) {
-      clearTimeout(timeoutId)
-      console.error('OpenRouter API error:', apiErr)
-      const err = apiErr as { status?: number; message?: string }
-      if (err?.status === 401) {
+    const llmStart = Date.now()
+
+    if (isLocalProxy) {
+      // Route through local Claude CLI proxy
+      try {
+        const proxyRes = await fetch(`${PROXY_URL}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMessage },
+            ],
+            max_tokens: llmMaxTokens,
+          }),
+          signal: AbortSignal.timeout(llmTimeoutMs),
+        })
+
+        if (!proxyRes.ok) {
+          const errBody = await proxyRes.json().catch(() => ({ error: 'Proxy error' }))
+          throw new Error(errBody.error || `Proxy returned ${proxyRes.status}`)
+        }
+
+        const proxyData = await proxyRes.json()
+        resultText = proxyData.choices?.[0]?.message?.content || ''
+
+        await logLlmCall({
+          userId: session.user.id,
+          endpoint: 'divination',
+          model: 'local/claude-proxy',
+          modelTier,
+          promptTokens: proxyData.usage?.prompt_tokens || 0,
+          completionTokens: proxyData.usage?.completion_tokens || 0,
+          totalTokens: proxyData.usage?.total_tokens || 0,
+          latencyMs: Date.now() - llmStart,
+          status: 'success',
+          inputPreview: userMessage,
+          outputPreview: resultText,
+        })
+      } catch (proxyErr: unknown) {
+        const err = proxyErr as { message?: string }
+        await logLlmCall({
+          userId: session.user.id,
+          endpoint: 'divination',
+          model: 'local/claude-proxy',
+          modelTier,
+          latencyMs: Date.now() - llmStart,
+          status: 'error',
+          errorMessage: err?.message || 'Proxy error',
+          inputPreview: userMessage,
+        })
         return NextResponse.json(
-          { error: language !== 'en' ? 'AI服務API密鑰無效，請檢查配置。' : 'AI API key is invalid.' },
-          { status: 401 }
+          { error: language !== 'en' ? `本地代理錯誤：${err?.message || '未知錯誤'}` : `Local proxy error: ${err?.message || 'Unknown'}` },
+          { status: 502 }
         )
       }
-      if (err?.status === 402) {
+    } else {
+      // Route through OpenRouter
+      const client = new OpenAI({
+        baseURL: 'https://openrouter.ai/api/v1',
+        apiKey: process.env.OPENROUTER_API_KEY,
+        timeout: llmTimeoutMs,
+        defaultHeaders: {
+          'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:8094',
+          'X-Title': 'Xuanji Divination',
+        },
+      })
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), llmTimeoutMs)
+      try {
+        const completion = await client.chat.completions.create({
+          model: modelName,
+          max_tokens: llmMaxTokens,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage },
+          ],
+        }, { signal: controller.signal as AbortSignal })
+        clearTimeout(timeoutId)
+        resultText = completion.choices[0]?.message?.content || ''
+
+        await logLlmCall({
+          userId: session.user.id,
+          endpoint: 'divination',
+          model: modelName,
+          modelTier,
+          promptTokens: completion.usage?.prompt_tokens,
+          completionTokens: completion.usage?.completion_tokens,
+          totalTokens: completion.usage?.total_tokens,
+          latencyMs: Date.now() - llmStart,
+          status: 'success',
+          inputPreview: userMessage,
+          outputPreview: resultText,
+        })
+      } catch (apiErr: unknown) {
+        clearTimeout(timeoutId)
+        console.error('OpenRouter API error:', apiErr)
+        const err = apiErr as { status?: number; message?: string }
+
+        await logLlmCall({
+          userId: session.user.id,
+          endpoint: 'divination',
+          model: modelName,
+          modelTier,
+          latencyMs: Date.now() - llmStart,
+          status: 'error',
+          errorMessage: err?.message || 'Unknown error',
+          inputPreview: userMessage,
+        })
+
+        if (err?.status === 401) {
+          return NextResponse.json(
+            { error: language !== 'en' ? 'AI服務API密鑰無效，請檢查配置。' : 'AI API key is invalid.' },
+            { status: 401 }
+          )
+        }
+        if (err?.status === 402) {
+          return NextResponse.json(
+            { error: language !== 'en' ? 'OpenRouter餘額不足，請前往 openrouter.ai 充值。' : 'OpenRouter credits exhausted. Please top up at openrouter.ai.' },
+            { status: 402 }
+          )
+        }
+        if (err?.status === 429) {
+          return NextResponse.json(
+            { error: language !== 'en' ? 'AI請求過於頻繁，請稍後再試。' : 'Too many requests. Please try again later.' },
+            { status: 429 }
+          )
+        }
         return NextResponse.json(
-          { error: language !== 'en' ? 'OpenRouter餘額不足，請前往 openrouter.ai 充值。' : 'OpenRouter credits exhausted. Please top up at openrouter.ai.' },
-          { status: 402 }
+          { error: language !== 'en' ? `AI服務錯誤：${err?.message || '未知錯誤'}` : `AI service error: ${err?.message || 'Unknown'}` },
+          { status: 502 }
         )
       }
-      if (err?.status === 429) {
-        return NextResponse.json(
-          { error: language !== 'en' ? 'AI請求過於頻繁，請稍後再試。' : 'Too many requests. Please try again later.' },
-          { status: 429 }
-        )
-      }
-      return NextResponse.json(
-        { error: language !== 'en' ? `AI服務錯誤：${err?.message || '未知錯誤'}` : `AI service error: ${err?.message || 'Unknown'}` },
-        { status: 502 }
-      )
     }
 
-    // Parse JSON from Claude's response
+    // Parse JSON from Claude's response — handle various LLM output formats
     let structuredResult: Record<string, unknown>
     try {
-      const raw = resultText.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '').replace(/^```\n?/, '')
-      structuredResult = JSON.parse(raw)
+      let cleaned = resultText.trim()
+      // Extract JSON from markdown code blocks (```json ... ``` or ``` ... ```)
+      const codeBlockMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/)
+      if (codeBlockMatch) {
+        cleaned = codeBlockMatch[1].trim()
+      }
+      // Also try stripping leading/trailing non-JSON text to find the JSON object
+      if (!cleaned.startsWith('{')) {
+        const firstBrace = cleaned.indexOf('{')
+        if (firstBrace !== -1) {
+          cleaned = cleaned.substring(firstBrace)
+        }
+      }
+      if (!cleaned.endsWith('}')) {
+        const lastBrace = cleaned.lastIndexOf('}')
+        if (lastBrace !== -1) {
+          cleaned = cleaned.substring(0, lastBrace + 1)
+        }
+      }
+      structuredResult = JSON.parse(cleaned)
     } catch {
       // Fallback: wrap as generic structure for ResultRenderer to handle
       structuredResult = { type, raw: resultText, sections: { overview: resultText }, keyAdvice: [] }
@@ -298,6 +534,9 @@ ${question ? `特别关注：${question}` : ''}`
       structuredResult.fiveElements = baziChart.fiveElements
       structuredResult.shenSha = baziChart.shenSha
       structuredResult.trueSolarTime = baziChart.trueSolarTime
+      structuredResult.daYun = baziChart.daYun
+      structuredResult.xiaoYun = baziChart.xiaoYun
+      structuredResult.qiYun = baziChart.qiYun
       if (!structuredResult.luckyElements || (structuredResult.luckyElements as string[]).length === 0) {
         structuredResult.luckyElements = baziChart.luckyElements
       }
@@ -318,7 +557,11 @@ ${question ? `特别关注：${question}` : ''}`
       if (inputData.birthPlace) profileUpdate.birthPlace = inputData.birthPlace
       if (inputData.gender) profileUpdate.gender = inputData.gender
       if (Object.keys(profileUpdate).length > 0) {
-        await prisma.user.update({ where: { id: session.user.id }, data: profileUpdate })
+        if (targetType === 'family' && resolvedFamilyMemberId) {
+          await prisma.familyMember.update({ where: { id: resolvedFamilyMemberId }, data: profileUpdate })
+        } else {
+          await prisma.user.update({ where: { id: session.user.id }, data: profileUpdate })
+        }
       }
     }
 
@@ -332,6 +575,8 @@ ${question ? `特别关注：${question}` : ''}`
           inputData,
           result: resultToStore,
           language: language || 'zh-TW',
+          targetType,
+          familyMemberId: resolvedFamilyMemberId,
         },
       })
       return NextResponse.json({ reading: { ...reading, result: resultToStore }, saved: true })

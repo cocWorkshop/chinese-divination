@@ -1,8 +1,15 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
+import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
+
+const T = (lang: string, zhTW: string, en: string) =>
+  lang === 'en' ? en : zhTW
 
 const services = [
   { id: 'bazi', symbol: '☰', twName: '八字命理', enName: 'BaZi (Four Pillars)', twDesc: '以生辰八字為基礎，分析命主的命運走向、性格特點、事業財運與婚姻', enDesc: 'Analyze destiny through birth date and time — career, wealth, relationships and personality' },
@@ -15,6 +22,34 @@ const services = [
 
 export default function DivinationPage() {
   const { lang } = useLang()
+  const { data: session } = useSession()
+  const router = useRouter()
+  const [tiers, setTiers] = useState<Record<string, string>>({})
+  const [userRole, setUserRole] = useState<string>('free')
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/divination-tiers').then(r => r.json()).then(setTiers).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!session) return
+    fetch('/api/profile').then(r => r.json()).then(data => {
+      if (data?.role) setUserRole(data.role)
+      if (data?.isAdmin) setIsAdmin(true)
+    }).catch(() => {})
+  }, [session])
+
+  const canAccessPremium = isAdmin || userRole === 'admin' || userRole === 'premium'
+
+  const handleClick = (svcId: string, e: React.MouseEvent) => {
+    if (tiers[svcId] === 'premium' && !canAccessPremium) {
+      e.preventDefault()
+      toast.error(T(lang, '此功能需要高級用戶權限', 'This feature requires premium access'), { icon: '✦' })
+      return
+    }
+    router.push(`/divination/${svcId}`)
+  }
 
   return (
     <div className="min-h-screen py-12 px-4 max-w-6xl mx-auto">
@@ -23,10 +58,10 @@ export default function DivinationPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
-        <h1 className="text-4xl font-serif text-gold mb-3">
+        <h1 className="text-4xl font-serif mb-3" style={{ color: 'var(--gold)' }}>
           {lang === 'zh-TW' ? '選擇占卜方式' : 'Choose Your Oracle'}
         </h1>
-        <p className="text-white/60">
+        <p style={{ color: 'var(--text-muted)' }}>
           {lang === 'zh-TW' ? '六大傳統命理體系，AI深度解讀' : 'Six classical systems, powered by AI'}
         </p>
       </motion.div>
@@ -39,20 +74,27 @@ export default function DivinationPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Link href={`/divination/${svc.id}`}>
-              <div className="glass-card rounded-2xl p-8 h-full hover:border-gold/60 hover:shadow-xl hover:shadow-gold/10 transition-all group cursor-pointer">
-                <div className="text-5xl mb-4">{svc.symbol}</div>
-                <h2 className="text-xl font-serif text-gold mb-2 group-hover:text-gold-light transition-colors">
-                  {lang === 'en' ? svc.enName : svc.twName}
-                </h2>
-                <p className="text-white/60 text-sm leading-relaxed">
-                  {lang === 'en' ? svc.enDesc : svc.twDesc}
-                </p>
-                <div className="mt-4 text-gold/60 text-sm flex items-center gap-1 group-hover:text-gold transition-colors">
-                  {lang === 'zh-TW' ? '開始占卜' : 'Start'} →
-                </div>
+            <div
+              onClick={(e) => handleClick(svc.id, e)}
+              className="glass-card rounded-2xl p-8 h-full hover:shadow-xl transition-all group cursor-pointer relative"
+              style={{ borderColor: 'var(--card-border)' }}
+            >
+              {tiers[svc.id] === 'premium' && (
+                <span className="absolute top-4 right-4 px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: 'rgba(212, 168, 83, 0.15)', color: 'var(--gold)' }}>
+                  ✦ {T(lang, '高級', 'Premium')}
+                </span>
+              )}
+              <div className="text-5xl mb-4">{svc.symbol}</div>
+              <h2 className="text-xl font-serif mb-2 transition-colors" style={{ color: 'var(--gold)' }}>
+                {lang === 'en' ? svc.enName : svc.twName}
+              </h2>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                {lang === 'en' ? svc.enDesc : svc.twDesc}
+              </p>
+              <div className="mt-4 text-sm flex items-center gap-1 transition-colors" style={{ color: 'var(--text-muted)' }}>
+                {lang === 'zh-TW' ? '開始占卜' : 'Start'} →
               </div>
-            </Link>
+            </div>
           </motion.div>
         ))}
       </div>

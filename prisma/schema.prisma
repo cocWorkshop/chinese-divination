@@ -19,28 +19,69 @@ model User {
   gender       String?
   isAdmin      Boolean     @default(false)
   isPaid       Boolean     @default(false)
+  role         String      @default("free") // free | paid | premium | admin
   chatSummary  String?     @db.Text
   hourlyQuota  Int         @default(10)
   bonusModel1  Int         @default(0)
   bonusModel2  Int         @default(0)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
-  readings     Reading[]
-  rateLimits   RateLimit[]
-  shareLinks   ShareLink[]
+  readings      Reading[]
+  rateLimits    RateLimit[]
+  shareLinks    ShareLink[]
+  familyMembers FamilyMember[]
 }
 
 model Reading {
+  id             String        @id @default(cuid())
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String
+  modelTier      String        @default("model1")
+  question       String?
+  inputData      Json
+  result         String        @db.Text
+  language       String        @default("zh")
+  targetType     String        @default("self")
+  familyMemberId String?
+  familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
+  rating         Int?          // 1-5 star rating (denormalized from ReadingFeedback)
+  shareToken     String?       @unique
+  deletedAt      DateTime?
+  createdAt      DateTime      @default(now())
+  feedbacks       ReadingFeedback[]
+}
+
+model ReadingFeedback {
   id        String   @id @default(cuid())
+  readingId String
+  reading   Reading  @relation(fields: [readingId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String
-  modelTier String   @default("model1")
-  question  String?
-  inputData Json
-  result    String   @db.Text
-  language  String   @default("zh")
+  rating    Int?     // 1-5
+  feedback  String?  @db.Text
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([readingId, userId])
+  @@index([readingId])
+  @@index([userId])
+}
+
+model FamilyMember {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relation   String
+  name       String?
+  birthDate  String?
+  birthTime  String?
+  birthPlace String?
+  gender     String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  readings   Reading[]
+
+  @@index([userId])
 }
 
 model RateLimit {
@@ -67,8 +108,43 @@ model ShareLink {
   createdAt DateTime  @default(now())
 }
 
+model LlmLog {
+  id            String   @id @default(cuid())
+  userId        String?
+  endpoint      String   // "divination" | "chat" | "chat-summary"
+  model         String   // actual model name used
+  modelTier     String?  // "model1" | "model2"
+  promptTokens  Int      @default(0)
+  completionTokens Int   @default(0)
+  totalTokens   Int      @default(0)
+  latencyMs     Int      @default(0)
+  status        String   @default("success") // "success" | "error"
+  errorMessage  String?
+  inputPreview  String?  @db.Text // first 200 chars of user message
+  outputPreview String?  @db.Text // first 200 chars of response
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([endpoint])
+}
+
 model AdminSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model FrontendError {
+  id        String   @id @default(cuid())
+  userId    String?
+  endpoint  String   // API endpoint that failed
+  status    Int?     // HTTP status code
+  error     String   @db.Text // error message
+  context   String?  @db.Text // extra context (page, action, etc.)
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
 }

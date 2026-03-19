@@ -49,6 +49,7 @@ export async function GET() {
     select: {
       name: true, birthDate: true, birthTime: true,
       birthPlace: true, gender: true, language: true,
+      role: true, isAdmin: true,
     },
   })
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 })

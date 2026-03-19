@@ -1,14 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useLang } from '@/components/LanguageContext'
 
 export default function LoginPage() {
+  return <Suspense><LoginInner /></Suspense>
+}
+
+function LoginInner() {
   const { lang } = useLang()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const refCode = searchParams.get('ref') || ''
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -29,16 +35,16 @@ export default function LoginPage() {
     if (res?.error) {
       setError(lang === 'zh-TW' ? '郵箱或密碼錯誤' : 'Invalid email or password')
     } else {
-      router.push('/dashboard')
+      router.push(refCode ? `/share/${refCode}` : '/dashboard')
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-radial-navy">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
       <div className="glass-card rounded-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="text-4xl font-serif text-gold mb-2">玄机</div>
-          <h1 className="text-2xl font-serif text-white">
+          <div className="text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>玄機</div>
+          <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>
             {lang === 'zh-TW' ? '登入帳號' : 'Sign In'}
           </h1>
         </div>

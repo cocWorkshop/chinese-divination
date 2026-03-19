@@ -96,7 +96,7 @@ export default function IChingResult({ data }: { data: Record<string, unknown> }
       {/* Changing Lines */}
       {d.changingLines && d.changingLines.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card rounded-xl p-5 border border-gold/30 bg-gold/5">
-          <h4 className="text-gold font-serif mb-3">变爻</h4>
+          <h4 className="text-gold font-serif mb-3">變爻</h4>
           {d.changingLines.map((cl, i) => (
             <div key={i} className="flex gap-3 mb-2">
               <span className="text-gold text-sm">第{cl.position}爻</span>

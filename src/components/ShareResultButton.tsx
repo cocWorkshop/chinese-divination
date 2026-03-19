@@ -1,0 +1,61 @@
+'use client'
+
+import { useState } from 'react'
+import toast from 'react-hot-toast'
+
+const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+
+export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW' }: {
+  readingId: string
+  shareToken?: string | null
+  lang?: string
+}) {
+  const [url, setUrl] = useState<string | null>(
+    shareToken ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${shareToken}` : null
+  )
+  const [loading, setLoading] = useState(false)
+
+  const generate = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/readings/${readingId}/share`, { method: 'POST' })
+      const data = await res.json()
+      if (data.token) {
+        const link = `${window.location.origin}/r/${data.token}`
+        setUrl(link)
+        navigator.clipboard.writeText(link)
+        toast.success(T(lang, '連結已複製！', 'Link copied!'))
+      }
+    } catch { toast.error('Error') }
+    setLoading(false)
+  }
+
+  if (url) {
+    return (
+      <div className="mt-3 pt-3 border-t flex items-center gap-2 flex-wrap" style={{ borderColor: 'var(--card-border)' }}>
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>🔗</span>
+        <code className="text-xs break-all px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--gold)' }}>{url}</code>
+        <button
+          onClick={() => { navigator.clipboard.writeText(url); toast.success(T(lang, '已複製', 'Copied!')) }}
+          className="px-2 py-0.5 text-xs rounded transition-colors"
+          style={{ backgroundColor: 'rgba(212, 168, 83, 0.1)', color: 'var(--gold)' }}
+        >
+          📋
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--card-border)' }}>
+      <button
+        onClick={generate}
+        disabled={loading}
+        className="px-3 py-1.5 text-xs rounded-lg transition-colors disabled:opacity-50"
+        style={{ backgroundColor: 'rgba(212, 168, 83, 0.1)', color: 'var(--gold)', border: '1px solid rgba(212, 168, 83, 0.2)' }}
+      >
+        {loading ? '...' : `📤 ${T(lang, '分享結果', 'Share Result')}`}
+      </button>
+    </div>
+  )
+}

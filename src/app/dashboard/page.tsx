@@ -7,6 +7,20 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
 import ResultRenderer from '@/components/results/ResultRenderer'
+import ReadingFeedback from '@/components/ReadingFeedback'
+import ShareResultButton from '@/components/ShareResultButton'
+
+const relationLabels: Record<string, { zh: string; en: string }> = {
+  spouse: { zh: '配偶', en: 'Spouse' },
+  father: { zh: '父親', en: 'Father' },
+  mother: { zh: '母親', en: 'Mother' },
+  son: { zh: '兒子', en: 'Son' },
+  daughter: { zh: '女兒', en: 'Daughter' },
+  brother: { zh: '兄弟', en: 'Brother' },
+  sister: { zh: '姐妹', en: 'Sister' },
+  friend: { zh: '朋友', en: 'Friend' },
+  other: { zh: '其他', en: 'Other' },
+}
 
 interface Reading {
   id: string
@@ -15,6 +29,10 @@ interface Reading {
   result: string
   language: string
   createdAt: string
+  targetType?: string
+  familyMember?: { relation: string; name: string | null } | null
+  rating?: number | null
+  shareToken?: string | null
 }
 
 const typeLabels: Record<string, { 'zh-TW': string; en: string }> = {
@@ -94,9 +112,22 @@ export default function DashboardPage() {
                     <span className="px-2 py-0.5 bg-gold/20 text-gold text-xs rounded-full mr-2">
                       {typeLabels[r.type]?.[lang === 'en' ? 'en' : 'zh-TW'] || r.type}
                     </span>
+                    {r.targetType === 'family' && r.familyMember && (
+                      <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs rounded-full mr-2">
+                        {lang === 'en'
+                          ? `For ${relationLabels[r.familyMember.relation]?.en || r.familyMember.relation}${r.familyMember.name ? ` (${r.familyMember.name})` : ''}`
+                          : `為${relationLabels[r.familyMember.relation]?.zh || r.familyMember.relation}${r.familyMember.name ? `（${r.familyMember.name}）` : ''}`
+                        }
+                      </span>
+                    )}
                     {r.question && <span className="text-white/60 text-sm">{r.question}</span>}
                   </div>
                   <div className="flex items-center gap-3">
+                    {r.rating && (
+                      <span className="text-gold text-xs" title={`${r.rating}/5`}>
+                        {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}
+                      </span>
+                    )}
                     <span className="text-white/40 text-xs">
                       {new Date(r.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')}
                     </span>
@@ -128,6 +159,13 @@ export default function DashboardPage() {
                     className="border-t border-gold/10 px-5 pb-5 pt-4"
                   >
                     <ResultRenderer result={r.result} type={r.type} />
+                    <div className="mt-4">
+                      <ReadingFeedback
+                        readingId={r.id}
+                        initialRating={r.rating}
+                      />
+                    </div>
+                    <ShareResultButton readingId={r.id} shareToken={r.shareToken} lang={lang} />
                   </motion.div>
                 )}
               </AnimatePresence>

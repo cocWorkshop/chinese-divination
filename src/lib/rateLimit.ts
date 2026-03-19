@@ -97,6 +97,52 @@ export async function incrementModelUsage(userId: string, modelTier: 'model1' | 
   }
 }
 
+// Chat rate limiting
+export async function checkChatLimit(userId: string): Promise<RateLimitResult> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isPaid: true, isAdmin: true },
+  })
+
+  if (user?.isAdmin) {
+    return { allowed: true, remaining: 999, used: 0, dailyLimit: -1, bonus: 0, resetAt: new Date() }
+  }
+
+  const isPaid = user?.isPaid ?? false
+  const limitKey = isPaid ? 'paidDailyChat' : 'freeDailyChat'
+  const dailyLimitStr = await getSetting(limitKey, isPaid ? '10' : '3')
+  const dailyLimit = parseInt(dailyLimitStr)
+
+  if (dailyLimit === -1) {
+    return { allowed: true, remaining: 999, used: 0, dailyLimit: -1, bonus: 0, resetAt: new Date() }
+  }
+
+  const now = new Date()
+  const windowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  const resetAt = new Date(windowStart)
+  resetAt.setUTCDate(resetAt.getUTCDate() + 1)
+
+  const record = await prisma.rateLimit.findFirst({
+    where: { userId, windowStart, modelTier: 'chat' },
+  })
+  const used = record?.count ?? 0
+  const allowed = used < dailyLimit
+  const remaining = Math.max(0, dailyLimit - used)
+
+  return { allowed, remaining, used, dailyLimit, bonus: 0, resetAt }
+}
+
+export async function incrementChatUsage(userId: string): Promise<void> {
+  const now = new Date()
+  const windowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+
+  await prisma.rateLimit.upsert({
+    where: { userId_windowStart_modelTier: { userId, windowStart, modelTier: 'chat' } },
+    create: { userId, windowStart, modelTier: 'chat', count: 1 },
+    update: { count: { increment: 1 } },
+  })
+}
+
 // Legacy compatibility
 export async function checkRateLimit(userId: string): Promise<RateLimitResult & { quota: number }> {
   const result = await checkModelLimit(userId, 'model1')

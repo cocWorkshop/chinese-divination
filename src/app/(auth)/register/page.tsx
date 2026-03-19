@@ -1,14 +1,20 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
 
 export default function RegisterPage() {
+  return <Suspense><RegisterInner /></Suspense>
+}
+
+function RegisterInner() {
   const { lang } = useLang()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const referralCode = searchParams.get('ref') || ''
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [loading, setLoading] = useState(false)
 
@@ -26,11 +32,16 @@ export default function RegisterPage() {
     const res = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+      body: JSON.stringify({ name: form.name, email: form.email, password: form.password, ...(referralCode && { referralCode }) }),
     })
     setLoading(false)
     if (res.ok) {
-      toast.success(lang === 'zh-TW' ? '註冊成功，請登入' : 'Registered! Please sign in.')
+      const data = await res.json()
+      if (data.bonusModel1) {
+        toast.success(lang === 'zh-TW' ? `🎁 註冊成功！獲得 ⚡×${data.bonusModel1} 額外次數` : `🎁 Registered! Got ⚡×${data.bonusModel1} bonus`, { duration: 4000 })
+      } else {
+        toast.success(lang === 'zh-TW' ? '註冊成功，請登入' : 'Registered! Please sign in.')
+      }
       router.push('/login')
     } else {
       const data = await res.json()
@@ -52,14 +63,20 @@ export default function RegisterPage() {
   )
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-radial-navy">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
       <div className="glass-card rounded-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="text-4xl font-serif text-gold mb-2">玄机</div>
-          <h1 className="text-2xl font-serif text-white">
+          <div className="text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>玄機</div>
+          <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>
             {lang === 'zh-TW' ? '建立帳號' : 'Create Account'}
           </h1>
         </div>
+
+        {referralCode && (
+          <div className="mb-4 py-2 px-4 rounded-lg text-center text-sm" style={{ backgroundColor: 'rgba(45, 212, 137, 0.1)', border: '1px solid rgba(45, 212, 137, 0.3)', color: '#2dd489' }}>
+            🎁 {lang === 'zh-TW' ? '透過分享連結註冊，您將獲得額外占卜次數！' : 'Register via referral to earn bonus credits!'}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {field('name', lang === 'zh-TW' ? '姓名（可選）' : 'Name (optional)')}

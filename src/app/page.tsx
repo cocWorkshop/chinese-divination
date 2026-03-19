@@ -28,8 +28,8 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
           >
-            <h1 className="text-8xl md:text-9xl font-serif text-gold mb-4" style={{ textShadow: '0 0 40px rgba(212,168,83,0.5)' }}>
-              玄机
+            <h1 className="text-6xl sm:text-8xl md:text-9xl font-serif text-gold mb-4" style={{ textShadow: '0 0 40px rgba(212,168,83,0.5)' }}>
+              玄機
             </h1>
             <p className="text-xl md:text-2xl text-white/70 mb-2 font-serif">
               {lang === 'zh-TW' ? '古法智慧，現代傳承' : 'Ancient Wisdom, Modern Clarity'}

@@ -31,7 +31,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { href: '/admin', label: '概览', enLabel: 'Overview', icon: '📊' },
     { href: '/admin/users', label: '用户管理', enLabel: 'Users', icon: '👥' },
-    { href: '/admin/settings', label: '系统设置', enLabel: 'Settings', icon: '⚙️' },
+    { href: '/admin/logs', label: 'LLM 日誌', enLabel: 'LLM Logs', icon: '📋' },
+    { href: '/admin/feedback', label: '用戶反饋', enLabel: 'Feedback', icon: '💬' },
+    { href: '/admin/errors', label: '前端錯誤', enLabel: 'Errors', icon: '🐛' },
+    { href: '/admin/settings', label: '系統設置', enLabel: 'Settings', icon: '⚙️' },
   ]
 
   return (
@@ -39,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Sidebar */}
       <aside className="w-56 bg-navy-900 border-r border-gold/20 flex flex-col">
         <div className="p-6 border-b border-gold/20">
-          <div className="text-gold font-serif text-xl">玄机</div>
+          <div className="text-gold font-serif text-xl">玄機</div>
           <div className="text-white/40 text-xs mt-1">Admin Console</div>
         </div>
         <nav className="flex-1 p-4 space-y-1">

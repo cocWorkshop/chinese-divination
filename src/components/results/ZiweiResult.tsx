@@ -11,13 +11,13 @@ interface ZiweiData {
   luckyInfo: { numbers: number[]; colors: string[]; directions: string[] }
 }
 
-const PALACE_ORDER = ['命宫','兄弟宫','夫妻宫','子女宫','财帛宫','疾厄宫','迁移宫','交友宫','官禄宫','田宅宫','福德宫','父母宫']
+const PALACE_ORDER = ['命宫','兄弟宫','夫妻宫','子女宫','財帛宮','疾厄宫','遷移宮','交友宫','官祿宮','田宅宫','福德宫','父母宫']
 
 const sectionTabs = [
-  { key: 'overview', label: '总览' },
-  { key: 'career', label: '事业' },
+  { key: 'overview', label: '總覽' },
+  { key: 'career', label: '事業' },
   { key: 'marriage', label: '婚姻' },
-  { key: 'wealth', label: '财运' },
+  { key: 'wealth', label: '財運' },
 ]
 
 export default function ZiweiResult({ data }: { data: Record<string, unknown> }) {
@@ -84,7 +84,7 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
             exit={{ opacity: 0, x: -10 }}
             className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap"
           >
-            {d.sections?.[activeSection as keyof typeof d.sections] || '暂无内容'}
+            {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
           </motion.div>
         </AnimatePresence>
       </motion.div>
@@ -92,7 +92,7 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
       {/* Key Advice */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <h3 className="text-gold font-serif mb-3">核心建议</h3>
+          <h3 className="text-gold font-serif mb-3">核心建議</h3>
           <div className="grid gap-3">
             {d.keyAdvice.map((advice, i) => (
               <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">

@@ -6,6 +6,29 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
+import BirthplaceInput from '@/components/BirthplaceInput'
+
+const relationPresets = [
+  { value: 'spouse', zh: '配偶', en: 'Spouse' },
+  { value: 'father', zh: '父親', en: 'Father' },
+  { value: 'mother', zh: '母親', en: 'Mother' },
+  { value: 'son', zh: '兒子', en: 'Son' },
+  { value: 'daughter', zh: '女兒', en: 'Daughter' },
+  { value: 'brother', zh: '兄弟', en: 'Brother' },
+  { value: 'sister', zh: '姐妹', en: 'Sister' },
+  { value: 'friend', zh: '朋友', en: 'Friend' },
+  { value: 'other', zh: '其他', en: 'Other' },
+]
+
+interface FamilyMember {
+  id: string
+  relation: string
+  name: string | null
+  birthDate: string | null
+  birthTime: string | null
+  birthPlace: string | null
+  gender: string | null
+}
 
 const shichen = [
   { value: 'zi',   label: '子時  23:00 – 01:00' },
@@ -34,11 +57,58 @@ export default function ProfilePage() {
     newPassword: '', currentPassword: '',
   })
   const [saving, setSaving] = useState(false)
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
+  const [editingMember, setEditingMember] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<Partial<FamilyMember>>({})
+  const [addingMember, setAddingMember] = useState(false)
+  const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '' })
+  const [credits, setCredits] = useState<Record<string, { remaining: number; dailyLimit: number }> | null>(null)
+  const [userBonus, setUserBonus] = useState<{ model1: number; model2: number } | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
     if (session?.user?.name) setForm(f => ({ ...f, name: session.user?.name || '' }))
   }, [status, session, router])
+
+  useEffect(() => {
+    if (session) {
+      fetch('/api/family-members').then(r => r.json()).then(data => setFamilyMembers(data.members || [])).catch(() => {})
+      fetch('/api/credits').then(r => r.json()).then(data => {
+        setCredits(data)
+        if (data.bonusModel1 !== undefined) setUserBonus({ model1: data.bonusModel1 || 0, model2: data.bonusModel2 || 0 })
+      }).catch(() => {})
+    }
+  }, [session])
+
+  const addFamilyMember = async () => {
+    if (!newMember.relation) { toast.error(T(lang, '請選擇關係', 'Please select relationship')); return }
+    const res = await fetch('/api/family-members', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newMember) })
+    if (res.ok) {
+      const { member } = await res.json()
+      setFamilyMembers(prev => [...prev, member])
+      setNewMember({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '' })
+      setAddingMember(false)
+      toast.success(T(lang, '已新增', 'Added'))
+    }
+  }
+
+  const updateFamilyMember = async (id: string) => {
+    const res = await fetch('/api/family-members', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...editForm }) })
+    if (res.ok) {
+      const { member } = await res.json()
+      setFamilyMembers(prev => prev.map(m => m.id === id ? member : m))
+      setEditingMember(null)
+      toast.success(T(lang, '已更新', 'Updated'))
+    }
+  }
+
+  const deleteFamilyMember = async (id: string) => {
+    const res = await fetch('/api/family-members', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    if (res.ok) {
+      setFamilyMembers(prev => prev.filter(m => m.id !== id))
+      toast.success(T(lang, '已刪除', 'Deleted'))
+    }
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,6 +141,57 @@ export default function ProfilePage() {
     <div className="min-h-screen py-12 px-4 max-w-xl mx-auto">
       <h1 className="text-3xl font-serif text-gold mb-8">{T(lang, '個人資料', 'Profile')}</h1>
 
+      {/* Credits Module */}
+      {credits && (
+        <div className="glass-card rounded-2xl p-5 sm:p-6 mb-6 border" style={{ borderColor: 'var(--card-border)' }}>
+          <h2 className="font-serif text-sm mb-4" style={{ color: 'var(--gold)' }}>
+            🔮 {T(lang, '模型使用額度', 'Model Usage Credits')}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              { key: 'model1', label: T(lang, '⚡ 標準模型', '⚡ Standard'), data: credits.model1 },
+              { key: 'model2', label: T(lang, '🌟 高級模型', '🌟 Premium'), data: credits.model2 },
+            ].map(m => {
+              const d = m.data as { remaining: number; used: number; dailyLimit: number; bonus: number }
+              if (!d) return null
+              const isUnlimited = d.dailyLimit === -1
+              const pct = isUnlimited ? 100 : d.dailyLimit > 0 ? Math.round((d.remaining / d.dailyLimit) * 100) : 0
+              return (
+                <div key={m.key} className="rounded-xl p-4 border" style={{ backgroundColor: 'var(--accent-bg)', borderColor: 'var(--card-border)' }}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{m.label}</span>
+                    <span className="text-xs" style={{ color: 'var(--gold)' }}>
+                      {isUnlimited ? '∞' : `${d.remaining} / ${d.dailyLimit}`}
+                    </span>
+                  </div>
+                  {!isUnlimited && (
+                    <div className="h-2 rounded-full mb-2" style={{ backgroundColor: 'var(--bg-primary)' }}>
+                      <div
+                        className="h-2 rounded-full transition-all"
+                        style={{ width: `${pct}%`, backgroundColor: pct > 30 ? 'var(--gold)' : '#ef4444' }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <span>{T(lang, `今日已用 ${d.used} 次`, `Used ${d.used} today`)}</span>
+                    {d.bonus > 0 && (
+                      <span style={{ color: '#2dd489' }}>+{d.bonus} {T(lang, '額外', 'bonus')}</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {userBonus && (userBonus.model1 > 0 || userBonus.model2 > 0) && (
+            <div className="mt-3 pt-3 border-t flex flex-wrap gap-3 text-xs" style={{ borderColor: 'var(--card-border)', color: 'var(--text-muted)' }}>
+              <span>🎁 {T(lang, '額外額度', 'Bonus credits')}:</span>
+              {userBonus.model1 > 0 && <span>⚡ ×{userBonus.model1}</span>}
+              {userBonus.model2 > 0 && <span>🌟 ×{userBonus.model2}</span>}
+            </div>
+          )}
+        </div>
+      )}
+
       <form onSubmit={handleSave} className="glass-card rounded-2xl p-8 space-y-5">
         <div>
           <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
@@ -89,7 +210,12 @@ export default function ProfilePage() {
         </div>
         <div>
           <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
-          <input type="text" className={inputCls} value={form.birthPlace} onChange={e => setForm(f => ({ ...f, birthPlace: e.target.value }))} />
+          <BirthplaceInput
+            value={form.birthPlace}
+            onChange={v => setForm(f => ({ ...f, birthPlace: v }))}
+            className={inputCls}
+            placeholder={T(lang, '輸入城市名稱搜尋...', 'Search city name...')}
+          />
         </div>
         <div>
           <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
@@ -126,6 +252,123 @@ export default function ProfilePage() {
           {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '儲存', 'Save')}
         </button>
       </form>
+
+      {/* Family Members Section */}
+      <h2 className="text-2xl font-serif text-gold mt-12 mb-4">{T(lang, '家庭成員', 'Family Members')}</h2>
+      <div className="glass-card rounded-2xl p-8 space-y-4">
+        {familyMembers.length === 0 && !addingMember && (
+          <p className="text-white/50 text-sm">{T(lang, '尚未新增家庭成員', 'No family members added yet')}</p>
+        )}
+
+        {familyMembers.map(member => (
+          <div key={member.id} className="border border-gold/20 rounded-xl p-4 bg-navy-900/50">
+            {editingMember === member.id ? (
+              <div className="space-y-3">
+                <div>
+                  <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
+                  <select className={inputCls} value={editForm.relation || ''} onChange={e => setEditForm(f => ({ ...f, relation: e.target.value }))}>
+                    {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
+                  <input type="text" className={inputCls} value={editForm.name || ''} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+                </div>
+                <div>
+                  <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+                  <input type="date" className={inputCls} value={editForm.birthDate || ''} onChange={e => setEditForm(f => ({ ...f, birthDate: e.target.value }))} />
+                </div>
+                <div>
+                  <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
+                  <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
+                    <option value="">{T(lang, '請選擇', 'Select')}</option>
+                    {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
+                  <input type="text" className={inputCls} value={editForm.birthPlace || ''} onChange={e => setEditForm(f => ({ ...f, birthPlace: e.target.value }))} />
+                </div>
+                <div>
+                  <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
+                  <select className={inputCls} value={editForm.gender || ''} onChange={e => setEditForm(f => ({ ...f, gender: e.target.value }))}>
+                    <option value="">{T(lang, '請選擇', 'Select')}</option>
+                    <option value="male">{T(lang, '男', 'Male')}</option>
+                    <option value="female">{T(lang, '女', 'Female')}</option>
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => updateFamilyMember(member.id)} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '儲存', 'Save')}</button>
+                  <button type="button" onClick={() => setEditingMember(null)} className="px-4 py-2 border border-white/20 text-white/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-gold font-medium">
+                    {relationPresets.find(r => r.value === member.relation)?.[lang === 'en' ? 'en' : 'zh'] || member.relation}
+                    {member.name ? ` — ${member.name}` : ''}
+                  </p>
+                  <p className="text-white/50 text-xs mt-1">
+                    {[member.birthDate, member.birthTime, member.birthPlace, member.gender === 'male' ? T(lang, '男', 'M') : member.gender === 'female' ? T(lang, '女', 'F') : ''].filter(Boolean).join(' · ') || T(lang, '未填寫生辰資訊', 'No birth info')}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '' }) }} className="text-white/40 hover:text-gold text-xs">✏️</button>
+                  <button type="button" onClick={() => deleteFamilyMember(member.id)} className="text-white/40 hover:text-red-400 text-xs">✕</button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {addingMember ? (
+          <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-3">
+            <div>
+              <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
+              <select className={inputCls} value={newMember.relation || ''} onChange={e => setNewMember(f => ({ ...f, relation: e.target.value }))}>
+                <option value="">{T(lang, '請選擇', 'Select')}</option>
+                {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '姓名（可選）', 'Name (optional)')}</label>
+              <input type="text" className={inputCls} value={newMember.name || ''} onChange={e => setNewMember(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+              <input type="date" className={inputCls} value={newMember.birthDate || ''} onChange={e => setNewMember(f => ({ ...f, birthDate: e.target.value }))} />
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
+              <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
+                <option value="">{T(lang, '請選擇', 'Select')}</option>
+                {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
+              <input type="text" className={inputCls} value={newMember.birthPlace || ''} onChange={e => setNewMember(f => ({ ...f, birthPlace: e.target.value }))} />
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
+              <select className={inputCls} value={newMember.gender || ''} onChange={e => setNewMember(f => ({ ...f, gender: e.target.value }))}>
+                <option value="">{T(lang, '請選擇', 'Select')}</option>
+                <option value="male">{T(lang, '男', 'Male')}</option>
+                <option value="female">{T(lang, '女', 'Female')}</option>
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={addFamilyMember} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '新增', 'Add')}</button>
+              <button type="button" onClick={() => setAddingMember(false)} className="px-4 py-2 border border-white/20 text-white/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setAddingMember(true)} className="w-full py-3 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-sm">
+            {T(lang, '➕ 新增成員', '➕ Add Member')}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

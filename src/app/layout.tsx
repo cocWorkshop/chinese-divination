@@ -5,6 +5,7 @@ import { SessionProvider } from 'next-auth/react'
 import { LanguageProvider } from '@/components/LanguageContext'
 import Navbar from '@/components/Navbar'
 import ChatWidget from '@/components/ChatWidget'
+import ThemeProvider from '@/components/ThemeProvider'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -15,7 +16,7 @@ const notoSerifSC = Noto_Serif_SC({
 })
 
 export const metadata: Metadata = {
-  title: '玄机 - 古法智慧，现代传承',
+  title: '玄機 - 古法智慧，現代傳承',
   description: 'Chinese divination platform - BaZi, I Ching, Zi Wei, Qi Men, Feng Shui',
   icons: {
     icon: '/favicon.svg',
@@ -30,10 +31,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh">
-      <body className={`${inter.variable} ${notoSerifSC.variable} bg-navy-950 text-white min-h-screen`}>
+    <html lang="zh" className="dark">
+      <body className={`${inter.variable} ${notoSerifSC.variable} min-h-screen`}>
         <SessionProvider>
           <LanguageProvider>
+            <ThemeProvider>
             <Navbar />
             <main className="pt-16">
               {children}
@@ -49,6 +51,7 @@ export default function RootLayout({
                 },
               }}
             />
+          </ThemeProvider>
           </LanguageProvider>
         </SessionProvider>
       </body>

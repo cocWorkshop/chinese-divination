@@ -48,8 +48,8 @@ export default function AdminDashboard() {
       {/* System Status */}
       <div className="flex gap-3 mb-8 flex-wrap">
         {[
-          { key: 'divinationEnabled', label: '占卜功能', on: '已开启', off: '已关闭' },
-          { key: 'maintenanceMode', label: '维护模式', on: '维护中', off: '正常' },
+          { key: 'divinationEnabled', label: '占卜功能', on: '已開啟', off: '已關閉' },
+          { key: 'maintenanceMode', label: '維護模式', on: '維護中', off: '正常' },
         ].map(s => (
           <div key={s.key} className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
             stats.settings[s.key] === 'true' && s.key === 'maintenanceMode'

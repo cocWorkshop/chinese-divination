@@ -9,9 +9,12 @@ export async function GET() {
   }
 
   const readings = await prisma.reading.findMany({
-    where: { userId: session.user.id },
+    where: { userId: session.user.id, deletedAt: null },
     orderBy: { createdAt: 'desc' },
     take: 20,
+    include: {
+      familyMember: { select: { relation: true, name: true } },
+    },
   })
 
   return NextResponse.json({ readings })

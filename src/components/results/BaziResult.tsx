@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLang } from '../LanguageContext'
 
 interface TenGodEntry { stem: string; god: string }
 interface Pillar {
@@ -18,6 +19,18 @@ interface TrueSolarTimeInfo {
   shichenChanged: boolean
 }
 interface ShenShaEntry { name: string; description: string }
+interface DaYunEntry {
+  stem: string; branch: string; nayin: string
+  startAge: number; startYear: number; endAge: number; endYear: number
+}
+interface XiaoYunEntry {
+  stem: string; branch: string; age: number; year: number
+}
+interface QiYunInfo {
+  direction: string; startAge: number; startAgeLabel: string
+  startYear: number; startMonth: number
+  nearestJieQi: string; nearestJieQiDate: string; daysDiff: number
+}
 interface BaziData {
   pillars: { year: Pillar; month: Pillar; day: Pillar; hour: Pillar }
   dayMaster: { stem: string; element: string; yinYang?: string; strength: string; strengthLabel: string }
@@ -29,6 +42,14 @@ interface BaziData {
   luckyInfo: { numbers: number[]; colors: string[]; directions: string[] }
   shenSha?: ShenShaEntry[]
   trueSolarTime?: TrueSolarTimeInfo
+  daYun?: DaYunEntry[]
+  xiaoYun?: XiaoYunEntry[]
+  qiYun?: QiYunInfo
+}
+
+const STEM_ELEMENT_MAP: Record<string, string> = {
+  '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
+  '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水',
 }
 
 const elementColor: Record<string, string> = {
@@ -41,23 +62,25 @@ const elementBg: Record<string, string> = {
 }
 
 const sectionsList = [
-  { key: 'overview', label: '总览', icon: '☰' },
-  { key: 'career', label: '事业', icon: '💼' },
+  { key: 'overview', label: '總覽', icon: '☰' },
+  { key: 'career', label: '事業', icon: '💼' },
   { key: 'marriage', label: '婚姻', icon: '💕' },
-  { key: 'wealth', label: '财运', icon: '💰' },
+  { key: 'wealth', label: '財運', icon: '💰' },
   { key: 'health', label: '健康', icon: '🌿' },
-  { key: 'periods', label: '大运', icon: '🔮' },
+  { key: 'daYunDetail', label: '大運精批', icon: '🔮' },
 ]
 
 export default function BaziResult({ data }: { data: Record<string, unknown> }) {
   const d = data as unknown as BaziData
+  const { lang } = useLang()
   const [activeSection, setActiveSection] = useState('overview')
+  const [showChart, setShowChart] = useState(lang !== 'en')
 
   const pillars = [
     { label: '年柱', data: d.pillars?.year },
     { label: '月柱', data: d.pillars?.month },
     { label: '日柱', data: d.pillars?.day },
-    { label: '时柱', data: d.pillars?.hour },
+    { label: '時柱', data: d.pillars?.hour },
   ]
 
   const fe = d.fiveElements || {}
@@ -70,36 +93,65 @@ export default function BaziResult({ data }: { data: Record<string, unknown> }) 
 
   return (
     <div className="space-y-6">
+      {/* Chart toggle for English mode */}
+      {lang === 'en' && (
+        <button
+          onClick={() => setShowChart(!showChart)}
+          className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all text-sm"
+          style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--gold)' }}
+        >
+          <span className="font-serif flex items-center gap-2">
+            ☰ BaZi Chart Details
+          </span>
+          <motion.span
+            animate={{ rotate: showChart ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            ▼
+          </motion.span>
+        </button>
+      )}
+
+      <AnimatePresence initial={false}>
+      {showChart && (
+        <motion.div
+          initial={lang === 'en' ? { height: 0, opacity: 0 } : false}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-6 overflow-hidden"
+        >
+
       {/* True Solar Time Info Bar */}
       {tst && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="glass-card rounded-xl p-4 border border-blue-400/30 bg-blue-400/5">
+          className="glass-card rounded-xl p-3 sm:p-4 border border-blue-400/30 bg-blue-400/5">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-blue-400 text-sm">🕐 真太阳时校正</span>
+            <span className="text-blue-400 text-xs sm:text-sm">🕐 真太陽時校正</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
             <div>
-              <span className="text-white/40">标准时间：</span>
+              <span className="text-white/40">標準時間：</span>
               <span className="text-white/80">{tst.originalTime}</span>
             </div>
             <div>
-              <span className="text-white/40">真太阳时：</span>
+              <span className="text-white/40">真太陽時：</span>
               <span className="text-white/80">{tst.correctedTime}</span>
             </div>
             <div>
-              <span className="text-white/40">出生经度：</span>
+              <span className="text-white/40">出生經度：</span>
               <span className="text-white/80">{tst.longitude}°E</span>
             </div>
             <div>
-              <span className="text-white/40">时差修正：</span>
+              <span className="text-white/40">時差修正：</span>
               <span className={`${tst.correctionMinutes >= 0 ? 'text-green-400' : 'text-orange-400'}`}>
-                {tst.correctionMinutes >= 0 ? '+' : ''}{tst.correctionMinutes.toFixed(1)}分钟
+                {tst.correctionMinutes >= 0 ? '+' : ''}{tst.correctionMinutes.toFixed(1)}分鐘
               </span>
             </div>
           </div>
           {tst.shichenChanged && (
             <div className="mt-2 text-orange-400 text-xs font-semibold">
-              ⚠️ 真太阳时校正后时辰发生变化，已自动调整为{tst.shichen}
+              ⚠️ 真太陽時校正後時辰發生變化，已自動調整為{tst.shichen}
             </div>
           )}
         </motion.div>
@@ -107,33 +159,33 @@ export default function BaziResult({ data }: { data: Record<string, unknown> }) 
 
       {/* Four Pillars */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-5">
-        <h3 className="text-gold font-serif text-lg mb-4 text-center">四柱命盘</h3>
-        <div className="grid grid-cols-4 gap-3">
+        <h3 className="text-gold font-serif text-lg mb-4 text-center">四柱命盤</h3>
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
           {pillars.map(({ label, data: p }) => {
             const stemTenGod = p?.tenGods?.find(t => t.stem === p.stem)
             return (
-              <div key={label} className={`rounded-xl border p-3 text-center ${p ? elementBg[p.element] || 'border-gold/20' : 'border-gold/20'}`}>
-                <div className="text-white/50 text-xs mb-2">{label}</div>
-                <div className={`text-2xl font-serif font-bold ${p ? elementColor[p.element] : 'text-white'}`}>
+              <div key={label} className={`rounded-xl border p-2 sm:p-3 text-center ${p ? elementBg[p.element] || 'border-gold/20' : 'border-gold/20'}`}>
+                <div className="text-white/50 text-[10px] sm:text-xs mb-1 sm:mb-2">{label}</div>
+                <div className={`text-xl sm:text-2xl font-serif font-bold ${p ? elementColor[p.element] : 'text-white'}`}>
                   {p?.stem || '?'}
                 </div>
                 {stemTenGod && label !== '日柱' && (
-                  <div className="text-white/40 text-[10px]">({stemTenGod.god})</div>
+                  <div className="text-white/40 text-[9px] sm:text-[10px]">({stemTenGod.god})</div>
                 )}
                 {label === '日柱' && (
-                  <div className="text-gold text-[10px]">(日主)</div>
+                  <div className="text-gold text-[9px] sm:text-[10px]">(日主)</div>
                 )}
-                <div className={`text-xl font-serif mt-1 ${p ? elementColor[p.element] : 'text-white'}`}>
+                <div className={`text-lg sm:text-xl font-serif mt-0.5 sm:mt-1 ${p ? elementColor[p.element] : 'text-white'}`}>
                   {p?.branch || '?'}
                 </div>
                 {/* Hidden Stems */}
                 {p?.hiddenStems && p.hiddenStems.length > 0 && (
-                  <div className="text-white/30 text-[10px] mt-1">
-                    藏干: {p.hiddenStems.join(' ')}
+                  <div className="text-white/30 text-[9px] sm:text-[10px] mt-0.5 sm:mt-1">
+                    藏: {p.hiddenStems.join(' ')}
                   </div>
                 )}
-                <div className="text-white/50 text-xs mt-1">{p?.element || ''}</div>
-                <div className="text-white/40 text-[10px]">{p?.nayin || ''}</div>
+                <div className="text-white/50 text-[10px] sm:text-xs mt-0.5 sm:mt-1">{p?.element || ''}</div>
+                <div className="text-white/40 text-[9px] sm:text-[10px]">{p?.nayin || ''}</div>
               </div>
             )
           })}
@@ -141,20 +193,20 @@ export default function BaziResult({ data }: { data: Record<string, unknown> }) 
       </motion.div>
 
       {/* Day Master + Five Elements */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-2 gap-4">
-        <div className="glass-card rounded-xl p-5 text-center border border-gold/20">
-          <h3 className="text-gold font-serif text-sm mb-3">日主</h3>
-          <div className={`text-4xl font-serif font-bold mb-1 ${elementColor[d.dayMaster?.element || '']}`}>{d.dayMaster?.stem}</div>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="glass-card rounded-xl p-4 sm:p-5 text-center border border-gold/20">
+          <h3 className="text-gold font-serif text-sm mb-2 sm:mb-3">日主</h3>
+          <div className={`text-3xl sm:text-4xl font-serif font-bold mb-1 ${elementColor[d.dayMaster?.element || '']}`}>{d.dayMaster?.stem}</div>
           <div className={`text-sm ${elementColor[d.dayMaster?.element || '']}`}>
             {d.dayMaster?.yinYang || ''}{d.dayMaster?.element}
           </div>
-          <div className="mt-3 px-3 py-1 rounded-full bg-gold/10 border border-gold/30 text-gold text-xs inline-block">
+          <div className="mt-2 sm:mt-3 px-3 py-1 rounded-full bg-gold/10 border border-gold/30 text-gold text-xs inline-block">
             {d.dayMaster?.strengthLabel || d.dayMaster?.strength}
           </div>
         </div>
 
-        <div className="glass-card rounded-xl p-5 border border-gold/20">
-          <h3 className="text-gold font-serif text-sm mb-3">五行分布</h3>
+        <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
+          <h3 className="text-gold font-serif text-sm mb-2 sm:mb-3">五行分佈</h3>
           <div className="space-y-2">
             {feEntries.map(([el, count]) => (
               <div key={el} className="flex items-center gap-2">
@@ -206,6 +258,59 @@ export default function BaziResult({ data }: { data: Record<string, unknown> }) 
         </motion.div>
       )}
 
+      {/* Da Yun (大运) Timeline */}
+      {d.daYun && d.daYun.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+          className="glass-card rounded-xl p-5 border border-gold/20">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-1">
+            <h3 className="text-gold font-serif text-sm">大運</h3>
+            {d.qiYun && (
+              <div className="text-white/40 text-[9px] sm:text-[10px]">
+                {d.qiYun.direction} | {d.qiYun.startAgeLabel}起運 | {d.qiYun.nearestJieQi}（{d.qiYun.nearestJieQiDate}）
+              </div>
+            )}
+          </div>
+          <div className="overflow-x-auto">
+            <div className="flex gap-2 min-w-max">
+              {d.daYun.map((dy, i) => {
+                const el = STEM_ELEMENT_MAP[dy.stem] || ''
+                return (
+                  <div key={i} className={`rounded-lg border p-2.5 text-center min-w-[72px] ${elementBg[el] || 'border-gold/20'}`}>
+                    <div className="text-white/40 text-[10px] mb-1">{dy.startAge}-{dy.endAge}歲</div>
+                    <div className={`text-lg font-serif font-bold ${elementColor[el] || 'text-white'}`}>
+                      {dy.stem}{dy.branch}
+                    </div>
+                    <div className="text-white/40 text-[10px]">{dy.nayin}</div>
+                    <div className="text-white/30 text-[9px] mt-0.5">{dy.startYear}-{dy.endYear}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Xiao Yun (小运) */}
+      {d.xiaoYun && d.xiaoYun.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19 }}
+          className="glass-card rounded-xl p-4 border border-gold/20">
+          <h3 className="text-gold font-serif text-sm mb-3">小運（起運前）</h3>
+          <div className="flex flex-wrap gap-2">
+            {d.xiaoYun.map((xy, i) => (
+              <div key={i} className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-center">
+                <div className="text-white/30 text-[9px]">{xy.age}歲</div>
+                <div className="text-white/70 text-sm font-serif">{xy.stem}{xy.branch}</div>
+                <div className="text-white/30 text-[9px]">{xy.year}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+        </motion.div>
+      )}
+      </AnimatePresence>
+
       {/* Sections Tabs */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <div className="flex overflow-x-auto gap-1 mb-4 pb-1">
@@ -227,7 +332,7 @@ export default function BaziResult({ data }: { data: Record<string, unknown> }) 
             exit={{ opacity: 0, x: -10 }}
             className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap"
           >
-            {d.sections?.[activeSection as keyof typeof d.sections] || '暂无内容'}
+            {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
           </motion.div>
         </AnimatePresence>
       </motion.div>
@@ -235,7 +340,7 @@ export default function BaziResult({ data }: { data: Record<string, unknown> }) 
       {/* Key Advice */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <h3 className="text-gold font-serif mb-3">核心建议</h3>
+          <h3 className="text-gold font-serif mb-3">核心建議</h3>
           <div className="grid gap-3">
             {d.keyAdvice.map((advice, i) => (
               <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
@@ -249,7 +354,7 @@ export default function BaziResult({ data }: { data: Record<string, unknown> }) 
 
       {/* Lucky Info */}
       {d.luckyInfo && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="grid grid-cols-3 gap-3">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="grid grid-cols-3 gap-2 sm:gap-3">
           <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
             <div className="text-white/40 text-xs mb-1">吉数</div>
             <div className="text-gold font-serif">{(d.luckyInfo.numbers || []).join(' · ')}</div>

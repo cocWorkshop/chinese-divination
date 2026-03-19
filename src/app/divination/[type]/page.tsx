@@ -8,23 +8,48 @@ import { motion } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import LoadingOracle from '@/components/LoadingOracle'
 import ResultRenderer from '@/components/results/ResultRenderer'
+import ReadingFeedback from '@/components/ReadingFeedback'
+import BirthplaceInput from '@/components/BirthplaceInput'
+import { reportError } from '@/lib/errorReporter'
 
 const shichen = [
-  { value: 'zi', zh: '子时 (23:00-01:00)', en: 'Zi (23:00-01:00)' },
-  { value: 'chou', zh: '丑时 (01:00-03:00)', en: 'Chou (01:00-03:00)' },
-  { value: 'yin', zh: '寅时 (03:00-05:00)', en: 'Yin (03:00-05:00)' },
-  { value: 'mao', zh: '卯时 (05:00-07:00)', en: 'Mao (05:00-07:00)' },
-  { value: 'chen', zh: '辰时 (07:00-09:00)', en: 'Chen (07:00-09:00)' },
-  { value: 'si', zh: '巳时 (09:00-11:00)', en: 'Si (09:00-11:00)' },
-  { value: 'wu', zh: '午时 (11:00-13:00)', en: 'Wu (11:00-13:00)' },
-  { value: 'wei', zh: '未时 (13:00-15:00)', en: 'Wei (13:00-15:00)' },
-  { value: 'shen', zh: '申时 (15:00-17:00)', en: 'Shen (15:00-17:00)' },
-  { value: 'you', zh: '酉时 (17:00-19:00)', en: 'You (17:00-19:00)' },
-  { value: 'xu', zh: '戌时 (19:00-21:00)', en: 'Xu (19:00-21:00)' },
-  { value: 'hai', zh: '亥时 (21:00-23:00)', en: 'Hai (21:00-23:00)' },
+  { value: 'zi', zh: '子時 (23:00-01:00)', en: 'Zi (23:00-01:00)' },
+  { value: 'chou', zh: '丑時 (01:00-03:00)', en: 'Chou (01:00-03:00)' },
+  { value: 'yin', zh: '寅時 (03:00-05:00)', en: 'Yin (03:00-05:00)' },
+  { value: 'mao', zh: '卯時 (05:00-07:00)', en: 'Mao (05:00-07:00)' },
+  { value: 'chen', zh: '辰時 (07:00-09:00)', en: 'Chen (07:00-09:00)' },
+  { value: 'si', zh: '巳時 (09:00-11:00)', en: 'Si (09:00-11:00)' },
+  { value: 'wu', zh: '午時 (11:00-13:00)', en: 'Wu (11:00-13:00)' },
+  { value: 'wei', zh: '未時 (13:00-15:00)', en: 'Wei (13:00-15:00)' },
+  { value: 'shen', zh: '申時 (15:00-17:00)', en: 'Shen (15:00-17:00)' },
+  { value: 'you', zh: '酉時 (17:00-19:00)', en: 'You (17:00-19:00)' },
+  { value: 'xu', zh: '戌時 (19:00-21:00)', en: 'Xu (19:00-21:00)' },
+  { value: 'hai', zh: '亥時 (21:00-23:00)', en: 'Hai (21:00-23:00)' },
 ]
 
 const directions8 = ['坎/North', '艮/NE', '震/East', '巽/SE', '离/South', '坤/SW', '兑/West', '乾/NW']
+
+const relationPresets = [
+  { value: 'spouse', zh: '配偶', en: 'Spouse' },
+  { value: 'father', zh: '父親', en: 'Father' },
+  { value: 'mother', zh: '母親', en: 'Mother' },
+  { value: 'son', zh: '兒子', en: 'Son' },
+  { value: 'daughter', zh: '女兒', en: 'Daughter' },
+  { value: 'brother', zh: '兄弟', en: 'Brother' },
+  { value: 'sister', zh: '姐妹', en: 'Sister' },
+  { value: 'friend', zh: '朋友', en: 'Friend' },
+  { value: 'other', zh: '其他', en: 'Other' },
+]
+
+interface FamilyMember {
+  id: string
+  relation: string
+  name: string | null
+  birthDate: string | null
+  birthTime: string | null
+  birthPlace: string | null
+  gender: string | null
+}
 
 const typeInfo: Record<string, { zhName: string; twName: string; enName: string; symbol: string }> = {
   bazi: { zhName: '八字命理', twName: '八字命理', enName: 'BaZi Analysis', symbol: '☰' },
@@ -58,17 +83,57 @@ export default function DivinationFormPage() {
     readingDateTime: new Date().toISOString().slice(0, 16),
     subType: 'meihua',
     lunarToggle: 'solar',
+    birthEnvironment: '',
   })
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [resultType, setResultType] = useState<string>('')
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [sharing, setSharing] = useState(false)
+  const [readingId, setReadingId] = useState<string | null>(null)
   const [saveProfile, setSaveProfile] = useState(true)
   const [saveHistory, setSaveHistory] = useState(true)
   const [profileLoaded, setProfileLoaded] = useState(false)
-  const [modelTier, setModelTier] = useState('model1')
+  const [modelTier, setModelTier] = useState('model2')
   const [credits, setCredits] = useState<Record<string, {remaining: number, dailyLimit: number}> | null>(null)
+  const [llmTimeoutMs, setLlmTimeoutMs] = useState(240000)
+  const [shareBonus, setShareBonus] = useState<{model1: number, model2: number} | null>(null)
+  const [targetType, setTargetType] = useState<'self' | 'family'>('self')
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('')
+  const [newMemberRelation, setNewMemberRelation] = useState('')
+  const [newMemberName, setNewMemberName] = useState('')
+  const [birthLat, setBirthLat] = useState<number | null>(null)
+  const [birthLng, setBirthLng] = useState<number | null>(null)
+  const [isSouthernHemisphere, setIsSouthernHemisphere] = useState(false)
+  const [tierChecked, setTierChecked] = useState(false)
 
   const info = typeInfo[type] || { zhName: '占卜', enName: 'Divination', symbol: '☯' }
+
+  // Premium tier check
+  useEffect(() => {
+    const checkTier = async () => {
+      try {
+        const [tiersRes, profileRes] = await Promise.all([
+          fetch('/api/divination-tiers'),
+          session ? fetch('/api/profile') : Promise.resolve(null),
+        ])
+        const tiers = await tiersRes.json()
+        const profile = profileRes ? await profileRes.json() : null
+        const userRole = profile?.role || 'free'
+        const isAdmin = profile?.isAdmin || false
+        const canAccess = isAdmin || userRole === 'admin' || userRole === 'premium'
+
+        if (tiers[type] === 'premium' && !canAccess) {
+          toast.error(T(lang, '此功能需要高級用戶權限', 'This feature requires premium access'), { icon: '✦' })
+          router.push('/divination')
+          return
+        }
+      } catch { /* ignore */ }
+      setTierChecked(true)
+    }
+    checkTier()
+  }, [type, session, lang, router])
 
   // Auto-fill from saved profile (bazi & ziwei only)
   useEffect(() => {
@@ -96,10 +161,44 @@ export default function DivinationFormPage() {
   // Fetch credits
   useEffect(() => {
     if (!session) return
-    fetch('/api/credits').then(r => r.json()).then(setCredits).catch(() => {})
+    fetch('/api/credits').then(r => r.json()).then(data => {
+      setCredits(data)
+      if (data.llmTimeoutSeconds) setLlmTimeoutMs(data.llmTimeoutSeconds * 1000)
+      // Auto-fallback: if model2 has no remaining credits, switch to model1
+      const m2 = data?.model2
+      if (m2 && m2.remaining !== -1 && m2.remaining <= 0) {
+        setModelTier('model1')
+      }
+    }).catch(() => {})
+    // Fetch share bonus info
+    fetch('/api/share/bonus').then(r => r.json()).then(setShareBonus).catch(() => {})
+  }, [session])
+
+  // Fetch family members
+  useEffect(() => {
+    if (!session) return
+    fetch('/api/family-members').then(r => r.json()).then(data => {
+      setFamilyMembers(data.members || [])
+    }).catch(() => {})
   }, [session])
 
   const setField = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleMemberSelect = (memberId: string) => {
+    setSelectedMemberId(memberId)
+    if (memberId && memberId !== '__new__') {
+      const member = familyMembers.find(m => m.id === memberId)
+      if (member) {
+        setForm(f => ({
+          ...f,
+          birthDate: member.birthDate || f.birthDate,
+          birthTime: member.birthTime || f.birthTime,
+          birthPlace: member.birthPlace || f.birthPlace,
+          gender: member.gender || f.gender,
+        }))
+      }
+    }
+  }
 
   const castHexagram = () => {
     const n = Math.floor(Math.random() * 64) + 1
@@ -114,23 +213,34 @@ export default function DivinationFormPage() {
       router.push('/login')
       return
     }
+    if (isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) {
+      toast.error(T(lang, '暫不支持南半球出生地', 'Southern hemisphere not yet supported'))
+      return
+    }
     setLoading(true)
     setResult(null)
     try {
       const hasProfileData = ['bazi', 'ziwei'].includes(type)
+      const formData = { ...form }
+      if (birthLat !== null) (formData as Record<string, unknown>).birthLat = birthLat
+      if (birthLng !== null) (formData as Record<string, unknown>).birthLng = birthLng
+
       const fetchController = new AbortController()
-      const fetchTimeout = setTimeout(() => fetchController.abort(), 120000)
+      const fetchTimeout = setTimeout(() => fetchController.abort(), llmTimeoutMs + 10000)
       const res = await fetch('/api/divination', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type,
-          inputData: form,
+          inputData: formData,
           language: lang,
           question: form.question,
           saveProfile: hasProfileData ? saveProfile : false,
           saveHistory,
           modelTier,
+          targetType,
+          familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
+          newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, name: newMemberName || undefined } : undefined,
         }),
         signal: fetchController.signal,
       })
@@ -139,19 +249,28 @@ export default function DivinationFormPage() {
       if (res.ok) {
         setResult(data.reading.result)
         setResultType(type)
+        setReadingId(data.reading.id || null)
+        if (data.cached) {
+          toast.success(T(lang, '已使用之前的八字分析結果', 'Using cached BaZi analysis'), { icon: '📦' })
+        }
         // Refresh credits
         fetch('/api/credits').then(r => r.json()).then(setCredits).catch(() => {})
       } else {
         toast.error(data.error || 'Error')
+        reportError({ endpoint: '/api/divination', status: res.status, error: data.error || 'Unknown error', context: `type=${type}, modelTier=${modelTier}` })
       }
-    } catch {
-      toast.error('Network error')
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Network error'
+      toast.error(msg.includes('abort') ? T(lang, '請求超時', 'Request timed out') : 'Network error')
+      reportError({ endpoint: '/api/divination', error: msg, context: `type=${type}, modelTier=${modelTier}, timeout=${llmTimeoutMs}` })
     }
     setLoading(false)
   }
 
   const inputCls = "w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
   const labelCls = "block text-white/70 text-sm mb-1"
+
+  if (!tierChecked) return null
 
   return (
     <div className="min-h-screen py-12 px-4 max-w-2xl mx-auto">
@@ -169,8 +288,99 @@ export default function DivinationFormPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           onSubmit={handleSubmit}
-          className="glass-card rounded-2xl p-8 space-y-5"
+          className="glass-card rounded-2xl p-4 sm:p-8 space-y-4 sm:space-y-5"
         >
+          {/* Target Person Selection */}
+          {session && (
+            <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-3">
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-2">
+                {T(lang, '👤 預測對象', '👤 Reading For')}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setTargetType('self'); setSelectedMemberId('') }}
+                  className={`p-3 rounded-lg border text-center transition-all ${
+                    targetType === 'self'
+                      ? 'border-gold bg-gold/10 ring-1 ring-gold/30'
+                      : 'border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <span className="text-white/80 text-sm font-medium">
+                    {T(lang, '為自己預測', 'For Myself')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetType('family')}
+                  className={`p-3 rounded-lg border text-center transition-all ${
+                    targetType === 'family'
+                      ? 'border-gold bg-gold/10 ring-1 ring-gold/30'
+                      : 'border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <span className="text-white/80 text-sm font-medium">
+                    {T(lang, '為他人預測', 'For Someone Else')}
+                  </span>
+                </button>
+              </div>
+
+              {targetType === 'family' && (
+                <div className="space-y-3 mt-3">
+                  <div>
+                    <label className={labelCls}>{T(lang, '選擇家庭成員', 'Select Family Member')}</label>
+                    <select
+                      className={inputCls}
+                      value={selectedMemberId}
+                      onChange={e => handleMemberSelect(e.target.value)}
+                      required
+                    >
+                      <option value="">{T(lang, '請選擇', 'Select')}</option>
+                      {familyMembers.map(m => (
+                        <option key={m.id} value={m.id}>
+                          {relationPresets.find(r => r.value === m.relation)?.[lang === 'en' ? 'en' : 'zh'] || m.relation}
+                          {m.name ? ` - ${m.name}` : ''}
+                        </option>
+                      ))}
+                      <option value="__new__">{T(lang, '➕ 新增家庭成員', '➕ Add New Member')}</option>
+                    </select>
+                  </div>
+
+                  {selectedMemberId === '__new__' && (
+                    <div className="space-y-3 border-t border-gold/10 pt-3">
+                      <div>
+                        <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
+                        <select
+                          className={inputCls}
+                          value={newMemberRelation}
+                          onChange={e => setNewMemberRelation(e.target.value)}
+                          required
+                        >
+                          <option value="">{T(lang, '請選擇', 'Select')}</option>
+                          {relationPresets.map(r => (
+                            <option key={r.value} value={r.value}>
+                              {lang === 'en' ? r.en : `${r.zh} (${r.en})`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={labelCls}>{T(lang, '姓名（可選）', 'Name (optional)')}</label>
+                        <input
+                          type="text"
+                          className={inputCls}
+                          value={newMemberName}
+                          onChange={e => setNewMemberName(e.target.value)}
+                          placeholder={T(lang, '例：張某', 'e.g. John')}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* BaZi */}
           {type === 'bazi' && <>
             <div>
@@ -186,7 +396,14 @@ export default function DivinationFormPage() {
             </div>
             <div>
               <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
-              <input type="text" className={inputCls} value={form.birthPlace} onChange={e => setField('birthPlace', e.target.value)} placeholder={T(lang, '省市', 'City, Province')} />
+              <BirthplaceInput
+                value={form.birthPlace}
+                onChange={v => setField('birthPlace', v)}
+                onLatLngChange={(lat, lng) => { setBirthLat(lat); setBirthLng(lng) }}
+                onSouthernHemisphere={setIsSouthernHemisphere}
+                className={inputCls}
+                placeholder={T(lang, '輸入城市名稱搜尋...', 'Search city name...')}
+              />
             </div>
             <div>
               <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
@@ -195,6 +412,16 @@ export default function DivinationFormPage() {
                 <option value="male">{T(lang, '男', 'Male')}</option>
                 <option value="female">{T(lang, '女', 'Female')}</option>
               </select>
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '出生地環境（可選）', 'Birth Environment (optional)')}</label>
+              <input
+                type="text"
+                className={inputCls}
+                value={form.birthEnvironment}
+                onChange={e => setField('birthEnvironment', e.target.value)}
+                placeholder={T(lang, '例：農村、城市、山區...', 'e.g. rural, urban, mountainous...')}
+              />
             </div>
           </>}
 
@@ -233,6 +460,17 @@ export default function DivinationFormPage() {
                 <option value="">{T(lang, '請選擇', 'Select')}</option>
                 {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
               </select>
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
+              <BirthplaceInput
+                value={form.birthPlace}
+                onChange={v => setField('birthPlace', v)}
+                onLatLngChange={(lat, lng) => { setBirthLat(lat); setBirthLng(lng) }}
+                onSouthernHemisphere={setIsSouthernHemisphere}
+                className={inputCls}
+                placeholder={T(lang, '輸入城市名稱搜尋...', 'Search city name...')}
+              />
             </div>
             <div>
               <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
@@ -306,8 +544,8 @@ export default function DivinationFormPage() {
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { tier: 'model1', zhLabel: '标准模型', enLabel: 'Standard', icon: '⚡' },
-                  { tier: 'model2', zhLabel: '高级模型', enLabel: 'Premium', icon: '🌟' },
+                  { tier: 'model1', zhLabel: '標準模型', enLabel: 'Standard', icon: '⚡' },
+                  { tier: 'model2', zhLabel: '高級模型', enLabel: 'Premium', icon: '🌟' },
                 ].map(m => (
                   <button
                     key={m.tier}
@@ -340,6 +578,26 @@ export default function DivinationFormPage() {
                   </button>
                 ))}
               </div>
+              {/* Share prompt when premium credits depleted */}
+              {credits?.model2 && credits.model2.remaining !== -1 && credits.model2.remaining <= 0 && shareBonus && (
+                <div className="mt-3 flex items-center gap-2 text-xs rounded-lg px-3 py-2" style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--border-gold)' }}>
+                  <span>🔗</span>
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    {T(lang, '高級模型次數已用完，', 'Premium credits used up. ')}
+                    <a href="/divination" onClick={async (e) => {
+                      e.preventDefault()
+                      const res = await fetch('/api/share', { method: 'POST' })
+                      const data = await res.json()
+                      if (res.ok) window.location.href = `/share/${data.code}`
+                    }} className="underline" style={{ color: 'var(--gold)' }}>
+                      {T(lang,
+                        `分享可獲得 ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`,
+                        `Share to earn ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`
+                      )}
+                    </a>
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -417,7 +675,8 @@ export default function DivinationFormPage() {
 
           <button
             type="submit"
-            className="w-full py-4 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-colors"
+            disabled={isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)}
+            className="w-full py-4 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {T(lang, '解卦 →', 'Consult Oracle →')}
           </button>
@@ -436,20 +695,68 @@ export default function DivinationFormPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card rounded-2xl p-8"
+          className="glass-card rounded-2xl p-4 sm:p-8"
         >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-serif text-gold">
+          <div className="flex justify-between items-center mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-serif text-gold">
               {T(lang, '解卦結果', 'Oracle Reading')}
             </h2>
             <button
-              onClick={() => setResult(null)}
+              onClick={() => { setResult(null); setReadingId(null) }}
               className="text-white/50 hover:text-gold text-sm"
             >
               {T(lang, '重新占卜', 'New Reading')}
             </button>
           </div>
           <ResultRenderer result={result} type={resultType || type} />
+
+          {/* Feedback widget */}
+          {readingId && (
+            <div className="mt-6">
+              <ReadingFeedback readingId={readingId} />
+            </div>
+          )}
+
+          {/* Share result */}
+          {readingId && (
+            <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--card-border)' }}>
+              {shareUrl ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>🔗 {T(lang, '分享連結', 'Share link')}:</span>
+                  <code className="text-xs break-all px-2 py-1 rounded" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--gold)' }}>{shareUrl}</code>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(shareUrl); toast.success(T(lang, '已複製', 'Copied!')) }}
+                    className="px-3 py-1 text-xs rounded-lg transition-colors"
+                    style={{ backgroundColor: 'rgba(212, 168, 83, 0.1)', color: 'var(--gold)', border: '1px solid rgba(212, 168, 83, 0.3)' }}
+                  >
+                    📋 {T(lang, '複製', 'Copy')}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={async () => {
+                    setSharing(true)
+                    try {
+                      const res = await fetch(`/api/readings/${readingId}/share`, { method: 'POST' })
+                      const data = await res.json()
+                      if (data.token) {
+                        const url = `${window.location.origin}/r/${data.token}`
+                        setShareUrl(url)
+                        navigator.clipboard.writeText(url)
+                        toast.success(T(lang, '連結已複製！可發送給朋友查看', 'Link copied! Share with friends'))
+                      }
+                    } catch { toast.error('Error') }
+                    setSharing(false)
+                  }}
+                  disabled={sharing}
+                  className="px-4 py-2 text-sm rounded-xl transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: 'rgba(212, 168, 83, 0.1)', color: 'var(--gold)', border: '1px solid rgba(212, 168, 83, 0.3)' }}
+                >
+                  {sharing ? '...' : `📤 ${T(lang, '分享結果給朋友', 'Share result with friends')}`}
+                </button>
+              )}
+            </div>
+          )}
         </motion.div>
       )}
     </div>

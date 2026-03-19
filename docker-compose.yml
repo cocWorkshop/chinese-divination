@@ -11,5 +11,20 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/divination_db
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-xuanji-secret-change-in-production}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:8094}
+      - CLAUDE_PROXY_URL=http://127.0.0.1:8095
       - NODE_ENV=production
+    restart: unless-stopped
+    depends_on:
+      - claude-proxy
+
+  claude-proxy:
+    build: ./claude-proxy
+    container_name: claude-proxy
+    network_mode: host
+    environment:
+      - PORT=8095
+      - HOME=/home/claude
+    volumes:
+      - /home/elvin/.claude:/home/claude/.claude:ro
+      - /home/elvin/.claude.json:/home/claude/.claude.json:ro
     restart: unless-stopped

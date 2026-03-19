@@ -5,23 +5,172 @@
 :root {
   --font-noto-serif: 'Noto Serif SC', serif;
   --font-inter: 'Inter', sans-serif;
+
+  /* Light theme (default root, but we default to dark via class) */
+  --bg-primary: #faf8f0;
+  --bg-surface: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --text-primary: #2d1f0e;
+  --text-secondary: rgba(45, 31, 14, 0.6);
+  --text-muted: rgba(45, 31, 14, 0.4);
+  --gold: #b8860b;
+  --gold-light: #d4a853;
+  --gold-dark: #8b6508;
+  --border-color: #e8dcc8;
+  --border-gold: rgba(184, 134, 11, 0.3);
+  --card-border: rgba(184, 134, 11, 0.2);
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --card-shadow: 0 4px 24px rgba(45, 31, 14, 0.08);
+  --nav-bg: rgba(250, 248, 240, 0.85);
+  --input-bg: #ffffff;
+  --accent-bg: rgba(184, 134, 11, 0.06);
+}
+
+.dark {
+  --bg-primary: #0a0f1e;
+  --bg-surface: #111d35;
+  --bg-card: rgba(17, 29, 53, 0.6);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --gold: #d4a853;
+  --gold-light: #e8c278;
+  --gold-dark: #b8893a;
+  --border-color: rgba(212, 168, 83, 0.2);
+  --border-gold: rgba(212, 168, 83, 0.3);
+  --card-border: rgba(212, 168, 83, 0.2);
+  --card-bg: rgba(17, 29, 53, 0.6);
+  --card-shadow: none;
+  --nav-bg: rgba(13, 21, 38, 0.8);
+  --input-bg: #111d35;
+  --accent-bg: rgba(17, 29, 53, 0.5);
 }
 
 body {
-  background-color: #0a0f1e;
-  color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   font-family: var(--font-inter), sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Light mode overrides for hardcoded dark-theme Tailwind classes */
+:root:not(.dark) {
+  /* Override white text to dark in light mode */
+  --tw-text-opacity: 1;
+}
+
+:root:not(.dark) .text-white { color: var(--text-primary) !important; }
+:root:not(.dark) .text-white\/90 { color: rgba(45, 31, 14, 0.9) !important; }
+:root:not(.dark) .text-white\/80 { color: rgba(45, 31, 14, 0.8) !important; }
+:root:not(.dark) .text-white\/70 { color: rgba(45, 31, 14, 0.7) !important; }
+:root:not(.dark) .text-white\/60 { color: rgba(45, 31, 14, 0.6) !important; }
+:root:not(.dark) .text-white\/50 { color: rgba(45, 31, 14, 0.5) !important; }
+:root:not(.dark) .text-white\/40 { color: rgba(45, 31, 14, 0.4) !important; }
+:root:not(.dark) .text-white\/30 { color: rgba(45, 31, 14, 0.3) !important; }
+:root:not(.dark) .text-gold { color: var(--gold) !important; }
+:root:not(.dark) .text-gold\/60 { color: rgba(184, 134, 11, 0.6) !important; }
+:root:not(.dark) .text-gold\/80 { color: rgba(184, 134, 11, 0.8) !important; }
+
+/* Background overrides */
+:root:not(.dark) .bg-navy-950 { background-color: var(--bg-primary) !important; }
+:root:not(.dark) .bg-navy-950\/95 { background-color: rgba(250, 248, 240, 0.95) !important; }
+:root:not(.dark) .bg-navy-900 { background-color: var(--bg-surface) !important; }
+:root:not(.dark) .bg-navy-900\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
+:root:not(.dark) .bg-navy-900\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
+:root:not(.dark) .bg-navy-800 { background-color: #f5f0e3 !important; }
+:root:not(.dark) .bg-navy-700 { background-color: #ede5d0 !important; }
+:root:not(.dark) .bg-gold\/5 { background-color: rgba(184, 134, 11, 0.05) !important; }
+:root:not(.dark) .bg-gold\/10 { background-color: rgba(184, 134, 11, 0.08) !important; }
+:root:not(.dark) .bg-gold\/20 { background-color: rgba(184, 134, 11, 0.1) !important; }
+:root:not(.dark) .bg-gold { background-color: var(--gold) !important; }
+:root:not(.dark) .bg-white\/5 { background-color: rgba(45, 31, 14, 0.03) !important; }
+:root:not(.dark) .bg-white\/10 { background-color: rgba(45, 31, 14, 0.05) !important; }
+:root:not(.dark) .bg-purple-500\/20 { background-color: rgba(139, 92, 246, 0.12) !important; }
+:root:not(.dark) .bg-blue-400\/5 { background-color: rgba(59, 130, 246, 0.05) !important; }
+:root:not(.dark) .text-orange-400 { color: #ea580c !important; }
+:root:not(.dark) .text-amber-400\/70 { color: rgba(180, 83, 9, 0.7) !important; }
+:root:not(.dark) .text-purple-300 { color: rgba(109, 40, 217, 0.8) !important; }
+
+/* Element bg overrides for light mode */
+:root:not(.dark) .bg-green-400\/10 { background-color: rgba(34, 197, 94, 0.08) !important; }
+:root:not(.dark) .bg-red-400\/10 { background-color: rgba(239, 68, 68, 0.08) !important; }
+:root:not(.dark) .bg-blue-400\/10 { background-color: rgba(59, 130, 246, 0.08) !important; }
+:root:not(.dark) .bg-yellow-500\/10 { background-color: rgba(234, 179, 8, 0.08) !important; }
+:root:not(.dark) .bg-gray-300\/10 { background-color: rgba(156, 163, 175, 0.08) !important; }
+:root:not(.dark) .border-green-400\/30 { border-color: rgba(34, 197, 94, 0.3) !important; }
+:root:not(.dark) .border-red-400\/30 { border-color: rgba(239, 68, 68, 0.3) !important; }
+:root:not(.dark) .border-blue-400\/30 { border-color: rgba(59, 130, 246, 0.3) !important; }
+:root:not(.dark) .border-yellow-500\/30 { border-color: rgba(234, 179, 8, 0.3) !important; }
+:root:not(.dark) .border-gray-300\/30 { border-color: rgba(156, 163, 175, 0.3) !important; }
+
+/* Border overrides */
+:root:not(.dark) .border-gold\/20 { border-color: rgba(184, 134, 11, 0.2) !important; }
+:root:not(.dark) .border-gold\/30 { border-color: rgba(184, 134, 11, 0.25) !important; }
+:root:not(.dark) .border-white\/10 { border-color: rgba(45, 31, 14, 0.1) !important; }
+:root:not(.dark) .border-white\/20 { border-color: rgba(45, 31, 14, 0.15) !important; }
+
+/* Input overrides */
+:root:not(.dark) input,
+:root:not(.dark) select,
+:root:not(.dark) textarea {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Placeholder */
+:root:not(.dark) input::placeholder,
+:root:not(.dark) textarea::placeholder {
+  color: rgba(45, 31, 14, 0.4) !important;
+}
+
+/* Hover overrides */
+:root:not(.dark) .hover\:text-gold:hover { color: var(--gold) !important; }
+:root:not(.dark) .hover\:bg-white\/5:hover { background-color: rgba(45, 31, 14, 0.04) !important; }
+:root:not(.dark) .hover\:bg-navy-700:hover { background-color: #ede5d0 !important; }
+
+/* Element colors in light mode — darker for readability */
+:root:not(.dark) .text-green-400 { color: #15803d !important; }
+:root:not(.dark) .text-red-400 { color: #dc2626 !important; }
+:root:not(.dark) .text-blue-400 { color: #2563eb !important; }
+:root:not(.dark) .text-yellow-500 { color: #a16207 !important; }
+:root:not(.dark) .text-gray-300 { color: #6b7280 !important; }
+:root:not(.dark) .bg-green-400 { background-color: #22c55e !important; }
+:root:not(.dark) .bg-red-400 { background-color: #ef4444 !important; }
+:root:not(.dark) .bg-blue-400 { background-color: #3b82f6 !important; }
+:root:not(.dark) .bg-yellow-500 { background-color: #eab308 !important; }
+:root:not(.dark) .bg-gray-300 { background-color: #9ca3af !important; }
+
+/* Radial background override */
+:root:not(.dark) .bg-radial-navy { background: var(--bg-primary) !important; }
+
+/* Gradient text fix for light */
+:root:not(.dark) .from-gold { --tw-gradient-from: var(--gold) !important; }
+
+/* Toast override */
+:root:not(.dark) [data-hot-toast] > div {
+  background: #ffffff !important;
+  color: #2d1f0e !important;
+  border-color: rgba(184, 134, 11, 0.3) !important;
 }
 
 @layer utilities {
   .glass-card {
-    background: rgba(17, 29, 53, 0.6);
+    background: var(--card-bg);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(212, 168, 83, 0.2);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   }
   
   .gold-gradient {
     background: linear-gradient(135deg, #d4a853, #e8c278, #b8893a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .light .gold-gradient {
+    background: linear-gradient(135deg, #b8860b, #d4a853, #8b6508);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
