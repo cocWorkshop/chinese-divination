@@ -19,11 +19,17 @@ model User {
   gender       String?
   isAdmin      Boolean     @default(false)
   isPaid       Boolean     @default(false)
-  role         String      @default("free") // free | paid | premium | admin
+  role         String      @default("arcane") // arcane | ethereal | prestige | admin
+  emailVerified     Boolean   @default(false)
+  verificationToken String?   @unique
+  tokenExpiry       DateTime?
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
   chatSummary  String?     @db.Text
   hourlyQuota  Int         @default(10)
   bonusModel1  Int         @default(0)
   bonusModel2  Int         @default(0)
+  bonusChat    Int         @default(0)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   readings      Reading[]
@@ -50,6 +56,11 @@ model Reading {
   deletedAt      DateTime?
   createdAt      DateTime      @default(now())
   feedbacks       ReadingFeedback[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, deletedAt])
+  @@index([type])
 }
 
 model ReadingFeedback {
@@ -106,6 +117,8 @@ model ShareLink {
   usedBy    String?
   usedAt    DateTime?
   createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model LlmLog {
@@ -133,6 +146,17 @@ model AdminSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model SiteFeedback {
+  id        String   @id @default(cuid())
+  userId    String
+  rating    Int?     // 1-5
+  feedback  String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
 }
 
 model FrontendError {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { generateToken, tokenExpiry, sendVerificationEmail } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,8 +10,11 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 })
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
+    if (password.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
+    }
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      return NextResponse.json({ error: 'Password must contain uppercase, lowercase, and a number' }, { status: 400 })
     }
 
     const existing = await prisma.user.findUnique({ where: { email } })
@@ -35,13 +39,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const vToken = generateToken()
     const user = await prisma.user.create({
       data: {
         email, password: hashed, name: name || null,
         bonusModel1: bonus1,
         bonusModel2: bonus2,
+        emailVerified: false,
+        verificationToken: vToken,
+        tokenExpiry: tokenExpiry(24),
       },
     })
+
+    // Send verification email (non-blocking — don't fail registration if email fails)
+    try {
+      const origin = req.headers.get('origin') || req.headers.get('referer')?.replace(/\/[^/]*$/, '') || ''
+      await sendVerificationEmail(email, vToken, 'zh-TW', origin)
+    } catch (emailErr) {
+      console.error('Verification email failed:', emailErr)
+    }
 
     // Grant bonus to sharer and mark link as used
     if (shareLink && !shareLink.used) {
@@ -62,6 +78,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       id: user.id, email: user.email,
+      needsVerification: true,
       ...(bonus1 > 0 && { bonusModel1: bonus1 }),
       ...(bonus2 > 0 && { bonusModel2: bonus2 }),
     }, { status: 201 })

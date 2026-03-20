@@ -29,11 +29,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const navItems = [
-    { href: '/admin', label: '概览', enLabel: 'Overview', icon: '📊' },
-    { href: '/admin/users', label: '用户管理', enLabel: 'Users', icon: '👥' },
-    { href: '/admin/logs', label: 'LLM 日誌', enLabel: 'LLM Logs', icon: '📋' },
+    { href: '/admin', label: '概覽', enLabel: 'Overview', icon: '📊' },
+    { href: '/admin/users', label: '用戶管理', enLabel: 'Users', icon: '👥' },
+    { href: '/admin/logs', label: '系統日誌', enLabel: 'System Logs', icon: '📋' },
     { href: '/admin/feedback', label: '用戶反饋', enLabel: 'Feedback', icon: '💬' },
-    { href: '/admin/errors', label: '前端錯誤', enLabel: 'Errors', icon: '🐛' },
     { href: '/admin/settings', label: '系統設置', enLabel: 'Settings', icon: '⚙️' },
   ]
 

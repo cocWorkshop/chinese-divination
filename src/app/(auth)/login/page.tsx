@@ -19,6 +19,8 @@ function LoginInner() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showResend, setShowResend] = useState(false)
+  const [resending, setResending] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,9 +35,25 @@ function LoginInner() {
 
     setLoading(false)
     if (res?.error) {
+      if (res.error.includes('EMAIL_NOT_VERIFIED') || res.error === 'CredentialsSignin') {
+        // Check if it's specifically email not verified
+        // NextAuth wraps errors, so we need to check against our known error
+        const checkRes = await fetch('/api/resend-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, check: true }),
+        })
+        const checkData = await checkRes.json()
+        if (checkData.unverified) {
+          setError(lang === 'zh-TW' ? '郵箱尚未驗證，請查收驗證郵件' : 'Email not verified. Please check your inbox.')
+          setShowResend(true)
+          return
+        }
+      }
       setError(lang === 'zh-TW' ? '郵箱或密碼錯誤' : 'Invalid email or password')
+      setShowResend(false)
     } else {
-      router.push(refCode ? `/share/${refCode}` : '/dashboard')
+      router.push(refCode ? `/share/${refCode}` : '/divination')
     }
   }
 
@@ -73,9 +91,38 @@ function LoginInner() {
               required
               className="w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
             />
+            <div className="mt-1 text-right">
+              <Link href="/forgot-password" className="text-gold/60 text-xs hover:text-gold transition-colors">
+                {lang === 'zh-TW' ? '忘記密碼？' : 'Forgot password?'}
+              </Link>
+            </div>
           </div>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && (
+            <div>
+              <p className="text-red-400 text-sm">{error}</p>
+              {showResend && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setResending(true)
+                    await fetch('/api/resend-verification', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email }),
+                    })
+                    setResending(false)
+                    setError(lang === 'zh-TW' ? '✉ 驗證郵件已重新發送，請查收' : '✉ Verification email resent, please check inbox')
+                    setShowResend(false)
+                  }}
+                  disabled={resending}
+                  className="mt-2 text-gold text-sm hover:text-gold-light transition-colors disabled:opacity-50"
+                >
+                  {resending ? '...' : (lang === 'zh-TW' ? '📧 重新發送驗證郵件' : '📧 Resend verification email')}
+                </button>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"

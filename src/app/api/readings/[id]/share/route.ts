@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import crypto from 'crypto'
+// Short URL-safe token generator
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -20,7 +20,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ token: reading.shareToken })
   }
 
-  const token = crypto.randomBytes(16).toString('hex')
+  // Generate short 8-char URL-safe token
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  let token = ''
+  for (let i = 0; i < 8; i++) token += chars[Math.floor(Math.random() * chars.length)]
   await prisma.reading.update({
     where: { id },
     data: { shareToken: token },

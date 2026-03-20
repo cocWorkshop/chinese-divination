@@ -31,6 +31,21 @@ export default function PublicReadingPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
+  // Hide navbar, chat widget, and remove top padding for public page
+  useEffect(() => {
+    const nav = document.querySelector('nav')
+    const chat = document.querySelector('.fixed.bottom-6')
+    const main = document.querySelector('main')
+    if (nav) nav.style.display = 'none'
+    if (chat) (chat as HTMLElement).style.display = 'none'
+    if (main) main.style.paddingTop = '0'
+    return () => {
+      if (nav) nav.style.display = ''
+      if (chat) (chat as HTMLElement).style.display = ''
+      if (main) main.style.paddingTop = ''
+    }
+  }, [])
+
   useEffect(() => {
     fetch(`/api/public/reading/${token}`)
       .then(r => {
@@ -69,12 +84,8 @@ export default function PublicReadingPage() {
   const lang = data.language === 'en' ? 'en' : 'zh-TW'
   const typeLabel = typeLabels[data.type]
 
-  let parsedResult
-  try {
-    parsedResult = JSON.parse(data.result)
-  } catch {
-    parsedResult = null
-  }
+  // ResultRenderer expects the raw string and parses internally
+  const resultString = data.result
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -97,11 +108,7 @@ export default function PublicReadingPage() {
 
         {/* Result */}
         <div className="glass-card rounded-2xl p-4 sm:p-8 mb-6">
-          {parsedResult ? (
-            <ResultRenderer type={data.type} result={parsedResult} />
-          ) : (
-            <div className="whitespace-pre-wrap text-white/80">{data.result}</div>
-          )}
+          <ResultRenderer type={data.type} result={resultString} />
         </div>
 
         {/* CTA */}

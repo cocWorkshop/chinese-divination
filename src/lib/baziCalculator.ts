@@ -1,4 +1,4 @@
-import { Solar } from 'lunar-typescript'
+import { Solar, Lunar } from 'lunar-typescript'
 import { cityLongitudes } from './cityLongitudes'
 import { trueSolarTime, getTrueSolarTimeCorrection, getShichen, shichenNameToBranch, shichenToHourRange } from './trueSolarTime'
 

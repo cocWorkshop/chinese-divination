@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       take: limit,
       select: {
         id: true, email: true, name: true, isAdmin: true, isPaid: true, role: true,
-        hourlyQuota: true, bonusModel1: true, bonusModel2: true,
+        hourlyQuota: true, bonusModel1: true, bonusModel2: true, bonusChat: true,
         createdAt: true, language: true,
         _count: { select: { readings: true } },
       },
@@ -40,19 +40,48 @@ export async function GET(req: NextRequest) {
     select: { userId: true, count: true, modelTier: true },
   })
 
-  const usageMap: Record<string, { model1: number; model2: number }> = {}
+  const usageMap: Record<string, { model1: number; model2: number; chat: number }> = {}
   for (const r of rateLimits) {
-    if (!usageMap[r.userId]) usageMap[r.userId] = { model1: 0, model2: 0 }
+    if (!usageMap[r.userId]) usageMap[r.userId] = { model1: 0, model2: 0, chat: 0 }
     if (r.modelTier === 'model2') usageMap[r.userId].model2 = r.count
-    else usageMap[r.userId].model1 = r.count
+    else if (r.modelTier === 'model1') usageMap[r.userId].model1 = r.count
+    else if (r.modelTier === 'chat') usageMap[r.userId].chat = r.count
   }
 
+  // Fetch role-based daily limits
+  const roles = ['arcane', 'ethereal', 'prestige']
+  const resources = ['model1', 'model2', 'chat']
+  const settingKeys = roles.flatMap(r => resources.map(res => `${r}_daily_${res}`))
+  const settings = await prisma.adminSetting.findMany({ where: { key: { in: settingKeys } } })
+  const settingsMap: Record<string, number> = {}
+  for (const s of settings) settingsMap[s.key] = parseInt(s.value)
+
+  const defaults: Record<string, { m1: number; m2: number; chat: number }> = {
+    arcane:   { m1: 20, m2: 2,  chat: 3  },
+    ethereal: { m1: -1, m2: 20, chat: 10 },
+    prestige: { m1: -1, m2: -1, chat: -1 },
+    admin:    { m1: -1, m2: -1, chat: -1 },
+  }
+  const getLimits = (role: string) => ({
+    m1: settingsMap[`${role}_daily_model1`] ?? defaults[role]?.m1 ?? 20,
+    m2: settingsMap[`${role}_daily_model2`] ?? defaults[role]?.m2 ?? 2,
+    chat: settingsMap[`${role}_daily_chat`] ?? defaults[role]?.chat ?? 3,
+  })
+
   return NextResponse.json({
-    users: users.map(u => ({
-      ...u,
-      usedTodayModel1: usageMap[u.id]?.model1 ?? 0,
-      usedTodayModel2: usageMap[u.id]?.model2 ?? 0,
-    })),
+    users: users.map(u => {
+      const role = u.isAdmin ? 'admin' : (u.role || 'arcane')
+      const roleLimits = getLimits(role)
+      return {
+        ...u,
+        usedTodayModel1: usageMap[u.id]?.model1 ?? 0,
+        usedTodayModel2: usageMap[u.id]?.model2 ?? 0,
+        usedTodayChat: usageMap[u.id]?.chat ?? 0,
+        limitModel1: roleLimits.m1,
+        limitModel2: roleLimits.m2,
+        limitChat: roleLimits.chat,
+      }
+    }),
     total,
     pages: Math.ceil(total / limit),
     page,

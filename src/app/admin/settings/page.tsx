@@ -18,14 +18,17 @@ export default function AdminSettings() {
     model1Label: '標準模型 / Standard',
     model2Name: 'anthropic/claude-sonnet-4',
     model2Label: '高級模型 / Premium',
-    freeDailyModel1: '20',
-    freeDailyModel2: '2',
-    paidDailyModel1: '-1',
-    paidDailyModel2: '20',
+    arcane_daily_model1: '20',
+    arcane_daily_model2: '2',
+    arcane_daily_chat: '3',
+    ethereal_daily_model1: '-1',
+    ethereal_daily_model2: '20',
+    ethereal_daily_chat: '10',
+    prestige_daily_model1: '-1',
+    prestige_daily_model2: '-1',
+    prestige_daily_chat: '-1',
     shareBonus: '20',
     shareBonusModel2: '5',
-    freeDailyChat: '3',
-    paidDailyChat: '10',
     llmTimeoutSeconds: '240',
     llmMaxTokens: '8192',
     chatModelName: '',
@@ -104,46 +107,31 @@ export default function AdminSettings() {
           </div>
         </div>
 
-        {/* Tier Limits - Free */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
-            <span>🆓</span> 免費用戶限制 / Free User Limits
-          </h2>
-          <div className="space-y-4">
-            {numberField('freeDailyModel1', '標準模型每日次数 / Standard daily limit', '-1 = 無限制 / unlimited')}
-            {numberField('freeDailyModel2', '高級模型每日次数 / Premium daily limit', '-1 = 無限制 / unlimited')}
+        {/* 每日配額 / Daily Quota per Role */}
+        {[
+          { role: 'arcane', icon: '🔮', label: '啟示 Arcane', desc: '基礎用戶' },
+          { role: 'ethereal', icon: '✧', label: '洞察 Ethereal', desc: '進階用戶' },
+          { role: 'prestige', icon: '✦', label: '大師 Prestige', desc: '高級用戶' },
+        ].map(r => (
+          <div key={r.role} className="glass-card rounded-xl p-6">
+            <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
+              <span>{r.icon}</span> {r.label} <span className="text-white/30 text-xs font-normal">— {r.desc}</span>
+            </h2>
+            <div className="grid grid-cols-3 gap-4">
+              {numberField(`${r.role}_daily_model1`, '⚡ 標準模型', '-1 = ∞')}
+              {numberField(`${r.role}_daily_model2`, '🌟 高級模型', '-1 = ∞')}
+              {numberField(`${r.role}_daily_chat`, '💬 問答聊天', '-1 = ∞')}
+            </div>
           </div>
-        </div>
-
-        {/* Tier Limits - Paid */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
-            <span>💎</span> 付費用戶限制 / Paid User Limits
-          </h2>
-          <div className="space-y-4">
-            {numberField('paidDailyModel1', '標準模型每日次数 / Standard daily limit', '-1 = 無限制 / unlimited')}
-            {numberField('paidDailyModel2', '高級模型每日次数 / Premium daily limit', '-1 = 無限制 / unlimited')}
-          </div>
-        </div>
-
-        {/* Chat Limits */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
-            <span>💬</span> 問答聊天限制 / Chat Limits
-          </h2>
-          <div className="space-y-4">
-            {numberField('freeDailyChat', '免費用戶每日輪數 / Free user daily chat rounds', '默認 3 輪/天，-1 = 無限制')}
-            {numberField('paidDailyChat', '付費用戶每日輪數 / Paid user daily chat rounds', '默認 10 輪/天，-1 = 無限制')}
-          </div>
-        </div>
+        ))}
 
         {/* Share Settings */}
         <div className="glass-card rounded-xl p-6">
           <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
             <span>🔗</span> 分享設置 / Share Settings
           </h2>
-          {numberField('shareBonus', '標準模型獎勵次數 / Standard model bonus per share', '分享者和接受者各获得此数量的標準模型额外次数')}
-          {numberField('shareBonusModel2', '高級模型獎勵次數 / Premium model bonus per share', '分享者和接受者各获得此数量的高級模型额外次数，0 = 不獎勵')}
+          {numberField('shareBonus', '標準模型儲備額度 / Standard reserve credits per share', '分享者和受邀者各獲得此數量的標準模型儲備額度')}
+          {numberField('shareBonusModel2', '高級模型儲備額度 / Premium reserve credits per share', '分享者和受邀者各獲得此數量的高級模型儲備額度，0 = 不獎勵')}
         </div>
 
         {/* Divination Type Tiers */}
@@ -161,22 +149,30 @@ export default function AdminSettings() {
               { key: 'other', label: '梅花六壬 / Plum & Liu Ren' },
             ].map(item => {
               const settingKey = `divinationType_${item.key}_tier`
-              const isPremium = settings[settingKey] === 'premium'
+              const currentTier = settings[settingKey] || 'arcane'
+              const tierOptions = [
+                { value: 'arcane', label: '🔮 啟示 Arcane', cls: 'bg-white/10 text-white/50 border-white/20' },
+                { value: 'ethereal', label: '✧ 洞察 Ethereal', cls: 'bg-blue-500/15 text-blue-300 border-blue-400/30' },
+                { value: 'prestige', label: '✦ 大師 Prestige', cls: 'bg-gold/20 text-gold border-gold/40' },
+              ]
               return (
-                <label key={item.key} className="flex items-center justify-between cursor-pointer group">
-                  <span className="text-white/80 text-sm">{item.label}</span>
-                  <button
-                    type="button"
-                    onClick={() => set(settingKey, isPremium ? 'normal' : 'premium')}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      isPremium
-                        ? 'bg-gold/20 text-gold border border-gold/40'
-                        : 'bg-white/10 text-white/50 border border-white/20 hover:border-white/30'
-                    }`}
-                  >
-                    {isPremium ? '✦ 高級 Premium' : '普通 Normal'}
-                  </button>
-                </label>
+                <div key={item.key} className="flex items-center justify-between gap-2">
+                  <span className="text-white/80 text-sm flex-shrink-0">{item.label}</span>
+                  <div className="flex gap-1">
+                    {tierOptions.map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => set(settingKey, opt.value)}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors border ${
+                          currentTier === opt.value ? opt.cls : 'bg-transparent text-white/20 border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )
             })}
           </div>

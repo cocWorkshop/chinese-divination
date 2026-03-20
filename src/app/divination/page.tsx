@@ -25,7 +25,7 @@ export default function DivinationPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const [tiers, setTiers] = useState<Record<string, string>>({})
-  const [userRole, setUserRole] = useState<string>('free')
+  const [userRole, setUserRole] = useState<string>('arcane')
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
@@ -40,12 +40,16 @@ export default function DivinationPage() {
     }).catch(() => {})
   }, [session])
 
-  const canAccessPremium = isAdmin || userRole === 'admin' || userRole === 'premium'
+  const roleLevel: Record<string, number> = { admin: 3, prestige: 3, ethereal: 2, arcane: 1 }
+  const tierLevel: Record<string, number> = { prestige: 3, ethereal: 2, arcane: 1 }
+  const userLvl = roleLevel[userRole] || 1
 
   const handleClick = (svcId: string, e: React.MouseEvent) => {
-    if (tiers[svcId] === 'premium' && !canAccessPremium) {
+    const requiredLvl = tierLevel[tiers[svcId]] || 1
+    if (!isAdmin && userLvl < requiredLvl) {
       e.preventDefault()
-      toast.error(T(lang, '此功能需要高級用戶權限', 'This feature requires premium access'), { icon: '✦' })
+      const tierNames: Record<string, string> = { prestige: T(lang, '大師', 'Prestige'), ethereal: T(lang, '洞察', 'Ethereal') }
+      toast.error(T(lang, `此功能需要${tierNames[tiers[svcId]] || '更高'}等級`, `Requires ${tiers[svcId] || 'higher'} access`), { icon: '✦' })
       return
     }
     router.push(`/divination/${svcId}`)
@@ -79,9 +83,9 @@ export default function DivinationPage() {
               className="glass-card rounded-2xl p-8 h-full hover:shadow-xl transition-all group cursor-pointer relative"
               style={{ borderColor: 'var(--card-border)' }}
             >
-              {tiers[svc.id] === 'premium' && (
+              {tiers[svc.id] && tiers[svc.id] !== 'arcane' && (
                 <span className="absolute top-4 right-4 px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: 'rgba(212, 168, 83, 0.15)', color: 'var(--gold)' }}>
-                  ✦ {T(lang, '高級', 'Premium')}
+                  {tiers[svc.id] === 'prestige' ? `✦ ${T(lang, '大師', 'Prestige')}` : `✧ ${T(lang, '洞察', 'Ethereal')}`}
                 </span>
               )}
               <div className="text-5xl mb-4">{svc.symbol}</div>

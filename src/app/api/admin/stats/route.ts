@@ -31,11 +31,9 @@ export async function GET() {
       take: 5,
       select: { id: true, email: true, name: true, createdAt: true, isAdmin: true },
     }),
-    prisma.rateLimit.groupBy({
+    prisma.reading.groupBy({
       by: ['userId'],
-      where: { windowStart: { gte: hourAgo } },
-      _sum: { count: true },
-      having: { count: { _sum: { gt: 0 } } },
+      where: { createdAt: { gte: hourAgo } },
     }),
     prisma.adminSetting.findMany(),
   ])

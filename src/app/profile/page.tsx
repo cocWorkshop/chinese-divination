@@ -57,13 +57,18 @@ export default function ProfilePage() {
     newPassword: '', currentPassword: '',
   })
   const [saving, setSaving] = useState(false)
+  const [fbRating, setFbRating] = useState(0)
+  const [fbText, setFbText] = useState('')
+  const [fbSending, setFbSending] = useState(false)
+  const [fbSent, setFbSent] = useState(false)
+  const [fbHistory, setFbHistory] = useState<{ id: string; rating: number | null; feedback: string; createdAt: string }[]>([])
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
   const [editingMember, setEditingMember] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<FamilyMember>>({})
   const [addingMember, setAddingMember] = useState(false)
   const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '' })
   const [credits, setCredits] = useState<Record<string, { remaining: number; dailyLimit: number }> | null>(null)
-  const [userBonus, setUserBonus] = useState<{ model1: number; model2: number } | null>(null)
+  const [userBonus, setUserBonus] = useState<{ model1: number; model2: number; chat: number } | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -73,9 +78,10 @@ export default function ProfilePage() {
   useEffect(() => {
     if (session) {
       fetch('/api/family-members').then(r => r.json()).then(data => setFamilyMembers(data.members || [])).catch(() => {})
+      fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(() => {})
       fetch('/api/credits').then(r => r.json()).then(data => {
         setCredits(data)
-        if (data.bonusModel1 !== undefined) setUserBonus({ model1: data.bonusModel1 || 0, model2: data.bonusModel2 || 0 })
+        if (data.bonusModel1 !== undefined) setUserBonus({ model1: data.bonusModel1 || 0, model2: data.bonusModel2 || 0, chat: data.bonusChat || 0 })
       }).catch(() => {})
     }
   }, [session])
@@ -145,12 +151,13 @@ export default function ProfilePage() {
       {credits && (
         <div className="glass-card rounded-2xl p-5 sm:p-6 mb-6 border" style={{ borderColor: 'var(--card-border)' }}>
           <h2 className="font-serif text-sm mb-4" style={{ color: 'var(--gold)' }}>
-            🔮 {T(lang, '模型使用額度', 'Model Usage Credits')}
+            🔮 {T(lang, '每日配額', 'Daily Quota')}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { key: 'model1', label: T(lang, '⚡ 標準模型', '⚡ Standard'), data: credits.model1 },
               { key: 'model2', label: T(lang, '🌟 高級模型', '🌟 Premium'), data: credits.model2 },
+              { key: 'chat', label: T(lang, '💬 問答聊天', '💬 Chat'), data: credits.chat },
             ].map(m => {
               const d = m.data as { remaining: number; used: number; dailyLimit: number; bonus: number }
               if (!d) return null
@@ -175,18 +182,19 @@ export default function ProfilePage() {
                   <div className="flex justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
                     <span>{T(lang, `今日已用 ${d.used} 次`, `Used ${d.used} today`)}</span>
                     {d.bonus > 0 && (
-                      <span style={{ color: '#2dd489' }}>+{d.bonus} {T(lang, '額外', 'bonus')}</span>
+                      <span style={{ color: '#2dd489' }}>+{d.bonus} {T(lang, '儲備', 'reserve')}</span>
                     )}
                   </div>
                 </div>
               )
             })}
           </div>
-          {userBonus && (userBonus.model1 > 0 || userBonus.model2 > 0) && (
+          {userBonus && (userBonus.model1 > 0 || userBonus.model2 > 0 || userBonus.chat > 0) && (
             <div className="mt-3 pt-3 border-t flex flex-wrap gap-3 text-xs" style={{ borderColor: 'var(--card-border)', color: 'var(--text-muted)' }}>
-              <span>🎁 {T(lang, '額外額度', 'Bonus credits')}:</span>
+              <span>🎁 {T(lang, '儲備額度', 'Reserve Credits')}:</span>
               {userBonus.model1 > 0 && <span>⚡ ×{userBonus.model1}</span>}
               {userBonus.model2 > 0 && <span>🌟 ×{userBonus.model2}</span>}
+              {userBonus.chat > 0 && <span>💬 ×{userBonus.chat}</span>}
             </div>
           )}
         </div>
@@ -198,8 +206,9 @@ export default function ProfilePage() {
           <input type="text" className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
         </div>
         <div>
-          <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+          <label className={labelCls}>{T(lang, '出生日期（公曆）', 'Birth Date (Solar)')}</label>
           <input type="date" className={inputCls} value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} />
+          <p className="text-white/30 text-xs mt-1">{T(lang, '此處請填寫公曆（陽曆）日期。占卜時可選擇農曆輸入。', 'Enter solar calendar date here. Lunar input available in divination forms.')}</p>
         </div>
         <div>
           <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
@@ -367,6 +376,93 @@ export default function ProfilePage() {
           <button type="button" onClick={() => setAddingMember(true)} className="w-full py-3 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-sm">
             {T(lang, '➕ 新增成員', '➕ Add Member')}
           </button>
+        )}
+      </div>
+
+      {/* Site Feedback */}
+      <div className="glass-card rounded-2xl p-5 sm:p-8 mt-6 border" style={{ borderColor: 'var(--card-border)' }}>
+        <h2 className="text-lg font-serif mb-4" style={{ color: 'var(--gold)' }}>
+          💬 {T(lang, '意見回饋', 'Feedback')}
+        </h2>
+        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+          {T(lang, '您的意見對我們非常重要，幫助我們持續改進服務。', 'Your feedback helps us improve our service.')}
+        </p>
+
+        {fbSent ? (
+          <div className="py-4 text-center rounded-xl" style={{ backgroundColor: 'rgba(45, 212, 137, 0.1)', color: '#2dd489' }}>
+            ✓ {T(lang, '感謝您的回饋！', 'Thank you for your feedback!')}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* Star rating */}
+            <div>
+              <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>{T(lang, '整體評分', 'Overall Rating')}</label>
+              <div className="flex gap-1">
+                {[1,2,3,4,5].map(n => (
+                  <button key={n} type="button" onClick={() => setFbRating(n)}
+                    className="text-2xl transition-transform hover:scale-110"
+                    style={{ color: n <= fbRating ? 'var(--gold)' : 'rgba(255,255,255,0.2)' }}
+                  >★</button>
+                ))}
+              </div>
+            </div>
+            {/* Text */}
+            <div>
+              <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>{T(lang, '建議或意見', 'Comments or Suggestions')}</label>
+              <textarea
+                value={fbText}
+                onChange={e => setFbText(e.target.value)}
+                rows={3}
+                maxLength={2000}
+                placeholder={T(lang, '分享您的使用體驗、建議或問題...', 'Share your experience, suggestions, or issues...')}
+                className="w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors"
+                style={{ backgroundColor: 'var(--input-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
+              />
+            </div>
+            <button
+              type="button"
+              disabled={!fbText.trim() || fbSending}
+              onClick={async () => {
+                setFbSending(true)
+                try {
+                  const res = await fetch('/api/site-feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating: fbRating || null, feedback: fbText }),
+                  })
+                  if (res.ok) {
+                    setFbSent(true)
+                    toast.success(T(lang, '感謝回饋！', 'Thanks for your feedback!'))
+                    setTimeout(() => { setFbSent(false); setFbRating(0); setFbText('') }, 3000)
+                    fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(() => {})
+                  }
+                } catch { toast.error('Error') }
+                setFbSending(false)
+              }}
+              className="px-5 py-2 rounded-xl font-medium text-sm transition-colors disabled:opacity-40"
+              style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
+            >
+              {fbSending ? '...' : T(lang, '提交回饋', 'Submit Feedback')}
+            </button>
+          </div>
+        )}
+
+        {/* History */}
+        {fbHistory.length > 0 && (
+          <div className="mt-5 pt-4 border-t" style={{ borderColor: 'var(--card-border)' }}>
+            <h3 className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>{T(lang, '過往回饋', 'Past Feedback')}</h3>
+            <div className="space-y-2">
+              {fbHistory.map(fb => (
+                <div key={fb.id} className="rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: 'var(--accent-bg)' }}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span style={{ color: 'var(--gold)' }}>{fb.rating ? '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating) : ''}</span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(fb.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <p style={{ color: 'var(--text-secondary)' }}>{fb.feedback}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

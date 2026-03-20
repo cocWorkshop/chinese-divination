@@ -17,16 +17,18 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (hourlyQuota !== undefined) updateData.hourlyQuota = Math.max(0, parseInt(hourlyQuota))
   if (isAdmin !== undefined) updateData.isAdmin = Boolean(isAdmin)
   if (isPaid !== undefined) updateData.isPaid = Boolean(isPaid)
-  if (role !== undefined && ['free', 'paid', 'premium', 'admin'].includes(role)) updateData.role = role
+  if (role !== undefined && ['arcane', 'ethereal', 'prestige', 'admin'].includes(role)) updateData.role = role
   if (bonusModel1 !== undefined) updateData.bonusModel1 = Math.max(0, parseInt(bonusModel1))
   if (bonusModel2 !== undefined) updateData.bonusModel2 = Math.max(0, parseInt(bonusModel2))
 
-  // Grant bonus credits (increment)
+  // Grant bonus credits (set absolute value)
   if (grantBonus) {
     const m1 = parseInt(grantBonus.model1)
     const m2 = parseInt(grantBonus.model2)
+    const chat = parseInt(grantBonus.chat)
     if (!isNaN(m1)) updateData.bonusModel1 = m1
     if (!isNaN(m2)) updateData.bonusModel2 = m2
+    if (!isNaN(chat)) updateData.bonusChat = chat
   }
 
   await prisma.user.update({ where: { id: targetId }, data: updateData })

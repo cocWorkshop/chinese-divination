@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const chatLimit = await checkChatLimit(session.user.id)
     if (!chatLimit.allowed) {
       return NextResponse.json({
-        error: `今日問答次數已用完（${chatLimit.dailyLimit}輪/天），請明日再試。\nDaily chat limit reached (${chatLimit.dailyLimit}/day). Try again tomorrow.`,
+        error: `今日問答配額已用完（${chatLimit.dailyLimit}輪/天），請明日再試。\nDaily chat quota reached (${chatLimit.dailyLimit}/day). Try again tomorrow.`,
         remaining: 0,
       }, { status: 429 })
     }

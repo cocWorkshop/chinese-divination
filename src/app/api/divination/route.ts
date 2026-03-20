@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma'
 import { checkModelLimit, incrementModelUsage } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
 import { logLlmCall } from '@/lib/llmLogger'
+import { Lunar } from 'lunar-typescript'
 
 const refFileMap: Record<string, string> = {
   bazi: 'bazi.md',
@@ -147,8 +148,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: language === 'en'
-            ? `Daily ${modelTier === 'model2' ? 'premium' : 'standard'} model limit reached. Share to earn bonus credits.`
-            : `已達今日${modelTier === 'model2' ? '高級模型' : '標準模型'}使用上限，請明日再試或分享獲取額外次數。`,
+            ? `Daily ${modelTier === 'model2' ? 'premium' : 'standard'} quota reached. Share to earn reserve credits.`
+            : `已達今日${modelTier === 'model2' ? '高級模型' : '標準模型'}配額，請明日再試或分享獲取儲備額度。`,
           resetAt: rl.resetAt.toISOString(),
         },
         { status: 429 }
@@ -271,10 +272,24 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
     let userMessage: string
     let baziChart: BaziChart | null = null
 
-    if (type === 'bazi' && inputData.birthDate && inputData.birthTime) {
+    // Lunar→Solar conversion if user selected lunar calendar
+    let solarBirthDate = inputData.birthDate
+    if (inputData.lunarToggle === 'lunar' && inputData.birthDate) {
+      try {
+        const [y, m, d] = inputData.birthDate.split('-').map(Number)
+        const lunarDate = Lunar.fromYmd(y, m, d)
+        const solarDate = lunarDate.getSolar()
+        solarBirthDate = `${solarDate.getYear()}-${String(solarDate.getMonth()).padStart(2, '0')}-${String(solarDate.getDay()).padStart(2, '0')}`
+        console.log(`Lunar ${inputData.birthDate} → Solar ${solarBirthDate}`)
+      } catch (lunarErr) {
+        console.error('Lunar conversion failed:', lunarErr)
+      }
+    }
+
+    if (type === 'bazi' && solarBirthDate && inputData.birthTime) {
       try {
         baziChart = calculateBazi(
-          inputData.birthDate,
+          solarBirthDate,
           inputData.birthTime,
           inputData.birthPlace || '',
           inputData.gender || 'male'
@@ -296,7 +311,7 @@ ${JSON.stringify({
 }, null, 2)}
 
 ## 用户输入
-- 出生日期：${inputData.birthDate}
+- 出生日期：${solarBirthDate}（公历）${inputData.lunarToggle === 'lunar' ? `（用户输入农历 ${inputData.birthDate}）` : ''}
 - 出生时辰：${inputData.birthTime}
 - 出生地：${inputData.birthPlace || '未提供'}
 - 性别：${inputData.gender}

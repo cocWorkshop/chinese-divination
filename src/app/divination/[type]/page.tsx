@@ -120,12 +120,16 @@ export default function DivinationFormPage() {
         ])
         const tiers = await tiersRes.json()
         const profile = profileRes ? await profileRes.json() : null
-        const userRole = profile?.role || 'free'
+        const userRole = profile?.role || 'arcane'
         const isAdmin = profile?.isAdmin || false
-        const canAccess = isAdmin || userRole === 'admin' || userRole === 'premium'
+        const roleLevel: Record<string, number> = { admin: 3, prestige: 3, ethereal: 2, arcane: 1 }
+        const tierLevel: Record<string, number> = { prestige: 3, ethereal: 2, arcane: 1 }
+        const userLvl = roleLevel[userRole] || 1
+        const requiredLvl = tierLevel[tiers[type]] || 1
 
-        if (tiers[type] === 'premium' && !canAccess) {
-          toast.error(T(lang, '此功能需要高級用戶權限', 'This feature requires premium access'), { icon: '✦' })
+        if (!isAdmin && userLvl < requiredLvl) {
+          const tierNames: Record<string, string> = { prestige: T(lang, '大師', 'Prestige'), ethereal: T(lang, '洞察', 'Ethereal') }
+          toast.error(T(lang, `此功能需要${tierNames[tiers[type]] || '更高'}等級權限`, `This feature requires ${tiers[type] || 'higher'} access`), { icon: '✦' })
           router.push('/divination')
           return
         }
@@ -206,6 +210,27 @@ export default function DivinationFormPage() {
     toast.success(T(lang, `得卦：第${n}卦`, `Hexagram #${n}`))
   }
 
+  // Poll for a reading that was saved server-side after connection was lost
+  const pollForReading = async (afterTime: string, readingType: string): Promise<{ id: string; result: string } | null> => {
+    const maxPollTime = 600_000 // 600 seconds
+    const pollInterval = 8_000 // 8 seconds
+    const startTime = Date.now()
+
+    while (Date.now() - startTime < maxPollTime) {
+      await new Promise(r => setTimeout(r, pollInterval))
+      try {
+        const res = await fetch('/api/readings')
+        if (!res.ok) continue
+        const data = await res.json()
+        const found = data.readings?.find((r: { type: string; createdAt: string; id: string; result: string }) =>
+          r.type === readingType && new Date(r.createdAt) > new Date(afterTime)
+        )
+        if (found) return { id: found.id, result: found.result }
+      } catch { /* continue polling */ }
+    }
+    return null
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!session) {
@@ -219,6 +244,8 @@ export default function DivinationFormPage() {
     }
     setLoading(true)
     setResult(null)
+    setShareUrl(null)
+    const requestStartTime = new Date().toISOString()
     try {
       const hasProfileData = ['bazi', 'ziwei'].includes(type)
       const formData = { ...form }
@@ -245,7 +272,26 @@ export default function DivinationFormPage() {
         signal: fetchController.signal,
       })
       clearTimeout(fetchTimeout)
-      const data = await res.json()
+      let data
+      try {
+        data = await res.json()
+      } catch {
+        // Response is not JSON (e.g. Cloudflare 524 HTML) — fall back to polling
+        toast(T(lang, '⏳ 伺服器仍在處理中，等待結果...', '⏳ Server still processing, waiting for result...'), { icon: '🔄', duration: 5000 })
+        const found = await pollForReading(requestStartTime, type)
+        if (found) {
+          setResult(found.result)
+          setResultType(type)
+          setReadingId(found.id)
+          toast.success(T(lang, '結果已就緒', 'Result ready!'))
+          fetch('/api/credits').then(r => r.json()).then(setCredits).catch(() => {})
+        } else {
+          toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
+          reportError({ endpoint: '/api/divination', status: res.status, error: 'Polling timeout after 600s — no result found', context: `type=${type}, modelTier=${modelTier}` })
+        }
+        setLoading(false)
+        return
+      }
       if (res.ok) {
         setResult(data.reading.result)
         setResultType(type)
@@ -261,8 +307,19 @@ export default function DivinationFormPage() {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Network error'
-      toast.error(msg.includes('abort') ? T(lang, '請求超時', 'Request timed out') : 'Network error')
-      reportError({ endpoint: '/api/divination', error: msg, context: `type=${type}, modelTier=${modelTier}, timeout=${llmTimeoutMs}` })
+      // Network error or abort — try polling as fallback
+      toast(T(lang, '⏳ 連接中斷，等待伺服器處理結果...', '⏳ Connection lost, waiting for server result...'), { icon: '🔄', duration: 5000 })
+      const found = await pollForReading(requestStartTime, type)
+      if (found) {
+        setResult(found.result)
+        setResultType(type)
+        setReadingId(found.id)
+        toast.success(T(lang, '結果已就緒', 'Result ready!'))
+        fetch('/api/credits').then(r => r.json()).then(setCredits).catch(() => {})
+      } else {
+        toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
+        reportError({ endpoint: '/api/divination', error: `Polling timeout after 600s — original error: ${msg}`, context: `type=${type}, modelTier=${modelTier}` })
+      }
     }
     setLoading(false)
   }
@@ -383,6 +440,13 @@ export default function DivinationFormPage() {
 
           {/* BaZi */}
           {type === 'bazi' && <>
+            <div>
+              <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
+              <select className={inputCls} value={form.lunarToggle} onChange={e => setField('lunarToggle', e.target.value)}>
+                <option value="solar">{T(lang, '公曆（陽曆）', 'Solar Calendar')}</option>
+                <option value="lunar">{T(lang, '農曆（陰曆）', 'Lunar Calendar')}</option>
+              </select>
+            </div>
             <div>
               <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
               <input type="date" className={inputCls} value={form.birthDate} onChange={e => setField('birthDate', e.target.value)} required />
@@ -571,7 +635,7 @@ export default function DivinationFormPage() {
                           const lim = c.dailyLimit === -1 ? '∞' : c.dailyLimit
                           return lang === 'en'
                             ? `${rem} / ${lim} remaining today`
-                            : `今日剩餘 ${rem} / ${lim} 次`
+                            : `今日配額剩餘 ${rem} / ${lim} 次`
                         })()}
                       </p>
                     )}
@@ -591,8 +655,8 @@ export default function DivinationFormPage() {
                       if (res.ok) window.location.href = `/share/${data.code}`
                     }} className="underline" style={{ color: 'var(--gold)' }}>
                       {T(lang,
-                        `分享可獲得 ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`,
-                        `Share to earn ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`
+                        `分享可獲得儲備額度 ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`,
+                        `Share for reserve credits ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`
                       )}
                     </a>
                   </span>
@@ -689,7 +753,19 @@ export default function DivinationFormPage() {
         </motion.form>
       )}
 
-      {loading && <LoadingOracle />}
+      {loading && (
+        <>
+          <LoadingOracle />
+          <div className="glass-card rounded-xl p-4 mt-4 text-center" style={{ borderColor: 'var(--card-border)' }}>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              {T(lang,
+                '🔮 天機推演中，此過程約需數分鐘。您可先行離開，稍後於「歷史記錄」中查閱結果。',
+                '🔮 The oracle is processing your reading — this may take a few minutes. Feel free to step away; your result will be saved to your reading history.'
+              )}
+            </p>
+          </div>
+        </>
+      )}
 
       {result && (
         <motion.div

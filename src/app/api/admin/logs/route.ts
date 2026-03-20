@@ -1,31 +1,55 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
 
-export async function GET() {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function GET(req: NextRequest) {
+  const { error } = await requireAdmin()
+  if (error) return error
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } })
-  if (!user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { searchParams } = new URL(req.url)
+  const page = parseInt(searchParams.get('page') || '1')
+  const limit = parseInt(searchParams.get('limit') || '30')
+  const filter = searchParams.get('filter') || 'all'
 
-  const logs = await prisma.llmLog.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 200,
-  })
+  const where = filter !== 'all' ? { endpoint: filter } : {}
 
-  // Fetch user emails for display
-  const userIds: string[] = logs.map(l => l.userId).filter((id): id is string => id !== null)
+  const [logs, total] = await Promise.all([
+    prisma.llmLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.llmLog.count({ where }),
+  ])
+
+  // Fetch user emails
+  const userIds = Array.from(new Set(logs.map(l => l.userId).filter((id): id is string => !!id)))
   const users = await prisma.user.findMany({
     where: { id: { in: userIds } },
     select: { id: true, email: true, name: true },
   })
   const userMap = Object.fromEntries(users.map(u => [u.id, { email: u.email, name: u.name }]))
 
-  const logsWithUser = logs.map(l => ({
-    ...l,
-    user: l.userId ? userMap[l.userId] || null : null,
-  }))
+  // Aggregate stats (for filtered set)
+  const stats = await prisma.llmLog.aggregate({
+    where,
+    _sum: { totalTokens: true },
+    _avg: { latencyMs: true },
+    _count: true,
+  })
+  const errorCount = await prisma.llmLog.count({ where: { ...where, status: 'error' } })
 
-  return NextResponse.json({ logs: logsWithUser })
+  return NextResponse.json({
+    logs: logs.map(l => ({ ...l, user: l.userId ? userMap[l.userId] || null : null })),
+    total,
+    page,
+    pages: Math.ceil(total / limit),
+    stats: {
+      totalCalls: stats._count,
+      totalTokens: stats._sum.totalTokens || 0,
+      avgLatencyMs: Math.round(stats._avg.latencyMs || 0),
+      errorCount,
+    },
+  })
 }

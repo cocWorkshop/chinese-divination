@@ -1,19 +1,16 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } })
-  if (!user?.isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { error } = await requireAdmin()
+  if (error) return error
 
   const url = new URL(req.url)
   const page = parseInt(url.searchParams.get('page') || '1')
-  const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100)
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '30'), 100)
 
   const [errors, total] = await Promise.all([
     prisma.frontendError.findMany({
@@ -24,5 +21,21 @@ export async function GET(req: NextRequest) {
     prisma.frontendError.count(),
   ])
 
-  return NextResponse.json({ errors, total, page, limit })
+  // Join user info
+  const userIds = Array.from(new Set(errors.map(e => e.userId).filter((id): id is string => !!id)))
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, email: true, name: true },
+  })
+  const userMap = Object.fromEntries(users.map(u => [u.id, { email: u.email, name: u.name }]))
+
+  return NextResponse.json({
+    errors: errors.map(e => ({
+      ...e,
+      user: e.userId ? userMap[e.userId] || null : null,
+    })),
+    total,
+    page,
+    limit,
+  })
 }

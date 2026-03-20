@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
@@ -16,6 +16,10 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [sharing, setSharing] = useState(false)
+
+  useEffect(() => {
+    document.title = lang === 'en' ? 'Chinese Divination - Ancient Wisdom, Modern Heritage' : '玄機 - 古法智慧，現代傳承'
+  }, [lang])
 
   const handleShare = async () => {
     if (!session) return

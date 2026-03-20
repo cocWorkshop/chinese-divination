@@ -143,11 +143,16 @@ export default function DashboardPage() {
                   {(() => {
                     try {
                       const parsed = JSON.parse(r.result)
-                      return parsed.sections?.overview?.slice(0, 100) || parsed.interpretation?.slice(0, 100) || r.result.slice(0, 100)
+                      const summary = parsed.sections?.overview
+                        || parsed.sections?.situation
+                        || parsed.interpretation
+                        || (parsed.outcome ? `${parsed.palace?.inquiry || ''} → ${parsed.outcome}` : '')
+                        || ''
+                      return (summary || r.result).slice(0, 120)
                     } catch {
-                      return r.result.slice(0, 100)
+                      return r.result.slice(0, 120)
                     }
-                  })()}{r.result.length > 100 ? '...' : ''}
+                  })()}...
                 </p>
               </div>
               <AnimatePresence>
