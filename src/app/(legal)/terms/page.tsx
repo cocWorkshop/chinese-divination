@@ -105,7 +105,7 @@ export default function TermsPage() {
                 {T(lang, '8. 聯繫我們', '8. Contact Us')}
               </h2>
               <p>{T(lang, '如有問題，請聯繫：', 'For questions, contact:')}</p>
-              <p className="mt-2" style={{ color: 'var(--gold)' }}>📧 support@xuanji.app</p>
+              <p className="mt-2" style={{ color: 'var(--gold)' }}>📧 admin@chinese-divination.com</p>
             </section>
           </div>
 

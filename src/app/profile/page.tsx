@@ -409,7 +409,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Site Feedback */}
-      <div className="glass-card rounded-2xl p-5 sm:p-8 mt-6 border" style={{ borderColor: 'var(--card-border)' }}>
+      <div className="glass-card rounded-2xl p-5 sm:p-8 space-y-4">
         <h2 className="text-lg font-serif mb-4" style={{ color: 'var(--gold)' }}>
           💬 {T(lang, '意見回饋', 'Feedback')}
         </h2>
@@ -496,7 +496,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Data Management (GDPR/PIPEDA) */}
-      <div className="glass-card rounded-2xl p-6 border" style={{ borderColor: 'var(--card-border)' }}>
+      <div className="glass-card rounded-2xl p-5 sm:p-8 mt-6 border" style={{ borderColor: 'var(--card-border)' }}>
         <h2 className="text-lg font-serif mb-4" style={{ color: 'var(--gold)' }}>
           {T(lang, '數據管理', 'Data Management')}
         </h2>

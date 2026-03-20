@@ -204,7 +204,7 @@ export default function PrivacyPolicyPage() {
                 '如有任何隱私相關問題或數據請求，請通過以下方式聯繫我們：',
                 'For any privacy-related questions or data requests, contact us at:'
               )}</p>
-              <p className="mt-2" style={{ color: 'var(--gold)' }}>📧 privacy@xuanji.app</p>
+              <p className="mt-2" style={{ color: 'var(--gold)' }}>📧 admin@chinese-divination.com</p>
             </section>
           </div>
 
