@@ -8,6 +8,7 @@ import ChatWidget from '@/components/ChatWidget'
 import ThemeProvider from '@/components/ThemeProvider'
 import ConsentPopup from '@/components/ConsentPopup'
 import CookieBanner from '@/components/CookieBanner'
+import Footer from '@/components/Footer'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -45,13 +46,7 @@ export default function RootLayout({
             <ChatWidget />
             <ConsentPopup />
             <CookieBanner />
-            <footer className="py-6 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-              <a href="/privacy" className="hover:underline" style={{ color: 'var(--text-muted)' }}>隱私政策</a>
-              <span className="mx-2">·</span>
-              <a href="/terms" className="hover:underline" style={{ color: 'var(--text-muted)' }}>用戶協議</a>
-              <span className="mx-2">·</span>
-              <span>© {new Date().getFullYear()} 玄機</span>
-            </footer>
+            <Footer />
             <Toaster
               position="top-right"
               toastOptions={{
