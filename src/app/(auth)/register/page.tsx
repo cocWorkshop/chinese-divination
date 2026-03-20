@@ -24,6 +24,7 @@ function RegisterInner() {
   const searchParams = useSearchParams()
   const referralCode = searchParams.get('ref') || ''
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
+  const [consent, setConsent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [verificationSent, setVerificationSent] = useState(false)
   const [resending, setResending] = useState(false)
@@ -37,6 +38,10 @@ function RegisterInner() {
     const pwdErrors = validatePassword(form.password, lang)
     if (pwdErrors) {
       toast.error(pwdErrors)
+      return
+    }
+    if (!consent) {
+      toast.error(lang === 'zh-TW' ? '請先同意隱私政策和用戶協議' : 'Please agree to Privacy Policy and Terms')
       return
     }
     setLoading(true)
@@ -186,9 +191,25 @@ function RegisterInner() {
           })()}
           {field('confirm', lang === 'zh-TW' ? '確認密碼' : 'Confirm Password', 'password')}
 
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={e => setConsent(e.target.checked)}
+              className="mt-1 accent-gold w-4 h-4 flex-shrink-0"
+            />
+            <span className="text-white/60 text-xs leading-relaxed">
+              {lang === 'zh-TW' ? (
+                <>我已閱讀並同意 <Link href="/privacy" target="_blank" className="text-gold underline">隱私政策</Link> 和 <Link href="/terms" target="_blank" className="text-gold underline">用戶協議</Link></>
+              ) : (
+                <>I have read and agree to the <Link href="/privacy" target="_blank" className="text-gold underline">Privacy Policy</Link> and <Link href="/terms" target="_blank" className="text-gold underline">Terms of Service</Link></>
+              )}
+            </span>
+          </label>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !consent}
             className="w-full py-3 bg-gold text-navy-950 rounded-lg font-semibold hover:bg-gold-light transition-colors disabled:opacity-50"
           >
             {loading ? (lang === 'zh-TW' ? '註冊中...' : 'Registering...') : (lang === 'zh-TW' ? '註冊' : 'Register')}

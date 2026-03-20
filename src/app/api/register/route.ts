@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { generateToken, tokenExpiry, sendVerificationEmail } from '@/lib/email'
+import { logAuth } from '@/lib/authLog'
+import { CURRENT_POLICY_VERSION } from '@/lib/policyVersion'
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') || null
+  const userAgent = req.headers.get('user-agent') || null
+
   try {
     const { name, email, password, referralCode } = await req.json()
 
@@ -19,6 +25,7 @@ export async function POST(req: NextRequest) {
 
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) {
+      await logAuth({ action: 'register', status: 'failure', email, reason: 'email_exists', ip, userAgent })
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 })
     }
 
@@ -48,6 +55,8 @@ export async function POST(req: NextRequest) {
         emailVerified: false,
         verificationToken: vToken,
         tokenExpiry: tokenExpiry(24),
+        consentAt: new Date(),
+        consentVersion: CURRENT_POLICY_VERSION,
       },
     })
 
@@ -75,6 +84,8 @@ export async function POST(req: NextRequest) {
         }),
       ])
     }
+
+    await logAuth({ action: 'register', status: 'success', email, userId: user.id, ip, userAgent })
 
     return NextResponse.json({
       id: user.id, email: user.email,

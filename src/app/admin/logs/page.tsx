@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 
-type Tab = 'llm' | 'errors'
+type Tab = 'llm' | 'errors' | 'auth'
 
 interface LogEntry {
   id: string; userId: string | null; endpoint: string; model: string; modelTier: string | null
@@ -17,7 +17,13 @@ interface FrontendError {
   user?: { email: string; name: string | null } | null
 }
 
+interface AuthLogEntry {
+  id: string; action: string; status: string; email: string; userId: string | null
+  reason: string | null; ip: string | null; userAgent: string | null; createdAt: string
+}
+
 interface LlmStats { totalCalls: number; totalTokens: number; avgLatencyMs: number; errorCount: number }
+interface AuthStats { totalSuccess: number; totalFailure: number; totalToday: number }
 
 export default function AdminSystemLogs() {
   const [tab, setTab] = useState<Tab>('llm')
@@ -39,6 +45,18 @@ export default function AdminSystemLogs() {
   const [errPages, setErrPages] = useState(1)
   const [errLoading, setErrLoading] = useState(true)
 
+  // Auth log state
+  const [authLogs, setAuthLogs] = useState<AuthLogEntry[]>([])
+  const [authTotal, setAuthTotal] = useState(0)
+  const [authPage, setAuthPage] = useState(1)
+  const [authPages, setAuthPages] = useState(1)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [authStats, setAuthStats] = useState<AuthStats>({ totalSuccess: 0, totalFailure: 0, totalToday: 0 })
+  const [authStatusFilter, setAuthStatusFilter] = useState('all')
+  const [authActionFilter, setAuthActionFilter] = useState('all')
+  const [authDateFrom, setAuthDateFrom] = useState('')
+  const [authDateTo, setAuthDateTo] = useState('')
+
   const fetchLogs = useCallback((p: number, filter: string) => {
     setLlmLoading(true)
     fetch(`/api/admin/logs?page=${p}&limit=30&filter=${filter}`)
@@ -51,6 +69,23 @@ export default function AdminSystemLogs() {
         if (d.stats) setLlmStats(d.stats)
       })
       .finally(() => setLlmLoading(false))
+  }, [])
+
+  const fetchAuthLogs = useCallback((p: number, status: string, action: string, from: string, to: string) => {
+    setAuthLoading(true)
+    const params = new URLSearchParams({ page: String(p), limit: '30', status, action })
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+    fetch(`/api/admin/auth-logs?${params}`)
+      .then(r => r.json())
+      .then(d => {
+        setAuthLogs(d.logs || [])
+        setAuthTotal(d.total || 0)
+        setAuthPage(d.page || 1)
+        setAuthPages(d.pages || 1)
+        if (d.stats) setAuthStats(d.stats)
+      })
+      .finally(() => setAuthLoading(false))
   }, [])
 
   const fetchErrors = useCallback((p: number) => {
@@ -68,6 +103,7 @@ export default function AdminSystemLogs() {
 
   useEffect(() => { fetchLogs(1, 'all') }, [fetchLogs])
   useEffect(() => { if (tab === 'errors') fetchErrors(1) }, [tab, fetchErrors])
+  useEffect(() => { if (tab === 'auth') fetchAuthLogs(1, 'all', 'all', '', '') }, [tab, fetchAuthLogs])
 
   const Pagination = ({ page, pages, onChange }: { page: number; pages: number; onChange: (p: number) => void }) => {
     if (pages <= 1) return null
@@ -88,15 +124,29 @@ export default function AdminSystemLogs() {
 
   return (
     <div className="p-8 max-w-6xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-serif text-gold">系統日誌</h1>
-        <p className="text-white/40 text-sm mt-1">System Logs</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-serif text-gold">系統日誌</h1>
+          <p className="text-white/40 text-sm mt-1">System Logs</p>
+        </div>
+        <button
+          onClick={async () => {
+            if (!confirm('清理過期日誌？(Auth: 90天, LLM: 180天, Errors: 90天)')) return
+            const r = await fetch('/api/admin/cleanup-logs', { method: 'POST' })
+            const d = await r.json()
+            alert(`已清理：Auth ${d.authDeleted} 條, LLM ${d.llmDeleted} 條, Errors ${d.errorsDeleted} 條`)
+          }}
+          className="px-3 py-1.5 rounded-lg text-xs border border-gold/20 text-white/50 hover:text-gold hover:border-gold/40 transition-colors"
+        >
+          🧹 清理過期日誌
+        </button>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 p-1 bg-navy-900/50 rounded-xl w-fit border border-gold/10">
         {[
           { key: 'llm' as Tab, label: '📋 LLM 調用', count: llmTotal },
+          { key: 'auth' as Tab, label: '🔐 登入日誌', count: authTotal },
           { key: 'errors' as Tab, label: '🐛 前端錯誤', count: errTotal },
         ].map(t => (
           <button
@@ -195,6 +245,101 @@ export default function AdminSystemLogs() {
             </div>
           )}
           <Pagination page={llmPage} pages={llmPages} onChange={p => fetchLogs(p, llmFilter)} />
+        </>
+      )}
+
+      {/* ===== Auth Logs Tab ===== */}
+      {tab === 'auth' && (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            {[
+              { label: '成功', value: authStats.totalSuccess.toString(), color: 'text-green-400' },
+              { label: '失敗', value: authStats.totalFailure.toString(), color: authStats.totalFailure > 0 ? 'text-red-400' : 'text-gold' },
+              { label: '今日', value: authStats.totalToday.toString(), color: 'text-gold' },
+            ].map((s, i) => (
+              <div key={i} className="glass-card rounded-xl p-3 border border-gold/15 text-center">
+                <div className="text-white/40 text-[10px] uppercase tracking-wider">{s.label}</div>
+                <div className={`text-xl font-serif mt-0.5 ${s.color}`}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap gap-3 mb-4 items-end">
+            <div className="flex gap-1.5">
+              {['all', 'success', 'failure'].map(f => (
+                <button key={f}
+                  onClick={() => { setAuthStatusFilter(f); fetchAuthLogs(1, f, authActionFilter, authDateFrom, authDateTo) }}
+                  className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                    authStatusFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                  }`}>
+                  {f === 'all' ? '全部' : f === 'success' ? '✅ 成功' : '❌ 失敗'}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1.5">
+              {['all', 'login', 'logout', 'register'].map(f => (
+                <button key={f}
+                  onClick={() => { setAuthActionFilter(f); fetchAuthLogs(1, authStatusFilter, f, authDateFrom, authDateTo) }}
+                  className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                    authActionFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                  }`}>
+                  {f === 'all' ? '類型' : f === 'login' ? '登入' : f === 'logout' ? '登出' : '註冊'}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 items-center">
+              <input type="date" value={authDateFrom} onChange={e => setAuthDateFrom(e.target.value)}
+                className="px-2 py-1 rounded-lg text-xs bg-navy-900 border border-gold/15 text-white/70 focus:outline-none focus:border-gold/40" />
+              <span className="text-white/30 text-xs">至</span>
+              <input type="date" value={authDateTo} onChange={e => setAuthDateTo(e.target.value)}
+                className="px-2 py-1 rounded-lg text-xs bg-navy-900 border border-gold/15 text-white/70 focus:outline-none focus:border-gold/40" />
+              <button onClick={() => fetchAuthLogs(1, authStatusFilter, authActionFilter, authDateFrom, authDateTo)}
+                className="px-3 py-1.5 rounded-lg text-xs bg-gold/20 text-gold hover:bg-gold/30 transition-colors">
+                篩選
+              </button>
+              {(authDateFrom || authDateTo) && (
+                <button onClick={() => { setAuthDateFrom(''); setAuthDateTo(''); fetchAuthLogs(1, authStatusFilter, authActionFilter, '', '') }}
+                  className="px-2 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/60 transition-colors">
+                  清除
+                </button>
+              )}
+            </div>
+          </div>
+
+          {authLoading ? (
+            <div className="text-gold animate-pulse p-8 text-center">Loading...</div>
+          ) : authLogs.length === 0 ? (
+            <div className="glass-card rounded-xl p-12 text-center text-white/40">暫無登入日誌</div>
+          ) : (
+            <div className="space-y-2">
+              {authLogs.map(log => (
+                <div key={log.id} className="glass-card rounded-xl p-3 border border-gold/10 flex items-center gap-3 text-xs">
+                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${log.status === 'success' ? 'bg-green-400' : 'bg-red-400'}`} />
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                    log.action === 'login' ? 'bg-blue-400/15 text-blue-400' :
+                    log.action === 'logout' ? 'bg-white/10 text-white/50' :
+                    'bg-purple-400/15 text-purple-400'
+                  }`}>
+                    {log.action === 'login' ? '登入' : log.action === 'logout' ? '登出' : '註冊'}
+                  </span>
+                  <span className="text-white/70 flex-1 truncate">{log.email}</span>
+                  {log.reason && (
+                    <span className="px-2 py-0.5 bg-red-400/10 text-red-400/70 rounded-full text-[10px]">
+                      {log.reason === 'invalid_password' ? '密碼錯誤' :
+                       log.reason === 'user_not_found' ? '用戶不存在' :
+                       log.reason === 'email_not_verified' ? '未驗證' :
+                       log.reason === 'email_exists' ? '郵箱已存在' : log.reason}
+                    </span>
+                  )}
+                  {log.ip && <span className="text-white/25 font-mono">{log.ip}</span>}
+                  <span className="text-white/25 flex-shrink-0">{new Date(log.createdAt).toLocaleString('zh-TW')}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <Pagination page={authPage} pages={authPages} onChange={p => fetchAuthLogs(p, authStatusFilter, authActionFilter, authDateFrom, authDateTo)} />
         </>
       )}
 

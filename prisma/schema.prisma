@@ -30,6 +30,8 @@ model User {
   bonusModel1  Int         @default(0)
   bonusModel2  Int         @default(0)
   bonusChat    Int         @default(0)
+  consentAt    DateTime?
+  consentVersion String?   // version of privacy/terms the user agreed to
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   readings      Reading[]
@@ -157,6 +159,45 @@ model SiteFeedback {
 
   @@index([createdAt])
   @@index([userId])
+}
+
+model Compensation {
+  id          String   @id @default(cuid())
+  userId      String?
+  email       String   // target email (may not have account yet)
+  reason      String   @db.Text
+  sourceType  String   @default("manual") // "error_log" | "llm_error" | "manual"
+  sourceIds   String?  @db.Text // comma-separated error/log IDs
+  bonusModel1 Int      @default(0)
+  bonusModel2 Int      @default(0)
+  bonusChat   Int      @default(0)
+  token       String   @unique
+  status      String   @default("pending") // "pending" | "sent" | "claimed" | "expired"
+  createdAt   DateTime @default(now())
+  sentAt      DateTime?
+  claimedAt   DateTime?
+  expiresAt   DateTime?
+
+  @@index([email])
+  @@index([status])
+  @@index([token])
+}
+
+model AuthLog {
+  id        String   @id @default(cuid())
+  action    String   // "login" | "logout" | "register"
+  status    String   // "success" | "failure"
+  email     String
+  userId    String?
+  reason    String?  // failure reason: "invalid_password", "user_not_found", "email_not_verified", "email_exists", etc.
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([email])
+  @@index([action])
+  @@index([status])
 }
 
 model FrontendError {

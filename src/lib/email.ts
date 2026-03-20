@@ -124,3 +124,70 @@ export async function sendPasswordResetEmail(email: string, token: string, lang:
     throw new Error(`Email send failed: ${error.message}`)
   }
 }
+
+export async function sendCompensationEmail(
+  email: string,
+  token: string,
+  compensation: { bonusModel1: number; bonusModel2: number; bonusChat: number; reason: string },
+  lang: string = 'zh-TW',
+  origin?: string
+) {
+  const baseUrl = origin || BASE_URL
+  const claimUrl = `${baseUrl}/claim/${token}`
+  const isZh = lang !== 'en'
+
+  const items: string[] = []
+  if (compensation.bonusModel1 > 0) items.push(`${isZh ? '標準模型' : 'Standard Model'}: +${compensation.bonusModel1}`)
+  if (compensation.bonusModel2 > 0) items.push(`${isZh ? '高級模型' : 'Premium Model'}: +${compensation.bonusModel2}`)
+  if (compensation.bonusChat > 0) items.push(`${isZh ? '聊天額度' : 'Chat Credits'}: +${compensation.bonusChat}`)
+  const itemsHtml = items.map(i => `<div style="padding:8px 16px;background:rgba(212,168,83,0.08);border-left:3px solid #d4a853;border-radius:0 8px 8px 0;color:rgba(255,255,255,0.85);font-size:14px;margin-bottom:6px;">${i}</div>`).join('')
+
+  const subject = isZh ? '玄機 - 您有一份補償待領取' : 'Xuanji - You Have a Compensation to Claim'
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#0a0f1e;font-family:'Georgia',serif;">
+  <div style="max-width:480px;margin:40px auto;background:#111827;border:1px solid rgba(212,168,83,0.3);border-radius:16px;overflow:hidden;">
+    <div style="text-align:center;padding:32px 24px 16px;border-bottom:1px solid rgba(212,168,83,0.15);">
+      <div style="font-size:40px;margin-bottom:8px;">☯</div>
+      <h1 style="color:#d4a853;font-size:24px;margin:0;font-weight:normal;">玄機</h1>
+      <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:4px 0 0;">Ancient Wisdom, Modern Heritage</p>
+    </div>
+    <div style="padding:32px 24px;text-align:center;">
+      <h2 style="color:rgba(255,255,255,0.9);font-size:18px;margin:0 0 8px;">
+        ${isZh ? '🎁 補償通知' : '🎁 Compensation Notice'}
+      </h2>
+      <p style="color:rgba(255,255,255,0.5);font-size:14px;line-height:1.6;margin:0 0 20px;">
+        ${isZh ? '由於近期使用中遇到的問題，我們為您準備了額度補償：' : 'Due to issues you experienced, we have prepared compensation credits for you:'}
+      </p>
+      
+      <div style="text-align:left;margin:0 0 20px;">
+        ${itemsHtml}
+      </div>
+
+      ${compensation.reason ? `<p style="color:rgba(255,255,255,0.35);font-size:12px;margin:0 0 20px;font-style:italic;">${isZh ? '原因：' : 'Reason: '}${compensation.reason}</p>` : ''}
+      
+      <a href="${claimUrl}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#d4a853,#b8912e);color:#0a0f1e;text-decoration:none;border-radius:8px;font-weight:bold;font-size:15px;letter-spacing:0.5px;">
+        ${isZh ? '🎁 領取補償' : '🎁 Claim Compensation'}
+      </a>
+      
+      <p style="color:rgba(255,255,255,0.3);font-size:12px;margin:24px 0 0;line-height:1.5;">
+        ${isZh ? '此連結 7 天內有效，每份補償僅可領取一次。' : 'This link expires in 7 days. Each compensation can only be claimed once.'}<br>
+        ${isZh ? '如有疑問，請聯繫管理員。' : 'Contact admin if you have questions.'}
+      </p>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid rgba(212,168,83,0.1);text-align:center;">
+      <p style="color:rgba(255,255,255,0.2);font-size:11px;margin:0;">玄機 · Xuanji — 古法智慧，現代傳承</p>
+    </div>
+  </div>
+</body>
+</html>`
+
+  const { error } = await resend.emails.send({ from: FROM_EMAIL, to: email, subject, html })
+  if (error) {
+    console.error('Failed to send compensation email:', error)
+    throw new Error(`Email send failed: ${error.message}`)
+  }
+}

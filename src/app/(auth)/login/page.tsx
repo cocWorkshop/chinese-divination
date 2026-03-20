@@ -27,33 +27,39 @@ function LoginInner() {
     setError('')
     setLoading(true)
 
-    const res = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    })
+    try {
+      // Pre-validate via our API (logs auth events with IP/UA)
+      const check = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const checkData = await check.json()
 
-    setLoading(false)
-    if (res?.error) {
-      if (res.error.includes('EMAIL_NOT_VERIFIED') || res.error === 'CredentialsSignin') {
-        // Check if it's specifically email not verified
-        // NextAuth wraps errors, so we need to check against our known error
-        const checkRes = await fetch('/api/resend-verification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, check: true }),
-        })
-        const checkData = await checkRes.json()
+      if (!check.ok) {
         if (checkData.unverified) {
           setError(lang === 'zh-TW' ? '郵箱尚未驗證，請查收驗證郵件' : 'Email not verified. Please check your inbox.')
           setShowResend(true)
-          return
+        } else {
+          setError(lang === 'zh-TW' ? '郵箱或密碼錯誤' : 'Invalid email or password')
+          setShowResend(false)
         }
+        setLoading(false)
+        return
       }
-      setError(lang === 'zh-TW' ? '郵箱或密碼錯誤' : 'Invalid email or password')
-      setShowResend(false)
-    } else {
-      router.push(refCode ? `/share/${refCode}` : '/divination')
+
+      // Credentials validated — establish session via NextAuth
+      const res = await signIn('credentials', { email, password, redirect: false })
+      setLoading(false)
+
+      if (res?.error) {
+        setError(lang === 'zh-TW' ? '登入失敗，請重試' : 'Login failed, please try again')
+      } else {
+        router.push(refCode ? `/share/${refCode}` : '/divination')
+      }
+    } catch {
+      setLoading(false)
+      setError(lang === 'zh-TW' ? '網路錯誤，請重試' : 'Network error, please try again')
     }
   }
 

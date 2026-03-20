@@ -6,6 +6,8 @@ import { LanguageProvider } from '@/components/LanguageContext'
 import Navbar from '@/components/Navbar'
 import ChatWidget from '@/components/ChatWidget'
 import ThemeProvider from '@/components/ThemeProvider'
+import ConsentPopup from '@/components/ConsentPopup'
+import CookieBanner from '@/components/CookieBanner'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -41,6 +43,15 @@ export default function RootLayout({
               {children}
             </main>
             <ChatWidget />
+            <ConsentPopup />
+            <CookieBanner />
+            <footer className="py-6 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+              <a href="/privacy" className="hover:underline" style={{ color: 'var(--text-muted)' }}>隱私政策</a>
+              <span className="mx-2">·</span>
+              <a href="/terms" className="hover:underline" style={{ color: 'var(--text-muted)' }}>用戶協議</a>
+              <span className="mx-2">·</span>
+              <span>© {new Date().getFullYear()} 玄機</span>
+            </footer>
             <Toaster
               position="top-right"
               toastOptions={{

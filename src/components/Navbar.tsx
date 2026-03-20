@@ -105,7 +105,7 @@ export default function Navbar() {
                       {lang === 'zh-TW' ? '個人資料' : 'Profile'}
                     </Link>
                     <button
-                      onClick={() => { signOut({ redirect: false }).then(() => window.location.href = '/'); setUserMenuOpen(false) }}
+                      onClick={() => { fetch('/api/auth/logout', { method: 'POST' }).finally(() => signOut({ redirect: false }).then(() => window.location.href = '/')); setUserMenuOpen(false) }}
                       className="w-full text-left px-4 py-2 hover:opacity-80 transition-colors"
                       style={{ color: 'var(--text-secondary)' }}
                     >
@@ -182,7 +182,7 @@ export default function Navbar() {
             {lang === 'zh-TW' ? 'Switch to English' : '切換到繁體中文'}
           </button>
           {session ? (
-            <button onClick={() => signOut({ redirect: false }).then(() => window.location.href = '/')} className="text-left text-white/80 hover:text-gold">
+            <button onClick={() => fetch('/api/auth/logout', { method: 'POST' }).finally(() => signOut({ redirect: false }).then(() => window.location.href = '/'))} className="text-left text-white/80 hover:text-gold">
               {lang === 'zh-TW' ? '登出' : 'Sign Out'}
             </button>
           ) : (

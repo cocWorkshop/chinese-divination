@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
@@ -94,6 +94,7 @@ export default function DivinationFormPage() {
   const [saveProfile, setSaveProfile] = useState(true)
   const [saveHistory, setSaveHistory] = useState(true)
   const [profileLoaded, setProfileLoaded] = useState(false)
+  const selfProfileRef = useRef<{ birthDate: string; birthTime: string; birthPlace: string; gender: string } | null>(null)
   const [modelTier, setModelTier] = useState('model2')
   const [credits, setCredits] = useState<Record<string, {remaining: number, dailyLimit: number}> | null>(null)
   const [llmTimeoutMs, setLlmTimeoutMs] = useState(240000)
@@ -154,6 +155,12 @@ export default function DivinationFormPage() {
           birthPlace: data.birthPlace || f.birthPlace,
           gender:     data.gender     || f.gender,
         }))
+        selfProfileRef.current = {
+          birthDate: data.birthDate || '',
+          birthTime: data.birthTime || '',
+          birthPlace: data.birthPlace || '',
+          gender: data.gender || '',
+        }
         setProfileLoaded(true)
         if (data.birthDate || data.birthTime) {
           toast.success(T(lang, '已從檔案自動填充生辰資訊', 'Profile info auto-filled'), { icon: '📋' })
@@ -356,7 +363,13 @@ export default function DivinationFormPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => { setTargetType('self'); setSelectedMemberId('') }}
+                  onClick={() => {
+                    setTargetType('self')
+                    setSelectedMemberId('')
+                    if (selfProfileRef.current) {
+                      setForm(f => ({ ...f, ...selfProfileRef.current! }))
+                    }
+                  }}
                   className={`p-3 rounded-lg border text-center transition-all ${
                     targetType === 'self'
                       ? 'border-gold bg-gold/10 ring-1 ring-gold/30'

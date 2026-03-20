@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useEffect, useState, useCallback } from 'react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
@@ -69,6 +69,35 @@ export default function ProfilePage() {
   const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '' })
   const [credits, setCredits] = useState<Record<string, { remaining: number; dailyLimit: number }> | null>(null)
   const [userBonus, setUserBonus] = useState<{ model1: number; model2: number; chat: number } | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deleteLoading, setDeleteLoading] = useState(false)
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (!deletePassword) return
+    setDeleteLoading(true)
+    try {
+      const res = await fetch('/api/profile/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deletePassword }),
+      })
+      if (res.ok) {
+        toast.success(T(lang, '帳號已刪除', 'Account deleted'))
+        await signOut({ redirect: false })
+        window.location.href = '/'
+      } else {
+        const data = await res.json()
+        toast.error(data.error === 'Invalid password'
+          ? T(lang, '密碼錯誤', 'Invalid password')
+          : T(lang, '刪除失敗', 'Delete failed'))
+      }
+    } catch {
+      toast.error(T(lang, '操作失敗', 'Operation failed'))
+    } finally {
+      setDeleteLoading(false)
+    }
+  }, [deletePassword, lang])
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -461,6 +490,74 @@ export default function ProfilePage() {
                   <p style={{ color: 'var(--text-secondary)' }}>{fb.feedback}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Data Management (GDPR/PIPEDA) */}
+      <div className="glass-card rounded-2xl p-6 border" style={{ borderColor: 'var(--card-border)' }}>
+        <h2 className="text-lg font-serif mb-4" style={{ color: 'var(--gold)' }}>
+          {T(lang, '數據管理', 'Data Management')}
+        </h2>
+        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+          {T(lang,
+            '根據 GDPR 和 PIPEDA，您有權導出或刪除您的所有個人數據。',
+            'Under GDPR and PIPEDA, you have the right to export or delete all your personal data.'
+          )}
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => {
+              window.open('/api/profile/export', '_blank')
+              toast.success(T(lang, '數據導出已開始', 'Data export started'))
+            }}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            style={{ border: '1px solid var(--card-border)', color: 'var(--text-secondary)' }}
+          >
+            📥 {T(lang, '導出我的數據', 'Export My Data')}
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
+          >
+            🗑️ {T(lang, '刪除帳號', 'Delete Account')}
+          </button>
+        </div>
+
+        {showDeleteConfirm && (
+          <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <p className="text-sm mb-3" style={{ color: '#fca5a5' }}>
+              ⚠️ {T(lang,
+                '此操作不可撤銷！您的帳號和所有數據（占卜記錄、個人資料、回饋等）將被永久刪除。請輸入密碼確認。',
+                'This action is irreversible! Your account and all data (readings, profile, feedback, etc.) will be permanently deleted. Enter your password to confirm.'
+              )}
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={e => setDeletePassword(e.target.value)}
+                placeholder={T(lang, '請輸入密碼', 'Enter password')}
+                className="flex-1 px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
+                style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)' }}
+              />
+              <button
+                onClick={handleDeleteAccount}
+                disabled={!deletePassword || deleteLoading}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors"
+                style={{ backgroundColor: '#dc2626' }}
+              >
+                {deleteLoading ? '...' : T(lang, '確認刪除', 'Confirm Delete')}
+              </button>
+              <button
+                onClick={() => { setShowDeleteConfirm(false); setDeletePassword('') }}
+                className="px-3 py-2 rounded-lg text-sm transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                {T(lang, '取消', 'Cancel')}
+              </button>
             </div>
           </div>
         )}
