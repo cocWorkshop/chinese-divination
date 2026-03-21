@@ -250,6 +250,7 @@ export default function DivinationFormPage() {
     setLoading(true)
     setResult(null)
     setShareUrl(null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     const requestStartTime = new Date().toISOString()
     try {
       const hasProfileData = ['bazi', 'ziwei'].includes(type)
