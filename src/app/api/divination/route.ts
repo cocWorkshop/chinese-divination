@@ -241,13 +241,14 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
       }
     }
 
-    if (type === 'bazi' && solarBirthDate && inputData.birthTime) {
+    if (type === 'bazi' && solarBirthDate && (inputData.birthTime || inputData.exactTime)) {
       try {
         baziChart = calculateBazi(
           solarBirthDate,
-          inputData.birthTime,
+          inputData.timeMode === 'precise' ? '' : (inputData.birthTime || ''),
           inputData.birthPlace || '',
-          inputData.gender || 'male'
+          inputData.gender || 'male',
+          inputData.timeMode === 'precise' ? inputData.exactTime : undefined
         )
         userMessage = `请为我进行八字命理精批。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
@@ -267,7 +268,7 @@ ${JSON.stringify({
 
 ## 用户输入
 - 出生日期：${solarBirthDate}（公历）${inputData.lunarToggle === 'lunar' ? `（用户输入农历 ${inputData.birthDate}）` : ''}
-- 出生时辰：${inputData.birthTime}
+- 出生时辰：${inputData.timeMode === 'precise' ? inputData.exactTime : inputData.birthTime}${inputData.timeMode === 'precise' ? '（精确时间，已真太阳时校正）' : '（模糊时辰）'}
 - 出生地：${inputData.birthPlace || '未提供'}
 - 性别：${inputData.gender}
 ${inputData.birthEnvironment ? `- 出生地环境：${inputData.birthEnvironment}` : ''}
@@ -666,7 +667,9 @@ ${question ? `特别关注：${question}` : ''}`
       }
       structuredResult.fiveElements = baziChart.fiveElements
       structuredResult.shenSha = baziChart.shenSha
-      structuredResult.trueSolarTime = baziChart.trueSolarTime
+      if (baziChart.trueSolarTime) {
+        structuredResult.trueSolarTime = baziChart.trueSolarTime
+      }
       structuredResult.daYun = baziChart.daYun
       structuredResult.xiaoYun = baziChart.xiaoYun
       structuredResult.qiYun = baziChart.qiYun

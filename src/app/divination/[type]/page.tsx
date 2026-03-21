@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import LoadingOracle from '@/components/LoadingOracle'
 import ResultRenderer from '@/components/results/ResultRenderer'
@@ -85,6 +85,8 @@ export default function DivinationFormPage() {
     subType: 'meihua',
     lunarToggle: 'solar',
     birthEnvironment: '',
+    timeMode: 'fuzzy',
+    exactTime: '',
   })
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string | null>(null)
@@ -338,6 +340,10 @@ export default function DivinationFormPage() {
       toast.error(T(lang, '暫不支持南半球出生地', 'Southern hemisphere not yet supported'))
       return
     }
+    if (type === 'bazi' && form.timeMode === 'precise' && !form.birthPlace) {
+      toast.error(T(lang, '精確模式需要填寫出生地（用於真太陽時校正）', 'Precise mode requires birthplace for true solar time correction'))
+      return
+    }
     // For bazi: check if existing readings exist before proceeding
     if (type === 'bazi') {
       try {
@@ -541,26 +547,86 @@ export default function DivinationFormPage() {
 
           {/* BaZi */}
           {type === 'bazi' && <>
+            {/* Calendar Toggle */}
             <div>
               <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
-              <select className={inputCls} value={form.lunarToggle} onChange={e => setField('lunarToggle', e.target.value)}>
-                <option value="solar">{T(lang, '公曆（陽曆）', 'Solar Calendar')}</option>
-                <option value="lunar">{T(lang, '農曆（陰曆）', 'Lunar Calendar')}</option>
-              </select>
+              <div className="flex rounded-full border border-gold/30 overflow-hidden bg-navy-800 w-fit">
+                {([['solar', '公曆', 'Solar'], ['lunar', '農曆', 'Lunar']] as const).map(([val, zh, en]) => (
+                  <motion.button
+                    key={val}
+                    type="button"
+                    onClick={() => setField('lunarToggle', val)}
+                    className={`px-5 py-2 text-sm font-medium transition-colors relative ${
+                      form.lunarToggle === val ? 'text-navy-900' : 'text-white/60 hover:text-white/80'
+                    }`}
+                  >
+                    {form.lunarToggle === val && (
+                      <motion.div
+                        layoutId="calendarToggle"
+                        className="absolute inset-0 rounded-full"
+                        style={{ backgroundColor: '#d4a853' }}
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                      />
+                    )}
+                    <span className="relative z-10">{T(lang, zh, en)}</span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
             <div>
               <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
               <input type="date" className={inputCls} value={form.birthDate} onChange={e => setField('birthDate', e.target.value)} required />
             </div>
+
+            {/* Time Mode Toggle */}
             <div>
-              <label className={labelCls}>{T(lang, '出生時辰', 'Birth Hour')}</label>
-              <select className={inputCls} value={form.birthTime} onChange={e => setField('birthTime', e.target.value)} required>
-                <option value="">{T(lang, '請選擇', 'Select')}</option>
-                {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
-              </select>
+              <label className={labelCls}>{T(lang, '出生時間', 'Birth Time')}</label>
+              <div className="flex rounded-full border border-gold/30 overflow-hidden bg-navy-800 w-fit mb-3">
+                {([['fuzzy', '模糊模式', 'Fuzzy'], ['precise', '精確模式', 'Precise']] as const).map(([val, zh, en]) => (
+                  <motion.button
+                    key={val}
+                    type="button"
+                    onClick={() => setField('timeMode', val)}
+                    className={`px-5 py-2 text-sm font-medium transition-colors relative ${
+                      form.timeMode === val ? 'text-navy-900' : 'text-white/60 hover:text-white/80'
+                    }`}
+                  >
+                    {form.timeMode === val && (
+                      <motion.div
+                        layoutId="timeModeToggle"
+                        className="absolute inset-0 rounded-full"
+                        style={{ backgroundColor: '#d4a853' }}
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                      />
+                    )}
+                    <span className="relative z-10">{T(lang, zh, en)}</span>
+                  </motion.button>
+                ))}
+              </div>
+              <AnimatePresence mode="wait">
+                {form.timeMode === 'fuzzy' ? (
+                  <motion.div key="fuzzy" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.2 }}>
+                    <select className={inputCls} value={form.birthTime} onChange={e => setField('birthTime', e.target.value)} required>
+                      <option value="">{T(lang, '請選擇時辰', 'Select Shichen')}</option>
+                      {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
+                    </select>
+                    <p className="text-white/40 text-xs mt-1">{T(lang, '自動取時辰中間值，無真太陽時校正', 'Uses midpoint of shichen, no true solar time correction')}</p>
+                  </motion.div>
+                ) : (
+                  <motion.div key="precise" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.2 }}>
+                    <input type="time" className={inputCls} value={form.exactTime} onChange={e => setField('exactTime', e.target.value)} required />
+                    <p className="text-white/40 text-xs mt-1">{T(lang, '將根據出生地經度進行真太陽時校正', 'True solar time correction based on birthplace longitude')}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+
             <div>
-              <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
+              <label className={labelCls}>
+                {T(lang, '出生地', 'Birthplace')}
+                {form.timeMode === 'precise' && <span className="text-gold ml-1">*</span>}
+                {form.timeMode === 'fuzzy' && <span className="text-white/40 ml-1">{T(lang, '（可選）', '(optional)')}</span>}
+              </label>
               <BirthplaceInput
                 value={form.birthPlace}
                 onChange={v => setField('birthPlace', v)}
@@ -610,10 +676,28 @@ export default function DivinationFormPage() {
           {type === 'ziwei' && <>
             <div>
               <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
-              <select className={inputCls} value={form.lunarToggle} onChange={e => setField('lunarToggle', e.target.value)}>
-                <option value="solar">{T(lang, '公曆', 'Solar')}</option>
-                <option value="lunar">{T(lang, '農曆', 'Lunar')}</option>
-              </select>
+              <div className="flex rounded-full border border-gold/30 overflow-hidden bg-navy-800 w-fit">
+                {([['solar', '公曆', 'Solar'], ['lunar', '農曆', 'Lunar']] as const).map(([val, zh, en]) => (
+                  <motion.button
+                    key={val}
+                    type="button"
+                    onClick={() => setField('lunarToggle', val)}
+                    className={`px-5 py-2 text-sm font-medium transition-colors relative ${
+                      form.lunarToggle === val ? 'text-navy-900' : 'text-white/60 hover:text-white/80'
+                    }`}
+                  >
+                    {form.lunarToggle === val && (
+                      <motion.div
+                        layoutId="ziweiCalendarToggle"
+                        className="absolute inset-0 rounded-full"
+                        style={{ backgroundColor: '#d4a853' }}
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                      />
+                    )}
+                    <span className="relative z-10">{T(lang, zh, en)}</span>
+                  </motion.button>
+                ))}
+              </div>
             </div>
             <div>
               <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
