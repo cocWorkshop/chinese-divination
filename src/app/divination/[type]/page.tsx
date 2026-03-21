@@ -100,7 +100,7 @@ export default function DivinationFormPage() {
   const [saveProfile, setSaveProfile] = useState(true)
   const [saveHistory, setSaveHistory] = useState(true)
   const [profileLoaded, setProfileLoaded] = useState(false)
-  const selfProfileRef = useRef<{ birthDate: string; birthTime: string; birthPlace: string; gender: string } | null>(null)
+  const selfProfileRef = useRef<{ birthDate: string; birthTime: string; birthPlace: string; gender: string; lunarToggle: string; timeMode: string; birthEnvironment: string } | null>(null)
   const [modelTier, setModelTier] = useState('model2')
   // Bazi cache dialog
   const [showCacheDialog, setShowCacheDialog] = useState(false)
@@ -163,12 +163,18 @@ export default function DivinationFormPage() {
           birthTime:  data.birthTime  || f.birthTime,
           birthPlace: data.birthPlace || f.birthPlace,
           gender:     data.gender     || f.gender,
+          lunarToggle: data.calendarType || f.lunarToggle,
+          timeMode:   data.timeMode   || f.timeMode,
+          birthEnvironment: data.birthEnvironment || f.birthEnvironment,
         }))
         selfProfileRef.current = {
           birthDate: data.birthDate || '',
           birthTime: data.birthTime || '',
           birthPlace: data.birthPlace || '',
           gender: data.gender || '',
+          lunarToggle: data.calendarType || 'solar',
+          timeMode: data.timeMode || 'fuzzy',
+          birthEnvironment: data.birthEnvironment || '',
         }
         setProfileLoaded(true)
         if (data.birthDate || data.birthTime) {
@@ -728,14 +734,49 @@ export default function DivinationFormPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>{T(lang, '出生時辰', 'Birth Hour')}</label>
-                  <select className={inputCls} value={form.birthTime} onChange={e => setField('birthTime', e.target.value)} required>
-                    <option value="">{T(lang, '請選擇', 'Select')}</option>
-                    {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
-                  </select>
+              {/* Time Mode Toggle + Time Input */}
+              <div>
+                <label className={labelCls}>{T(lang, '出生時間', 'Birth Time')}</label>
+                <div className="flex rounded-full border border-gold/30 overflow-hidden bg-navy-800 w-fit mb-3">
+                  {([['fuzzy', '模糊（時辰）', 'Fuzzy (Shichen)'], ['precise', '精確（時分）', 'Precise (HH:MM)']] as const).map(([val, zh, en]) => (
+                    <motion.button
+                      key={val}
+                      type="button"
+                      onClick={() => setField('timeMode', val)}
+                      className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                        form.timeMode === val ? 'text-navy-900' : 'text-white/60 hover:text-white/80'
+                      }`}
+                    >
+                      {form.timeMode === val && (
+                        <motion.div
+                          layoutId="ziweiTimeModeToggle"
+                          className="absolute inset-0 rounded-full"
+                          style={{ backgroundColor: '#d4a853' }}
+                          transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                        />
+                      )}
+                      <span className="relative z-10">{T(lang, zh, en)}</span>
+                    </motion.button>
+                  ))}
                 </div>
+                <AnimatePresence mode="wait">
+                  {form.timeMode === 'fuzzy' ? (
+                    <motion.div key="fuzzy" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.2 }}>
+                      <select className={inputCls} value={form.birthTime} onChange={e => setField('birthTime', e.target.value)} required>
+                        <option value="">{T(lang, '請選擇時辰', 'Select Shichen')}</option>
+                        {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
+                      </select>
+                    </motion.div>
+                  ) : (
+                    <motion.div key="precise" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.2 }}>
+                      <input type="time" className={inputCls} value={form.exactTime} onChange={e => setField('exactTime', e.target.value)} required />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Gender + Birthplace */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
                   <select className={inputCls} value={form.gender} onChange={e => setField('gender', e.target.value)} required>
@@ -744,18 +785,17 @@ export default function DivinationFormPage() {
                     <option value="female">{T(lang, '女', 'Female')}</option>
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label className={labelCls}>{T(lang, '出生地（可選）', 'Birthplace (optional)')}</label>
-                <BirthplaceInput
-                  value={form.birthPlace}
-                  onChange={v => setField('birthPlace', v)}
-                  onLatLngChange={(lat, lng) => { setBirthLat(lat); setBirthLng(lng) }}
-                  onSouthernHemisphere={setIsSouthernHemisphere}
-                  className={inputCls}
-                  placeholder={T(lang, '搜尋城市...', 'Search city...')}
-                />
+                <div>
+                  <label className={labelCls}>{T(lang, '出生地（可選）', 'Birthplace (optional)')}</label>
+                  <BirthplaceInput
+                    value={form.birthPlace}
+                    onChange={v => setField('birthPlace', v)}
+                    onLatLngChange={(lat, lng) => { setBirthLat(lat); setBirthLng(lng) }}
+                    onSouthernHemisphere={setIsSouthernHemisphere}
+                    className={inputCls}
+                    placeholder={T(lang, '搜尋城市...', 'Search city...')}
+                  />
+                </div>
               </div>
             </div>
           </>}
