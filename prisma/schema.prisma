@@ -17,6 +17,8 @@ model User {
   birthTime    String?
   birthPlace   String?
   gender       String?
+  timeMode     String?     // "fuzzy" | "exact"
+  calendarType String?     // "solar" | "lunar"
   isAdmin      Boolean     @default(false)
   isPaid       Boolean     @default(false)
   role         String      @default("arcane") // arcane | ethereal | prestige | admin
