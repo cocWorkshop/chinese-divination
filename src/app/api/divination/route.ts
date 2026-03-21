@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 // Allow long-running LLM calls (up to 10 minutes)
 export const maxDuration = 600
 
