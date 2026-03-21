@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
@@ -72,6 +72,7 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteEmailSent, setDeleteEmailSent] = useState(false)
 
   const handleDeleteAccount = useCallback(async () => {
     if (!deletePassword) return
@@ -83,13 +84,15 @@ export default function ProfilePage() {
         body: JSON.stringify({ password: deletePassword }),
       })
       if (res.ok) {
-        toast.success(T(lang, '帳號已刪除', 'Account deleted'))
-        await signOut({ redirect: false })
-        window.location.href = '/'
+        setDeleteEmailSent(true)
+        setShowDeleteConfirm(false)
+        setDeletePassword('')
       } else {
         const data = await res.json()
         toast.error(data.error === 'Invalid password'
           ? T(lang, '密碼錯誤', 'Invalid password')
+          : data.error === 'Failed to send email'
+          ? T(lang, '郵件發送失敗，請稍後再試', 'Failed to send email, please try again later')
           : T(lang, '刪除失敗', 'Delete failed'))
       }
     } catch {
@@ -526,12 +529,23 @@ export default function ProfilePage() {
           </button>
         </div>
 
+        {deleteEmailSent && (
+          <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'rgba(45,212,137,0.05)', border: '1px solid rgba(45,212,137,0.2)' }}>
+            <p className="text-sm" style={{ color: '#2dd489' }}>
+              ✉️ {T(lang,
+                '確認郵件已發送至您的信箱。請點擊郵件中的連結完成帳號刪除。連結 24 小時內有效。',
+                'A confirmation email has been sent to your inbox. Please click the link in the email to complete the account deletion. The link is valid for 24 hours.'
+              )}
+            </p>
+          </div>
+        )}
+
         {showDeleteConfirm && (
           <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <p className="text-sm mb-3" style={{ color: '#fca5a5' }}>
               ⚠️ {T(lang,
-                '此操作不可撤銷！您的帳號和所有數據（占卜記錄、個人資料、回饋等）將被永久刪除。請輸入密碼確認。',
-                'This action is irreversible! Your account and all data (readings, profile, feedback, etc.) will be permanently deleted. Enter your password to confirm.'
+                '我們將發送一封確認郵件到您的信箱。請點擊郵件中的連結完成帳號刪除。請輸入密碼以繼續。',
+                'We will send a confirmation email to your inbox. Click the link in the email to complete account deletion. Enter your password to continue.'
               )}
             </p>
             <div className="flex gap-2">
@@ -549,7 +563,7 @@ export default function ProfilePage() {
                 className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors"
                 style={{ backgroundColor: '#dc2626' }}
               >
-                {deleteLoading ? '...' : T(lang, '確認刪除', 'Confirm Delete')}
+                {deleteLoading ? '...' : T(lang, '發送確認信', 'Send Confirmation')}
               </button>
               <button
                 onClick={() => { setShowDeleteConfirm(false); setDeletePassword('') }}

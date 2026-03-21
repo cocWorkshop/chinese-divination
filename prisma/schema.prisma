@@ -25,6 +25,8 @@ model User {
   tokenExpiry       DateTime?
   resetToken        String?   @unique
   resetTokenExpiry  DateTime?
+  deleteToken       String?   @unique
+  deleteTokenExpiry DateTime?
   chatSummary  String?     @db.Text
   hourlyQuota  Int         @default(10)
   bonusModel1  Int         @default(0)
