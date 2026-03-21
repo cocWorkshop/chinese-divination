@@ -48,7 +48,7 @@ function RegisterInner() {
     const res = await fetch('/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: form.name, email: form.email, password: form.password, ...(referralCode && { referralCode }) }),
+      body: JSON.stringify({ name: form.name, email: form.email, password: form.password, language: lang === 'en' ? 'en' : 'zh-TW', ...(referralCode && { referralCode }) }),
     })
     setLoading(false)
     if (res.ok) {
