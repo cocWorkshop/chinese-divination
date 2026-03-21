@@ -584,7 +584,7 @@ export default function ProfilePage() {
                 const d = m.data as { remaining: number; used: number; dailyLimit: number; bonus: number }
                 if (!d) return null
                 const isUnlimited = d.dailyLimit === -1
-                const pct = isUnlimited ? 100 : d.dailyLimit > 0 ? Math.round((d.remaining / d.dailyLimit) * 100) : 0
+                const pct = isUnlimited ? 100 : d.dailyLimit > 0 ? Math.min(100, Math.round((d.remaining / d.dailyLimit) * 100)) : 0
                 return (
                   <div key={m.key} className="rounded-xl p-4 border border-gold/10 bg-navy-900/50">
                     <div className="flex justify-between items-center mb-2">
