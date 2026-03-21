@@ -265,7 +265,7 @@ export default function DivinationFormPage() {
           inputData: formData,
           language: lang,
           question: form.question,
-          saveProfile: hasProfileData ? saveProfile : false,
+          saveProfile: saveProfile,
           saveHistory,
           modelTier,
           targetType,
