@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import YinYangIcon from '@/components/YinYangIcon'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
@@ -129,7 +130,7 @@ export default function VerifyEmailPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gold text-3xl animate-pulse">☯</div>
+        <div className="animate-pulse"><YinYangIcon size={30} /></div>
       </div>
     }>
       <VerifyEmailContent />

@@ -10,6 +10,7 @@ import LoadingOracle from '@/components/LoadingOracle'
 import ResultRenderer from '@/components/results/ResultRenderer'
 import ReadingFeedback from '@/components/ReadingFeedback'
 import BirthplaceInput from '@/components/BirthplaceInput'
+import YinYangIcon from '@/components/YinYangIcon'
 import { reportError } from '@/lib/errorReporter'
 
 const shichen = [
@@ -343,7 +344,7 @@ export default function DivinationFormPage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-10"
       >
-        <div className="text-5xl mb-3">{info.symbol}</div>
+        <div className="text-5xl mb-3">{type === 'iching' ? <YinYangIcon size={48} /> : info.symbol}</div>
         <h1 className="text-3xl font-serif text-gold">{lang === 'en' ? info.enName : info.twName}</h1>
       </motion.div>
 

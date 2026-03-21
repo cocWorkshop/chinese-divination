@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import YinYangIcon from '@/components/YinYangIcon'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
@@ -90,7 +91,7 @@ export default function DashboardPage() {
 
       {readings.length === 0 ? (
         <div className="glass-card rounded-2xl p-12 text-center text-white/50">
-          <div className="text-5xl mb-4">☯</div>
+          <div className="mb-4"><YinYangIcon size={48} /></div>
           <p>{lang === 'zh-TW' ? '還沒有占卜記錄' : 'No readings yet'}</p>
         </div>
       ) : (

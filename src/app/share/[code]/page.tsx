@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import YinYangIcon from '@/components/YinYangIcon'
 import toast from 'react-hot-toast'
 import QRCode from 'qrcode'
 import Link from 'next/link'
@@ -71,7 +72,7 @@ export default function SharePage() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gold text-3xl animate-pulse">☯</div>
+        <div className="animate-pulse"><YinYangIcon size={30} /></div>
       </div>
     )
   }
@@ -86,7 +87,7 @@ export default function SharePage() {
             <div className="absolute inset-0 rounded-2xl border-2 border-gold/30 pointer-events-none" />
             <div className="absolute top-2 left-2 right-2 bottom-2 rounded-xl border border-gold/10 pointer-events-none" />
             
-            <div className="text-5xl mb-4">☯</div>
+            <div className="mb-4"><YinYangIcon size={48} /></div>
             <h1 className="text-3xl font-serif text-gold mb-2">玄機</h1>
             <p className="text-white/60 text-sm mb-1">古法智慧，現代傳承</p>
             <p className="text-white/40 text-xs">Ancient Wisdom, Modern Heritage</p>

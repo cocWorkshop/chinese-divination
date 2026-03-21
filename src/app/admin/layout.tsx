@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import YinYangIcon from '@/components/YinYangIcon'
 import Link from 'next/link'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -23,7 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (status === 'loading' || isAdmin === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-navy-950">
-        <div className="text-gold text-2xl animate-pulse">☯</div>
+        <div className="animate-pulse"><YinYangIcon size={24} /></div>
       </div>
     )
   }

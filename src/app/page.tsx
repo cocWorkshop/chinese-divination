@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
+import YinYangIcon from '@/components/YinYangIcon'
 import StarField from '@/components/StarField'
 
 const services = [
@@ -99,7 +100,7 @@ export default function HomePage() {
             >
               <Link href={`/divination/${svc.id}`}>
                 <div className="glass-card rounded-2xl p-6 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10 transition-all group cursor-pointer">
-                  <div className="text-5xl mb-4">{svc.symbol}</div>
+                  <div className="text-5xl mb-4">{svc.id === 'iching' ? <YinYangIcon size={48} /> : svc.symbol}</div>
                   <h3 className="text-xl font-serif text-gold mb-1 group-hover:text-gold-light">
                     {lang === 'en' ? svc.enName : svc.twName}
                   </h3>
@@ -121,7 +122,7 @@ export default function HomePage() {
           viewport={{ once: true }}
           className="glass-card rounded-3xl p-10"
         >
-          <div className="text-5xl mb-6">☯</div>
+          <div className="mb-6"><YinYangIcon size={48} /></div>
           <h2 className="text-3xl font-serif text-gold mb-4">
             {lang === 'zh-TW' ? '關於玄機' : 'About Xuanji'}
           </h2>

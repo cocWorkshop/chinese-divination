@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import YinYangIcon from '@/components/YinYangIcon'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import ResultRenderer from '@/components/results/ResultRenderer'
@@ -93,7 +94,7 @@ export default function PublicReadingPage() {
         {/* Header */}
         <div className="glass-card rounded-2xl p-6 mb-6 text-center relative overflow-hidden">
           <div className="absolute inset-0 rounded-2xl border border-gold/20 pointer-events-none" />
-          <div className="text-3xl mb-2">☯</div>
+          <div className="mb-2"><YinYangIcon size={30} /></div>
           <h1 className="text-2xl font-serif text-gold mb-1">
             {typeLabel ? (lang === 'en' ? typeLabel.en : typeLabel.zh) : data.type}
           </h1>

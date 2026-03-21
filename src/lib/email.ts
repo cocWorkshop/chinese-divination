@@ -30,7 +30,7 @@ export async function sendVerificationEmail(email: string, token: string, lang: 
   <div style="max-width:480px;margin:40px auto;background:#111827;border:1px solid rgba(212,168,83,0.3);border-radius:16px;overflow:hidden;">
     <!-- Header -->
     <div style="text-align:center;padding:32px 24px 16px;border-bottom:1px solid rgba(212,168,83,0.15);">
-      <div style="font-size:40px;margin-bottom:8px;">☯</div>
+      <img src="https://chinese-divination.com/favicon.svg" alt="☯" width="40" height="40" style="margin-bottom:8px;" />
       <h1 style="color:#d4a853;font-size:24px;margin:0;font-weight:normal;">玄機</h1>
       <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:4px 0 0;">Ancient Wisdom, Modern Heritage</p>
     </div>
@@ -92,7 +92,7 @@ export async function sendPasswordResetEmail(email: string, token: string, lang:
 <body style="margin:0;padding:0;background:#0a0f1e;font-family:'Georgia',serif;">
   <div style="max-width:480px;margin:40px auto;background:#111827;border:1px solid rgba(212,168,83,0.3);border-radius:16px;overflow:hidden;">
     <div style="text-align:center;padding:32px 24px 16px;border-bottom:1px solid rgba(212,168,83,0.15);">
-      <div style="font-size:40px;margin-bottom:8px;">☯</div>
+      <img src="https://chinese-divination.com/favicon.svg" alt="☯" width="40" height="40" style="margin-bottom:8px;" />
       <h1 style="color:#d4a853;font-size:24px;margin:0;font-weight:normal;">玄機</h1>
       <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:4px 0 0;">Ancient Wisdom, Modern Heritage</p>
     </div>
@@ -151,7 +151,7 @@ export async function sendCompensationEmail(
 <body style="margin:0;padding:0;background:#0a0f1e;font-family:'Georgia',serif;">
   <div style="max-width:480px;margin:40px auto;background:#111827;border:1px solid rgba(212,168,83,0.3);border-radius:16px;overflow:hidden;">
     <div style="text-align:center;padding:32px 24px 16px;border-bottom:1px solid rgba(212,168,83,0.15);">
-      <div style="font-size:40px;margin-bottom:8px;">☯</div>
+      <img src="https://chinese-divination.com/favicon.svg" alt="☯" width="40" height="40" style="margin-bottom:8px;" />
       <h1 style="color:#d4a853;font-size:24px;margin:0;font-weight:normal;">玄機</h1>
       <p style="color:rgba(255,255,255,0.4);font-size:12px;margin:4px 0 0;">Ancient Wisdom, Modern Heritage</p>
     </div>

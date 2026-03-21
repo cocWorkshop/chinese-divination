@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
+import YinYangIcon from '@/components/YinYangIcon'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -15,7 +16,7 @@ function validatePassword(pwd: string, lang: string): string | null {
 }
 
 export default function ResetPasswordPage() {
-  return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="text-gold text-3xl animate-pulse">☯</div></div>}><ResetInner /></Suspense>
+  return <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-pulse"><YinYangIcon size={30} /></div></div>}><ResetInner /></Suspense>
 }
 
 function ResetInner() {

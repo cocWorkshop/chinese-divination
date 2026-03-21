@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import YinYangIcon from '@/components/YinYangIcon'
 import { useParams } from 'next/navigation'
 
 type Status = 'loading' | 'ready' | 'claiming' | 'claimed' | 'expired' | 'invalid' | 'not_sent' | 'no_account' | 'error'
@@ -84,7 +85,7 @@ export default function ClaimPage() {
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">☯</div>
+          <div className="mb-3"><YinYangIcon size={48} /></div>
           <h1 className="text-[#d4a853] font-serif text-2xl">玄機</h1>
           <p className="text-[rgba(255,255,255,0.3)] text-xs mt-1">Ancient Wisdom, Modern Heritage</p>
         </div>
@@ -94,7 +95,7 @@ export default function ClaimPage() {
           {/* Loading */}
           {status === 'loading' && (
             <div className="p-12 text-center">
-              <div className="text-[#d4a853] text-3xl animate-pulse mb-3">☯</div>
+              <div className="animate-pulse mb-3"><YinYangIcon size={30} /></div>
               <p className="text-[rgba(255,255,255,0.5)] text-sm">正在載入...</p>
             </div>
           )}
@@ -137,7 +138,7 @@ export default function ClaimPage() {
           {/* Claiming */}
           {status === 'claiming' && (
             <div className="p-12 text-center">
-              <div className="text-[#d4a853] text-3xl animate-spin mb-3">☯</div>
+              <div className="animate-spin mb-3"><YinYangIcon size={30} /></div>
               <p className="text-[rgba(255,255,255,0.5)] text-sm">正在領取...</p>
             </div>
           )}

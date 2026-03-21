@@ -1,4 +1,5 @@
 'use client'
+import YinYangIcon from '@/components/YinYangIcon'
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -71,7 +72,7 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
           animate={{ rotate: 360 }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
         >
-          <span className="text-5xl text-gold drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]">☯</span>
+          <YinYangIcon size={48} className="drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]" />
         </motion.div>
         <p className="text-gold/60 text-sm font-serif">
           {lang === 'en' ? 'Loading...' : '載入中...'}
@@ -113,7 +114,7 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
           animate={{ rotate: 360 }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
         >
-          <span className="text-5xl text-gold drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]">☯</span>
+          <YinYangIcon size={48} className="drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]" />
         </motion.div>
 
         {/* Pulsing glow */}

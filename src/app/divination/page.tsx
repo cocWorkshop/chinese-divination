@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { DivinationIcon } from '@/components/DivinationIcons'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -88,7 +89,7 @@ export default function DivinationPage() {
                   {tiers[svc.id] === 'prestige' ? `✦ ${T(lang, '大師', 'Prestige')}` : `✧ ${T(lang, '洞察', 'Ethereal')}`}
                 </span>
               )}
-              <div className="text-5xl mb-4">{svc.symbol}</div>
+              <div className="mb-4"><DivinationIcon type={svc.id} size={48} /></div>
               <h2 className="text-xl font-serif mb-2 transition-colors" style={{ color: 'var(--gold)' }}>
                 {lang === 'en' ? svc.enName : svc.twName}
               </h2>

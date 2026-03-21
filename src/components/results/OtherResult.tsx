@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import YinYangIcon from '@/components/YinYangIcon'
 
 interface OtherData {
   subType: string
@@ -71,7 +72,7 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
               onClick={() => setOpenSection(openSection === s.key ? null : s.key)}
               className="w-full px-5 py-4 flex items-center justify-between text-left"
             >
-              <span className="text-gold font-serif">{s.icon} {s.label}</span>
+              <span className="text-gold font-serif">{s.icon === '☯' ? <><YinYangIcon size={16} /> </> : s.icon} {s.label}</span>
               <span className="text-white/40">{openSection === s.key ? '▲' : '▼'}</span>
             </button>
             <AnimatePresence>

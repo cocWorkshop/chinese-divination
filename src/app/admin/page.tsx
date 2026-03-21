@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import YinYangIcon from '@/components/YinYangIcon'
 
 interface Stats {
   totalUsers: number
@@ -76,7 +77,7 @@ export default function AdminDashboard() {
             transition={{ delay: i * 0.08 }}
             className="glass-card rounded-xl p-4"
           >
-            <div className="text-2xl mb-2">{card.icon}</div>
+            <div className="text-2xl mb-2">{card.icon === '☯' ? <YinYangIcon size={28} /> : card.icon}</div>
             <div className={`text-3xl font-bold ${card.color} mb-1`}>{card.value}</div>
             <div className="text-white/50 text-xs">{card.label}</div>
           </motion.div>

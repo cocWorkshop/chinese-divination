@@ -1,4 +1,5 @@
 'use client'
+import YinYangIcon from '@/components/YinYangIcon'
 
 import { motion } from 'framer-motion'
 
@@ -113,7 +114,7 @@ export default function IChingResult({ data }: { data: Record<string, unknown> }
           <ul className="space-y-2">
             {d.keyPoints.map((pt, i) => (
               <li key={i} className="flex gap-2 text-white/70 text-sm">
-                <span className="text-gold">☯</span>
+                <YinYangIcon size={16} />
                 <span>{pt}</span>
               </li>
             ))}

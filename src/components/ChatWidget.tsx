@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { useLang } from './LanguageContext'
 import MysticalLoader from './MysticalLoader'
 import { reportError } from '@/lib/errorReporter'
+import YinYangIcon from './YinYangIcon'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -80,7 +81,7 @@ export default function ChatWidget() {
             {/* Header */}
             <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-gold)', backgroundColor: 'var(--accent-bg)' }}>
               <div className="flex items-center gap-2">
-                <span className="text-lg" style={{ color: 'var(--gold)' }}>☯</span>
+                <YinYangIcon size={20} />
                 <div>
                   <div className="font-serif text-sm" style={{ color: 'var(--gold)' }}>{lang === 'en' ? 'Xuanji Assistant' : '玄機助手'}</div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{lang === 'en' ? 'Divination Q&A' : '命理問答'}</div>
@@ -99,7 +100,7 @@ export default function ChatWidget() {
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {!session ? (
                 <div className="h-full flex flex-col items-center justify-center text-center gap-3">
-                  <div className="text-4xl">☯</div>
+                  <YinYangIcon size={40} />
                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{lang === 'en' ? 'Please sign in to use the assistant' : '請登入後使用命理問答'}</p>
                   <a
                     href="/login"
@@ -113,7 +114,7 @@ export default function ChatWidget() {
                 <>
                   {messages.length === 0 && (
                     <div className="text-center text-xs py-4" style={{ color: 'var(--text-muted)' }}>
-                      <div className="text-2xl mb-2">☯</div>
+                      <YinYangIcon size={28} className="mb-2" />
                       <p>{lang === 'en' ? 'Hello, I am the Xuanji divination assistant' : '您好，我是玄機命理助手'}</p>
                       <p>{lang === 'en' ? 'Ask me anything about your readings' : '可以問我關於您命盤的任何問題'}</p>
                     </div>
@@ -121,8 +122,8 @@ export default function ChatWidget() {
                   {messages.map((msg, i) => (
                     <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       {msg.role === 'assistant' && (
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs mt-0.5" style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.2)', color: 'var(--gold)' }}>
-                          ☯
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.2)' }}>
+                          <YinYangIcon size={16} />
                         </div>
                       )}
                       <div
@@ -140,8 +141,8 @@ export default function ChatWidget() {
                   ))}
                   {loading && (
                     <div className="flex gap-2 justify-start">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs" style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.2)', color: 'var(--gold)' }}>
-                        ☯
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.2)' }}>
+                        <YinYangIcon size={16} />
                       </div>
                       <div className="rounded-xl rounded-bl-sm px-4 py-2" style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--border-gold)' }}>
                         <MysticalLoader lang={lang} variant="chat" />
@@ -200,7 +201,7 @@ export default function ChatWidget() {
           transition={{ repeat: Infinity, duration: 2 }}
           title={lang === 'en' ? 'Divination Q&A' : '命理問答'}
         >
-          {isOpen ? '✕' : '☯'}
+          {isOpen ? '✕' : <YinYangIcon size={28} />}
         </motion.button>
       </div>
     </div>
