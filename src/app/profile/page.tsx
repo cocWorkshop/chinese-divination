@@ -183,6 +183,11 @@ export default function ProfilePage() {
 
   const inputCls = "w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
   const labelCls = "block text-white/70 text-sm mb-1"
+  const cardStyle = {
+    background: 'rgba(15, 23, 42, 0.6)',
+    border: '1px solid rgba(212, 168, 83, 0.15)',
+    backdropFilter: 'blur(10px)',
+  }
 
   if (status === 'loading') return (
     <div className="min-h-screen flex items-center justify-center">
@@ -192,13 +197,261 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen py-12 px-4 max-w-xl mx-auto">
-      <h1 className="text-3xl font-serif text-gold mb-8">{T(lang, '個人資料', 'Profile')}</h1>
+      <h1 className="text-3xl font-serif mb-8" style={{ color: 'var(--gold)' }}>
+        {T(lang, '個人資料', 'Profile')}
+      </h1>
 
-      {/* Credits Module */}
+      <form onSubmit={handleSave} className="space-y-6">
+        {/* Personal Info */}
+        <div className="rounded-2xl p-6" style={cardStyle}>
+          <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
+            {T(lang, '個人信息', 'Personal Info')}
+          </h2>
+          <div className="space-y-5">
+            <div>
+              <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
+              <input type="text" className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            {session?.user?.email && (
+              <div>
+                <label className={labelCls}>{T(lang, '電子郵件', 'Email')}</label>
+                <p className="px-4 py-3 rounded-lg text-sm text-white/50" style={{ background: 'rgba(15, 23, 42, 0.4)' }}>
+                  {session.user.email}
+                </p>
+              </div>
+            )}
+            <div>
+              <label className={labelCls}>{T(lang, '介面語言', 'Language')}</label>
+              <select className={inputCls} value={form.language} onChange={e => setForm(f => ({ ...f, language: e.target.value }))}>
+                <option value="zh-TW">繁體中文</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            <div className="pt-4 mt-4" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.1)' }}>
+              <p className="text-white/50 text-sm mb-4">{T(lang, '修改密碼（留空則不更改）', 'Change password (leave blank to keep)')}</p>
+              <div className="space-y-4">
+                <div>
+                  <label className={labelCls}>{T(lang, '當前密碼', 'Current Password')}</label>
+                  <input type="password" className={inputCls} value={form.currentPassword} onChange={e => setForm(f => ({ ...f, currentPassword: e.target.value }))} />
+                </div>
+                <div>
+                  <label className={labelCls}>{T(lang, '新密碼', 'New Password')}</label>
+                  <input type="password" className={inputCls} value={form.newPassword} onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Birth Info */}
+        <div className="rounded-2xl p-6" style={cardStyle}>
+          <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
+            {T(lang, '生辰信息', 'Birth Info')}
+          </h2>
+          <div className="space-y-5">
+            <div>
+              <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
+              <div className="flex rounded-lg overflow-hidden border border-gold/20">
+                {[
+                  { value: 'solar', label: T(lang, '公曆（陽曆）', 'Solar') },
+                  { value: 'lunar', label: T(lang, '農曆（陰曆）', 'Lunar') },
+                ].map(opt => (
+                  <button key={opt.value} type="button"
+                    className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                    onClick={() => setForm(f => ({ ...f, calendarType: opt.value as 'solar' | 'lunar' }))}
+                  >{opt.label}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+              <input type="date" className={inputCls} value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} />
+              <p className="text-white/30 text-xs mt-1">
+                {form.calendarType === 'lunar'
+                  ? T(lang, '請填寫農曆（陰曆）日期。', 'Enter lunar calendar date.')
+                  : T(lang, '請填寫公曆（陽曆）日期。', 'Enter solar calendar date.')}
+              </p>
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '時間模式', 'Time Mode')}</label>
+              <div className="flex rounded-lg overflow-hidden border border-gold/20">
+                {[
+                  { value: 'fuzzy', label: T(lang, '模糊（時辰）', 'Fuzzy (Shichen)') },
+                  { value: 'exact', label: T(lang, '精確（時分）', 'Exact (HH:MM)') },
+                ].map(opt => (
+                  <button key={opt.value} type="button"
+                    className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                    onClick={() => setForm(f => ({ ...f, timeMode: opt.value as 'fuzzy' | 'exact' }))}
+                  >{opt.label}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
+              {form.timeMode === 'exact' ? (
+                <input type="time" className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))} />
+              ) : (
+                <select className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))}>
+                  <option value="">{T(lang, '請選擇', 'Select')}</option>
+                  {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              )}
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
+              <BirthplaceInput
+                value={form.birthPlace}
+                onChange={v => setForm(f => ({ ...f, birthPlace: v }))}
+                className={inputCls}
+                placeholder={T(lang, '輸入城市名稱搜尋...', 'Search city name...')}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
+              <select className={inputCls} value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}>
+                <option value="">{T(lang, '請選擇', 'Select')}</option>
+                <option value="male">{T(lang, '男', 'Male')}</option>
+                <option value="female">{T(lang, '女', 'Female')}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full py-3 bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light transition-colors disabled:opacity-50"
+        >
+          {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '儲存', 'Save')}
+        </button>
+      </form>
+
+      {/* Family Members */}
+      <div className="rounded-2xl p-6 mt-6" style={cardStyle}>
+        <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
+          {T(lang, '家庭成員', 'Family Members')}
+        </h2>
+        <div className="space-y-4">
+          {familyMembers.length === 0 && !addingMember && (
+            <p className="text-white/50 text-sm">{T(lang, '尚未新增家庭成員', 'No family members added yet')}</p>
+          )}
+
+          {familyMembers.map(member => (
+            <div key={member.id} className="rounded-xl p-4" style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
+              {editingMember === member.id ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
+                    <select className={inputCls} value={editForm.relation || ''} onChange={e => setEditForm(f => ({ ...f, relation: e.target.value }))}>
+                      {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
+                    <input type="text" className={inputCls} value={editForm.name || ''} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+                    <input type="date" className={inputCls} value={editForm.birthDate || ''} onChange={e => setEditForm(f => ({ ...f, birthDate: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
+                    <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
+                      <option value="">{T(lang, '請選擇', 'Select')}</option>
+                      {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
+                    <input type="text" className={inputCls} value={editForm.birthPlace || ''} onChange={e => setEditForm(f => ({ ...f, birthPlace: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
+                    <select className={inputCls} value={editForm.gender || ''} onChange={e => setEditForm(f => ({ ...f, gender: e.target.value }))}>
+                      <option value="">{T(lang, '請選擇', 'Select')}</option>
+                      <option value="male">{T(lang, '男', 'Male')}</option>
+                      <option value="female">{T(lang, '女', 'Female')}</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => updateFamilyMember(member.id)} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '儲存', 'Save')}</button>
+                    <button type="button" onClick={() => setEditingMember(null)} className="px-4 py-2 border border-white/20 text-white/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium" style={{ color: 'var(--gold)' }}>
+                      {relationPresets.find(r => r.value === member.relation)?.[lang === 'en' ? 'en' : 'zh'] || member.relation}
+                      {member.name ? ` — ${member.name}` : ''}
+                    </p>
+                    <p className="text-white/50 text-xs mt-1">
+                      {[member.birthDate, member.birthTime, member.birthPlace, member.gender === 'male' ? T(lang, '男', 'M') : member.gender === 'female' ? T(lang, '女', 'F') : ''].filter(Boolean).join(' · ') || T(lang, '未填寫生辰資訊', 'No birth info')}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '' }) }} className="text-white/40 hover:text-gold text-xs">✏️</button>
+                    <button type="button" onClick={() => deleteFamilyMember(member.id)} className="text-white/40 hover:text-red-400 text-xs">✕</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {addingMember ? (
+            <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
+              <div>
+                <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
+                <select className={inputCls} value={newMember.relation || ''} onChange={e => setNewMember(f => ({ ...f, relation: e.target.value }))}>
+                  <option value="">{T(lang, '請選擇', 'Select')}</option>
+                  {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>{T(lang, '姓名（可選）', 'Name (optional)')}</label>
+                <input type="text" className={inputCls} value={newMember.name || ''} onChange={e => setNewMember(f => ({ ...f, name: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+                <input type="date" className={inputCls} value={newMember.birthDate || ''} onChange={e => setNewMember(f => ({ ...f, birthDate: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
+                <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
+                  <option value="">{T(lang, '請選擇', 'Select')}</option>
+                  {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
+                <input type="text" className={inputCls} value={newMember.birthPlace || ''} onChange={e => setNewMember(f => ({ ...f, birthPlace: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
+                <select className={inputCls} value={newMember.gender || ''} onChange={e => setNewMember(f => ({ ...f, gender: e.target.value }))}>
+                  <option value="">{T(lang, '請選擇', 'Select')}</option>
+                  <option value="male">{T(lang, '男', 'Male')}</option>
+                  <option value="female">{T(lang, '女', 'Female')}</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={addFamilyMember} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '新增', 'Add')}</button>
+                <button type="button" onClick={() => setAddingMember(false)} className="px-4 py-2 border border-white/20 text-white/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setAddingMember(true)} className="w-full py-3 rounded-xl text-sm transition-colors hover:bg-gold/10" style={{ border: '1px solid rgba(212, 168, 83, 0.3)', color: 'var(--gold)' }}>
+              {T(lang, '➕ 新增成員', '➕ Add Member')}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Credits */}
       {credits && (
-        <div className="glass-card rounded-2xl p-5 sm:p-6 mb-6 border" style={{ borderColor: 'var(--card-border)' }}>
-          <h2 className="font-serif text-sm mb-4" style={{ color: 'var(--gold)' }}>
-            🔮 {T(lang, '每日配額', 'Daily Quota')}
+        <div className="rounded-2xl p-6 mt-6" style={cardStyle}>
+          <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
+            {T(lang, '額度信息', 'Credits')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
@@ -211,7 +464,7 @@ export default function ProfilePage() {
               const isUnlimited = d.dailyLimit === -1
               const pct = isUnlimited ? 100 : d.dailyLimit > 0 ? Math.round((d.remaining / d.dailyLimit) * 100) : 0
               return (
-                <div key={m.key} className="rounded-xl p-4 border" style={{ backgroundColor: 'var(--accent-bg)', borderColor: 'var(--card-border)' }}>
+                <div key={m.key} className="rounded-xl p-4" style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{m.label}</span>
                     <span className="text-xs" style={{ color: 'var(--gold)' }}>
@@ -237,7 +490,7 @@ export default function ProfilePage() {
             })}
           </div>
           {userBonus && (userBonus.model1 > 0 || userBonus.model2 > 0 || userBonus.chat > 0) && (
-            <div className="mt-3 pt-3 border-t flex flex-wrap gap-3 text-xs" style={{ borderColor: 'var(--card-border)', color: 'var(--text-muted)' }}>
+            <div className="mt-3 pt-3 flex flex-wrap gap-3 text-xs" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.1)', color: 'var(--text-muted)' }}>
               <span>🎁 {T(lang, '儲備額度', 'Reserve Credits')}:</span>
               {userBonus.model1 > 0 && <span>⚡ ×{userBonus.model1}</span>}
               {userBonus.model2 > 0 && <span>🌟 ×{userBonus.model2}</span>}
@@ -247,224 +500,11 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <form onSubmit={handleSave} className="glass-card rounded-2xl p-8 space-y-5">
-        <div>
-          <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
-          <input type="text" className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-        </div>
-        <div>
-          <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
-          <div className="flex rounded-lg overflow-hidden border border-gold/20">
-            {[
-              { value: 'solar', label: T(lang, '公曆（陽曆）', 'Solar') },
-              { value: 'lunar', label: T(lang, '農曆（陰曆）', 'Lunar') },
-            ].map(opt => (
-              <button key={opt.value} type="button"
-                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
-                onClick={() => setForm(f => ({ ...f, calendarType: opt.value as 'solar' | 'lunar' }))}
-              >{opt.label}</button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
-          <input type="date" className={inputCls} value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} />
-          <p className="text-white/30 text-xs mt-1">
-            {form.calendarType === 'lunar'
-              ? T(lang, '請填寫農曆（陰曆）日期。', 'Enter lunar calendar date.')
-              : T(lang, '請填寫公曆（陽曆）日期。', 'Enter solar calendar date.')}
-          </p>
-        </div>
-        <div>
-          <label className={labelCls}>{T(lang, '時間模式', 'Time Mode')}</label>
-          <div className="flex rounded-lg overflow-hidden border border-gold/20">
-            {[
-              { value: 'fuzzy', label: T(lang, '模糊（時辰）', 'Fuzzy (Shichen)') },
-              { value: 'exact', label: T(lang, '精確（時分）', 'Exact (HH:MM)') },
-            ].map(opt => (
-              <button key={opt.value} type="button"
-                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
-                onClick={() => setForm(f => ({ ...f, timeMode: opt.value as 'fuzzy' | 'exact' }))}
-              >{opt.label}</button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
-          {form.timeMode === 'exact' ? (
-            <input type="time" className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))} />
-          ) : (
-            <select className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))}>
-              <option value="">{T(lang, '請選擇', 'Select')}</option>
-              {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
-          )}
-        </div>
-        <div>
-          <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
-          <BirthplaceInput
-            value={form.birthPlace}
-            onChange={v => setForm(f => ({ ...f, birthPlace: v }))}
-            className={inputCls}
-            placeholder={T(lang, '輸入城市名稱搜尋...', 'Search city name...')}
-          />
-        </div>
-        <div>
-          <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
-          <select className={inputCls} value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}>
-            <option value="">{T(lang, '請選擇', 'Select')}</option>
-            <option value="male">{T(lang, '男', 'Male')}</option>
-            <option value="female">{T(lang, '女', 'Female')}</option>
-          </select>
-        </div>
-        <div>
-          <label className={labelCls}>{T(lang, '介面語言', 'Language')}</label>
-          <select className={inputCls} value={form.language} onChange={e => setForm(f => ({ ...f, language: e.target.value }))}>
-            <option value="zh-TW">繁體中文</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-
-        <hr className="border-gold/20" />
-        <p className="text-white/50 text-sm">{T(lang, '修改密碼（留空則不更改）', 'Change password (leave blank to keep)')}</p>
-        <div>
-          <label className={labelCls}>{T(lang, '當前密碼', 'Current Password')}</label>
-          <input type="password" className={inputCls} value={form.currentPassword} onChange={e => setForm(f => ({ ...f, currentPassword: e.target.value }))} />
-        </div>
-        <div>
-          <label className={labelCls}>{T(lang, '新密碼', 'New Password')}</label>
-          <input type="password" className={inputCls} value={form.newPassword} onChange={e => setForm(f => ({ ...f, newPassword: e.target.value }))} />
-        </div>
-
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full py-3 bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light transition-colors disabled:opacity-50"
-        >
-          {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '儲存', 'Save')}
-        </button>
-      </form>
-
-      {/* Family Members Section */}
-      <h2 className="text-2xl font-serif text-gold mt-12 mb-4">{T(lang, '家庭成員', 'Family Members')}</h2>
-      <div className="glass-card rounded-2xl p-8 space-y-4">
-        {familyMembers.length === 0 && !addingMember && (
-          <p className="text-white/50 text-sm">{T(lang, '尚未新增家庭成員', 'No family members added yet')}</p>
-        )}
-
-        {familyMembers.map(member => (
-          <div key={member.id} className="border border-gold/20 rounded-xl p-4 bg-navy-900/50">
-            {editingMember === member.id ? (
-              <div className="space-y-3">
-                <div>
-                  <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
-                  <select className={inputCls} value={editForm.relation || ''} onChange={e => setEditForm(f => ({ ...f, relation: e.target.value }))}>
-                    {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
-                  <input type="text" className={inputCls} value={editForm.name || ''} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
-                </div>
-                <div>
-                  <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
-                  <input type="date" className={inputCls} value={editForm.birthDate || ''} onChange={e => setEditForm(f => ({ ...f, birthDate: e.target.value }))} />
-                </div>
-                <div>
-                  <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
-                  <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
-                    <option value="">{T(lang, '請選擇', 'Select')}</option>
-                    {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
-                  <input type="text" className={inputCls} value={editForm.birthPlace || ''} onChange={e => setEditForm(f => ({ ...f, birthPlace: e.target.value }))} />
-                </div>
-                <div>
-                  <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
-                  <select className={inputCls} value={editForm.gender || ''} onChange={e => setEditForm(f => ({ ...f, gender: e.target.value }))}>
-                    <option value="">{T(lang, '請選擇', 'Select')}</option>
-                    <option value="male">{T(lang, '男', 'Male')}</option>
-                    <option value="female">{T(lang, '女', 'Female')}</option>
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => updateFamilyMember(member.id)} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '儲存', 'Save')}</button>
-                  <button type="button" onClick={() => setEditingMember(null)} className="px-4 py-2 border border-white/20 text-white/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-gold font-medium">
-                    {relationPresets.find(r => r.value === member.relation)?.[lang === 'en' ? 'en' : 'zh'] || member.relation}
-                    {member.name ? ` — ${member.name}` : ''}
-                  </p>
-                  <p className="text-white/50 text-xs mt-1">
-                    {[member.birthDate, member.birthTime, member.birthPlace, member.gender === 'male' ? T(lang, '男', 'M') : member.gender === 'female' ? T(lang, '女', 'F') : ''].filter(Boolean).join(' · ') || T(lang, '未填寫生辰資訊', 'No birth info')}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '' }) }} className="text-white/40 hover:text-gold text-xs">✏️</button>
-                  <button type="button" onClick={() => deleteFamilyMember(member.id)} className="text-white/40 hover:text-red-400 text-xs">✕</button>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {addingMember ? (
-          <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-3">
-            <div>
-              <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
-              <select className={inputCls} value={newMember.relation || ''} onChange={e => setNewMember(f => ({ ...f, relation: e.target.value }))}>
-                <option value="">{T(lang, '請選擇', 'Select')}</option>
-                {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>{T(lang, '姓名（可選）', 'Name (optional)')}</label>
-              <input type="text" className={inputCls} value={newMember.name || ''} onChange={e => setNewMember(f => ({ ...f, name: e.target.value }))} />
-            </div>
-            <div>
-              <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
-              <input type="date" className={inputCls} value={newMember.birthDate || ''} onChange={e => setNewMember(f => ({ ...f, birthDate: e.target.value }))} />
-            </div>
-            <div>
-              <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
-              <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
-                <option value="">{T(lang, '請選擇', 'Select')}</option>
-                {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
-              <input type="text" className={inputCls} value={newMember.birthPlace || ''} onChange={e => setNewMember(f => ({ ...f, birthPlace: e.target.value }))} />
-            </div>
-            <div>
-              <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
-              <select className={inputCls} value={newMember.gender || ''} onChange={e => setNewMember(f => ({ ...f, gender: e.target.value }))}>
-                <option value="">{T(lang, '請選擇', 'Select')}</option>
-                <option value="male">{T(lang, '男', 'Male')}</option>
-                <option value="female">{T(lang, '女', 'Female')}</option>
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={addFamilyMember} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '新增', 'Add')}</button>
-              <button type="button" onClick={() => setAddingMember(false)} className="px-4 py-2 border border-white/20 text-white/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
-            </div>
-          </div>
-        ) : (
-          <button type="button" onClick={() => setAddingMember(true)} className="w-full py-3 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-sm">
-            {T(lang, '➕ 新增成員', '➕ Add Member')}
-          </button>
-        )}
-      </div>
-
       {/* Site Feedback */}
-      <h2 className="text-2xl font-serif text-gold mt-12 mb-4">{T(lang, '意見回饋', 'Feedback')}</h2>
-      <div className="glass-card rounded-2xl p-5 sm:p-8 space-y-4">
+      <div className="rounded-2xl p-6 mt-6" style={cardStyle}>
+        <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
+          {T(lang, '意見回饋', 'Feedback')}
+        </h2>
         <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
           {T(lang, '您的意見對我們非常重要，幫助我們持續改進服務。', 'Your feedback helps us improve our service.')}
         </p>
@@ -475,7 +515,6 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Star rating */}
             <div>
               <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>{T(lang, '整體評分', 'Overall Rating')}</label>
               <div className="flex gap-1">
@@ -487,7 +526,6 @@ export default function ProfilePage() {
                 ))}
               </div>
             </div>
-            {/* Text */}
             <div>
               <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>{T(lang, '建議或意見', 'Comments or Suggestions')}</label>
               <textarea
@@ -528,13 +566,12 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* History */}
         {fbHistory.length > 0 && (
-          <div className="mt-5 pt-4 border-t" style={{ borderColor: 'var(--card-border)' }}>
+          <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.1)' }}>
             <h3 className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>{T(lang, '過往回饋', 'Past Feedback')}</h3>
             <div className="space-y-2">
               {fbHistory.map(fb => (
-                <div key={fb.id} className="rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: 'var(--accent-bg)' }}>
+                <div key={fb.id} className="rounded-lg px-3 py-2 text-sm" style={{ background: 'rgba(15, 23, 42, 0.5)' }}>
                   <div className="flex justify-between items-center mb-1">
                     <span style={{ color: 'var(--gold)' }}>{fb.rating ? '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating) : ''}</span>
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(fb.createdAt).toLocaleDateString()}</span>
@@ -547,9 +584,11 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Data Management (GDPR/PIPEDA) */}
-      <h2 className="text-2xl font-serif text-gold mt-12 mb-4">{T(lang, '數據管理', 'Data Management')}</h2>
-      <div className="glass-card rounded-2xl p-5 sm:p-8 border" style={{ borderColor: 'var(--card-border)' }}>
+      {/* Data Management */}
+      <div className="rounded-2xl p-6 mt-6" style={cardStyle}>
+        <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
+          {T(lang, '數據管理', 'Data Management')}
+        </h2>
         <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
           {T(lang,
             '根據 GDPR 和 PIPEDA，您有權導出或刪除您的所有個人數據。',
@@ -563,7 +602,7 @@ export default function ProfilePage() {
               toast.success(T(lang, '數據導出已開始', 'Data export started'))
             }}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            style={{ border: '1px solid var(--card-border)', color: 'var(--text-secondary)' }}
+            style={{ border: '1px solid rgba(212, 168, 83, 0.15)', color: 'var(--text-secondary)' }}
           >
             📥 {T(lang, '導出我的數據', 'Export My Data')}
           </button>
@@ -602,7 +641,7 @@ export default function ProfilePage() {
                 onChange={e => setDeletePassword(e.target.value)}
                 placeholder={T(lang, '請輸入密碼', 'Enter password')}
                 className="flex-1 px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
-                style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)' }}
+                style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(212, 168, 83, 0.1)' }}
               />
               <button
                 onClick={handleDeleteAccount}
