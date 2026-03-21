@@ -181,11 +181,7 @@ export default function DivinationFormPage() {
     fetch('/api/credits').then(r => r.json()).then(data => {
       setCredits(data)
       if (data.llmTimeoutSeconds) setLlmTimeoutMs(data.llmTimeoutSeconds * 1000)
-      // Auto-fallback: if model2 has no remaining credits, switch to model1
-      const m2 = data?.model2
-      if (m2 && m2.remaining !== -1 && m2.remaining <= 0) {
-        setModelTier('model1')
-      }
+
     }).catch(() => {})
     // Fetch share bonus info
     fetch('/api/share/bonus').then(r => r.json()).then(setShareBonus).catch(() => {})
