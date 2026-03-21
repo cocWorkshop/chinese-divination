@@ -209,7 +209,7 @@ export default function ProfilePage() {
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Personal Info Card */}
-        <div className="glass-card rounded-2xl overflow-hidden">
+        <div className="glass-card rounded-2xl">
           <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
             <span className="text-lg">🏷️</span>
             <h2 className="text-lg font-serif text-gold">{T(lang, '個人信息', 'Personal Info')}</h2>
@@ -246,7 +246,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Birth Info Card */}
-        <div className="glass-card rounded-2xl overflow-hidden">
+        <div className="glass-card rounded-2xl">
           <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
             <span className="text-lg">📅</span>
             <h2 className="text-lg font-serif text-gold">{T(lang, '生辰信息', 'Birth Info')}</h2>
@@ -342,7 +342,7 @@ export default function ProfilePage() {
       </form>
 
       {/* Family Members Card */}
-      <div className="glass-card rounded-2xl overflow-hidden mt-6">
+      <div className="glass-card rounded-2xl mt-6">
         <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
           <div className="flex items-center gap-3">
             <span className="text-lg">👨‍👩‍👧‍👦</span>
@@ -490,7 +490,7 @@ export default function ProfilePage() {
 
       {/* Credits Card */}
       {credits && (
-        <div className="glass-card rounded-2xl overflow-hidden mt-6">
+        <div className="glass-card rounded-2xl mt-6">
           <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
             <span className="text-lg">✦</span>
             <h2 className="text-lg font-serif text-gold">{T(lang, '額度信息', 'Credits')}</h2>
@@ -541,7 +541,7 @@ export default function ProfilePage() {
       )}
 
       {/* Feedback Card */}
-      <div className="glass-card rounded-2xl overflow-hidden mt-6">
+      <div className="glass-card rounded-2xl mt-6">
         <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
           <span className="text-lg">💬</span>
           <h2 className="text-lg font-serif text-gold">{T(lang, '意見回饋', 'Feedback')}</h2>
@@ -623,7 +623,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Data Management Card */}
-      <div className="glass-card rounded-2xl overflow-hidden mt-6">
+      <div className="glass-card rounded-2xl mt-6">
         <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
           <span className="text-lg">🔒</span>
           <h2 className="text-lg font-serif text-gold">{T(lang, '數據管理', 'Data Management')}</h2>
