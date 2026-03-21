@@ -16,9 +16,14 @@ http.createServer = function(...args) {
 
 // Run pending database migrations before starting
 const { execSync } = require('child_process')
+const path = require('path')
 try {
   console.log('> Running database migrations...')
-  execSync('npx prisma migrate deploy', { stdio: 'inherit' })
+  const prismaBin = path.join(__dirname, 'node_modules', '.bin', 'prisma')
+  execSync(`${prismaBin} migrate deploy --schema=./prisma/schema.prisma`, {
+    stdio: 'inherit',
+    env: { ...process.env, PATH: `${path.join(__dirname, 'node_modules', '.bin')}:${process.env.PATH || ''}` }
+  })
   console.log('> Migrations complete')
 } catch (e) {
   console.error('> Migration failed:', e.message)
