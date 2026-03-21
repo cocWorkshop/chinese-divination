@@ -14,5 +14,16 @@ http.createServer = function(...args) {
   return server
 }
 
+// Run pending database migrations before starting
+const { execSync } = require('child_process')
+try {
+  console.log('> Running database migrations...')
+  execSync('npx prisma migrate deploy', { stdio: 'inherit' })
+  console.log('> Migrations complete')
+} catch (e) {
+  console.error('> Migration failed:', e.message)
+  // Don't exit — app can still run if DB is already up to date
+}
+
 // Now load the original Next.js standalone server
 require('./server.js')
