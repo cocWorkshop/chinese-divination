@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 
@@ -52,6 +53,7 @@ export default function DeleteAccountPage() {
 
       if (res.ok) {
         setStatus('deleted')
+        await signOut({ redirect: false })
         setTimeout(() => { window.location.href = '/' }, 3000)
       } else {
         const data = await res.json()
