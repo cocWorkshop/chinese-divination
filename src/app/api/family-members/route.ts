@@ -23,13 +23,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { relation, name, birthDate, birthTime, birthPlace, gender } = await req.json()
+  const { relation, name, birthDate, birthTime, birthPlace, gender, calendarType, timeMode, birthEnvironment } = await req.json()
   if (!relation) {
     return NextResponse.json({ error: 'Relation is required' }, { status: 400 })
   }
 
   const member = await prisma.familyMember.create({
-    data: { userId: session.user.id, relation, name, birthDate, birthTime, birthPlace, gender },
+    data: { userId: session.user.id, relation, name, birthDate, birthTime, birthPlace, gender, calendarType, timeMode, birthEnvironment },
   })
 
   return NextResponse.json({ member })
@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id, relation, name, birthDate, birthTime, birthPlace, gender } = await req.json()
+  const { id, relation, name, birthDate, birthTime, birthPlace, gender, calendarType, timeMode, birthEnvironment } = await req.json()
   if (!id) {
     return NextResponse.json({ error: 'ID is required' }, { status: 400 })
   }
@@ -54,7 +54,7 @@ export async function PUT(req: NextRequest) {
 
   const member = await prisma.familyMember.update({
     where: { id },
-    data: { relation, name, birthDate, birthTime, birthPlace, gender },
+    data: { relation, name, birthDate, birthTime, birthPlace, gender, calendarType, timeMode, birthEnvironment },
   })
 
   return NextResponse.json({ member })

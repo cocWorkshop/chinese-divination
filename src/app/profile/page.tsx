@@ -28,6 +28,9 @@ interface FamilyMember {
   birthTime: string | null
   birthPlace: string | null
   gender: string | null
+  calendarType: string | null
+  timeMode: string | null
+  birthEnvironment: string | null
 }
 
 const shichen = [
@@ -67,7 +70,7 @@ export default function ProfilePage() {
   const [editingMember, setEditingMember] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<FamilyMember>>({})
   const [addingMember, setAddingMember] = useState(false)
-  const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '' })
+  const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', calendarType: 'solar', timeMode: 'fuzzy', birthEnvironment: '' })
   const [credits, setCredits] = useState<Record<string, { remaining: number; dailyLimit: number }> | null>(null)
   const [userBonus, setUserBonus] = useState<{ model1: number; model2: number; chat: number } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -379,15 +382,49 @@ export default function ProfilePage() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
+                      <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
+                      <div className="flex rounded-lg overflow-hidden border border-gold/20">
+                        {[
+                          { value: 'solar', label: T(lang, '公曆', 'Solar') },
+                          { value: 'lunar', label: T(lang, '農曆', 'Lunar') },
+                        ].map(opt => (
+                          <button key={opt.value} type="button"
+                            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${editForm.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                            onClick={() => setEditForm(f => ({ ...f, calendarType: opt.value }))}
+                          >{opt.label}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
                       <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
                       <input type="date" className={inputCls} value={editForm.birthDate || ''} onChange={e => setEditForm(f => ({ ...f, birthDate: e.target.value }))} />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={labelCls}>{T(lang, '時間模式', 'Time Mode')}</label>
+                      <div className="flex rounded-lg overflow-hidden border border-gold/20">
+                        {[
+                          { value: 'fuzzy', label: T(lang, '時辰', 'Shichen') },
+                          { value: 'exact', label: T(lang, '精確', 'Exact') },
+                        ].map(opt => (
+                          <button key={opt.value} type="button"
+                            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${editForm.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                            onClick={() => setEditForm(f => ({ ...f, timeMode: opt.value }))}
+                          >{opt.label}</button>
+                        ))}
+                      </div>
+                    </div>
                     <div>
                       <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
-                      <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
-                        <option value="">{T(lang, '請選擇', 'Select')}</option>
-                        {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                      </select>
+                      {editForm.timeMode === 'exact' ? (
+                        <input type="time" className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))} />
+                      ) : (
+                        <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
+                          <option value="">{T(lang, '請選擇', 'Select')}</option>
+                          {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -403,6 +440,10 @@ export default function ProfilePage() {
                         <option value="female">{T(lang, '女', 'Female')}</option>
                       </select>
                     </div>
+                  </div>
+                  <div>
+                    <label className={labelCls}>{T(lang, '出生環境（可選）', 'Birth Environment (optional)')}</label>
+                    <input type="text" className={inputCls} value={editForm.birthEnvironment || ''} onChange={e => setEditForm(f => ({ ...f, birthEnvironment: e.target.value }))} placeholder={T(lang, '例：農村、城市、山區...', 'e.g. rural, urban, mountainous...')} />
                   </div>
                   <div className="flex gap-2 pt-1">
                     <button type="button" onClick={() => updateFamilyMember(member.id)} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '儲存', 'Save')}</button>
@@ -427,7 +468,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '' }) }}
+                    <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '', calendarType: member.calendarType || 'solar', timeMode: member.timeMode || 'fuzzy', birthEnvironment: member.birthEnvironment || '' }) }}
                       className="text-white/30 hover:text-gold text-sm transition-colors">✏️</button>
                     <button type="button" onClick={() => deleteFamilyMember(member.id)}
                       className="text-white/30 hover:text-red-400 text-sm transition-colors">✕</button>
@@ -454,15 +495,49 @@ export default function ProfilePage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
+                  <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
+                  <div className="flex rounded-lg overflow-hidden border border-gold/20">
+                    {[
+                      { value: 'solar', label: T(lang, '公曆', 'Solar') },
+                      { value: 'lunar', label: T(lang, '農曆', 'Lunar') },
+                    ].map(opt => (
+                      <button key={opt.value} type="button"
+                        className={`flex-1 py-2.5 text-sm font-medium transition-colors ${newMember.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                        onClick={() => setNewMember(f => ({ ...f, calendarType: opt.value }))}
+                      >{opt.label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
                   <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
                   <input type="date" className={inputCls} value={newMember.birthDate || ''} onChange={e => setNewMember(f => ({ ...f, birthDate: e.target.value }))} />
                 </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>{T(lang, '時間模式', 'Time Mode')}</label>
+                  <div className="flex rounded-lg overflow-hidden border border-gold/20">
+                    {[
+                      { value: 'fuzzy', label: T(lang, '時辰', 'Shichen') },
+                      { value: 'exact', label: T(lang, '精確', 'Exact') },
+                    ].map(opt => (
+                      <button key={opt.value} type="button"
+                        className={`flex-1 py-2.5 text-sm font-medium transition-colors ${newMember.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                        onClick={() => setNewMember(f => ({ ...f, timeMode: opt.value }))}
+                      >{opt.label}</button>
+                    ))}
+                  </div>
+                </div>
                 <div>
                   <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
-                  <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
-                    <option value="">{T(lang, '請選擇', 'Select')}</option>
-                    {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
+                  {newMember.timeMode === 'exact' ? (
+                    <input type="time" className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))} />
+                  ) : (
+                    <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
+                      <option value="">{T(lang, '請選擇', 'Select')}</option>
+                      {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -478,6 +553,10 @@ export default function ProfilePage() {
                     <option value="female">{T(lang, '女', 'Female')}</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className={labelCls}>{T(lang, '出生環境（可選）', 'Birth Environment (optional)')}</label>
+                <input type="text" className={inputCls} value={newMember.birthEnvironment || ''} onChange={e => setNewMember(f => ({ ...f, birthEnvironment: e.target.value }))} placeholder={T(lang, '例：農村、城市、山區...', 'e.g. rural, urban, mountainous...')} />
               </div>
               <div className="flex gap-2 pt-1">
                 <button type="button" onClick={addFamilyMember} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '新增', 'Add')}</button>

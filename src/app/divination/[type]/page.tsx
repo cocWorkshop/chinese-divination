@@ -50,6 +50,9 @@ interface FamilyMember {
   birthTime: string | null
   birthPlace: string | null
   gender: string | null
+  calendarType: string | null
+  timeMode: string | null
+  birthEnvironment: string | null
 }
 
 const typeInfo: Record<string, { zhName: string; twName: string; enName: string; symbol: string }> = {
@@ -208,6 +211,9 @@ export default function DivinationFormPage() {
           birthTime: member.birthTime || f.birthTime,
           birthPlace: member.birthPlace || f.birthPlace,
           gender: member.gender || f.gender,
+          lunarToggle: member.calendarType || f.lunarToggle,
+          timeMode: member.timeMode || f.timeMode,
+          birthEnvironment: member.birthEnvironment || f.birthEnvironment,
         }))
       }
     }
