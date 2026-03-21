@@ -89,7 +89,7 @@ export default function DivinationPage() {
                   {tiers[svc.id] === 'prestige' ? `✦ ${T(lang, '大師', 'Prestige')}` : `✧ ${T(lang, '洞察', 'Ethereal')}`}
                 </span>
               )}
-              <div className="mb-4"><DivinationIcon type={svc.id} size={48} /></div>
+              <div className="text-5xl mb-4">{svc.symbol}</div>
               <h2 className="text-xl font-serif mb-2 transition-colors" style={{ color: 'var(--gold)' }}>
                 {lang === 'en' ? svc.enName : svc.twName}
               </h2>

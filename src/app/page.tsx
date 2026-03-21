@@ -100,7 +100,7 @@ export default function HomePage() {
             >
               <Link href={`/divination/${svc.id}`}>
                 <div className="glass-card rounded-2xl p-6 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10 transition-all group cursor-pointer">
-                  <div className="text-5xl mb-4">{svc.id === 'iching' ? <YinYangIcon size={48} /> : svc.symbol}</div>
+                  <div className="text-5xl mb-4"> {svc.symbol}</div>
                   <h3 className="text-xl font-serif text-gold mb-1 group-hover:text-gold-light">
                     {lang === 'en' ? svc.enName : svc.twName}
                   </h3>
