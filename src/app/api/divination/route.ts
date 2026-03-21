@@ -199,8 +199,17 @@ export async function POST(req: NextRequest) {
     let refContent = ''
     try {
       refContent = fs.readFileSync(refPath, 'utf-8')
-    } catch {
+    } catch (refErr) {
       refContent = '（参考资料暂时不可用）'
+      console.error(`Failed to read ref file ${refPath}:`, refErr)
+      await prisma.frontendError.create({
+        data: {
+          userId: session.user.id,
+          endpoint: '/api/divination',
+          error: `Failed to read reference file: ${refFileName} — ${refErr instanceof Error ? refErr.message : String(refErr)}`,
+          context: `type=${type}, path=${refPath}`,
+        },
+      }).catch(() => {})
     }
 
     const schema = schemas[type] || schemas.other
