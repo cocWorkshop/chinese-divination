@@ -97,7 +97,7 @@ export default function AdminUsers() {
               <th className="px-4 py-3 text-center">等级</th>
               <th className="px-4 py-3 text-center">占卜次数</th>
               <th className="px-4 py-3 text-center">每日配額</th>
-              <th className="px-4 py-3 text-center">儲備額度</th>
+              <th className="px-4 py-3 text-center">永久額度</th>
               <th className="px-4 py-3 text-center">操作</th>
             </tr>
           </thead>

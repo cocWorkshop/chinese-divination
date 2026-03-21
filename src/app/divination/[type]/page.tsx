@@ -909,8 +909,8 @@ export default function DivinationFormPage() {
                       if (res.ok) window.location.href = `/share/${data.code}`
                     }} className="underline" style={{ color: 'var(--gold)' }}>
                       {T(lang,
-                        `分享可獲得儲備額度 ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`,
-                        `Share for reserve credits ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`
+                        `分享可獲得永久額度 ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`,
+                        `Share for permanent credits ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`
                       )}
                     </a>
                   </span>

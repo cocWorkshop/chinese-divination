@@ -609,7 +609,7 @@ export default function ProfilePage() {
             </div>
             {userBonus && (userBonus.model1 > 0 || userBonus.model2 > 0 || userBonus.chat > 0) && (
               <div className="mt-4 pt-3 flex flex-wrap gap-3 text-xs text-white/40" style={{ borderTop: '1px solid rgba(212,168,83,0.1)' }}>
-                <span>🎁 {T(lang, '儲備額度', 'Reserve')}:</span>
+                <span>🎁 {T(lang, '永久額度', 'Permanent')}:</span>
                 {userBonus.model1 > 0 && <span>⚡×{userBonus.model1}</span>}
                 {userBonus.model2 > 0 && <span>🌟×{userBonus.model2}</span>}
                 {userBonus.chat > 0 && <span>💬×{userBonus.chat}</span>}
