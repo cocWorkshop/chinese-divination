@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma'
 import { checkModelLimit, incrementModelUsage } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
 import { calculateZiwei, ZiweiChart } from '@/lib/ziweiCalculator'
+import { calculateQimen, QimenChart } from '@/lib/qimenCalculator'
 import { logLlmCall } from '@/lib/llmLogger'
 import { Lunar } from 'lunar-typescript'
 
@@ -221,6 +222,7 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
     let userMessage: string
     let baziChart: BaziChart | null = null
     let ziweiChart: ZiweiChart | null = null
+    let qimenChart: QimenChart | null = null
 
     // Lunar→Solar conversion if user selected lunar calendar
     let solarBirthDate = inputData.birthDate
@@ -337,6 +339,58 @@ ${question ? `- 特别关注：${question}` : ''}
 四化飞星和星耀数据以程序计算结果为准，你只负责解盘分析。`
       } catch (e) {
         console.error('Ziwei calculation error:', e)
+        userMessage = `请为我进行${type}分析。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+输入信息：${JSON.stringify(inputData, null, 2)}
+${question ? `特别关注：${question}` : ''}`
+      }
+    } else if (type === 'qimen') {
+      try {
+        // Use current time for Qi Men chart (or parse from inputData if provided)
+        const qimenTime = inputData.dateTime ? new Date(inputData.dateTime) : new Date()
+        qimenChart = calculateQimen(qimenTime)
+        userMessage = `请为我进行奇门遁甲排盘分析。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+## 程序预计算的奇门遁甲盘（已验证准确，请直接使用）
+${JSON.stringify({
+  timeInfo: {
+    year: qimenChart.year,
+    month: qimenChart.month,
+    day: qimenChart.day,
+    hour: qimenChart.hour,
+    solarTerm: qimenChart.solarTerm,
+    roundLabel: qimenChart.roundLabel,
+  },
+  zhiFu: qimenChart.zhiFu,
+  zhiShi: qimenChart.zhiShi,
+  palaces: qimenChart.palaces.map(p => ({
+    name: p.name,
+    direction: p.direction,
+    star: p.star,
+    door: p.door,
+    divinity: p.divinity,
+    heavenStem: p.heavenStem,
+    earthStem: p.earthStem,
+  })),
+}, null, 2)}
+
+## 用户输入
+- 起局时间：${qimenChart.year}年 ${qimenChart.month}月 ${qimenChart.day}日 ${qimenChart.hour}时
+- 节气：${qimenChart.solarTerm}
+- 局数：${qimenChart.roundLabel}
+${question ? `- 求测问题：${question}` : '- 求测问题：综合运势'}
+
+## 解盘要求
+你是资深奇门遁甲术数师，请基于以上程序排出的奇门盘进行分析。重点：
+1. **situation**：分析当前格局，值符${qimenChart.zhiFu}和值使${qimenChart.zhiShi}的含义（100字以上）
+2. **trend**：从九宫格局分析事态走向，特别关注天盘与地盘天干的关系（100字以上）
+3. **timing**：根据八门旺衰判断最佳时机（100字以上）
+4. **strategy**：综合星、门、神给出行动策略（100字以上）
+
+同时请判断整体吉凶(outcome字段)，并确定palace字段中的inquiry(问事宫)、outcome(结果宫)、god(值符神)、star(值符星)、door(当值门)。
+九宫数据以程序计算结果为准，你只负责解盘分析。`
+      } catch (e) {
+        console.error('Qimen calculation error:', e)
         userMessage = `请为我进行${type}分析。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 输入信息：${JSON.stringify(inputData, null, 2)}
@@ -616,6 +670,23 @@ ${question ? `特别关注：${question}` : ''}`
         }
       }
       structuredResult.mainStars = mainStars
+    }
+
+    // Merge programmatic Qimen data with LLM interpretation
+    if (type === 'qimen' && qimenChart) {
+      structuredResult.qimenChart = {
+        year: qimenChart.year,
+        month: qimenChart.month,
+        day: qimenChart.day,
+        hour: qimenChart.hour,
+        solarTerm: qimenChart.solarTerm,
+        round: qimenChart.round,
+        roundLabel: qimenChart.roundLabel,
+        zhiFu: qimenChart.zhiFu,
+        zhiShi: qimenChart.zhiShi,
+        palaces: qimenChart.palaces,
+        grid: qimenChart.grid,
+      }
     }
 
     const resultToStore = JSON.stringify(structuredResult)
