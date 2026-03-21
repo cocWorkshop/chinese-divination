@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { compare } from 'bcryptjs'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { logAuth } from '@/lib/authLog'
+import { generateToken, tokenExpiry, sendDeleteConfirmationEmail } from '@/lib/email'
 
 export async function DELETE(req: NextRequest) {
   const session = await auth()
@@ -18,17 +18,22 @@ export async function DELETE(req: NextRequest) {
   const isValid = await compare(password, user.password)
   if (!isValid) return NextResponse.json({ error: 'Invalid password' }, { status: 403 })
 
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
-  const userAgent = req.headers.get('user-agent') || null
+  const deleteToken = generateToken()
+  const deleteTokenExpiry = tokenExpiry(24)
 
-  // Delete auth logs for this email
-  await prisma.authLog.deleteMany({ where: { email: user.email } })
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { deleteToken, deleteTokenExpiry },
+  })
 
-  // Delete user (cascades to readings, familyMembers, rateLimits, shareLinks, etc.)
-  await prisma.user.delete({ where: { id: session.user.id } })
+  const origin = req.headers.get('origin') || undefined
 
-  // Log the deletion (won't have userId since user is gone)
-  await logAuth({ action: 'logout', status: 'success', email: user.email, reason: 'account_deleted', ip, userAgent })
+  try {
+    await sendDeleteConfirmationEmail(user.email, deleteToken, user.language || 'zh-TW', origin)
+  } catch (err) {
+    console.error('Failed to send delete confirmation email:', err)
+    return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
+  }
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, message: 'Confirmation email sent' })
 }
