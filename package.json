@@ -18,6 +18,7 @@
     "@types/qrcode": "^1.5.6",
     "bcryptjs": "^2.4.3",
     "framer-motion": "^11.0.0",
+    "iztro": "^2.5.8",
     "lunar-typescript": "^1.8.6",
     "next": "14.2.0",
     "next-auth": "^5.0.0-beta.25",
@@ -28,7 +29,8 @@
     "react-hot-toast": "^2.4.1",
     "react-markdown": "^9.0.0",
     "remark-gfm": "^4.0.0",
-    "resend": "^6.9.4"
+    "resend": "^6.9.4",
+    "taobi": "^0.4.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

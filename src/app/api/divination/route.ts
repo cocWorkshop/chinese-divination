@@ -9,6 +9,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkModelLimit, incrementModelUsage } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
+import { calculateZiwei, ZiweiChart } from '@/lib/ziweiCalculator'
 import { logLlmCall } from '@/lib/llmLogger'
 import { Lunar } from 'lunar-typescript'
 
@@ -219,6 +220,7 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
 
     let userMessage: string
     let baziChart: BaziChart | null = null
+    let ziweiChart: ZiweiChart | null = null
 
     // Lunar→Solar conversion if user selected lunar calendar
     let solarBirthDate = inputData.birthDate
@@ -278,6 +280,63 @@ ${question ? `- 特别关注：${question}` : ''}
 四柱和大运数据以程序计算结果为准，你只负责解盘分析。`
       } catch (e) {
         console.error('BaZi calculation error:', e)
+        userMessage = `请为我进行${type}分析。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+输入信息：${JSON.stringify(inputData, null, 2)}
+${question ? `特别关注：${question}` : ''}`
+      }
+    } else if (type === 'ziwei' && solarBirthDate && inputData.birthTime) {
+      try {
+        ziweiChart = calculateZiwei(
+          solarBirthDate,
+          inputData.birthTime,
+          inputData.gender || 'male'
+        )
+        const palaceSummary = ziweiChart.palaces.map(p => ({
+          name: p.name,
+          heavenlyStem: p.heavenlyStem,
+          earthlyBranch: p.earthlyBranch,
+          majorStars: p.majorStars.map(s => ({ name: s.name, brightness: s.brightness, mutagen: s.mutagen })),
+          minorStars: p.minorStars.map(s => ({ name: s.name, brightness: s.brightness, mutagen: s.mutagen })),
+          isBodyPalace: p.isBodyPalace,
+          decadal: p.decadal,
+        }))
+        userMessage = `请为我进行紫微斗数命盘精批。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+## 程序预计算的紫微斗数命盘（已验证准确，请直接使用）
+${JSON.stringify({
+  basicInfo: {
+    solarDate: ziweiChart.solarDate,
+    lunarDate: ziweiChart.lunarDate,
+    chineseDate: ziweiChart.chineseDate,
+    time: ziweiChart.time,
+    zodiac: ziweiChart.zodiac,
+    gender: ziweiChart.gender,
+    fiveElementsClass: ziweiChart.fiveElementsClass,
+    soul: ziweiChart.soul,
+    body: ziweiChart.body,
+  },
+  siHua: ziweiChart.siHua,
+  palaces: palaceSummary,
+}, null, 2)}
+
+## 用户输入
+- 出生日期：${solarBirthDate}（公历）${inputData.lunarToggle === 'lunar' ? `（用户输入农历 ${inputData.birthDate}）` : ''}
+- 出生时辰：${ziweiChart.time}
+- 性别：${inputData.gender}
+${question ? `- 特别关注：${question}` : ''}
+
+## 解盘要求
+你是资深紫微斗数命理师，请基于以上程序排出的命盘进行精批。重点：
+1. **overview**：命主性格特质、命宫主星分析、身宫解读、五行局含义（150字以上）
+2. **career**：官禄宫主星分析、事业方向、适合行业、三方四正格局（150字以上）
+3. **marriage**：夫妻宫主星分析、配偶特征、婚姻质量（150字以上）
+4. **wealth**：财帛宫主星分析、财运格局、正财偏财（150字以上）
+
+关于palaces中各宫的分析(analysis字段)：请为每个宫位写50-100字的分析。
+四化飞星和星耀数据以程序计算结果为准，你只负责解盘分析。`
+      } catch (e) {
+        console.error('Ziwei calculation error:', e)
         userMessage = `请为我进行${type}分析。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 输入信息：${JSON.stringify(inputData, null, 2)}
@@ -506,6 +565,57 @@ ${question ? `特别关注：${question}` : ''}`
       if (!structuredResult.avoidElements || (structuredResult.avoidElements as string[]).length === 0) {
         structuredResult.avoidElements = baziChart.avoidElements
       }
+    }
+
+    // Merge programmatic Ziwei data with LLM interpretation
+    if (type === 'ziwei' && ziweiChart) {
+      structuredResult.ziweiChart = {
+        solarDate: ziweiChart.solarDate,
+        lunarDate: ziweiChart.lunarDate,
+        chineseDate: ziweiChart.chineseDate,
+        time: ziweiChart.time,
+        timeRange: ziweiChart.timeRange,
+        zodiac: ziweiChart.zodiac,
+        sign: ziweiChart.sign,
+        gender: ziweiChart.gender,
+        fiveElementsClass: ziweiChart.fiveElementsClass,
+        soul: ziweiChart.soul,
+        body: ziweiChart.body,
+        earthlyBranchOfSoulPalace: ziweiChart.earthlyBranchOfSoulPalace,
+        earthlyBranchOfBodyPalace: ziweiChart.earthlyBranchOfBodyPalace,
+        siHua: ziweiChart.siHua,
+      }
+      // Override palaces with programmatic data, keep LLM analysis
+      const llmPalaces = (structuredResult.palaces || {}) as Record<string, { stars?: string[]; analysis?: string }>
+      const mergedPalaces: Record<string, unknown> = {}
+      for (const palace of ziweiChart.palaces) {
+        const llmPalace = llmPalaces[palace.name] || {}
+        mergedPalaces[palace.name] = {
+          stars: [
+            ...palace.majorStars.map(s => s.mutagen ? `${s.name}(${s.mutagen})` : s.name),
+            ...palace.minorStars.map(s => s.mutagen ? `${s.name}(${s.mutagen})` : s.name),
+          ],
+          majorStars: palace.majorStars,
+          minorStars: palace.minorStars,
+          adjectiveStars: palace.adjectiveStars,
+          heavenlyStem: palace.heavenlyStem,
+          earthlyBranch: palace.earthlyBranch,
+          isBodyPalace: palace.isBodyPalace,
+          changsheng12: palace.changsheng12,
+          decadal: palace.decadal,
+          ages: palace.ages,
+          analysis: llmPalace.analysis || '',
+        }
+      }
+      structuredResult.palaces = mergedPalaces
+      // Build mainStars from programmatic data
+      const mainStars: { name: string; palace: string; brightness?: string; mutagen?: string }[] = []
+      for (const palace of ziweiChart.palaces) {
+        for (const star of palace.majorStars) {
+          mainStars.push({ name: star.name, palace: palace.name, brightness: star.brightness, mutagen: star.mutagen })
+        }
+      }
+      structuredResult.mainStars = mainStars
     }
 
     const resultToStore = JSON.stringify(structuredResult)
