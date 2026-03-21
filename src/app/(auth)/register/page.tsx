@@ -64,7 +64,14 @@ function RegisterInner() {
       router.push('/login')
     } else {
       const data = await res.json()
-      toast.error(data.error || 'Error')
+      const errorMap: Record<string, string> = lang === 'zh-TW' ? {
+        'Email already registered': '此郵箱已被註冊，請直接登入或使用其他郵箱',
+        'Email and password required': '請輸入郵箱和密碼',
+      } : {
+        'Email already registered': 'This email is already registered. Please log in or use a different email.',
+        'Email and password required': 'Email and password are required',
+      }
+      toast.error(errorMap[data.error] || (lang === 'zh-TW' ? '註冊失敗，請稍後重試' : 'Registration failed, please try again'))
     }
   }
 
