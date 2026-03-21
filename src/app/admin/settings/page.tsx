@@ -130,8 +130,8 @@ export default function AdminSettings() {
           <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
             <span>🔗</span> 分享設置 / Share Settings
           </h2>
-          {numberField('shareBonus', '標準模型儲備額度 / Standard reserve credits per share', '分享者和受邀者各獲得此數量的標準模型儲備額度')}
-          {numberField('shareBonusModel2', '高級模型儲備額度 / Premium reserve credits per share', '分享者和受邀者各獲得此數量的高級模型儲備額度，0 = 不獎勵')}
+          {numberField('shareBonus', '標準模型永久額度 / Standard permanent credits per share', '分享者和受邀者各獲得此數量的標準模型永久額度')}
+          {numberField('shareBonusModel2', '高級模型永久額度 / Premium permanent credits per share', '分享者和受邀者各獲得此數量的高級模型永久額度，0 = 不獎勵')}
         </div>
 
         {/* Divination Type Tiers */}

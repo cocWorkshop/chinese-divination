@@ -105,8 +105,8 @@ export default function SharePage() {
           {/* Bonus reward card */}
           <div className="glass-card rounded-2xl p-6 text-center border border-gold/20">
             <div className="text-2xl mb-3">🎁</div>
-            <h2 className="text-lg font-serif text-gold mb-3">註冊即獲儲備額度</h2>
-            <p className="text-white/50 text-xs mb-4">Register now and receive reserve credits</p>
+            <h2 className="text-lg font-serif text-gold mb-3">註冊即獲永久額度</h2>
+            <p className="text-white/50 text-xs mb-4">Register now and receive permanent credits</p>
             
             <div className="flex justify-center gap-4 mb-4">
               <div className="px-4 py-3 rounded-xl bg-gold/10 border border-gold/20">
@@ -124,7 +124,7 @@ export default function SharePage() {
             </div>
 
             <p className="text-white/30 text-xs">
-              註冊後儲備額度自動到帳 · Reserve credits auto-granted upon registration
+              註冊後永久額度自動到帳 · Permanent credits auto-granted upon registration
             </p>
           </div>
 
@@ -222,13 +222,13 @@ export default function SharePage() {
           </div>
 
           <div className="py-3 px-6 bg-gold/5 border border-gold/20 rounded-xl text-white/60 text-sm">
-            分享此連結給朋友，對方註冊後雙方自動獲得儲備額度
+            分享此連結給朋友，對方註冊後雙方自動獲得永久額度
             <br />
-            <span className="text-white/40 text-xs">Share this link — both of you earn reserve credits when they register</span>
+            <span className="text-white/40 text-xs">Share this link — both of you earn permanent credits when they register</span>
           </div>
 
           <div className="mt-4 py-3 px-4 rounded-lg bg-gold/5 border border-gold/10">
-            <p className="text-gold/80 text-xs font-medium mb-1.5">🎁 分享儲備額度</p>
+            <p className="text-gold/80 text-xs font-medium mb-1.5">🎁 分享永久額度</p>
             <div className="flex justify-center gap-4 text-xs">
               <span className="text-white/60">⚡ 標準 ×{bonus1}</span>
               {bonus2 > 0 && <span className="text-white/60">🌟 高級 ×{bonus2}</span>}

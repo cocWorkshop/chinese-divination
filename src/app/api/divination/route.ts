@@ -152,8 +152,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: language === 'en'
-            ? `Daily ${modelTier === 'model2' ? 'premium' : 'standard'} quota reached. Share to earn reserve credits.`
-            : `已達今日${modelTier === 'model2' ? '高級模型' : '標準模型'}配額，請明日再試或分享獲取儲備額度。`,
+            ? `Daily ${modelTier === 'model2' ? 'premium' : 'standard'} quota reached. Share to earn permanent credits.`
+            : `已達今日${modelTier === 'model2' ? '高級模型' : '標準模型'}配額，請明日再試或分享獲取永久額度。`,
           resetAt: rl.resetAt.toISOString(),
         },
         { status: 429 }
