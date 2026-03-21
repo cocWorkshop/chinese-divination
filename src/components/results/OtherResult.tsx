@@ -4,6 +4,42 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import YinYangIcon from '@/components/YinYangIcon'
 
+interface MeihuaTrigram {
+  name: string
+  symbol: string
+  element: string
+  lines: number[]
+}
+
+interface MeihuaHexagram {
+  name: string
+  upper: MeihuaTrigram
+  lower: MeihuaTrigram
+  lines: number[]
+}
+
+interface MeihuaChartInfo {
+  lunarYear?: number
+  lunarMonth?: number
+  lunarDay?: number
+  shichen?: number
+  yearBranch?: string
+  yearNum?: number
+  monthNum?: number
+  dayNum?: number
+  hourNum?: number
+  upperNum?: number
+  lowerNum?: number
+  changingLine?: number
+  benGua?: MeihuaHexagram
+  huGua?: MeihuaHexagram
+  bianGua?: MeihuaHexagram
+  tiGua?: MeihuaTrigram
+  yongGua?: MeihuaTrigram
+  tiYongRelation?: string
+  tiYongAnalysis?: string
+}
+
 interface OtherData {
   subType: string
   trigrams: {
@@ -14,6 +50,7 @@ interface OtherData {
   sections: { situation: string; inquiry: string; interaction: string; timeline: string }
   outcome: string
   keyAdvice: string[]
+  meihuaChart?: MeihuaChartInfo
 }
 
 const outcomeColor: Record<string, string> = {
@@ -24,12 +61,72 @@ const outcomeColor: Record<string, string> = {
   '大凶': 'text-red-400 border-red-400/40 bg-red-400/10',
 }
 
+const elementColor: Record<string, string> = {
+  '金': 'text-gray-300', '木': 'text-green-400', '水': 'text-blue-400', '火': 'text-red-400', '土': 'text-yellow-500',
+}
+
+const relationColor: Record<string, string> = {
+  '用生体': 'text-green-400 border-green-400/40 bg-green-400/10',
+  '体克用': 'text-blue-400 border-blue-400/40 bg-blue-400/10',
+  '体用比和': 'text-yellow-400 border-yellow-400/40 bg-yellow-400/10',
+  '体生用': 'text-orange-400 border-orange-400/40 bg-orange-400/10',
+  '用克体': 'text-red-400 border-red-400/40 bg-red-400/10',
+}
+
 const accordionSections = [
   { key: 'situation', label: '體卦分析', icon: '☰' },
   { key: 'inquiry', label: '用卦分析', icon: '☯' },
   { key: 'interaction', label: '體用關係', icon: '⚡' },
-  { key: 'timeline', label: '时间推断', icon: '⏰' },
+  { key: 'timeline', label: '時間推斷', icon: '⏰' },
 ]
+
+// Render a single hexagram line
+function HexagramLine({ yang, isChanging, index }: { yang: boolean; isChanging: boolean; index: number }) {
+  return (
+    <div className="flex items-center gap-1 justify-center" key={index}>
+      {yang ? (
+        <div className={`h-[4px] sm:h-[5px] rounded-full flex-1 ${isChanging ? 'bg-red-400' : 'bg-gold'}`} />
+      ) : (
+        <>
+          <div className={`h-[4px] sm:h-[5px] rounded-full flex-1 ${isChanging ? 'bg-red-400' : 'bg-gold'}`} />
+          <div className="w-2 sm:w-3" />
+          <div className={`h-[4px] sm:h-[5px] rounded-full flex-1 ${isChanging ? 'bg-red-400' : 'bg-gold'}`} />
+        </>
+      )}
+      {isChanging && <span className="text-red-400 text-[8px] ml-1">动</span>}
+    </div>
+  )
+}
+
+// Render a full hexagram (6 lines from top to bottom visually, but data is bottom-to-top)
+function HexagramDisplay({ hexagram, changingLine, label }: { hexagram: MeihuaHexagram; changingLine?: number; label: string }) {
+  const lines = hexagram.lines || []
+  return (
+    <div className="rounded-xl border border-gold/20 bg-gold/5 p-3 sm:p-4 text-center">
+      <div className="text-white/40 text-xs mb-2">{label}</div>
+      <div className="text-gold font-serif text-sm sm:text-base mb-2">{hexagram.name}</div>
+      <div className="flex flex-col gap-1.5 w-16 sm:w-20 mx-auto">
+        {/* Render from top (line 6) to bottom (line 1) */}
+        {[...lines].reverse().map((line, i) => {
+          const lineNum = lines.length - i // 6 down to 1
+          return <HexagramLine key={i} yang={line === 1} isChanging={changingLine === lineNum} index={i} />
+        })}
+      </div>
+      <div className="flex justify-center gap-2 mt-2">
+        <div>
+          <span className={`text-xs ${elementColor[hexagram.upper?.element || ''] || 'text-gold'}`}>
+            {hexagram.upper?.name}({hexagram.upper?.element})
+          </span>
+        </div>
+        <div>
+          <span className={`text-xs ${elementColor[hexagram.lower?.element || ''] || 'text-gold'}`}>
+            {hexagram.lower?.name}({hexagram.lower?.element})
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function OtherResult({ data }: { data: Record<string, unknown> }) {
   const d = data as unknown as OtherData
@@ -37,35 +134,111 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
 
   const oc = d.outcome || '中'
   const ocClass = outcomeColor[oc] || outcomeColor['中']
-
-  const trigrams = [
-    { label: '體卦(上)', data: d.trigrams?.upper },
-    { label: '用卦(下)', data: d.trigrams?.lower },
-    { label: '变卦', data: d.trigrams?.transformed },
-  ]
+  const mc = d.meihuaChart
+  const hasMeihuaData = !!mc?.benGua
 
   return (
     <div className="space-y-6">
-      {/* Trigrams */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-5 border border-gold/20">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-gold font-serif">{d.subType === 'liuren' ? '六壬神课' : '梅花易数'}</h3>
-          <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {trigrams.map(({ label, data: t }) => (
-            <div key={label} className="rounded-xl border border-gold/20 bg-gold/5 p-4 text-center">
-              <div className="text-white/40 text-xs mb-2">{label}</div>
-              <div className="text-4xl mb-1">{t?.symbol || '☰'}</div>
-              <div className="text-gold font-serif">{t?.name || '?'}</div>
-              <div className="text-white/50 text-xs">{t?.element}</div>
+      {/* Meihua Chart Info */}
+      {hasMeihuaData && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          className="glass-card rounded-xl p-3 sm:p-4 border border-amber-400/30 bg-amber-400/5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-amber-400 text-xs sm:text-sm">梅花易數 · 時間起卦</span>
+            <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
+            <div>
+              <span className="text-white/40">農曆：</span>
+              <span className="text-white/80">{mc.lunarYear}年{mc.lunarMonth}月{mc.lunarDay}日</span>
             </div>
-          ))}
-        </div>
-      </motion.div>
+            <div>
+              <span className="text-white/40">年支：</span>
+              <span className="text-white/80">{mc.yearBranch}（數{mc.yearNum}）</span>
+            </div>
+            <div>
+              <span className="text-white/40">上卦數：</span>
+              <span className="text-white/80">{mc.yearNum}+{mc.monthNum}+{mc.dayNum}=%8→{mc.upperNum}</span>
+            </div>
+            <div>
+              <span className="text-white/40">下卦數：</span>
+              <span className="text-white/80">+{mc.hourNum}=%8→{mc.lowerNum}</span>
+            </div>
+          </div>
+          <div className="mt-1.5 text-[11px] sm:text-xs">
+            <span className="text-white/40">動爻：</span>
+            <span className="text-red-400">第{mc.changingLine}爻</span>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Hexagram Visualization */}
+      {hasMeihuaData && mc.benGua && mc.huGua && mc.bianGua ? (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
+          <h3 className="text-gold font-serif mb-4 text-center">卦象</h3>
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            <HexagramDisplay hexagram={mc.benGua} changingLine={mc.changingLine} label="本卦" />
+            <HexagramDisplay hexagram={mc.huGua} label="互卦" />
+            <HexagramDisplay hexagram={mc.bianGua} label="變卦" />
+          </div>
+        </motion.div>
+      ) : (
+        /* Fallback: original trigram cards */
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-5 border border-gold/20">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-gold font-serif">{d.subType === 'liuren' ? '六壬神課' : '梅花易數'}</h3>
+            <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: '體卦(上)', data: d.trigrams?.upper },
+              { label: '用卦(下)', data: d.trigrams?.lower },
+              { label: '变卦', data: d.trigrams?.transformed },
+            ].map(({ label, data: t }) => (
+              <div key={label} className="rounded-xl border border-gold/20 bg-gold/5 p-4 text-center">
+                <div className="text-white/40 text-xs mb-2">{label}</div>
+                <div className="text-4xl mb-1">{t?.symbol || '☰'}</div>
+                <div className="text-gold font-serif">{t?.name || '?'}</div>
+                <div className="text-white/50 text-xs">{t?.element}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* 体用关系 */}
+      {hasMeihuaData && mc.tiGua && mc.yongGua && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="glass-card rounded-xl p-4 border border-gold/20">
+          <h3 className="text-gold font-serif text-sm mb-3">體用關係</h3>
+          <div className="flex items-center justify-center gap-4 mb-3">
+            <div className="text-center">
+              <div className="text-white/40 text-xs mb-1">體卦</div>
+              <div className={`text-lg font-serif ${elementColor[mc.tiGua.element] || 'text-gold'}`}>
+                {mc.tiGua.symbol} {mc.tiGua.name}
+              </div>
+              <div className={`text-xs ${elementColor[mc.tiGua.element] || 'text-white/50'}`}>{mc.tiGua.element}</div>
+            </div>
+            <div className={`px-3 py-1.5 rounded-full border text-sm font-semibold ${relationColor[mc.tiYongRelation || ''] || 'border-gold/30 text-gold'}`}>
+              {mc.tiYongRelation}
+            </div>
+            <div className="text-center">
+              <div className="text-white/40 text-xs mb-1">用卦</div>
+              <div className={`text-lg font-serif ${elementColor[mc.yongGua.element] || 'text-gold'}`}>
+                {mc.yongGua.symbol} {mc.yongGua.name}
+              </div>
+              <div className={`text-xs ${elementColor[mc.yongGua.element] || 'text-white/50'}`}>{mc.yongGua.element}</div>
+            </div>
+          </div>
+          {mc.tiYongAnalysis && (
+            <div className="text-white/60 text-xs text-center">{mc.tiYongAnalysis}</div>
+          )}
+        </motion.div>
+      )}
 
       {/* Accordion */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-2">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="space-y-2">
         {accordionSections.map(s => (
           <div key={s.key} className="glass-card rounded-xl border border-gold/20 overflow-hidden">
             <button

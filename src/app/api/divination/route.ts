@@ -11,6 +11,7 @@ import { checkModelLimit, incrementModelUsage } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
 import { calculateZiwei, ZiweiChart } from '@/lib/ziweiCalculator'
 import { calculateQimen, QimenChart } from '@/lib/qimenCalculator'
+import { calculateMeihua, MeihuaChart } from '@/lib/meihuaCalculator'
 import { logLlmCall } from '@/lib/llmLogger'
 import { Lunar } from 'lunar-typescript'
 
@@ -223,6 +224,7 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
     let baziChart: BaziChart | null = null
     let ziweiChart: ZiweiChart | null = null
     let qimenChart: QimenChart | null = null
+    let meihuaChart: MeihuaChart | null = null
 
     // Lunar→Solar conversion if user selected lunar calendar
     let solarBirthDate = inputData.birthDate
@@ -391,6 +393,60 @@ ${question ? `- 求测问题：${question}` : '- 求测问题：综合运势'}
 九宫数据以程序计算结果为准，你只负责解盘分析。`
       } catch (e) {
         console.error('Qimen calculation error:', e)
+        userMessage = `请为我进行${type}分析。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+输入信息：${JSON.stringify(inputData, null, 2)}
+${question ? `特别关注：${question}` : ''}`
+      }
+    } else if (type === 'other' && solarBirthDate && inputData.birthTime) {
+      try {
+        meihuaChart = calculateMeihua(solarBirthDate, inputData.birthTime)
+        userMessage = `请为我进行梅花易数排卦分析。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+## 程序预计算的梅花易数卦象（已验证准确，请直接使用）
+${JSON.stringify({
+  timeNumbers: {
+    lunarYear: meihuaChart.lunarYear,
+    lunarMonth: meihuaChart.lunarMonth,
+    lunarDay: meihuaChart.lunarDay,
+    yearBranch: meihuaChart.yearBranch,
+    yearNum: meihuaChart.yearNum,
+    monthNum: meihuaChart.monthNum,
+    dayNum: meihuaChart.dayNum,
+    hourNum: meihuaChart.hourNum,
+  },
+  calculation: {
+    upperSum: `${meihuaChart.yearNum}+${meihuaChart.monthNum}+${meihuaChart.dayNum}=${meihuaChart.yearNum + meihuaChart.monthNum + meihuaChart.dayNum}, %8=${meihuaChart.upperNum}`,
+    lowerSum: `${meihuaChart.yearNum}+${meihuaChart.monthNum}+${meihuaChart.dayNum}+${meihuaChart.hourNum}=${meihuaChart.yearNum + meihuaChart.monthNum + meihuaChart.dayNum + meihuaChart.hourNum}, %8=${meihuaChart.lowerNum}`,
+    changingLine: meihuaChart.changingLine,
+  },
+  benGua: { name: meihuaChart.benGua.name, upper: meihuaChart.benGua.upper.name, lower: meihuaChart.benGua.lower.name, lines: meihuaChart.benGua.lines },
+  huGua: { name: meihuaChart.huGua.name, upper: meihuaChart.huGua.upper.name, lower: meihuaChart.huGua.lower.name },
+  bianGua: { name: meihuaChart.bianGua.name, upper: meihuaChart.bianGua.upper.name, lower: meihuaChart.bianGua.lower.name },
+  tiYong: {
+    tiGua: `${meihuaChart.tiGua.name}(${meihuaChart.tiGua.element})`,
+    yongGua: `${meihuaChart.yongGua.name}(${meihuaChart.yongGua.element})`,
+    relation: meihuaChart.tiYongRelation,
+    analysis: meihuaChart.tiYongAnalysis,
+  },
+}, null, 2)}
+
+## 用户输入
+- 出生日期：${solarBirthDate}（公历）${inputData.lunarToggle === 'lunar' ? `（用户输入农历 ${inputData.birthDate}）` : ''}
+- 时辰：${inputData.birthTime}
+${question ? `- 求测问题：${question}` : '- 求测问题：综合运势'}
+
+## 解卦要求
+你是资深梅花易数术数师，请基于以上程序排出的卦象进行分析。重点：
+1. **situation**：本卦（${meihuaChart.benGua.name}）的卦象含义和当前处境分析（100字以上）
+2. **inquiry**：用卦分析，以动爻变化论述所问之事（100字以上）
+3. **interaction**：体用生克关系详析（${meihuaChart.tiYongRelation}），结合互卦（${meihuaChart.huGua.name}）论中期发展（100字以上）
+4. **timeline**：结合变卦（${meihuaChart.bianGua.name}）推断事物最终走向和应期（100字以上）
+
+同时设置subType为"meihua"。卦象数据以程序计算结果为准，你只负责解卦分析。
+关于trigrams字段：upper对应体卦，lower对应用卦，transformed对应变卦。`
+      } catch (e) {
+        console.error('Meihua calculation error:', e)
         userMessage = `请为我进行${type}分析。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 输入信息：${JSON.stringify(inputData, null, 2)}
@@ -686,6 +742,40 @@ ${question ? `特别关注：${question}` : ''}`
         zhiShi: qimenChart.zhiShi,
         palaces: qimenChart.palaces,
         grid: qimenChart.grid,
+      }
+    }
+
+    // Merge programmatic Meihua data with LLM interpretation
+    if (type === 'other' && meihuaChart) {
+      structuredResult.meihuaChart = {
+        lunarYear: meihuaChart.lunarYear,
+        lunarMonth: meihuaChart.lunarMonth,
+        lunarDay: meihuaChart.lunarDay,
+        shichen: meihuaChart.shichen,
+        yearBranch: meihuaChart.yearBranch,
+        yearNum: meihuaChart.yearNum,
+        monthNum: meihuaChart.monthNum,
+        dayNum: meihuaChart.dayNum,
+        hourNum: meihuaChart.hourNum,
+        upperNum: meihuaChart.upperNum,
+        lowerNum: meihuaChart.lowerNum,
+        changingLine: meihuaChart.changingLine,
+        benGua: meihuaChart.benGua,
+        huGua: meihuaChart.huGua,
+        bianGua: meihuaChart.bianGua,
+        tiGua: meihuaChart.tiGua,
+        yongGua: meihuaChart.yongGua,
+        tiYongRelation: meihuaChart.tiYongRelation,
+        tiYongAnalysis: meihuaChart.tiYongAnalysis,
+      }
+      // Override trigrams with programmatic data
+      structuredResult.trigrams = {
+        upper: { name: meihuaChart.benGua.upper.name, symbol: meihuaChart.benGua.upper.symbol, element: meihuaChart.benGua.upper.element },
+        lower: { name: meihuaChart.benGua.lower.name, symbol: meihuaChart.benGua.lower.symbol, element: meihuaChart.benGua.lower.element },
+        transformed: { name: meihuaChart.bianGua.upper.name, symbol: meihuaChart.bianGua.upper.symbol, element: meihuaChart.bianGua.upper.element },
+      }
+      if (!structuredResult.subType) {
+        structuredResult.subType = 'meihua'
       }
     }
 
