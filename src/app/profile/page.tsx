@@ -183,11 +183,6 @@ export default function ProfilePage() {
 
   const inputCls = "w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
   const labelCls = "block text-white/70 text-sm mb-1"
-  const cardStyle = {
-    background: 'rgba(15, 23, 42, 0.6)',
-    border: '1px solid rgba(212, 168, 83, 0.15)',
-    backdropFilter: 'blur(10px)',
-  }
 
   if (status === 'loading') return (
     <div className="min-h-screen flex items-center justify-center">
@@ -196,40 +191,47 @@ export default function ProfilePage() {
   )
 
   return (
-    <div className="min-h-screen py-12 px-4 max-w-xl mx-auto">
-      <h1 className="text-3xl font-serif mb-8" style={{ color: 'var(--gold)' }}>
-        {T(lang, '個人資料', 'Profile')}
-      </h1>
+    <div className="min-h-screen py-12 px-4 max-w-2xl mx-auto">
+      {/* Page Header Card */}
+      <div className="glass-card rounded-2xl p-6 sm:p-8 mb-6 text-center relative overflow-hidden">
+        <div className="absolute inset-0 rounded-2xl border border-gold/20 pointer-events-none" />
+        <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center text-3xl"
+          style={{ background: 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.05))', border: '2px solid rgba(212,168,83,0.3)' }}>
+          👤
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-serif text-gold">
+          {T(lang, '個人資料', 'Profile')}
+        </h1>
+        {session?.user?.email && (
+          <p className="text-white/40 text-sm mt-1">{session.user.email}</p>
+        )}
+      </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* Personal Info */}
-        <div className="rounded-2xl p-6" style={cardStyle}>
-          <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
-            {T(lang, '個人信息', 'Personal Info')}
-          </h2>
-          <div className="space-y-5">
-            <div>
-              <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
-              <input type="text" className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-            </div>
-            {session?.user?.email && (
+        {/* Personal Info Card */}
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+            <span className="text-lg">🏷️</span>
+            <h2 className="text-lg font-serif text-gold">{T(lang, '個人信息', 'Personal Info')}</h2>
+          </div>
+          <div className="p-6 space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className={labelCls}>{T(lang, '電子郵件', 'Email')}</label>
-                <p className="px-4 py-3 rounded-lg text-sm text-white/50" style={{ background: 'rgba(15, 23, 42, 0.4)' }}>
-                  {session.user.email}
-                </p>
+                <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
+                <input type="text" className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
               </div>
-            )}
-            <div>
-              <label className={labelCls}>{T(lang, '介面語言', 'Language')}</label>
-              <select className={inputCls} value={form.language} onChange={e => setForm(f => ({ ...f, language: e.target.value }))}>
-                <option value="zh-TW">繁體中文</option>
-                <option value="en">English</option>
-              </select>
+              <div>
+                <label className={labelCls}>{T(lang, '介面語言', 'Language')}</label>
+                <select className={inputCls} value={form.language} onChange={e => setForm(f => ({ ...f, language: e.target.value }))}>
+                  <option value="zh-TW">繁體中文</option>
+                  <option value="en">English</option>
+                </select>
+              </div>
             </div>
-            <div className="pt-4 mt-4" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.1)' }}>
-              <p className="text-white/50 text-sm mb-4">{T(lang, '修改密碼（留空則不更改）', 'Change password (leave blank to keep)')}</p>
-              <div className="space-y-4">
+
+            <div className="pt-4" style={{ borderTop: '1px solid rgba(212,168,83,0.1)' }}>
+              <p className="text-white/40 text-xs uppercase tracking-wider mb-3">{T(lang, '🔑 修改密碼（留空不更改）', '🔑 Change Password (leave blank to keep)')}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>{T(lang, '當前密碼', 'Current Password')}</label>
                   <input type="password" className={inputCls} value={form.currentPassword} onChange={e => setForm(f => ({ ...f, currentPassword: e.target.value }))} />
@@ -243,424 +245,460 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Birth Info */}
-        <div className="rounded-2xl p-6" style={cardStyle}>
-          <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
-            {T(lang, '生辰信息', 'Birth Info')}
-          </h2>
-          <div className="space-y-5">
-            <div>
-              <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
-              <div className="flex rounded-lg overflow-hidden border border-gold/20">
-                {[
-                  { value: 'solar', label: T(lang, '公曆（陽曆）', 'Solar') },
-                  { value: 'lunar', label: T(lang, '農曆（陰曆）', 'Lunar') },
-                ].map(opt => (
-                  <button key={opt.value} type="button"
-                    className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
-                    onClick={() => setForm(f => ({ ...f, calendarType: opt.value as 'solar' | 'lunar' }))}
-                  >{opt.label}</button>
-                ))}
+        {/* Birth Info Card */}
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+            <span className="text-lg">📅</span>
+            <h2 className="text-lg font-serif text-gold">{T(lang, '生辰信息', 'Birth Info')}</h2>
+          </div>
+          <div className="p-6 space-y-5">
+            {/* Calendar + Date row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
+                <div className="flex rounded-lg overflow-hidden border border-gold/20">
+                  {[
+                    { value: 'solar', label: T(lang, '公曆', 'Solar') },
+                    { value: 'lunar', label: T(lang, '農曆', 'Lunar') },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                      onClick={() => setForm(f => ({ ...f, calendarType: opt.value as 'solar' | 'lunar' }))}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+                <input type="date" className={inputCls} value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} />
+                <p className="text-white/30 text-xs mt-1">
+                  {form.calendarType === 'lunar'
+                    ? T(lang, '請填寫農曆日期', 'Enter lunar date')
+                    : T(lang, '請填寫公曆日期', 'Enter solar date')}
+                </p>
               </div>
             </div>
-            <div>
-              <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
-              <input type="date" className={inputCls} value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} />
-              <p className="text-white/30 text-xs mt-1">
-                {form.calendarType === 'lunar'
-                  ? T(lang, '請填寫農曆（陰曆）日期。', 'Enter lunar calendar date.')
-                  : T(lang, '請填寫公曆（陽曆）日期。', 'Enter solar calendar date.')}
-              </p>
-            </div>
-            <div>
-              <label className={labelCls}>{T(lang, '時間模式', 'Time Mode')}</label>
-              <div className="flex rounded-lg overflow-hidden border border-gold/20">
-                {[
-                  { value: 'fuzzy', label: T(lang, '模糊（時辰）', 'Fuzzy (Shichen)') },
-                  { value: 'exact', label: T(lang, '精確（時分）', 'Exact (HH:MM)') },
-                ].map(opt => (
-                  <button key={opt.value} type="button"
-                    className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
-                    onClick={() => setForm(f => ({ ...f, timeMode: opt.value as 'fuzzy' | 'exact' }))}
-                  >{opt.label}</button>
-                ))}
+
+            {/* Time mode + Time row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>{T(lang, '時間模式', 'Time Mode')}</label>
+                <div className="flex rounded-lg overflow-hidden border border-gold/20">
+                  {[
+                    { value: 'fuzzy', label: T(lang, '時辰', 'Shichen') },
+                    { value: 'exact', label: T(lang, '精確', 'Exact') },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                      onClick={() => setForm(f => ({ ...f, timeMode: opt.value as 'fuzzy' | 'exact' }))}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
+                {form.timeMode === 'exact' ? (
+                  <input type="time" className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))} />
+                ) : (
+                  <select className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))}>
+                    <option value="">{T(lang, '請選擇', 'Select')}</option>
+                    {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                )}
               </div>
             </div>
-            <div>
-              <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
-              {form.timeMode === 'exact' ? (
-                <input type="time" className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))} />
-              ) : (
-                <select className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))}>
+
+            {/* Birthplace + Gender row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
+                <BirthplaceInput
+                  value={form.birthPlace}
+                  onChange={v => setForm(f => ({ ...f, birthPlace: v }))}
+                  className={inputCls}
+                  placeholder={T(lang, '搜尋城市...', 'Search city...')}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
+                <select className={inputCls} value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}>
                   <option value="">{T(lang, '請選擇', 'Select')}</option>
-                  {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  <option value="male">{T(lang, '男', 'Male')}</option>
+                  <option value="female">{T(lang, '女', 'Female')}</option>
                 </select>
-              )}
-            </div>
-            <div>
-              <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
-              <BirthplaceInput
-                value={form.birthPlace}
-                onChange={v => setForm(f => ({ ...f, birthPlace: v }))}
-                className={inputCls}
-                placeholder={T(lang, '輸入城市名稱搜尋...', 'Search city name...')}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
-              <select className={inputCls} value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}>
-                <option value="">{T(lang, '請選擇', 'Select')}</option>
-                <option value="male">{T(lang, '男', 'Male')}</option>
-                <option value="female">{T(lang, '女', 'Female')}</option>
-              </select>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Save Button */}
         <button
           type="submit"
           disabled={saving}
-          className="w-full py-3 bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light transition-colors disabled:opacity-50"
+          className="w-full py-3.5 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-colors disabled:opacity-50"
         >
-          {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '儲存', 'Save')}
+          {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '💾 儲存', '💾 Save')}
         </button>
       </form>
 
-      {/* Family Members */}
-      <div className="rounded-2xl p-6 mt-6" style={cardStyle}>
-        <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
-          {T(lang, '家庭成員', 'Family Members')}
-        </h2>
-        <div className="space-y-4">
+      {/* Family Members Card */}
+      <div className="glass-card rounded-2xl overflow-hidden mt-6">
+        <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+          <div className="flex items-center gap-3">
+            <span className="text-lg">👨‍👩‍👧‍👦</span>
+            <h2 className="text-lg font-serif text-gold">{T(lang, '家庭成員', 'Family Members')}</h2>
+          </div>
+          {!addingMember && (
+            <button type="button" onClick={() => setAddingMember(true)}
+              className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-gold/10"
+              style={{ border: '1px solid rgba(212,168,83,0.3)', color: 'var(--gold)' }}>
+              ➕ {T(lang, '新增', 'Add')}
+            </button>
+          )}
+        </div>
+        <div className="p-6 space-y-3">
           {familyMembers.length === 0 && !addingMember && (
-            <p className="text-white/50 text-sm">{T(lang, '尚未新增家庭成員', 'No family members added yet')}</p>
+            <p className="text-white/40 text-sm text-center py-4">{T(lang, '尚未新增家庭成員', 'No family members added yet')}</p>
           )}
 
           {familyMembers.map(member => (
-            <div key={member.id} className="rounded-xl p-4" style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
+            <div key={member.id} className="rounded-xl p-4 border border-gold/10 bg-navy-900/50">
               {editingMember === member.id ? (
                 <div className="space-y-3">
-                  <div>
-                    <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
-                    <select className={inputCls} value={editForm.relation || ''} onChange={e => setEditForm(f => ({ ...f, relation: e.target.value }))}>
-                      {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
-                    </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
+                      <select className={inputCls} value={editForm.relation || ''} onChange={e => setEditForm(f => ({ ...f, relation: e.target.value }))}>
+                        {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
+                      <input type="text" className={inputCls} value={editForm.name || ''} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+                    </div>
                   </div>
-                  <div>
-                    <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
-                    <input type="text" className={inputCls} value={editForm.name || ''} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+                      <input type="date" className={inputCls} value={editForm.birthDate || ''} onChange={e => setEditForm(f => ({ ...f, birthDate: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
+                      <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
+                        <option value="">{T(lang, '請選擇', 'Select')}</option>
+                        {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      </select>
+                    </div>
                   </div>
-                  <div>
-                    <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
-                    <input type="date" className={inputCls} value={editForm.birthDate || ''} onChange={e => setEditForm(f => ({ ...f, birthDate: e.target.value }))} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
+                      <input type="text" className={inputCls} value={editForm.birthPlace || ''} onChange={e => setEditForm(f => ({ ...f, birthPlace: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
+                      <select className={inputCls} value={editForm.gender || ''} onChange={e => setEditForm(f => ({ ...f, gender: e.target.value }))}>
+                        <option value="">{T(lang, '請選擇', 'Select')}</option>
+                        <option value="male">{T(lang, '男', 'Male')}</option>
+                        <option value="female">{T(lang, '女', 'Female')}</option>
+                      </select>
+                    </div>
                   </div>
-                  <div>
-                    <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
-                    <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
-                      <option value="">{T(lang, '請選擇', 'Select')}</option>
-                      {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
-                    <input type="text" className={inputCls} value={editForm.birthPlace || ''} onChange={e => setEditForm(f => ({ ...f, birthPlace: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
-                    <select className={inputCls} value={editForm.gender || ''} onChange={e => setEditForm(f => ({ ...f, gender: e.target.value }))}>
-                      <option value="">{T(lang, '請選擇', 'Select')}</option>
-                      <option value="male">{T(lang, '男', 'Male')}</option>
-                      <option value="female">{T(lang, '女', 'Female')}</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-1">
                     <button type="button" onClick={() => updateFamilyMember(member.id)} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '儲存', 'Save')}</button>
                     <button type="button" onClick={() => setEditingMember(null)} className="px-4 py-2 border border-white/20 text-white/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium" style={{ color: 'var(--gold)' }}>
-                      {relationPresets.find(r => r.value === member.relation)?.[lang === 'en' ? 'en' : 'zh'] || member.relation}
-                      {member.name ? ` — ${member.name}` : ''}
-                    </p>
-                    <p className="text-white/50 text-xs mt-1">
-                      {[member.birthDate, member.birthTime, member.birthPlace, member.gender === 'male' ? T(lang, '男', 'M') : member.gender === 'female' ? T(lang, '女', 'F') : ''].filter(Boolean).join(' · ') || T(lang, '未填寫生辰資訊', 'No birth info')}
-                    </p>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm"
+                      style={{ background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.2)' }}>
+                      {member.gender === 'male' ? '👨' : member.gender === 'female' ? '👩' : '👤'}
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm text-gold">
+                        {relationPresets.find(r => r.value === member.relation)?.[lang === 'en' ? 'en' : 'zh'] || member.relation}
+                        {member.name ? ` — ${member.name}` : ''}
+                      </p>
+                      <p className="text-white/40 text-xs mt-0.5">
+                        {[member.birthDate, member.birthTime, member.birthPlace].filter(Boolean).join(' · ') || T(lang, '未填寫生辰', 'No birth info')}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '' }) }} className="text-white/40 hover:text-gold text-xs">✏️</button>
-                    <button type="button" onClick={() => deleteFamilyMember(member.id)} className="text-white/40 hover:text-red-400 text-xs">✕</button>
+                    <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '' }) }}
+                      className="text-white/30 hover:text-gold text-sm transition-colors">✏️</button>
+                    <button type="button" onClick={() => deleteFamilyMember(member.id)}
+                      className="text-white/30 hover:text-red-400 text-sm transition-colors">✕</button>
                   </div>
                 </div>
               )}
             </div>
           ))}
 
-          {addingMember ? (
-            <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
-              <div>
-                <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
-                <select className={inputCls} value={newMember.relation || ''} onChange={e => setNewMember(f => ({ ...f, relation: e.target.value }))}>
-                  <option value="">{T(lang, '請選擇', 'Select')}</option>
-                  {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
-                </select>
+          {addingMember && (
+            <div className="rounded-xl p-4 space-y-3 border border-gold/20 bg-navy-900/50">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
+                  <select className={inputCls} value={newMember.relation || ''} onChange={e => setNewMember(f => ({ ...f, relation: e.target.value }))}>
+                    <option value="">{T(lang, '請選擇', 'Select')}</option>
+                    {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>{T(lang, '姓名（可選）', 'Name (optional)')}</label>
+                  <input type="text" className={inputCls} value={newMember.name || ''} onChange={e => setNewMember(f => ({ ...f, name: e.target.value }))} />
+                </div>
               </div>
-              <div>
-                <label className={labelCls}>{T(lang, '姓名（可選）', 'Name (optional)')}</label>
-                <input type="text" className={inputCls} value={newMember.name || ''} onChange={e => setNewMember(f => ({ ...f, name: e.target.value }))} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+                  <input type="date" className={inputCls} value={newMember.birthDate || ''} onChange={e => setNewMember(f => ({ ...f, birthDate: e.target.value }))} />
+                </div>
+                <div>
+                  <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
+                  <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
+                    <option value="">{T(lang, '請選擇', 'Select')}</option>
+                    {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
-                <input type="date" className={inputCls} value={newMember.birthDate || ''} onChange={e => setNewMember(f => ({ ...f, birthDate: e.target.value }))} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
+                  <input type="text" className={inputCls} value={newMember.birthPlace || ''} onChange={e => setNewMember(f => ({ ...f, birthPlace: e.target.value }))} />
+                </div>
+                <div>
+                  <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
+                  <select className={inputCls} value={newMember.gender || ''} onChange={e => setNewMember(f => ({ ...f, gender: e.target.value }))}>
+                    <option value="">{T(lang, '請選擇', 'Select')}</option>
+                    <option value="male">{T(lang, '男', 'Male')}</option>
+                    <option value="female">{T(lang, '女', 'Female')}</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
-                <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
-                  <option value="">{T(lang, '請選擇', 'Select')}</option>
-                  {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
-                <input type="text" className={inputCls} value={newMember.birthPlace || ''} onChange={e => setNewMember(f => ({ ...f, birthPlace: e.target.value }))} />
-              </div>
-              <div>
-                <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
-                <select className={inputCls} value={newMember.gender || ''} onChange={e => setNewMember(f => ({ ...f, gender: e.target.value }))}>
-                  <option value="">{T(lang, '請選擇', 'Select')}</option>
-                  <option value="male">{T(lang, '男', 'Male')}</option>
-                  <option value="female">{T(lang, '女', 'Female')}</option>
-                </select>
-              </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-1">
                 <button type="button" onClick={addFamilyMember} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '新增', 'Add')}</button>
                 <button type="button" onClick={() => setAddingMember(false)} className="px-4 py-2 border border-white/20 text-white/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
               </div>
             </div>
-          ) : (
-            <button type="button" onClick={() => setAddingMember(true)} className="w-full py-3 rounded-xl text-sm transition-colors hover:bg-gold/10" style={{ border: '1px solid rgba(212, 168, 83, 0.3)', color: 'var(--gold)' }}>
-              {T(lang, '➕ 新增成員', '➕ Add Member')}
-            </button>
           )}
         </div>
       </div>
 
-      {/* Credits */}
+      {/* Credits Card */}
       {credits && (
-        <div className="rounded-2xl p-6 mt-6" style={cardStyle}>
-          <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
-            {T(lang, '額度信息', 'Credits')}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { key: 'model1', label: T(lang, '⚡ 標準模型', '⚡ Standard'), data: credits.model1 },
-              { key: 'model2', label: T(lang, '🌟 高級模型', '🌟 Premium'), data: credits.model2 },
-              { key: 'chat', label: T(lang, '💬 問答聊天', '💬 Chat'), data: credits.chat },
-            ].map(m => {
-              const d = m.data as { remaining: number; used: number; dailyLimit: number; bonus: number }
-              if (!d) return null
-              const isUnlimited = d.dailyLimit === -1
-              const pct = isUnlimited ? 100 : d.dailyLimit > 0 ? Math.round((d.remaining / d.dailyLimit) * 100) : 0
-              return (
-                <div key={m.key} className="rounded-xl p-4" style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(212, 168, 83, 0.1)' }}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{m.label}</span>
-                    <span className="text-xs" style={{ color: 'var(--gold)' }}>
-                      {isUnlimited ? '∞' : `${d.remaining} / ${d.dailyLimit}`}
-                    </span>
-                  </div>
-                  {!isUnlimited && (
-                    <div className="h-2 rounded-full mb-2" style={{ backgroundColor: 'var(--bg-primary)' }}>
-                      <div
-                        className="h-2 rounded-full transition-all"
-                        style={{ width: `${pct}%`, backgroundColor: pct > 30 ? 'var(--gold)' : '#ef4444' }}
-                      />
-                    </div>
-                  )}
-                  <div className="flex justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span>{T(lang, `今日已用 ${d.used} 次`, `Used ${d.used} today`)}</span>
-                    {d.bonus > 0 && (
-                      <span style={{ color: '#2dd489' }}>+{d.bonus} {T(lang, '儲備', 'reserve')}</span>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+        <div className="glass-card rounded-2xl overflow-hidden mt-6">
+          <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+            <span className="text-lg">✦</span>
+            <h2 className="text-lg font-serif text-gold">{T(lang, '額度信息', 'Credits')}</h2>
           </div>
-          {userBonus && (userBonus.model1 > 0 || userBonus.model2 > 0 || userBonus.chat > 0) && (
-            <div className="mt-3 pt-3 flex flex-wrap gap-3 text-xs" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.1)', color: 'var(--text-muted)' }}>
-              <span>🎁 {T(lang, '儲備額度', 'Reserve Credits')}:</span>
-              {userBonus.model1 > 0 && <span>⚡ ×{userBonus.model1}</span>}
-              {userBonus.model2 > 0 && <span>🌟 ×{userBonus.model2}</span>}
-              {userBonus.chat > 0 && <span>💬 ×{userBonus.chat}</span>}
+          <div className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { key: 'model1', label: T(lang, '⚡ 標準', '⚡ Standard'), data: credits.model1 },
+                { key: 'model2', label: T(lang, '🌟 高級', '🌟 Premium'), data: credits.model2 },
+                { key: 'chat', label: T(lang, '💬 問答', '💬 Chat'), data: credits.chat },
+              ].map(m => {
+                const d = m.data as { remaining: number; used: number; dailyLimit: number; bonus: number }
+                if (!d) return null
+                const isUnlimited = d.dailyLimit === -1
+                const pct = isUnlimited ? 100 : d.dailyLimit > 0 ? Math.round((d.remaining / d.dailyLimit) * 100) : 0
+                return (
+                  <div key={m.key} className="rounded-xl p-4 border border-gold/10 bg-navy-900/50">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-white/80">{m.label}</span>
+                      <span className="text-xs text-gold font-mono">
+                        {isUnlimited ? '∞' : `${d.remaining}/${d.dailyLimit}`}
+                      </span>
+                    </div>
+                    {!isUnlimited && (
+                      <div className="h-1.5 rounded-full bg-navy-800 mb-2">
+                        <div className="h-1.5 rounded-full transition-all"
+                          style={{ width: `${pct}%`, backgroundColor: pct > 30 ? '#d4a853' : '#ef4444' }} />
+                      </div>
+                    )}
+                    <div className="flex justify-between text-xs text-white/40">
+                      <span>{T(lang, `已用 ${d.used}`, `Used ${d.used}`)}</span>
+                      {d.bonus > 0 && <span className="text-emerald-400">+{d.bonus}</span>}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          )}
+            {userBonus && (userBonus.model1 > 0 || userBonus.model2 > 0 || userBonus.chat > 0) && (
+              <div className="mt-4 pt-3 flex flex-wrap gap-3 text-xs text-white/40" style={{ borderTop: '1px solid rgba(212,168,83,0.1)' }}>
+                <span>🎁 {T(lang, '儲備額度', 'Reserve')}:</span>
+                {userBonus.model1 > 0 && <span>⚡×{userBonus.model1}</span>}
+                {userBonus.model2 > 0 && <span>🌟×{userBonus.model2}</span>}
+                {userBonus.chat > 0 && <span>💬×{userBonus.chat}</span>}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Site Feedback */}
-      <div className="rounded-2xl p-6 mt-6" style={cardStyle}>
-        <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
-          {T(lang, '意見回饋', 'Feedback')}
-        </h2>
-        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-          {T(lang, '您的意見對我們非常重要，幫助我們持續改進服務。', 'Your feedback helps us improve our service.')}
-        </p>
+      {/* Feedback Card */}
+      <div className="glass-card rounded-2xl overflow-hidden mt-6">
+        <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+          <span className="text-lg">💬</span>
+          <h2 className="text-lg font-serif text-gold">{T(lang, '意見回饋', 'Feedback')}</h2>
+        </div>
+        <div className="p-6">
+          {fbSent ? (
+            <div className="py-6 text-center rounded-xl" style={{ backgroundColor: 'rgba(45,212,137,0.08)', border: '1px solid rgba(45,212,137,0.2)' }}>
+              <span className="text-2xl">🙏</span>
+              <p className="text-emerald-400 text-sm mt-2">{T(lang, '感謝您的回饋！', 'Thank you for your feedback!')}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm mb-2 text-white/50">{T(lang, '整體評分', 'Overall Rating')}</label>
+                <div className="flex gap-1">
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n} type="button" onClick={() => setFbRating(n)}
+                      className="text-2xl transition-all hover:scale-125"
+                      style={{ color: n <= fbRating ? '#d4a853' : 'rgba(255,255,255,0.15)' }}
+                    >★</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm mb-1 text-white/50">{T(lang, '建議或意見', 'Comments')}</label>
+                <textarea
+                  value={fbText}
+                  onChange={e => setFbText(e.target.value)}
+                  rows={3}
+                  maxLength={2000}
+                  placeholder={T(lang, '分享您的使用體驗...', 'Share your experience...')}
+                  className={inputCls + ' resize-none'}
+                />
+              </div>
+              <button
+                type="button"
+                disabled={!fbText.trim() || fbSending}
+                onClick={async () => {
+                  setFbSending(true)
+                  try {
+                    const res = await fetch('/api/site-feedback', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ rating: fbRating || null, feedback: fbText }),
+                    })
+                    if (res.ok) {
+                      setFbSent(true)
+                      toast.success(T(lang, '感謝回饋！', 'Thanks!'))
+                      setTimeout(() => { setFbSent(false); setFbRating(0); setFbText('') }, 3000)
+                      fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(() => {})
+                    }
+                  } catch { toast.error('Error') }
+                  setFbSending(false)
+                }}
+                className="px-5 py-2.5 rounded-xl font-medium text-sm bg-gold text-navy-950 hover:bg-gold-light transition-colors disabled:opacity-40"
+              >
+                {fbSending ? '...' : T(lang, '提交回饋', 'Submit')}
+              </button>
+            </div>
+          )}
 
-        {fbSent ? (
-          <div className="py-4 text-center rounded-xl" style={{ backgroundColor: 'rgba(45, 212, 137, 0.1)', color: '#2dd489' }}>
-            ✓ {T(lang, '感謝您的回饋！', 'Thank you for your feedback!')}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>{T(lang, '整體評分', 'Overall Rating')}</label>
-              <div className="flex gap-1">
-                {[1,2,3,4,5].map(n => (
-                  <button key={n} type="button" onClick={() => setFbRating(n)}
-                    className="text-2xl transition-transform hover:scale-110"
-                    style={{ color: n <= fbRating ? 'var(--gold)' : 'rgba(255,255,255,0.2)' }}
-                  >★</button>
+          {fbHistory.length > 0 && (
+            <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(212,168,83,0.1)' }}>
+              <h3 className="text-xs uppercase tracking-wider text-white/40 mb-3">{T(lang, '過往回饋', 'Past Feedback')}</h3>
+              <div className="space-y-2">
+                {fbHistory.map(fb => (
+                  <div key={fb.id} className="rounded-lg px-4 py-3 border border-gold/5 bg-navy-900/50">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-gold text-xs">{fb.rating ? '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating) : ''}</span>
+                      <span className="text-white/30 text-xs">{new Date(fb.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-white/60 text-sm">{fb.feedback}</p>
+                  </div>
                 ))}
               </div>
             </div>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: 'var(--text-muted)' }}>{T(lang, '建議或意見', 'Comments or Suggestions')}</label>
-              <textarea
-                value={fbText}
-                onChange={e => setFbText(e.target.value)}
-                rows={3}
-                maxLength={2000}
-                placeholder={T(lang, '分享您的使用體驗、建議或問題...', 'Share your experience, suggestions, or issues...')}
-                className="w-full px-4 py-3 rounded-lg border text-sm focus:outline-none transition-colors"
-                style={{ backgroundColor: 'var(--input-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
-              />
-            </div>
-            <button
-              type="button"
-              disabled={!fbText.trim() || fbSending}
-              onClick={async () => {
-                setFbSending(true)
-                try {
-                  const res = await fetch('/api/site-feedback', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ rating: fbRating || null, feedback: fbText }),
-                  })
-                  if (res.ok) {
-                    setFbSent(true)
-                    toast.success(T(lang, '感謝回饋！', 'Thanks for your feedback!'))
-                    setTimeout(() => { setFbSent(false); setFbRating(0); setFbText('') }, 3000)
-                    fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(() => {})
-                  }
-                } catch { toast.error('Error') }
-                setFbSending(false)
-              }}
-              className="px-5 py-2 rounded-xl font-medium text-sm transition-colors disabled:opacity-40"
-              style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
-            >
-              {fbSending ? '...' : T(lang, '提交回饋', 'Submit Feedback')}
-            </button>
-          </div>
-        )}
-
-        {fbHistory.length > 0 && (
-          <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(212, 168, 83, 0.1)' }}>
-            <h3 className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>{T(lang, '過往回饋', 'Past Feedback')}</h3>
-            <div className="space-y-2">
-              {fbHistory.map(fb => (
-                <div key={fb.id} className="rounded-lg px-3 py-2 text-sm" style={{ background: 'rgba(15, 23, 42, 0.5)' }}>
-                  <div className="flex justify-between items-center mb-1">
-                    <span style={{ color: 'var(--gold)' }}>{fb.rating ? '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating) : ''}</span>
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(fb.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <p style={{ color: 'var(--text-secondary)' }}>{fb.feedback}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Data Management */}
-      <div className="rounded-2xl p-6 mt-6" style={cardStyle}>
-        <h2 className="text-xl font-serif mb-4" style={{ color: 'var(--gold)' }}>
-          {T(lang, '數據管理', 'Data Management')}
-        </h2>
-        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-          {T(lang,
-            '根據 GDPR 和 PIPEDA，您有權導出或刪除您的所有個人數據。',
-            'Under GDPR and PIPEDA, you have the right to export or delete all your personal data.'
-          )}
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => {
-              window.open('/api/profile/export', '_blank')
-              toast.success(T(lang, '數據導出已開始', 'Data export started'))
-            }}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            style={{ border: '1px solid rgba(212, 168, 83, 0.15)', color: 'var(--text-secondary)' }}
-          >
-            📥 {T(lang, '導出我的數據', 'Export My Data')}
-          </button>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
-          >
-            🗑️ {T(lang, '刪除帳號', 'Delete Account')}
-          </button>
+      {/* Data Management Card */}
+      <div className="glass-card rounded-2xl overflow-hidden mt-6">
+        <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+          <span className="text-lg">🔒</span>
+          <h2 className="text-lg font-serif text-gold">{T(lang, '數據管理', 'Data Management')}</h2>
         </div>
-
-        {deleteEmailSent && (
-          <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'rgba(45,212,137,0.05)', border: '1px solid rgba(45,212,137,0.2)' }}>
-            <p className="text-sm" style={{ color: '#2dd489' }}>
-              ✉️ {T(lang,
-                '確認郵件已發送至您的信箱。請點擊郵件中的連結完成帳號刪除。連結 24 小時內有效。',
-                'A confirmation email has been sent to your inbox. Please click the link in the email to complete the account deletion. The link is valid for 24 hours.'
-              )}
-            </p>
+        <div className="p-6">
+          <p className="text-sm text-white/50 mb-4">
+            {T(lang,
+              '根據 GDPR 和 PIPEDA，您有權導出或刪除您的所有個人數據。',
+              'Under GDPR and PIPEDA, you have the right to export or delete all your personal data.'
+            )}
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => {
+                window.open('/api/profile/export', '_blank')
+                toast.success(T(lang, '數據導出已開始', 'Data export started'))
+              }}
+              className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 border border-gold/15 text-white/70"
+            >
+              📥 {T(lang, '導出數據', 'Export Data')}
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-red-500/10"
+              style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
+            >
+              🗑️ {T(lang, '刪除帳號', 'Delete Account')}
+            </button>
           </div>
-        )}
 
-        {showDeleteConfirm && (
-          <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <p className="text-sm mb-3" style={{ color: '#fca5a5' }}>
-              ⚠️ {T(lang,
-                '我們將發送一封確認郵件到您的信箱。請點擊郵件中的連結完成帳號刪除。請輸入密碼以繼續。',
-                'We will send a confirmation email to your inbox. Click the link in the email to complete account deletion. Enter your password to continue.'
-              )}
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                value={deletePassword}
-                onChange={e => setDeletePassword(e.target.value)}
-                placeholder={T(lang, '請輸入密碼', 'Enter password')}
-                className="flex-1 px-3 py-2 rounded-lg text-sm text-white focus:outline-none"
-                style={{ background: 'rgba(15, 23, 42, 0.5)', border: '1px solid rgba(212, 168, 83, 0.1)' }}
-              />
-              <button
-                onClick={handleDeleteAccount}
-                disabled={!deletePassword || deleteLoading}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors"
-                style={{ backgroundColor: '#dc2626' }}
-              >
-                {deleteLoading ? '...' : T(lang, '發送確認信', 'Send Confirmation')}
-              </button>
-              <button
-                onClick={() => { setShowDeleteConfirm(false); setDeletePassword('') }}
-                className="px-3 py-2 rounded-lg text-sm transition-colors"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {T(lang, '取消', 'Cancel')}
-              </button>
+          {deleteEmailSent && (
+            <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: 'rgba(45,212,137,0.05)', border: '1px solid rgba(45,212,137,0.2)' }}>
+              <p className="text-sm text-emerald-400">
+                ✉️ {T(lang,
+                  '確認郵件已發送。請點擊郵件中的連結完成帳號刪除，24 小時內有效。',
+                  'Confirmation email sent. Click the link to complete deletion. Valid for 24 hours.'
+                )}
+              </p>
             </div>
-          </div>
-        )}
+          )}
+
+          {showDeleteConfirm && (
+            <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
+              <p className="text-sm mb-3" style={{ color: '#fca5a5' }}>
+                ⚠️ {T(lang,
+                  '我們將發送確認郵件。請輸入密碼繼續。',
+                  'We will send a confirmation email. Enter your password to continue.'
+                )}
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={e => setDeletePassword(e.target.value)}
+                  placeholder={T(lang, '請輸入密碼', 'Enter password')}
+                  className="flex-1 px-3 py-2 rounded-lg text-sm text-white bg-navy-900/50 border border-gold/10 focus:outline-none focus:border-gold/30"
+                />
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={!deletePassword || deleteLoading}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors"
+                  style={{ backgroundColor: '#dc2626' }}
+                >
+                  {deleteLoading ? '...' : T(lang, '確認', 'Confirm')}
+                </button>
+                <button
+                  onClick={() => { setShowDeleteConfirm(false); setDeletePassword('') }}
+                  className="px-3 py-2 rounded-lg text-sm text-white/40 hover:text-white/60 transition-colors"
+                >
+                  {T(lang, '取消', 'Cancel')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
