@@ -1,5 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
@@ -17,6 +20,14 @@ const services = [
 
 export default function HomePage() {
   const { lang } = useLang()
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.replace('/divination')
+    }
+  }, [status, session, router])
 
   return (
     <div className="min-h-screen bg-navy-950">
