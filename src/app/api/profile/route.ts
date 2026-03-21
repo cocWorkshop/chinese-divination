@@ -10,7 +10,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { name, birthDate, birthTime, birthPlace, gender, language, currentPassword, newPassword } = await req.json()
+  const { name, birthDate, birthTime, birthPlace, gender, language, timeMode, calendarType, currentPassword, newPassword } = await req.json()
 
   const updateData: Record<string, string | null> = {
     name: name || null,
@@ -19,6 +19,8 @@ export async function PUT(req: NextRequest) {
     birthPlace: birthPlace || null,
     gender: gender || null,
     language: language || 'zh',
+    timeMode: timeMode || null,
+    calendarType: calendarType || null,
   }
 
   if (newPassword) {
@@ -50,6 +52,7 @@ export async function GET() {
     select: {
       name: true, birthDate: true, birthTime: true,
       birthPlace: true, gender: true, language: true,
+      timeMode: true, calendarType: true,
       role: true, isAdmin: true,
     },
   })

@@ -1,6 +1,6 @@
 import { Solar, Lunar } from 'lunar-typescript'
 import { cityLongitudes } from './cityLongitudes'
-import { trueSolarTime, getTrueSolarTimeCorrection, getShichen, shichenNameToBranch, shichenToHourRange } from './trueSolarTime'
+import { trueSolarTime, getTrueSolarTimeCorrection, getShichen, shichenNameToBranch } from './trueSolarTime'
 
 const STEMS = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'] as const
 const BRANCHES = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'] as const
@@ -275,7 +275,7 @@ export interface BaziChart {
   luckyElements: string[]
   avoidElements: string[]
   shenSha: { name: string; description: string }[]
-  trueSolarTime: {
+  trueSolarTime?: {
     originalTime: string
     correctedTime: string
     correctionMinutes: number
@@ -503,7 +503,8 @@ export function calculateBazi(
   birthDate: string,
   birthTime: string,
   birthPlace: string,
-  gender: 'male' | 'female'
+  gender: 'male' | 'female',
+  exactTime?: string // HH:MM format for precise mode
 ): BaziChart {
   // Resolve longitude
   const cityInfo = cityLongitudes[birthPlace]
@@ -512,27 +513,43 @@ export function calculateBazi(
   // Parse birth date
   const [year, month, day] = birthDate.split('-').map(Number)
 
-  // Resolve shichen to an hour for the solar object
-  const branch = shichenNameToBranch(birthTime)
-  const hourRange = shichenToHourRange(branch)
-  // Use the midpoint of the shichen for true solar time calculation
-  let midHour = branch === '子' ? 0 : hourRange.start + 1 // midpoint-ish
-
-  // Create standard time Date for true solar time calculation
-  const standardDate = new Date(year, month - 1, day, midHour, 0, 0)
-  const correctionMinutes = getTrueSolarTimeCorrection(standardDate, longitude)
-  const correctedDate = trueSolarTime(standardDate, longitude)
-  const correctedShichen = getShichen(correctedDate)
-  const shichenChanged = correctedShichen.branch !== branch
-
-  // Use corrected shichen for the actual BaZi calculation
-  const actualBranch = correctedShichen.branch
   // Map branch to hour for lunar-typescript
   const branchToHour: Record<string, number> = {
     '子': 0, '丑': 2, '寅': 4, '卯': 6, '辰': 8, '巳': 10,
     '午': 12, '未': 14, '申': 16, '酉': 18, '戌': 20, '亥': 22,
   }
-  const solarHour = branchToHour[actualBranch] ?? 12
+
+  let actualBranch: string
+  let solarHour: number
+  let trueSolarTimeInfo: BaziChart['trueSolarTime'] | undefined
+
+  if (exactTime) {
+    // Precise mode: parse exact HH:MM, apply true solar time correction
+    const [exactHour, exactMinute] = exactTime.split(':').map(Number)
+    const standardDate = new Date(year, month - 1, day, exactHour, exactMinute, 0)
+    const correctionMinutes = getTrueSolarTimeCorrection(standardDate, longitude)
+    const correctedDate = trueSolarTime(standardDate, longitude)
+    const correctedShichen = getShichen(correctedDate)
+    const originalShichen = getShichen(standardDate)
+    const shichenChanged = correctedShichen.branch !== originalShichen.branch
+
+    actualBranch = correctedShichen.branch
+    solarHour = branchToHour[actualBranch] ?? 12
+
+    trueSolarTimeInfo = {
+      originalTime: formatTime(standardDate),
+      correctedTime: formatTime(correctedDate),
+      correctionMinutes: Math.round(correctionMinutes * 10) / 10,
+      longitude,
+      shichen: actualBranch + '时',
+      shichenChanged,
+    }
+  } else {
+    // Fuzzy mode: use shichen directly, no true solar time correction
+    const branch = shichenNameToBranch(birthTime)
+    actualBranch = branch
+    solarHour = branchToHour[actualBranch] ?? 12
+  }
 
   // Use lunar-typescript for accurate Gan-Zhi calculation
   const solar = Solar.fromYmdHms(year, month, day, solarHour, 0, 0)
@@ -672,14 +689,7 @@ export function calculateBazi(
     luckyElements: luckyElements.filter(Boolean),
     avoidElements: avoidElements.filter(Boolean),
     shenSha,
-    trueSolarTime: {
-      originalTime: formatTime(standardDate),
-      correctedTime: formatTime(correctedDate),
-      correctionMinutes: Math.round(correctionMinutes * 10) / 10,
-      longitude,
-      shichen: actualBranch + '时',
-      shichenChanged,
-    },
+    trueSolarTime: trueSolarTimeInfo,
     daYun,
     xiaoYun,
     qiYun: {

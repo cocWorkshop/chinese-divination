@@ -54,6 +54,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const [form, setForm] = useState({
     name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', language: 'zh-TW',
+    timeMode: 'fuzzy' as 'fuzzy' | 'exact', calendarType: 'solar' as 'solar' | 'lunar',
     newPassword: '', currentPassword: '',
   })
   const [saving, setSaving] = useState(false)
@@ -104,11 +105,25 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
-    if (session?.user?.name) setForm(f => ({ ...f, name: session.user?.name || '' }))
-  }, [status, session, router])
+  }, [status, router])
 
   useEffect(() => {
     if (session) {
+      fetch('/api/profile').then(r => r.json()).then(data => {
+        if (!data.error) {
+          setForm(f => ({
+            ...f,
+            name: data.name || '',
+            birthDate: data.birthDate || '',
+            birthTime: data.birthTime || '',
+            birthPlace: data.birthPlace || '',
+            gender: data.gender || '',
+            language: data.language || 'zh-TW',
+            timeMode: data.timeMode || 'fuzzy',
+            calendarType: data.calendarType || 'solar',
+          }))
+        }
+      }).catch(() => {})
       fetch('/api/family-members').then(r => r.json()).then(data => setFamilyMembers(data.members || [])).catch(() => {})
       fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(() => {})
       fetch('/api/credits').then(r => r.json()).then(data => {
@@ -238,16 +253,52 @@ export default function ProfilePage() {
           <input type="text" className={inputCls} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
         </div>
         <div>
-          <label className={labelCls}>{T(lang, '出生日期（公曆）', 'Birth Date (Solar)')}</label>
+          <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
+          <div className="flex rounded-lg overflow-hidden border border-gold/20">
+            {[
+              { value: 'solar', label: T(lang, '公曆（陽曆）', 'Solar') },
+              { value: 'lunar', label: T(lang, '農曆（陰曆）', 'Lunar') },
+            ].map(opt => (
+              <button key={opt.value} type="button"
+                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                onClick={() => setForm(f => ({ ...f, calendarType: opt.value as 'solar' | 'lunar' }))}
+              >{opt.label}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
           <input type="date" className={inputCls} value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} />
-          <p className="text-white/30 text-xs mt-1">{T(lang, '此處請填寫公曆（陽曆）日期。占卜時可選擇農曆輸入。', 'Enter solar calendar date here. Lunar input available in divination forms.')}</p>
+          <p className="text-white/30 text-xs mt-1">
+            {form.calendarType === 'lunar'
+              ? T(lang, '請填寫農曆（陰曆）日期。', 'Enter lunar calendar date.')
+              : T(lang, '請填寫公曆（陽曆）日期。', 'Enter solar calendar date.')}
+          </p>
+        </div>
+        <div>
+          <label className={labelCls}>{T(lang, '時間模式', 'Time Mode')}</label>
+          <div className="flex rounded-lg overflow-hidden border border-gold/20">
+            {[
+              { value: 'fuzzy', label: T(lang, '模糊（時辰）', 'Fuzzy (Shichen)') },
+              { value: 'exact', label: T(lang, '精確（時分）', 'Exact (HH:MM)') },
+            ].map(opt => (
+              <button key={opt.value} type="button"
+                className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                onClick={() => setForm(f => ({ ...f, timeMode: opt.value as 'fuzzy' | 'exact' }))}
+              >{opt.label}</button>
+            ))}
+          </div>
         </div>
         <div>
           <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
-          <select className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))}>
-            <option value="">{T(lang, '請選擇', 'Select')}</option>
-            {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
+          {form.timeMode === 'exact' ? (
+            <input type="time" className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))} />
+          ) : (
+            <select className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))}>
+              <option value="">{T(lang, '請選擇', 'Select')}</option>
+              {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          )}
         </div>
         <div>
           <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
@@ -412,10 +463,8 @@ export default function ProfilePage() {
       </div>
 
       {/* Site Feedback */}
+      <h2 className="text-2xl font-serif text-gold mt-12 mb-4">{T(lang, '意見回饋', 'Feedback')}</h2>
       <div className="glass-card rounded-2xl p-5 sm:p-8 space-y-4">
-        <h2 className="text-lg font-serif mb-4" style={{ color: 'var(--gold)' }}>
-          💬 {T(lang, '意見回饋', 'Feedback')}
-        </h2>
         <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
           {T(lang, '您的意見對我們非常重要，幫助我們持續改進服務。', 'Your feedback helps us improve our service.')}
         </p>
@@ -499,10 +548,8 @@ export default function ProfilePage() {
       </div>
 
       {/* Data Management (GDPR/PIPEDA) */}
-      <div className="glass-card rounded-2xl p-5 sm:p-8 mt-6 border" style={{ borderColor: 'var(--card-border)' }}>
-        <h2 className="text-lg font-serif mb-4" style={{ color: 'var(--gold)' }}>
-          {T(lang, '數據管理', 'Data Management')}
-        </h2>
+      <h2 className="text-2xl font-serif text-gold mt-12 mb-4">{T(lang, '數據管理', 'Data Management')}</h2>
+      <div className="glass-card rounded-2xl p-5 sm:p-8 border" style={{ borderColor: 'var(--card-border)' }}>
         <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
           {T(lang,
             '根據 GDPR 和 PIPEDA，您有權導出或刪除您的所有個人數據。',

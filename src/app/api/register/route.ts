@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const userAgent = req.headers.get('user-agent') || null
 
   try {
-    const { name, email, password, referralCode } = await req.json()
+    const { name, email, password, referralCode, language } = await req.json()
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 })
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     const vToken = generateToken()
     const user = await prisma.user.create({
       data: {
-        email, password: hashed, name: name || null,
+        email, password: hashed, name: name || null, language: language || 'zh-TW',
         bonusModel1: bonus1,
         bonusModel2: bonus2,
         emailVerified: false,
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     // Send verification email (non-blocking — don't fail registration if email fails)
     try {
       const origin = req.headers.get('origin') || req.headers.get('referer')?.replace(/\/[^/]*$/, '') || ''
-      await sendVerificationEmail(email, vToken, 'zh-TW', origin)
+      await sendVerificationEmail(email, vToken, language || 'zh-TW', origin)
     } catch (emailErr) {
       console.error('Verification email failed:', emailErr)
     }
