@@ -188,59 +188,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // BaZi Cache: check for existing reading with same birth data
-    if (type === 'bazi' && inputData.birthDate && inputData.birthTime && inputData.gender) {
-      const cacheWhere: Record<string, unknown> = {
-        userId: session.user.id,
-        type: 'bazi',
-        targetType,
-        deletedAt: null,
-      }
-      if (targetType === 'family' && resolvedFamilyMemberId) {
-        cacheWhere.familyMemberId = resolvedFamilyMemberId
-      } else if (targetType === 'self') {
-        cacheWhere.familyMemberId = null
-      }
-
-      const existingReadings = await prisma.reading.findMany({
-        where: cacheWhere,
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      })
-
-      for (const existing of existingReadings) {
-        const existingInput = existing.inputData as Record<string, unknown>
-        if (
-          existingInput.birthDate === inputData.birthDate &&
-          existingInput.birthTime === inputData.birthTime &&
-          existingInput.gender === inputData.gender
-        ) {
-          // Found a cached reading
-          if (shouldSaveHistory) {
-            // Create a new reading record pointing to same result
-            const newReading = await prisma.reading.create({
-              data: {
-                userId: session.user.id,
-                type,
-                modelTier,
-                question: question || null,
-                inputData,
-                result: existing.result,
-                language: language || 'zh-TW',
-                targetType,
-                familyMemberId: resolvedFamilyMemberId,
-              },
-            })
-            return NextResponse.json({ reading: { ...newReading, result: existing.result }, saved: true, cached: true })
-          }
-          return NextResponse.json({
-            reading: { id: null, result: existing.result, type, createdAt: existing.createdAt },
-            saved: false,
-            cached: true,
-          })
-        }
-      }
-    }
+    // BaZi cache check moved to /api/divination/check — user chooses via UI dialog
 
     const refFileName = refFileMap[type] || 'others.md'
     const refPath = path.join(process.cwd(), 'divination-refs', refFileName)

@@ -97,6 +97,9 @@ export default function DivinationFormPage() {
   const [profileLoaded, setProfileLoaded] = useState(false)
   const selfProfileRef = useRef<{ birthDate: string; birthTime: string; birthPlace: string; gender: string } | null>(null)
   const [modelTier, setModelTier] = useState('model2')
+  // Bazi cache dialog
+  const [showCacheDialog, setShowCacheDialog] = useState(false)
+  const [cachedReading, setCachedReading] = useState<{ id: string; result: string; createdAt: string; count: number } | null>(null)
   const [credits, setCredits] = useState<Record<string, {remaining: number, dailyLimit: number}> | null>(null)
   const [llmTimeoutMs, setLlmTimeoutMs] = useState(240000)
   const [shareBonus, setShareBonus] = useState<{model1: number, model2: number} | null>(null)
@@ -239,17 +242,9 @@ export default function DivinationFormPage() {
     return null
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!session) {
-      toast.error(T(lang, '請先登入', 'Please sign in first'))
-      router.push('/login')
-      return
-    }
-    if (isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) {
-      toast.error(T(lang, '暫不支持南半球出生地', 'Southern hemisphere not yet supported'))
-      return
-    }
+  const doSubmit = async () => {
+    setShowCacheDialog(false)
+    setCachedReading(null)
     setLoading(true)
     setResult(null)
     setShareUrl(null)
@@ -332,6 +327,56 @@ export default function DivinationFormPage() {
     setLoading(false)
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!session) {
+      toast.error(T(lang, '請先登入', 'Please sign in first'))
+      router.push('/login')
+      return
+    }
+    if (isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) {
+      toast.error(T(lang, '暫不支持南半球出生地', 'Southern hemisphere not yet supported'))
+      return
+    }
+    // For bazi: check if existing readings exist before proceeding
+    if (type === 'bazi') {
+      try {
+        const checkRes = await fetch('/api/divination/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type,
+            targetType,
+            familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
+            inputData: { birthDate: form.birthDate, birthTime: form.birthTime, gender: form.gender },
+          }),
+        })
+        const checkData = await checkRes.json()
+        if (checkData.hasExisting) {
+          setCachedReading({ id: checkData.latest.id, result: checkData.latest.result, createdAt: checkData.latest.createdAt, count: checkData.count })
+          setShowCacheDialog(true)
+          return
+        }
+      } catch { /* proceed normally */ }
+    }
+    doSubmit()
+  }
+
+  const handleViewCached = () => {
+    if (cachedReading) {
+      setResult(cachedReading.result)
+      setResultType(type)
+      setReadingId(cachedReading.id)
+      setShowCacheDialog(false)
+      toast.success(T(lang, '已載入歷史八字分析', 'Loaded previous BaZi reading'), { icon: '📦' })
+    }
+  }
+
+  const handleNewReading = () => {
+    setShowCacheDialog(false)
+    doSubmit()
+  }
+
   const inputCls = "w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
   const labelCls = "block text-white/70 text-sm mb-1"
 
@@ -339,6 +384,48 @@ export default function DivinationFormPage() {
 
   return (
     <div className="min-h-screen py-12 px-4 max-w-2xl mx-auto">
+      {/* Bazi cache dialog */}
+      {showCacheDialog && cachedReading && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card p-6 rounded-xl max-w-md w-full text-center space-y-4"
+          >
+            <div className="text-4xl mb-2">📦</div>
+            <h3 className="text-xl font-serif text-gold">
+              {T(lang, '發現歷史八字分析', 'Existing BaZi Reading Found')}
+            </h3>
+            <p className="text-white/70 text-sm">
+              {T(lang,
+                `已有 ${cachedReading.count} 筆相同生辰的八字分析記錄。最近一次：${new Date(cachedReading.createdAt).toLocaleDateString('zh-TW')}`,
+                `Found ${cachedReading.count} existing reading(s) with the same birth data. Latest: ${new Date(cachedReading.createdAt).toLocaleDateString('en-US')}`
+              )}
+            </p>
+            <div className="flex gap-3 justify-center pt-2">
+              <button
+                onClick={handleViewCached}
+                className="px-5 py-2.5 bg-gold/20 border border-gold/40 rounded-lg text-gold hover:bg-gold/30 transition-colors font-medium"
+              >
+                {T(lang, '📖 查看歷史', '📖 View History')}
+              </button>
+              <button
+                onClick={handleNewReading}
+                className="px-5 py-2.5 bg-gold text-navy-900 rounded-lg hover:bg-gold-light transition-colors font-medium"
+              >
+                {T(lang, '🔮 重新占卜', '🔮 New Reading')}
+              </button>
+            </div>
+            <button
+              onClick={() => setShowCacheDialog(false)}
+              className="text-white/40 hover:text-white/60 text-sm transition-colors"
+            >
+              {T(lang, '取消', 'Cancel')}
+            </button>
+          </motion.div>
+        </div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
