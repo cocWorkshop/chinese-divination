@@ -85,18 +85,21 @@ model ReadingFeedback {
 }
 
 model FamilyMember {
-  id         String    @id @default(cuid())
-  userId     String
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  relation   String
-  name       String?
-  birthDate  String?
-  birthTime  String?
-  birthPlace String?
-  gender     String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  readings   Reading[]
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relation         String
+  name             String?
+  birthDate        String?
+  birthTime        String?
+  birthPlace       String?
+  gender           String?
+  calendarType     String?   // "solar" or "lunar"
+  timeMode         String?   // "fuzzy" or "exact"
+  birthEnvironment String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  readings         Reading[]
 
   @@index([userId])
 }
