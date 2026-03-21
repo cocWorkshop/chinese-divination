@@ -1,5 +1,16 @@
-.env
-.env.local
+# Dependencies
 node_modules
+
+# Next.js
 .next
+
+# Environment (secrets)
+.env.local
+.env.production
+.env.*.local
+
+# Deploy script (contains local paths)
+deploy.sh
+
+# Agent
 AGENT_TASK.md
