@@ -395,7 +395,7 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
                   : 'text-gold/70 hover:text-gold border border-gold/30 bg-gold/5'
               }`}
             >
-              ☯ 玄機
+              ☯ 玄機破
             </button>
           )}
         </div>

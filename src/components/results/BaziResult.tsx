@@ -334,7 +334,7 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
                   : 'text-gold/70 hover:text-gold border border-gold/30 bg-gold/5'
               }`}
             >
-              ☯ 玄機
+              ☯ 玄機破
             </button>
           )}
         </div>

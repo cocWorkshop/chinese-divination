@@ -16,14 +16,14 @@ const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 const suggestedQuestions: Record<string, { zh: string; en: string }[]> = {
   bazi: [
-    { zh: '我的命格有什麼特別之處？', en: 'What is special about my chart?' },
-    { zh: '今年的運勢如何？', en: 'How is my fortune this year?' },
-    { zh: '我適合什麼行業？', en: 'What industries suit me?' },
+    { zh: '破解我命格中的隱藏格局', en: 'Decode the hidden patterns in my chart' },
+    { zh: '我的大運轉折點在哪裡？', en: 'Where are the turning points in my cycles?' },
+    { zh: '五行喜忌對事業有何影響？', en: 'How do my elemental preferences affect career?' },
   ],
   ziwei: [
-    { zh: '我的命宮主星有什麼含義？', en: 'What do my main stars mean?' },
-    { zh: '我目前的大運如何？', en: 'How is my current major cycle?' },
-    { zh: '我的事業宮怎麼看？', en: 'How does my career palace look?' },
+    { zh: '破解我命宮主星的深層含義', en: 'Decode the deeper meaning of my main stars' },
+    { zh: '四化飛星揭示了什麼天機？', en: 'What secrets do the Four Transformations reveal?' },
+    { zh: '我命盤中最有利的宮位是哪個？', en: 'Which palace is most favorable in my chart?' },
   ],
 }
 
@@ -96,7 +96,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
         <YinYangIcon size={48} />
-        <p className="text-white/50 text-sm">{T(lang, '請登入後使用玄機問答', 'Please sign in to use Xuanji Q&A')}</p>
+        <p className="text-white/50 text-sm">{T(lang, '請登入後使用玄機破', 'Please sign in to use Xuanji Po')}</p>
         <a href="/login" className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold hover:bg-gold-light transition-colors">
           {T(lang, '登入帳號', 'Sign In')}
         </a>
@@ -114,10 +114,10 @@ export default function XuanjiChat({ readingResult, readingType }: {
             <div className="mb-6">
               <YinYangIcon size={40} className="mx-auto mb-3" />
               <h3 className="text-gold font-serif text-lg mb-1">
-                {T(lang, '玄機問答', 'Xuanji Q&A')}
+                {T(lang, '玄機破', 'Xuanji Po')}
               </h3>
               <p className="text-white/40 text-xs">
-                {T(lang, '基於您的命盤解讀結果，深入探討任何問題', 'Ask anything based on your reading results')}
+                {T(lang, '破解命盤玄機，洞悉天機奧秘', 'Decode the mysteries of your destiny')}
               </p>
             </div>
             <div className="space-y-2 max-w-sm mx-auto">
@@ -180,7 +180,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={T(lang, '對命盤有什麼疑問？', 'Any questions about your reading?')}
+            placeholder={T(lang, '破解什麼玄機？', 'What mystery to decode?')}
             className="flex-1 rounded-xl px-4 py-2.5 text-sm bg-navy-900/80 border border-gold/15
               text-white/90 placeholder-white/30 focus:outline-none focus:border-gold/40 transition-colors"
             disabled={loading}
