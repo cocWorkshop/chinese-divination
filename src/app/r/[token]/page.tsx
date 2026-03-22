@@ -87,7 +87,7 @@ export default function PublicReadingPage() {
   if (notFound || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="glass-card rounded-2xl p-8 text-center max-w-md">
+        <div className="glass-card rounded-2xl p-5 sm:p-8 text-center max-w-md">
           <div className="text-4xl mb-4">🔮</div>
           <h1 className="text-xl font-serif text-gold mb-2">找不到此預測結果</h1>
           <p className="text-white/50 text-sm mb-6">Reading not found or has been removed</p>
@@ -106,10 +106,10 @@ export default function PublicReadingPage() {
   const resultString = data.result
 
   return (
-    <div className="min-h-screen py-8 px-4">
+    <div className="min-h-screen py-6 sm:py-8 px-3 sm:px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="glass-card rounded-2xl p-6 mb-6 text-center relative overflow-hidden">
+        <div className="glass-card rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 text-center relative overflow-hidden">
           <div className="absolute inset-0 rounded-2xl border border-gold/20 pointer-events-none" />
           <div className="mb-2"><YinYangIcon size={30} /></div>
           <h1 className="text-2xl font-serif text-gold mb-1">
@@ -139,11 +139,11 @@ export default function PublicReadingPage() {
 
         {/* Result */}
         <div className="glass-card rounded-2xl p-4 sm:p-8 mb-6">
-          <ResultRenderer type={data.type} result={resultString} />
+          <ResultRenderer type={data.type} result={resultString} isShared />
         </div>
 
         {/* CTA */}
-        <div className="glass-card rounded-2xl p-6 text-center">
+        <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
           <p className="text-white/60 text-sm mb-4">
             {lang === 'en'
               ? '✨ Want your own divination? Try Xuanji for free!'

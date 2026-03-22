@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLang } from '../LanguageContext'
+import dynamic from 'next/dynamic'
+const XuanjiChat = dynamic(() => import('./XuanjiChat'), { ssr: false })
 
 interface ZiweiStar {
   name: string
@@ -117,7 +120,7 @@ const sectionTabs = [
   { key: 'wealth', label: '財運' },
 ]
 
-export default function ZiweiResult({ data }: { data: Record<string, unknown> }) {
+export default function ZiweiResult({ data, isShared, rawResult }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string }) {
   const d = data as unknown as ZiweiData
   const [activeSection, setActiveSection] = useState('overview')
   const [selectedPalace, setSelectedPalace] = useState<string | null>(null)
@@ -373,7 +376,7 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
 
       {/* Sections */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <div className="flex gap-1 mb-4">
+        <div className="flex flex-wrap gap-1 mb-4">
           {sectionTabs.map(s => (
             <button
               key={s.key}
@@ -383,18 +386,40 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
               {s.label}
             </button>
           ))}
+          {!isShared && (
+            <button
+              onClick={() => setActiveSection('xuanji')}
+              className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
+                activeSection === 'xuanji'
+                  ? 'bg-gradient-to-r from-amber-600 to-gold text-navy-950 font-semibold shadow-lg shadow-gold/20'
+                  : 'text-gold/70 hover:text-gold border border-gold/30 bg-gold/5'
+              }`}
+            >
+              ☯ 玄機破
+            </button>
+          )}
         </div>
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeSection}
+            key={activeSection === 'xuanji' ? 'sections' : activeSection}
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
-            className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap"
           >
-            {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
+            {activeSection !== 'xuanji' && (
+              <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+                {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
+        {!isShared && (
+          <div className={`rounded-xl p-5 text-sm leading-relaxed mt-4 ${activeSection === 'xuanji' ? '' : 'hidden'}`}
+            style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--border-gold)' }}
+          >
+            <XuanjiChat readingResult={rawResult || ''} readingType="ziwei" />
+          </div>
+        )}
       </motion.div>
 
       {/* Key Advice */}

@@ -34,7 +34,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
         <StarField />
-        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+        <div className="relative z-10 text-center px-3 sm:px-4 max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -87,7 +87,7 @@ export default function HomePage() {
       </section>
 
       {/* Services grid */}
-      <section className="py-20 px-4 max-w-6xl mx-auto">
+      <section className="py-12 sm:py-20 px-3 sm:px-4 max-w-6xl mx-auto">
         <motion.h2
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -126,7 +126,7 @@ export default function HomePage() {
       </section>
 
       {/* About */}
-      <section className="py-20 px-4 max-w-4xl mx-auto text-center">
+      <section className="py-12 sm:py-20 px-3 sm:px-4 max-w-4xl mx-auto text-center">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}

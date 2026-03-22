@@ -4,7 +4,7 @@ import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
 import { LanguageProvider } from '@/components/LanguageContext'
 import Navbar from '@/components/Navbar'
-import ChatWidget from '@/components/ChatWidget'
+// ChatWidget removed — chat is now embedded in result pages as "玄機" tab
 import ThemeProvider from '@/components/ThemeProvider'
 import ConsentPopup from '@/components/ConsentPopup'
 import CookieBanner from '@/components/CookieBanner'
@@ -43,7 +43,7 @@ export default function RootLayout({
             <main className="pt-16">
               {children}
             </main>
-            <ChatWidget />
+
             <ConsentPopup />
             <CookieBanner />
             <Footer />

@@ -82,14 +82,29 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 gap-8">
+    <motion.div
+      className="flex flex-col items-center justify-center py-16 gap-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1.2, ease: 'easeOut' }}
+    >
       {/* Rotating Bagua / Yin-Yang */}
-      <div className="relative w-32 h-32">
+      <motion.div
+        className="relative w-32 h-32"
+        initial={{ opacity: 0, scale: 0.3 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+      >
         {/* Outer ring with trigram symbols */}
         <motion.div
           className="absolute inset-0"
-          animate={{ rotate: -360 }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1, rotate: -360 }}
+          transition={{
+            opacity: { duration: 2, delay: 0.5 },
+            scale: { duration: 2, delay: 0.5, ease: 'easeOut' },
+            rotate: { duration: 20, repeat: Infinity, ease: 'linear', delay: 0.5 },
+          }}
         >
           {['☰', '☱', '☲', '☳', '☴', '☵', '☶', '☷'].map((trigram, i) => (
             <motion.span
@@ -100,8 +115,9 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
                 top: `${50 + 45 * Math.sin((i * Math.PI) / 4 - Math.PI / 2)}%`,
                 transform: 'translate(-50%, -50%)',
               }}
+              initial={{ opacity: 0 }}
               animate={{ opacity: [0.3, 0.8, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity, delay: i * 0.25 }}
+              transition={{ duration: 2, repeat: Infinity, delay: 0.8 + i * 0.15 }}
             >
               {trigram}
             </motion.span>
@@ -111,8 +127,13 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
         {/* Inner yin-yang */}
         <motion.div
           className="absolute inset-6 flex items-center justify-center"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+          initial={{ opacity: 0, scale: 0, rotate: -180 }}
+          animate={{ opacity: 1, scale: 1, rotate: 360 }}
+          transition={{
+            opacity: { duration: 1.2, ease: 'easeOut' },
+            scale: { duration: 1.2, ease: [0.16, 1, 0.3, 1] },
+            rotate: { duration: 8, repeat: Infinity, ease: 'linear' },
+          }}
         >
           <YinYangIcon size={48} className="drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]" />
         </motion.div>
@@ -121,13 +142,19 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
         <motion.div
           className="absolute inset-0 rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(212,168,83,0.15) 0%, transparent 70%)' }}
+          initial={{ opacity: 0 }}
           animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 3, repeat: Infinity }}
+          transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
         />
-      </div>
+      </motion.div>
 
       {/* Animated quote text */}
-      <div className="h-8 flex items-center">
+      <motion.div
+        className="h-8 flex items-center"
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, delay: 1 }}
+      >
         <AnimatePresence mode="wait">
           <motion.p
             key={quoteIndex}
@@ -140,10 +167,15 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
             {quotes[quoteIndex]}
           </motion.p>
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* Progress dots */}
-      <div className="flex gap-1.5">
+      <motion.div
+        className="flex gap-1.5"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 1.5 }}
+      >
         {[0, 1, 2, 3, 4, 5].map(i => (
           <motion.div
             key={i}
@@ -154,7 +186,7 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
             transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
           />
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

@@ -258,7 +258,9 @@ export default function DivinationFormPage() {
     setLoading(true)
     setResult(null)
     setShareUrl(null)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Use instant scroll + setTimeout fallback for mobile browsers
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
+    setTimeout(() => window.scrollTo({ top: 0 }), 100)
     const requestStartTime = new Date().toISOString()
     try {
       const hasProfileData = ['bazi', 'ziwei'].includes(type)
@@ -398,7 +400,7 @@ export default function DivinationFormPage() {
   if (!tierChecked) return null
 
   return (
-    <div className="min-h-screen py-12 px-4 max-w-2xl mx-auto">
+    <div className="min-h-screen py-8 sm:py-12 px-3 sm:px-4 max-w-2xl mx-auto">
       {/* Bazi cache dialog */}
       {showCacheDialog && cachedReading && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
