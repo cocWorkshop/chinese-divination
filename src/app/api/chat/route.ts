@@ -133,7 +133,10 @@ ${user.chatSummary || '（暂无）'}
       ],
     })
 
-    const reply = completion.choices[0]?.message?.content || '抱歉，無法獲取回覆。'
+    const reply = completion.choices[0]?.message?.content
+    if (!reply) {
+      return NextResponse.json({ error: 'AI 未能生成回覆，額度未扣除。\nAI failed to generate a reply. Credits not deducted.' }, { status: 502 })
+    }
 
     await logLlmCall({
       userId: session.user.id,
