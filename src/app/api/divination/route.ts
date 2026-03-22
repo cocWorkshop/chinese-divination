@@ -8,7 +8,7 @@ import path from 'path'
 import OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkModelLimit, incrementModelUsage } from '@/lib/rateLimit'
+import { checkDivinationCredits, deductDivinationCredit, grantDailyBonus } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
 import { calculateZiwei, ZiweiChart } from '@/lib/ziweiCalculator'
 import { calculateQimen, QimenChart } from '@/lib/qimenCalculator'
@@ -135,9 +135,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { type, inputData, language, question, saveProfile, saveHistory, modelTier: rawModelTier, targetType: rawTargetType, familyMemberId, newFamilyMember } = await req.json()
+    const { type, inputData, language, question, saveProfile, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember } = await req.json()
     const targetType = rawTargetType === 'family' ? 'family' : 'self'
-    const modelTier = (rawModelTier === 'model2' ? 'model2' : 'model1') as 'model1' | 'model2'
 
     if (!type || !inputData) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -162,14 +161,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const rl = await checkModelLimit(session.user.id, modelTier)
+    // Grant daily bonus on first activity
+    await grantDailyBonus(session.user.id)
+
+    const rl = await checkDivinationCredits(session.user.id)
     if (!rl.allowed) {
       return NextResponse.json(
         {
           error: language === 'en'
-            ? `Daily ${modelTier === 'model2' ? 'premium' : 'standard'} quota reached. Share to earn permanent credits.`
-            : `已達今日${modelTier === 'model2' ? '高級模型' : '標準模型'}配額，請明日再試或分享獲取永久額度。`,
-          resetAt: rl.resetAt.toISOString(),
+            ? 'No divination credits remaining. Purchase more or share to earn credits.'
+            : '占卜額度已用完，請購買或分享獲取更多額度。',
         },
         { status: 429 }
       )
@@ -560,9 +561,8 @@ ${question ? `特别关注：${question}` : ''}`
       )
     }
 
-    // Get model name from admin settings
-    const modelKey = modelTier === 'model2' ? 'model2Name' : 'model1Name'
-    const modelSetting = await prisma.adminSetting.findUnique({ where: { key: modelKey } })
+    // Get model name from admin settings (single model)
+    const modelSetting = await prisma.adminSetting.findUnique({ where: { key: 'model1Name' } })
     const modelName = modelSetting?.value || 'anthropic/claude-3-5-haiku'
 
     const isLocalProxy = modelName === 'local/claude-proxy'
@@ -607,7 +607,7 @@ ${question ? `特别关注：${question}` : ''}`
           userId: session.user.id,
           endpoint: 'divination',
           model: 'local/claude-proxy',
-          modelTier,
+          modelTier: "model1",
           promptTokens: proxyData.usage?.prompt_tokens || 0,
           completionTokens: proxyData.usage?.completion_tokens || 0,
           totalTokens: proxyData.usage?.total_tokens || 0,
@@ -623,7 +623,7 @@ ${question ? `特别关注：${question}` : ''}`
           userId: session.user.id,
           endpoint: 'divination',
           model: 'local/claude-proxy',
-          modelTier,
+          modelTier: "model1",
           latencyMs: Date.now() - llmStart,
           status: 'error',
           errorMessage: err?.message || 'Proxy error',
@@ -665,7 +665,7 @@ ${question ? `特别关注：${question}` : ''}`
           userId: session.user.id,
           endpoint: 'divination',
           model: modelName,
-          modelTier,
+          modelTier: "model1",
           promptTokens: completion.usage?.prompt_tokens,
           completionTokens: completion.usage?.completion_tokens,
           totalTokens: completion.usage?.total_tokens,
@@ -684,7 +684,7 @@ ${question ? `特别关注：${question}` : ''}`
           userId: session.user.id,
           endpoint: 'divination',
           model: modelName,
-          modelTier,
+          modelTier: "model1",
           latencyMs: Date.now() - llmStart,
           status: 'error',
           errorMessage: err?.message || 'Unknown error',
@@ -890,8 +890,8 @@ ${question ? `特别关注：${question}` : ''}`
     const calculationDataStr = Object.keys(calculationData).length > 0 ? JSON.stringify(calculationData) : null
     const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
 
-    // Increment usage after successful generation
-    await incrementModelUsage(session.user.id, modelTier)
+    // Deduct divination credit after successful generation
+    await deductDivinationCredit(session.user.id)
 
     if (shouldSaveProfile && (type === 'bazi' || type === 'ziwei')) {
       const profileUpdate: Record<string, string | null> = {}
@@ -913,7 +913,7 @@ ${question ? `特别关注：${question}` : ''}`
         data: {
           userId: session.user.id,
           type,
-          modelTier,
+          modelTier: "model1",
           question: question || null,
           inputData,
           result: resultToStore,

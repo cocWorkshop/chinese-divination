@@ -1,14 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { DivinationIcon } from '@/components/DivinationIcons'
 import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
-import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
-import { catchAndReport } from '@/lib/errorReporter'
 
 const T = (lang: string, zhTW: string, en: string) =>
   lang === 'en' ? en : zhTW
@@ -27,34 +24,7 @@ export default function DivinationPage() {
   const { lang } = useLang()
   const { data: session } = useSession()
   const router = useRouter()
-  const [tiers, setTiers] = useState<Record<string, string>>({})
-  const [userRole, setUserRole] = useState<string>('arcane')
-  const [isAdmin, setIsAdmin] = useState(false)
-
-  useEffect(() => {
-    fetch('/api/divination-tiers').then(r => r.json()).then(setTiers).catch(catchAndReport('/api/divination-tiers'))
-  }, [])
-
-  useEffect(() => {
-    if (!session) return
-    fetch('/api/profile').then(r => r.json()).then(data => {
-      if (data?.role) setUserRole(data.role)
-      if (data?.isAdmin) setIsAdmin(true)
-    }).catch(catchAndReport('/api/credits'))
-  }, [session])
-
-  const roleLevel: Record<string, number> = { admin: 3, prestige: 3, ethereal: 2, arcane: 1 }
-  const tierLevel: Record<string, number> = { prestige: 3, ethereal: 2, arcane: 1 }
-  const userLvl = roleLevel[userRole] || 1
-
-  const handleClick = (svcId: string, e: React.MouseEvent) => {
-    const requiredLvl = tierLevel[tiers[svcId]] || 1
-    if (!isAdmin && userLvl < requiredLvl) {
-      e.preventDefault()
-      const tierNames: Record<string, string> = { prestige: T(lang, '大師', 'Prestige'), ethereal: T(lang, '洞察', 'Ethereal') }
-      toast.error(T(lang, `此功能需要${tierNames[tiers[svcId]] || '更高'}等級`, `Requires ${tiers[svcId] || 'higher'} access`), { icon: '✦' })
-      return
-    }
+  const handleClick = (svcId: string, _e: React.MouseEvent) => {
     router.push(`/divination/${svcId}`)
   }
 
@@ -86,11 +56,6 @@ export default function DivinationPage() {
               className="glass-card rounded-2xl p-5 sm:p-8 h-full hover:shadow-xl transition-all group cursor-pointer relative"
               style={{ borderColor: 'var(--card-border)' }}
             >
-              {tiers[svc.id] && tiers[svc.id] !== 'arcane' && (
-                <span className="absolute top-4 right-4 px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: 'rgba(212, 168, 83, 0.15)', color: 'var(--gold)' }}>
-                  {tiers[svc.id] === 'prestige' ? `✦ ${T(lang, '大師', 'Prestige')}` : `✧ ${T(lang, '洞察', 'Ethereal')}`}
-                </span>
-              )}
               <div className="text-5xl mb-4">{svc.symbol}</div>
               <h2 className="text-xl font-serif mb-2 transition-colors" style={{ color: 'var(--gold)' }}>
                 {lang === 'en' ? svc.enName : svc.twName}

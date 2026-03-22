@@ -41,7 +41,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [chatUsage, setChatUsage] = useState<{ used: number; limit: number } | null>(null)
+  const [chatRemaining, setChatRemaining] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -80,7 +80,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
       const data = await res.json()
       if (res.ok) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
-        if (data.chatUsage) setChatUsage(data.chatUsage)
+        if (data.chatCredits) setChatRemaining(data.chatCredits.remaining)
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: `${T(lang, '錯誤', 'Error')}：${data.error || T(lang, '請稍後再試', 'Please try again')}` }])
         reportError({ endpoint: '/api/chat', status: res.status, error: data.error || 'Unknown', context: 'xuanji-chat-tab' })
@@ -205,9 +205,9 @@ export default function XuanjiChat({ readingResult, readingType }: {
               border: '1px solid var(--border-gold)',
               color: 'var(--text-primary)',
             }}
-            disabled={loading || (chatUsage !== null && chatUsage.used >= chatUsage.limit)}
+            disabled={loading || (chatRemaining !== null && chatRemaining <= 0)}
           />
-          {chatUsage !== null && chatUsage.used >= chatUsage.limit ? (
+          {chatRemaining !== null && chatRemaining <= 0 ? (
             <a
               href="/pricing"
               className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-colors text-center whitespace-nowrap"
@@ -222,8 +222,8 @@ export default function XuanjiChat({ readingResult, readingType }: {
               className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
               style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
             >
-              {chatUsage && chatUsage.limit > 0
-                ? `${T(lang, '發送', 'Send')} ${chatUsage.used}/${chatUsage.limit}`
+              {chatRemaining !== null
+                ? `${T(lang, '發送', 'Send')} (${chatRemaining})`
                 : T(lang, '發送', 'Send')
               }
             </button>

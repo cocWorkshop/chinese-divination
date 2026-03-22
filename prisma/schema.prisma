@@ -21,7 +21,10 @@ model User {
   calendarType String?     // "solar" | "lunar"
   isAdmin      Boolean     @default(false)
   isPaid       Boolean     @default(false)
-  role         String      @default("arcane") // arcane | ethereal | prestige | admin
+  role         String      @default("user") // user | admin
+  divinationCredits  Int       @default(3)
+  chatCredits        Int       @default(3)
+  lastDailyBonus     DateTime?
   emailVerified     Boolean   @default(false)
   verificationToken String?   @unique
   tokenExpiry       DateTime?

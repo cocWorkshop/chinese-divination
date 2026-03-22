@@ -7,9 +7,8 @@ import { useParams } from 'next/navigation'
 type Status = 'loading' | 'ready' | 'claiming' | 'claimed' | 'expired' | 'invalid' | 'not_sent' | 'no_account' | 'error'
 
 interface CompData {
-  bonusModel1: number
-  bonusModel2: number
-  bonusChat: number
+  divinationCredits: number
+  chatCredits: number
   reason: string
   email: string
 }
@@ -46,7 +45,7 @@ export default function ClaimPage() {
       const res = await fetch(`/api/claim/${token}`, { method: 'POST' })
       const d = await res.json()
       if (d.success) {
-        setClaimed({ bonusModel1: d.bonusModel1, bonusModel2: d.bonusModel2, bonusChat: d.bonusChat, reason: '', email: '' })
+        setClaimed({ divinationCredits: d.divinationCredits, chatCredits: d.chatCredits, reason: '', email: '' })
         setStatus('claimed')
       } else if (d.error === 'no_account') {
         setStatus('no_account')
@@ -110,9 +109,8 @@ export default function ClaimPage() {
               </div>
 
               <div className="space-y-2.5 mb-6">
-                <CreditItem label="標準模型" value={data.bonusModel1} icon="⚡" />
-                <CreditItem label="高級模型" value={data.bonusModel2} icon="🌟" />
-                <CreditItem label="聊天額度" value={data.bonusChat} icon="💬" />
+                <CreditItem label="占卜額度" value={data.divinationCredits} icon="🔮" />
+                <CreditItem label="聊天額度" value={data.chatCredits} icon="💬" />
               </div>
 
               {data.reason && (
@@ -151,9 +149,8 @@ export default function ClaimPage() {
               <p className="text-[rgba(255,255,255,0.5)] text-sm mb-4">補償額度已發放至您的帳戶</p>
               {claimed && (
                 <div className="space-y-2 mb-6">
-                  <CreditItem label="標準模型" value={claimed.bonusModel1} icon="⚡" />
-                  <CreditItem label="高級模型" value={claimed.bonusModel2} icon="🌟" />
-                  <CreditItem label="聊天額度" value={claimed.bonusChat} icon="💬" />
+                  <CreditItem label="占卜額度" value={claimed.divinationCredits} icon="🔮" />
+                  <CreditItem label="聊天額度" value={claimed.chatCredits} icon="💬" />
                 </div>
               )}
               <a

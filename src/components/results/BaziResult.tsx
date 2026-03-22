@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '../LanguageContext'
-import dynamic from 'next/dynamic'
-const XuanjiChat = dynamic(() => import('./XuanjiChat'), { ssr: false })
+import XuanjiChatCard from './XuanjiChatCard'
 
 interface TenGodEntry { stem: string; god: string }
 interface Pillar {
@@ -407,21 +406,6 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
         </AnimatePresence>
       </motion.div>
 
-      {/* Xuanji Chat */}
-      {!isShared && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <div className="glass-card rounded-xl p-4 sm:p-6 border-2 border-gold/30">
-            <h3 className="flex items-center gap-2 text-gold font-serif text-base sm:text-lg mb-3">
-              <span className="text-xl">☯</span>
-              <span className="bg-gradient-to-r from-amber-400 to-gold bg-clip-text text-transparent font-semibold">
-                {T(lang, '玄機破', 'Xuanji Po')}
-              </span>
-            </h3>
-            <XuanjiChat readingResult={rawResult || ''} readingType="bazi" />
-          </div>
-        </motion.div>
-      )}
-
       {/* Key Advice */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
@@ -436,6 +420,9 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
           </div>
         </motion.div>
       )}
+
+      {/* Xuanji Chat */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" isShared={isShared} delay={0.22} />
 
       {/* Lucky Info */}
       {d.luckyInfo && (

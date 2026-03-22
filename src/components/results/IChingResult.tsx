@@ -1,6 +1,6 @@
 'use client'
 import YinYangIcon from '@/components/YinYangIcon'
-
+import XuanjiChatCard from './XuanjiChatCard'
 import { motion } from 'framer-motion'
 
 interface IChingData {
@@ -24,7 +24,7 @@ const outcomeColor: Record<string, string> = {
   '小凶': 'text-orange-300 border-orange-300/40 bg-orange-300/10',
 }
 
-export default function IChingResult({ data }: { data: Record<string, unknown> }) {
+export default function IChingResult({ data, rawResult, isShared }: { data: Record<string, unknown>; rawResult?: string; isShared?: boolean }) {
   const d = data as unknown as IChingData
   const lines = d.hexagram?.lines || []
 
@@ -129,6 +129,9 @@ export default function IChingResult({ data }: { data: Record<string, unknown> }
           <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.advice}</p>
         </motion.div>
       )}
+
+      {/* Xuanji Chat */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" isShared={isShared} delay={0.35} />
     </div>
   )
 }

@@ -10,13 +10,14 @@ interface AffectedUser {
 
 interface Compensation {
   id: string; email: string; userId: string | null; reason: string
-  sourceType: string; bonusModel1: number; bonusModel2: number; bonusChat: number
+  sourceType: string; divinationCredits: number; chatCredits: number
+  bonusModel1: number; bonusModel2: number; bonusChat: number
   token: string; status: string; createdAt: string; sentAt: string | null; claimedAt: string | null
 }
 
 interface DraftItem {
   email: string; userId?: string; reason: string; sourceType: string; sourceIds?: string
-  bonusModel1: number; bonusModel2: number; bonusChat: number
+  divinationCredits: number; chatCredits: number
   selected: boolean
 }
 
@@ -34,8 +35,7 @@ export default function AdminCompensation() {
   const [drafts, setDrafts] = useState<DraftItem[]>([])
   const [manualEmail, setManualEmail] = useState('')
   const [manualReason, setManualReason] = useState('')
-  const [defaultModel1, setDefaultModel1] = useState(2)
-  const [defaultModel2, setDefaultModel2] = useState(1)
+  const [defaultDiv, setDefaultDiv] = useState(2)
   const [defaultChat, setDefaultChat] = useState(1)
 
   // History
@@ -90,9 +90,8 @@ export default function AdminCompensation() {
       reason: `系統錯誤補償（${errorCount} 次錯誤）`,
       sourceType: 'error_log',
       sourceIds: allIds.join(','),
-      bonusModel1: defaultModel1,
-      bonusModel2: defaultModel2,
-      bonusChat: defaultChat,
+      divinationCredits: defaultDiv,
+      chatCredits: defaultChat,
       selected: true,
     }])
   }
@@ -104,9 +103,8 @@ export default function AdminCompensation() {
       email: manualEmail.trim(),
       reason: manualReason || '管理員補償',
       sourceType: 'manual',
-      bonusModel1: defaultModel1,
-      bonusModel2: defaultModel2,
-      bonusChat: defaultChat,
+      divinationCredits: defaultDiv,
+      chatCredits: defaultChat,
       selected: true,
     }])
     setManualEmail('')
@@ -225,13 +223,8 @@ export default function AdminCompensation() {
             <div className="text-white/60 text-xs mb-3 uppercase tracking-wider">預設補償額度</div>
             <div className="flex gap-4 items-center">
               <label className="flex items-center gap-2 text-sm text-white/70">
-                <span>⚡ 標準</span>
-                <input type="number" min={0} value={defaultModel1} onChange={e => setDefaultModel1(parseInt(e.target.value) || 0)}
-                  className="w-16 px-2 py-1 rounded-lg bg-navy-900 border border-gold/20 text-white text-center text-sm" />
-              </label>
-              <label className="flex items-center gap-2 text-sm text-white/70">
-                <span>🌟 高級</span>
-                <input type="number" min={0} value={defaultModel2} onChange={e => setDefaultModel2(parseInt(e.target.value) || 0)}
+                <span>🔮 占卜</span>
+                <input type="number" min={0} value={defaultDiv} onChange={e => setDefaultDiv(parseInt(e.target.value) || 0)}
                   className="w-16 px-2 py-1 rounded-lg bg-navy-900 border border-gold/20 text-white text-center text-sm" />
               </label>
               <label className="flex items-center gap-2 text-sm text-white/70">
@@ -350,18 +343,13 @@ export default function AdminCompensation() {
                         className="flex-1 px-2 py-1 rounded bg-navy-900/50 border border-white/10 text-white/60 text-xs" />
                       <div className="flex gap-2 items-center text-xs">
                         <label className="flex items-center gap-1 text-white/50">
-                          ⚡<input type="number" min={0} value={d.bonusModel1}
-                            onChange={e => updateDraft(d.email, 'bonusModel1', parseInt(e.target.value) || 0)}
+                          🔮<input type="number" min={0} value={d.divinationCredits}
+                            onChange={e => updateDraft(d.email, 'divinationCredits', parseInt(e.target.value) || 0)}
                             className="w-12 px-1 py-0.5 rounded bg-navy-900 border border-gold/15 text-white text-center" />
                         </label>
                         <label className="flex items-center gap-1 text-white/50">
-                          🌟<input type="number" min={0} value={d.bonusModel2}
-                            onChange={e => updateDraft(d.email, 'bonusModel2', parseInt(e.target.value) || 0)}
-                            className="w-12 px-1 py-0.5 rounded bg-navy-900 border border-gold/15 text-white text-center" />
-                        </label>
-                        <label className="flex items-center gap-1 text-white/50">
-                          💬<input type="number" min={0} value={d.bonusChat}
-                            onChange={e => updateDraft(d.email, 'bonusChat', parseInt(e.target.value) || 0)}
+                          💬<input type="number" min={0} value={d.chatCredits}
+                            onChange={e => updateDraft(d.email, 'chatCredits', parseInt(e.target.value) || 0)}
                             className="w-12 px-1 py-0.5 rounded bg-navy-900 border border-gold/15 text-white text-center" />
                         </label>
                       </div>
@@ -420,9 +408,8 @@ export default function AdminCompensation() {
                   <div className="flex items-center gap-4 text-xs text-white/50">
                     <span className="text-white/30">{c.reason}</span>
                     <span className="ml-auto flex gap-3">
-                      {c.bonusModel1 > 0 && <span>⚡ +{c.bonusModel1}</span>}
-                      {c.bonusModel2 > 0 && <span>🌟 +{c.bonusModel2}</span>}
-                      {c.bonusChat > 0 && <span>💬 +{c.bonusChat}</span>}
+                      {(c.divinationCredits > 0 || c.bonusModel1 > 0) && <span>🔮 +{c.divinationCredits || c.bonusModel1}</span>}
+                      {(c.chatCredits > 0 || c.bonusChat > 0) && <span>💬 +{c.chatCredits || c.bonusChat}</span>}
                     </span>
                   </div>
                   {c.claimedAt && (

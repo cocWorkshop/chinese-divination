@@ -10,18 +10,10 @@ interface UserRow {
   isAdmin: boolean
   isPaid: boolean
   role: string
-  hourlyQuota: number
-  bonusModel1: number
-  bonusModel2: number
-  bonusChat: number
+  divinationCredits: number
+  chatCredits: number
   createdAt: string
   language: string
-  usedTodayModel1: number
-  usedTodayModel2: number
-  usedTodayChat: number
-  limitModel1: number
-  limitModel2: number
-  limitChat: number
   _count: { readings: number }
 }
 
@@ -33,8 +25,7 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [grantingId, setGrantingId] = useState<string | null>(null)
-  const [grantM1, setGrantM1] = useState(0)
-  const [grantM2, setGrantM2] = useState(0)
+  const [grantDiv, setGrantDiv] = useState(0)
   const [grantChat, setGrantChat] = useState(0)
 
   const load = useCallback(() => {
@@ -58,10 +49,9 @@ export default function AdminUsers() {
   }
 
   const grantCredits = async (id: string) => {
-    await update(id, { grantBonus: { model1: grantM1, model2: grantM2, chat: grantChat } })
+    await update(id, { divinationCredits: grantDiv, chatCredits: grantChat })
     setGrantingId(null)
-    setGrantM1(0)
-    setGrantM2(0)
+    setGrantDiv(0)
     setGrantChat(0)
   }
 
@@ -94,19 +84,17 @@ export default function AdminUsers() {
             <tr className="border-b border-gold/20 text-white/50 text-xs uppercase tracking-wider">
               <th className="px-4 py-3 text-left">用户</th>
               <th className="px-4 py-3 text-center">角色</th>
-              <th className="px-4 py-3 text-center">等级</th>
               <th className="px-4 py-3 text-center">占卜次数</th>
-              <th className="px-4 py-3 text-center">每日配額</th>
-              <th className="px-4 py-3 text-center">永久額度</th>
+              <th className="px-4 py-3 text-center">額度</th>
               <th className="px-4 py-3 text-center">操作</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-white/40">Loading...</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-white/40">Loading...</td></tr>
             )}
             {!loading && users.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-white/40">无用户</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-white/40">无用户</td></tr>
             )}
             {users.map(u => (
               <tr key={u.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
@@ -125,45 +113,13 @@ export default function AdminUsers() {
                     {u.isAdmin ? 'Admin' : 'User'}
                   </button>
                 </td>
-                <td className="px-4 py-3 text-center">
-                  <select
-                    value={u.role || 'arcane'}
-                    onChange={e => update(u.id, { role: e.target.value })}
-                    className="px-2 py-0.5 rounded text-xs font-medium bg-navy-800 border border-gold/20 text-white/80 focus:outline-none focus:border-gold/50 cursor-pointer"
-                  >
-                    <option value="arcane">🔮 啟示 Arcane</option>
-                    <option value="ethereal">✧ 洞察 Ethereal</option>
-                    <option value="prestige">✦ 大師 Prestige</option>
-                    <option value="admin">🔑 Admin</option>
-                  </select>
-                </td>
                 <td className="px-4 py-3 text-center text-white/70">{u._count.readings}</td>
-                <td className="px-4 py-3 text-center">
-                  <div className="text-xs space-y-0.5">
-                    <div>
-                      <span className="text-white/50">⚡</span> <span className="text-white/70">{u.usedTodayModel1}</span>
-                      <span className="text-white/30">/{u.limitModel1 === -1 ? '∞' : u.limitModel1}</span>
-                      <span className="text-white/20 mx-1">|</span>
-                      <span className="text-white/50">🌟</span> <span className="text-white/70">{u.usedTodayModel2}</span>
-                      <span className="text-white/30">/{u.limitModel2 === -1 ? '∞' : u.limitModel2}</span>
-                    </div>
-                    <div>
-                      <span className="text-white/50">💬</span> <span className="text-white/70">{u.usedTodayChat}</span>
-                      <span className="text-white/30">/{u.limitChat === -1 ? '∞' : u.limitChat}</span>
-                    </div>
-                  </div>
-                </td>
                 <td className="px-4 py-3 text-center">
                   {grantingId === u.id ? (
                     <div className="flex items-center gap-1 justify-center flex-wrap">
                       <div className="flex items-center gap-1">
-                        <span className="text-xs text-white/40">⚡</span>
-                        <input type="number" value={grantM1} onChange={e => setGrantM1(parseInt(e.target.value) || 0)}
-                          className="w-12 px-1 py-0.5 bg-navy-800 border border-gold/30 rounded text-white text-xs text-center" />
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-white/40">🌟</span>
-                        <input type="number" value={grantM2} onChange={e => setGrantM2(parseInt(e.target.value) || 0)}
+                        <span className="text-xs text-white/40">🔮</span>
+                        <input type="number" value={grantDiv} onChange={e => setGrantDiv(parseInt(e.target.value) || 0)}
                           className="w-12 px-1 py-0.5 bg-navy-800 border border-gold/30 rounded text-white text-xs text-center" />
                       </div>
                       <div className="flex items-center gap-1">
@@ -176,14 +132,12 @@ export default function AdminUsers() {
                     </div>
                   ) : (
                     <button
-                      onClick={() => { setGrantingId(u.id); setGrantM1(u.bonusModel1); setGrantM2(u.bonusModel2); setGrantChat(u.bonusChat) }}
+                      onClick={() => { setGrantingId(u.id); setGrantDiv(u.divinationCredits); setGrantChat(u.chatCredits) }}
                       className="text-white/50 hover:text-gold text-xs transition-colors"
                     >
-                      <span className="text-white/50">⚡</span><span className="text-white/70">{u.bonusModel1}</span>
+                      <span className="text-white/50">🔮</span><span className="text-white/70">{u.divinationCredits}</span>
                       <span className="text-white/20 mx-0.5">|</span>
-                      <span className="text-white/50">🌟</span><span className="text-white/70">{u.bonusModel2}</span>
-                      <span className="text-white/20 mx-0.5">|</span>
-                      <span className="text-white/50">💬</span><span className="text-white/70">{u.bonusChat}</span>
+                      <span className="text-white/50">💬</span><span className="text-white/70">{u.chatCredits}</span>
                       <span className="text-white/30 ml-1">✎</span>
                     </button>
                   )}

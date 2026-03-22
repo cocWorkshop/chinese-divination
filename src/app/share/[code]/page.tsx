@@ -15,7 +15,6 @@ export default function SharePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copied, setCopied] = useState(false)
   const [bonus1, setBonus1] = useState(20)
-  const [bonus2, setBonus2] = useState(0)
 
   const shareUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/share/${code}` 
@@ -25,8 +24,7 @@ export default function SharePage() {
     fetch('/api/share/bonus')
       .then(r => r.json())
       .then(data => {
-        if (data.model1) setBonus1(data.model1)
-        if (data.model2) setBonus2(data.model2)
+        if (data.divination) setBonus1(data.divination)
       })
       .catch(catchAndReport('/api/share'))
   }, [])
@@ -112,16 +110,9 @@ export default function SharePage() {
             <div className="flex justify-center gap-4 mb-4">
               <div className="px-4 py-3 rounded-xl bg-gold/10 border border-gold/20">
                 <div className="text-2xl font-bold text-gold">{bonus1}</div>
-                <div className="text-white/50 text-xs mt-1">⚡ 標準占卜</div>
-                <div className="text-white/30 text-[10px]">Standard</div>
+                <div className="text-white/50 text-xs mt-1">🔮 占卜額度</div>
+                <div className="text-white/30 text-[10px]">Divination Credits</div>
               </div>
-              {bonus2 > 0 && (
-                <div className="px-4 py-3 rounded-xl bg-gold/10 border border-gold/20">
-                  <div className="text-2xl font-bold text-gold">{bonus2}</div>
-                  <div className="text-white/50 text-xs mt-1">🌟 高級占卜</div>
-                  <div className="text-white/30 text-[10px]">Premium</div>
-                </div>
-              )}
             </div>
 
             <p className="text-white/30 text-xs">
@@ -231,8 +222,7 @@ export default function SharePage() {
           <div className="mt-4 py-3 px-4 rounded-lg bg-gold/5 border border-gold/10">
             <p className="text-gold/80 text-xs font-medium mb-1.5">🎁 分享永久額度</p>
             <div className="flex justify-center gap-4 text-xs">
-              <span className="text-white/60">⚡ 標準 ×{bonus1}</span>
-              {bonus2 > 0 && <span className="text-white/60">🌟 高級 ×{bonus2}</span>}
+              <span className="text-white/60">🔮 占卜 ×{bonus1}</span>
             </div>
           </div>
         </div>

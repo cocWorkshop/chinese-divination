@@ -105,9 +105,8 @@ export async function POST(req: NextRequest) {
       reason: string
       sourceType?: string
       sourceIds?: string
-      bonusModel1?: number
-      bonusModel2?: number
-      bonusChat?: number
+      divinationCredits?: number
+      chatCredits?: number
     }>
   }
 
@@ -124,9 +123,9 @@ export async function POST(req: NextRequest) {
         reason: item.reason,
         sourceType: item.sourceType || 'manual',
         sourceIds: item.sourceIds || null,
-        bonusModel1: item.bonusModel1 || 0,
-        bonusModel2: item.bonusModel2 || 0,
-        bonusChat: item.bonusChat || 0,
+        bonusModel1: item.divinationCredits || 0,
+        bonusModel2: 0,
+        bonusChat: item.chatCredits || 0,
         token: generateToken(),
         status: 'pending',
         expiresAt: tokenExpiry(7 * 24), // 7 days

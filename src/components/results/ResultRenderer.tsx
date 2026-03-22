@@ -20,7 +20,7 @@ export default function ResultRenderer({ result, type, isShared }: { result: str
 
   switch (type) {
     case 'bazi': return <BaziResult data={parsed} isShared={isShared} rawResult={result} />
-    case 'iching': return <IChingResult data={parsed} />
+    case 'iching': return <IChingResult data={parsed} isShared={isShared} rawResult={result} />
     case 'liuyao': return <LiuYaoResult data={parsed} isShared={isShared} rawResult={result} />
     case 'ziwei': return <ZiweiResult data={parsed} isShared={isShared} rawResult={result} />
     case 'qimen': return <QimenResult data={parsed} />

@@ -28,9 +28,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   return NextResponse.json({
     status: 'ready',
     email: comp.email,
-    bonusModel1: comp.bonusModel1,
-    bonusModel2: comp.bonusModel2,
-    bonusChat: comp.bonusChat,
+    divinationCredits: comp.bonusModel1,
+    chatCredits: comp.bonusChat,
     reason: comp.reason,
   })
 }
@@ -61,13 +60,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return NextResponse.json({ error: 'no_account', message: '找不到此電郵對應的帳戶，請先註冊' }, { status: 404 })
   }
 
-  // Apply bonuses
+  // Apply credits
   await prisma.user.update({
     where: { id: user.id },
     data: {
-      bonusModel1: { increment: comp.bonusModel1 },
-      bonusModel2: { increment: comp.bonusModel2 },
-      bonusChat: { increment: comp.bonusChat },
+      divinationCredits: { increment: comp.bonusModel1 },
+      chatCredits: { increment: comp.bonusChat },
     },
   })
 
@@ -79,8 +77,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
 
   return NextResponse.json({
     success: true,
-    bonusModel1: comp.bonusModel1,
-    bonusModel2: comp.bonusModel2,
-    bonusChat: comp.bonusChat,
+    divinationCredits: comp.bonusModel1,
+    chatCredits: comp.bonusChat,
   })
 }

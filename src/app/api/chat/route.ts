@@ -6,7 +6,7 @@ import OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logLlmCall } from '@/lib/llmLogger'
-import { checkChatLimit, incrementChatUsage } from '@/lib/rateLimit'
+import { checkChatCredits, deductChatCredit, grantDailyBonus } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,11 +20,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
     }
 
-    // Check chat rate limit
-    const chatLimit = await checkChatLimit(session.user.id)
+    // Grant daily bonus on first activity
+    await grantDailyBonus(session.user.id)
+
+    // Check chat credits
+    const chatLimit = await checkChatCredits(session.user.id)
     if (!chatLimit.allowed) {
       return NextResponse.json({
-        error: `今日問答配額已用完（${chatLimit.dailyLimit}輪/天），請明日再試。\nDaily chat quota reached (${chatLimit.dailyLimit}/day). Try again tomorrow.`,
+        error: '問答額度已用完，請購買更多額度。\nChat credits exhausted. Please purchase more.',
         remaining: 0,
       }, { status: 429 })
     }
@@ -159,11 +162,11 @@ ${user.chatSummary || '（暂无）'}
       outputPreview: reply,
     })
 
-    // Increment chat usage
-    await incrementChatUsage(session.user.id)
+    // Deduct chat credit
+    await deductChatCredit(session.user.id)
 
-    // Fetch updated usage to return to frontend
-    const updatedUsage = await checkChatLimit(session.user.id)
+    // Fetch updated credits to return to frontend
+    const updatedCredits = await checkChatCredits(session.user.id)
 
     // Generate condensed summary in background (fire-and-forget)
     const conversationForSummary = [
@@ -176,9 +179,8 @@ ${user.chatSummary || '（暂无）'}
 
     return NextResponse.json({
       reply,
-      chatUsage: {
-        used: updatedUsage.used,
-        limit: updatedUsage.dailyLimit === -1 ? -1 : updatedUsage.dailyLimit + updatedUsage.bonus,
+      chatCredits: {
+        remaining: updatedCredits.remaining,
       },
     })
   } catch (e: unknown) {

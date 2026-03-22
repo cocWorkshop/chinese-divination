@@ -72,8 +72,7 @@ export default function ProfilePage() {
   const [editForm, setEditForm] = useState<Partial<FamilyMember>>({})
   const [addingMember, setAddingMember] = useState(false)
   const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', calendarType: 'solar', timeMode: 'fuzzy', birthEnvironment: '' })
-  const [credits, setCredits] = useState<Record<string, { remaining: number; dailyLimit: number }> | null>(null)
-  const [userBonus, setUserBonus] = useState<{ model1: number; model2: number; chat: number } | null>(null)
+  const [credits, setCredits] = useState<{ divination: { remaining: number }; chat: { remaining: number } } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -132,7 +131,6 @@ export default function ProfilePage() {
       fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(catchAndReport('/api/site-feedback'))
       fetch('/api/credits').then(r => r.json()).then(data => {
         setCredits(data)
-        if (data.bonusModel1 !== undefined) setUserBonus({ model1: data.bonusModel1 || 0, model2: data.bonusModel2 || 0, chat: data.bonusChat || 0 })
       }).catch(catchAndReport('/api/credits'))
     }
   }, [session])
@@ -576,46 +574,21 @@ export default function ProfilePage() {
             <h2 className="text-lg font-serif text-gold">{T(lang, '額度信息', 'Credits')}</h2>
           </div>
           <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { key: 'model1', label: T(lang, '⚡ 標準', '⚡ Standard'), data: credits.model1 },
-                { key: 'model2', label: T(lang, '🌟 高級', '🌟 Premium'), data: credits.model2 },
-                { key: 'chat', label: T(lang, '💬 問答', '💬 Chat'), data: credits.chat },
-              ].map(m => {
-                const d = m.data as { remaining: number; used: number; dailyLimit: number; bonus: number }
-                if (!d) return null
-                const isUnlimited = d.dailyLimit === -1
-                const pct = isUnlimited ? 100 : d.dailyLimit > 0 ? Math.min(100, Math.round((d.remaining / d.dailyLimit) * 100)) : 0
-                return (
-                  <div key={m.key} className="rounded-xl p-4 border border-gold/10 bg-navy-900/50">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-white/80">{m.label}</span>
-                      <span className="text-xs text-gold font-mono">
-                        {isUnlimited ? '∞' : `${d.remaining}/${d.dailyLimit}`}
-                      </span>
-                    </div>
-                    {!isUnlimited && (
-                      <div className="h-1.5 rounded-full bg-navy-800 mb-2">
-                        <div className="h-1.5 rounded-full transition-all"
-                          style={{ width: `${pct}%`, backgroundColor: pct > 30 ? '#d4a853' : '#ef4444' }} />
-                      </div>
-                    )}
-                    <div className="flex justify-between text-xs text-white/40">
-                      <span>{T(lang, `已用 ${d.used}`, `Used ${d.used}`)}</span>
-                      {d.bonus > 0 && <span className="text-emerald-400">+{d.bonus}</span>}
-                    </div>
+                { key: 'divination', label: T(lang, '🔮 占卜', '🔮 Divination'), remaining: credits.divination?.remaining ?? 0 },
+                { key: 'chat', label: T(lang, '💬 問答', '💬 Chat'), remaining: credits.chat?.remaining ?? 0 },
+              ].map(m => (
+                <div key={m.key} className="rounded-xl p-4 border border-gold/10 bg-navy-900/50">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-white/80">{m.label}</span>
+                    <span className="text-lg text-gold font-mono font-bold">
+                      {m.remaining === 999 ? '∞' : m.remaining}
+                    </span>
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
-            {userBonus && (userBonus.model1 > 0 || userBonus.model2 > 0 || userBonus.chat > 0) && (
-              <div className="mt-4 pt-3 flex flex-wrap gap-3 text-xs text-white/40" style={{ borderTop: '1px solid rgba(212,168,83,0.1)' }}>
-                <span>🎁 {T(lang, '永久額度', 'Permanent')}:</span>
-                {userBonus.model1 > 0 && <span>⚡×{userBonus.model1}</span>}
-                {userBonus.model2 > 0 && <span>🌟×{userBonus.model2}</span>}
-                {userBonus.chat > 0 && <span>💬×{userBonus.chat}</span>}
-              </div>
-            )}
           </div>
         </div>
       )}

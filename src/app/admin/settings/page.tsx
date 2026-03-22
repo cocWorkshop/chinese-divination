@@ -16,19 +16,7 @@ export default function AdminSettings() {
     maintenanceMode: 'false',
     model1Name: 'anthropic/claude-3-5-haiku',
     model1Label: '標準模型 / Standard',
-    model2Name: 'anthropic/claude-sonnet-4',
-    model2Label: '高級模型 / Premium',
-    arcane_daily_model1: '20',
-    arcane_daily_model2: '2',
-    arcane_daily_chat: '3',
-    ethereal_daily_model1: '-1',
-    ethereal_daily_model2: '20',
-    ethereal_daily_chat: '10',
-    prestige_daily_model1: '-1',
-    prestige_daily_model2: '-1',
-    prestige_daily_chat: '-1',
     shareBonus: '20',
-    shareBonusModel2: '5',
     llmTimeoutSeconds: '240',
     llmMaxTokens: '8192',
     chatModelName: '',
@@ -99,39 +87,18 @@ export default function AdminSettings() {
             <span>🤖</span> 模型配置 / Model Configuration
           </h2>
           <div className="space-y-4">
-            {textField('model1Name', '標準模型 API名称 / Standard Model Name', 'e.g. anthropic/claude-3-5-haiku')}
-            {textField('model1Label', '標準模型 顯示名 / Standard Model Label')}
-            {textField('model2Name', '高級模型 API名称 / Premium Model Name', 'e.g. anthropic/claude-sonnet-4')}
-            {textField('model2Label', '高級模型 顯示名 / Premium Model Label')}
-            {textField('chatModelName', '聊天模型 / Chat Model Name', '留空則使用標準模型')}
+            {textField('model1Name', '占卜模型 API名称 / Divination Model Name', 'e.g. anthropic/claude-3-5-haiku')}
+            {textField('model1Label', '占卜模型 顯示名 / Divination Model Label')}
+            {textField('chatModelName', '聊天模型 / Chat Model Name', '留空則使用占卜模型')}
           </div>
         </div>
-
-        {/* 每日配額 / Daily Quota per Role */}
-        {[
-          { role: 'arcane', icon: '🔮', label: '啟示 Arcane', desc: '基礎用戶' },
-          { role: 'ethereal', icon: '✧', label: '洞察 Ethereal', desc: '進階用戶' },
-          { role: 'prestige', icon: '✦', label: '大師 Prestige', desc: '高級用戶' },
-        ].map(r => (
-          <div key={r.role} className="glass-card rounded-xl p-6">
-            <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
-              <span>{r.icon}</span> {r.label} <span className="text-white/30 text-xs font-normal">— {r.desc}</span>
-            </h2>
-            <div className="grid grid-cols-3 gap-4">
-              {numberField(`${r.role}_daily_model1`, '⚡ 標準模型', '-1 = ∞')}
-              {numberField(`${r.role}_daily_model2`, '🌟 高級模型', '-1 = ∞')}
-              {numberField(`${r.role}_daily_chat`, '💬 問答聊天', '-1 = ∞')}
-            </div>
-          </div>
-        ))}
 
         {/* Share Settings */}
         <div className="glass-card rounded-xl p-6">
           <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
             <span>🔗</span> 分享設置 / Share Settings
           </h2>
-          {numberField('shareBonus', '標準模型永久額度 / Standard permanent credits per share', '分享者和受邀者各獲得此數量的標準模型永久額度')}
-          {numberField('shareBonusModel2', '高級模型永久額度 / Premium permanent credits per share', '分享者和受邀者各獲得此數量的高級模型永久額度，0 = 不獎勵')}
+          {numberField('shareBonus', '分享獎勵占卜額度 / Divination credits per share', '分享者和受邀者各獲得此數量的占卜額度')}
         </div>
 
         {/* Divination Type Tiers */}

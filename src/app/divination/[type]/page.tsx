@@ -103,13 +103,13 @@ export default function DivinationFormPage() {
   const [saveHistory, setSaveHistory] = useState(true)
   const [profileLoaded, setProfileLoaded] = useState(false)
   const selfProfileRef = useRef<{ birthDate: string; birthTime: string; birthPlace: string; gender: string; lunarToggle: string; timeMode: string; birthEnvironment: string } | null>(null)
-  const [modelTier, setModelTier] = useState('model2')
+  // modelTier removed — single model now
   // Bazi cache dialog
   const [showCacheDialog, setShowCacheDialog] = useState(false)
   const [cachedReading, setCachedReading] = useState<{ id: string; result: string; createdAt: string; count: number } | null>(null)
-  const [credits, setCredits] = useState<Record<string, {remaining: number, dailyLimit: number}> | null>(null)
+  const [credits, setCredits] = useState<{ divination?: { remaining: number }; chat?: { remaining: number } } | null>(null)
   const [llmTimeoutMs, setLlmTimeoutMs] = useState(240000)
-  const [shareBonus, setShareBonus] = useState<{model1: number, model2: number} | null>(null)
+  const [shareBonus, setShareBonus] = useState<{divination: number} | null>(null)
   const [targetType, setTargetType] = useState<'self' | 'family'>('self')
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
   const [selectedMemberId, setSelectedMemberId] = useState<string>('')
@@ -122,33 +122,9 @@ export default function DivinationFormPage() {
 
   const info = typeInfo[type] || { zhName: '占卜', enName: 'Divination', symbol: '☯' }
 
-  // Premium tier check
+  // Tier check — no longer role-gated, just mark as checked
   useEffect(() => {
-    const checkTier = async () => {
-      try {
-        const [tiersRes, profileRes] = await Promise.all([
-          fetch('/api/divination-tiers'),
-          session ? fetch('/api/profile') : Promise.resolve(null),
-        ])
-        const tiers = await tiersRes.json()
-        const profile = profileRes ? await profileRes.json() : null
-        const userRole = profile?.role || 'arcane'
-        const isAdmin = profile?.isAdmin || false
-        const roleLevel: Record<string, number> = { admin: 3, prestige: 3, ethereal: 2, arcane: 1 }
-        const tierLevel: Record<string, number> = { prestige: 3, ethereal: 2, arcane: 1 }
-        const userLvl = roleLevel[userRole] || 1
-        const requiredLvl = tierLevel[tiers[type]] || 1
-
-        if (!isAdmin && userLvl < requiredLvl) {
-          const tierNames: Record<string, string> = { prestige: T(lang, '大師', 'Prestige'), ethereal: T(lang, '洞察', 'Ethereal') }
-          toast.error(T(lang, `此功能需要${tierNames[tiers[type]] || '更高'}等級權限`, `This feature requires ${tiers[type] || 'higher'} access`), { icon: '✦' })
-          router.push('/divination')
-          return
-        }
-      } catch { /* ignore */ }
-      setTierChecked(true)
-    }
-    checkTier()
+    setTierChecked(true)
   }, [type, session, lang, router])
 
   // Auto-fill from saved profile (bazi & ziwei only)
@@ -282,7 +258,6 @@ export default function DivinationFormPage() {
           question: form.question,
           saveProfile: saveProfile,
           saveHistory,
-          modelTier,
           targetType,
           familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
           newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, name: newMemberName || undefined } : undefined,
@@ -305,7 +280,7 @@ export default function DivinationFormPage() {
           fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
         } else {
           toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
-          reportError({ endpoint: '/api/divination', status: res.status, error: 'Polling timeout after 600s — no result found', context: `type=${type}, modelTier=${modelTier}` })
+          reportError({ endpoint: '/api/divination', status: res.status, error: 'Polling timeout after 600s — no result found', context: `type=${type}, type=${type}` })
         }
         setLoading(false)
         return
@@ -321,7 +296,7 @@ export default function DivinationFormPage() {
         fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
       } else {
         toast.error(data.error || 'Error')
-        reportError({ endpoint: '/api/divination', status: res.status, error: data.error || 'Unknown error', context: `type=${type}, modelTier=${modelTier}` })
+        reportError({ endpoint: '/api/divination', status: res.status, error: data.error || 'Unknown error', context: `type=${type}, type=${type}` })
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Network error'
@@ -336,7 +311,7 @@ export default function DivinationFormPage() {
         fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
       } else {
         toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
-        reportError({ endpoint: '/api/divination', error: `Polling timeout after 600s — original error: ${msg}`, context: `type=${type}, modelTier=${modelTier}` })
+        reportError({ endpoint: '/api/divination', error: `Polling timeout after 600s — original error: ${msg}`, context: `type=${type}, type=${type}` })
       }
     }
     setLoading(false)
@@ -964,68 +939,17 @@ export default function DivinationFormPage() {
             </div>
           )}
 
-          {/* Model Selection */}
-          {session && (
+          {/* Credits display */}
+          {session && credits?.divination && (
             <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50">
-              <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">
-                {T(lang, '🤖 選擇模型', '🤖 Select Model')}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { tier: 'model1', zhLabel: '標準模型', enLabel: 'Standard', icon: '⚡' },
-                  { tier: 'model2', zhLabel: '高級模型', enLabel: 'Premium', icon: '🌟' },
-                ].map(m => (
-                  <button
-                    key={m.tier}
-                    type="button"
-                    onClick={() => setModelTier(m.tier)}
-                    className={`p-3 rounded-lg border text-left transition-all ${
-                      modelTier === m.tier
-                        ? 'border-gold bg-gold/10 ring-1 ring-gold/30'
-                        : 'border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span>{m.icon}</span>
-                      <span className="text-white/80 text-sm font-medium">
-                        {lang === 'en' ? m.enLabel : m.zhLabel}
-                      </span>
-                    </div>
-                    {credits && credits[m.tier] && (
-                      <p className="text-white/40 text-xs">
-                        {(() => {
-                          const c = credits[m.tier]
-                          const rem = c.remaining === -1 ? '∞' : c.remaining
-                          const lim = c.dailyLimit === -1 ? '∞' : c.dailyLimit
-                          return lang === 'en'
-                            ? `${rem} / ${lim} remaining today`
-                            : `今日配額剩餘 ${rem} / ${lim} 次`
-                        })()}
-                      </p>
-                    )}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between">
+                <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">
+                  {T(lang, '🔮 占卜額度', '🔮 Divination Credits')}
+                </span>
+                <span className="text-gold font-mono font-bold">
+                  {credits.divination.remaining === 999 ? '∞' : credits.divination.remaining}
+                </span>
               </div>
-              {/* Share prompt when premium credits depleted */}
-              {credits?.model2 && credits.model2.remaining !== -1 && credits.model2.remaining <= 0 && shareBonus && (
-                <div className="mt-3 flex items-center gap-2 text-xs rounded-lg px-3 py-2" style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--border-gold)' }}>
-                  <span>🔗</span>
-                  <span style={{ color: 'var(--text-muted)' }}>
-                    {T(lang, '高級模型次數已用完，', 'Premium credits used up. ')}
-                    <a href="/divination" onClick={async (e) => {
-                      e.preventDefault()
-                      const res = await fetch('/api/share', { method: 'POST' })
-                      const data = await res.json()
-                      if (res.ok) window.location.href = `/share/${data.code}`
-                    }} className="underline" style={{ color: 'var(--gold)' }}>
-                      {T(lang,
-                        `分享可獲得永久額度 ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`,
-                        `Share for permanent credits ⚡×${shareBonus.model1}${shareBonus.model2 > 0 ? ` + 🌟×${shareBonus.model2}` : ''}`
-                      )}
-                    </a>
-                  </span>
-                </div>
-              )}
             </div>
           )}
 
