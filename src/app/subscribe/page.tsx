@@ -130,7 +130,15 @@ export default function SubscribePage() {
               </div>
 
               <div className="text-center mb-6">
-                <span className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                <div className="mb-1">
+                  <span className="text-sm line-through" style={{ color: 'var(--text-muted)' }}>
+                    ${(pack.originalPrice / 100).toFixed(2)}
+                  </span>
+                  <span className="ml-2 text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+                    {T(lang, '1折', '90% OFF')}
+                  </span>
+                </div>
+                <span className="text-3xl font-bold" style={{ color: 'var(--gold)' }}>
                   ${(pack.price / 100).toFixed(2)}
                 </span>
               </div>
