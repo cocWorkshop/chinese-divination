@@ -9,32 +9,49 @@ import { useLang } from '@/components/LanguageContext'
 import YinYangIcon from '@/components/YinYangIcon'
 import StarField from '@/components/StarField'
 
-const services = [
-  { id: 'bazi', symbol: '☰', twName: '八字命理', enName: 'BaZi', twDesc: '四柱八字，推演命運', enDesc: 'Four Pillars of Destiny' },
-  { id: 'iching', symbol: '☯', twName: '易經占卜', enName: 'I Ching', twDesc: '六十四卦，洞察先機', enDesc: 'Book of Changes Oracle' },
-  { id: 'ziwei', symbol: '⭐', twName: '紫微斗數', enName: 'Zi Wei', twDesc: '星盤命宮，紫微護命', enDesc: 'Purple Star Astrology' },
-  { id: 'qimen', symbol: '⚡', twName: '奇門遁甲', enName: 'Qi Men', twDesc: '奇門佈局，謀事在天', enDesc: 'Qi Men Dun Jia' },
-  { id: 'fengshui', symbol: '🏯', twName: '風水佈局', enName: 'Feng Shui', twDesc: '藏風聚氣，宅運興旺', enDesc: 'Wind & Water Harmony' },
-  { id: 'other', symbol: '🌸', twName: '梅花六壬', enName: 'Others', twDesc: '梅花易數·六壬神課', enDesc: 'Plum Blossom & Liu Ren' },
-]
+interface VisibilityItem {
+  type: string
+  visible: boolean
+  order: number
+}
 
-// Map service id to visibility key
-const visKeyMap: Record<string, string> = { other: 'meihua' }
-const getVisKey = (id: string) => visKeyMap[id] || id
+const serviceMap: Record<string, { symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }> = {
+  bazi: { symbol: '☰', twName: '八字命理', enName: 'BaZi', twDesc: '四柱八字，推演命運', enDesc: 'Four Pillars of Destiny' },
+  iching: { symbol: '☯', twName: '易經占卜', enName: 'I Ching', twDesc: '六十四卦，洞察先機', enDesc: 'Book of Changes Oracle' },
+  liuyao: { symbol: '☯', twName: '六爻占卜', enName: 'Liu Yao', twDesc: '銅錢搖卦，精準斷事', enDesc: 'Six Lines Divination' },
+  ziwei: { symbol: '⭐', twName: '紫微斗數', enName: 'Zi Wei', twDesc: '星盤命宮，紫微護命', enDesc: 'Purple Star Astrology' },
+  qimen: { symbol: '⚡', twName: '奇門遁甲', enName: 'Qi Men', twDesc: '奇門佈局，謀事在天', enDesc: 'Qi Men Dun Jia' },
+  fengshui: { symbol: '🏯', twName: '風水佈局', enName: 'Feng Shui', twDesc: '藏風聚氣，宅運興旺', enDesc: 'Wind & Water Harmony' },
+  meihua: { symbol: '🌸', twName: '梅花六壬', enName: 'Mei Hua', twDesc: '梅花易數·六壬神課', enDesc: 'Plum Blossom & Liu Ren' },
+}
+
+// Map visibility type keys to route ids (meihua routes to /divination/other)
+const routeIdMap: Record<string, string> = { meihua: 'other' }
+const getRouteId = (type: string) => routeIdMap[type] || type
 
 export default function HomePage() {
   const { lang } = useLang()
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [visibleServices, setVisibleServices] = useState(services)
+  const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
 
   useEffect(() => {
     fetch('/api/divination/visibility')
       .then(r => r.json())
-      .then((vis: Record<string, boolean>) => {
-        setVisibleServices(services.filter(s => vis[getVisKey(s.id)] !== false))
+      .then((items: VisibilityItem[]) => {
+        const ordered = items
+          .filter(item => item.visible && serviceMap[item.type])
+          .sort((a, b) => a.order - b.order)
+          .map(item => ({
+            id: getRouteId(item.type),
+            ...serviceMap[item.type],
+          }))
+        setVisibleServices(ordered)
       })
-      .catch(() => {})
+      .catch(() => {
+        // Fallback: show all
+        setVisibleServices(Object.entries(serviceMap).map(([type, info]) => ({ id: getRouteId(type), ...info })))
+      })
   }, [])
 
   useEffect(() => {

@@ -3,28 +3,34 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
-const DEFAULT_VISIBILITY: Record<string, boolean> = {
-  bazi: true,
-  iching: false,
-  liuyao: true,
-  ziwei: true,
-  qimen: true,
-  fengshui: true,
-  meihua: true,
+interface VisibilityItem {
+  type: string
+  visible: boolean
+  order: number
 }
 
-const DIVINATION_TYPES = [
-  { key: 'bazi', symbol: '☰', label: '八字命理 / BaZi' },
-  { key: 'iching', symbol: '☯', label: '易經占卜 / I Ching' },
-  { key: 'liuyao', symbol: '☯', label: '六爻占卜 / Liu Yao' },
-  { key: 'ziwei', symbol: '⭐', label: '紫微斗數 / Zi Wei' },
-  { key: 'qimen', symbol: '⚡', label: '奇門遁甲 / Qi Men' },
-  { key: 'fengshui', symbol: '🏯', label: '風水佈局 / Feng Shui' },
-  { key: 'meihua', symbol: '🌸', label: '梅花六壬 / Plum & Liu Ren' },
+const TYPE_INFO: Record<string, { icon: string; zh: string; en: string }> = {
+  bazi: { icon: '☰', zh: '八字命理', en: 'BaZi' },
+  iching: { icon: '☯', zh: '易經占卜', en: 'I Ching' },
+  liuyao: { icon: '☯', zh: '六爻占卜', en: 'Liu Yao' },
+  ziwei: { icon: '⭐', zh: '紫微斗數', en: 'Zi Wei' },
+  qimen: { icon: '⚡', zh: '奇門遁甲', en: 'Qi Men' },
+  fengshui: { icon: '🏯', zh: '風水佈局', en: 'Feng Shui' },
+  meihua: { icon: '🌸', zh: '梅花六壬', en: 'Mei Hua' },
+}
+
+const DEFAULT_VISIBILITY: VisibilityItem[] = [
+  { type: 'bazi', visible: true, order: 1 },
+  { type: 'ziwei', visible: true, order: 2 },
+  { type: 'liuyao', visible: true, order: 3 },
+  { type: 'qimen', visible: true, order: 4 },
+  { type: 'fengshui', visible: true, order: 5 },
+  { type: 'meihua', visible: true, order: 6 },
+  { type: 'iching', visible: false, order: 7 },
 ]
 
 export default function AdminSettings() {
-  const [visibility, setVisibility] = useState<Record<string, boolean>>(DEFAULT_VISIBILITY)
+  const [visibilityItems, setVisibilityItems] = useState<VisibilityItem[]>(DEFAULT_VISIBILITY)
   const [settings, setSettings] = useState<Record<string, string>>({
     divinationType_bazi_tier: 'normal',
     divinationType_iching_tier: 'normal',
@@ -51,7 +57,7 @@ export default function AdminSettings() {
       fetch('/api/divination/visibility').then(r => r.json()),
     ]).then(([statsData, visData]) => {
       if (statsData.settings) setSettings(s => ({ ...s, ...statsData.settings }))
-      if (visData) setVisibility(v => ({ ...v, ...visData }))
+      if (Array.isArray(visData)) setVisibilityItems(visData.sort((a: VisibilityItem, b: VisibilityItem) => a.order - b.order))
     }).finally(() => setLoading(false))
   }, [])
 
@@ -59,7 +65,7 @@ export default function AdminSettings() {
     setSaving(true)
     const allSettings = {
       ...settings,
-      divination_visibility: JSON.stringify(visibility),
+      divination_visibility: JSON.stringify(visibilityItems),
     }
     const res = await fetch('/api/admin/settings', {
       method: 'PUT',
@@ -134,29 +140,67 @@ export default function AdminSettings() {
           <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
             <span>👁</span> 占卜類型顯示 / Divination Visibility
           </h2>
-          <p className="text-white/40 text-xs mb-4">控制首頁和選擇頁面顯示哪些占卜類型 / Control which types appear on the home and selection pages</p>
-          <div className="space-y-3">
-            {DIVINATION_TYPES.map(item => {
-              const visible = visibility[item.key] ?? true
+          <p className="text-white/40 text-xs mb-4">控制首頁和選擇頁面顯示哪些占卜類型及順序 / Control which types appear and their display order</p>
+          <div className="space-y-2">
+            {visibilityItems.map((item, idx) => {
+              const info = TYPE_INFO[item.type]
+              if (!info) return null
               return (
-                <label key={item.key} className="flex items-center justify-between cursor-pointer group">
-                  <span className="text-white/80 text-sm">{item.symbol} {item.label}</span>
+                <div key={item.type} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-navy-800/50">
+                  <div className="flex flex-col gap-0.5">
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => {
+                        const arr = [...visibilityItems]
+                        ;[arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]
+                        setVisibilityItems(arr.map((it, i) => ({ ...it, order: i + 1 })))
+                      }}
+                      className="text-white/40 hover:text-gold disabled:opacity-20 text-xs leading-none"
+                    >▲</button>
+                    <button
+                      type="button"
+                      disabled={idx === visibilityItems.length - 1}
+                      onClick={() => {
+                        const arr = [...visibilityItems]
+                        ;[arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]]
+                        setVisibilityItems(arr.map((it, i) => ({ ...it, order: i + 1 })))
+                      }}
+                      className="text-white/40 hover:text-gold disabled:opacity-20 text-xs leading-none"
+                    >▼</button>
+                  </div>
+                  <span className="text-2xl w-8 text-center">{info.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-white/80 text-sm">{info.zh}</span>
+                    <span className="text-white/40 text-xs ml-2">{info.en}</span>
+                  </div>
                   <div className="relative flex-shrink-0">
                     <input
                       type="checkbox"
-                      checked={visible}
-                      onChange={e => setVisibility(v => ({ ...v, [item.key]: e.target.checked }))}
+                      checked={item.visible}
+                      onChange={e => {
+                        setVisibilityItems(prev => prev.map(it =>
+                          it.type === item.type ? { ...it, visible: e.target.checked } : it
+                        ))
+                      }}
                       className="sr-only"
                     />
-                    <div className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
-                      visible ? 'bg-jade' : 'bg-navy-800 border border-white/20'
-                    }`}>
+                    <div
+                      onClick={() => {
+                        setVisibilityItems(prev => prev.map(it =>
+                          it.type === item.type ? { ...it, visible: !it.visible } : it
+                        ))
+                      }}
+                      className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 cursor-pointer ${
+                        item.visible ? 'bg-jade' : 'bg-navy-800 border border-white/20'
+                      }`}
+                    >
                       <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                        visible ? 'translate-x-5' : 'translate-x-0'
+                        item.visible ? 'translate-x-5' : 'translate-x-0'
                       }`} />
                     </div>
                   </div>
-                </label>
+                </div>
               )
             })}
           </div>

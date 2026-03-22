@@ -81,7 +81,7 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
             />
           ))}
         </motion.div>
-        <span className="text-white/40 text-xs">{lang === 'en' ? 'Contemplating...' : '玄機推演中...'}</span>
+        <span className="text-white/40 text-xs">{lang === 'en' ? 'Deciphering the hidden path...' : '破解玄機中...'}</span>
       </div>
     )
   }

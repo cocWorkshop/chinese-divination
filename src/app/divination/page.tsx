@@ -11,33 +11,48 @@ import { useLang } from '@/components/LanguageContext'
 const T = (lang: string, zhTW: string, en: string) =>
   lang === 'en' ? en : zhTW
 
-const services = [
-  { id: 'bazi', symbol: '☰', twName: '八字命理', enName: 'BaZi (Four Pillars)', twDesc: '以生辰八字為基礎，分析命主的命運走向、性格特點、事業財運與婚姻', enDesc: 'Analyze destiny through birth date and time — career, wealth, relationships and personality' },
-  { id: 'liuyao', symbol: '☯', twName: '六爻占卜', enName: 'Liu Yao Divination', twDesc: '以銅錢搖卦起六爻，配合六親、世應、用神，精準斷事吉凶', enDesc: 'Cast hexagrams with coins, analyze six lines with six relatives for precise event prediction' },
-  // { id: 'iching', symbol: '☯', twName: '易經占卜', enName: 'I Ching Oracle', twDesc: '通過六十四卦解讀當下疑惑，洞察事物發展趨勢，指引前行方向', enDesc: 'Consult the 64 hexagrams for insight on current situations and future trends' },
-  { id: 'ziwei', symbol: '⭐', twName: '紫微斗數', enName: 'Zi Wei Dou Shu', twDesc: '以出生時間排列星盤，分析十二宮位，全面揭示人生各方面的吉凶', enDesc: 'Birth chart of stars across 12 palaces — a comprehensive life analysis system' },
-  { id: 'qimen', symbol: '⚡', twName: '奇門遁甲', enName: 'Qi Men Dun Jia', twDesc: '古代最高級預測術，用於擇時、選地、謀事，把握最佳時機', enDesc: 'Advanced divination for timing decisions, choosing directions, and strategic planning' },
-  { id: 'fengshui', symbol: '🏯', twName: '風水佈局', enName: 'Feng Shui', twDesc: '分析居所風水格局，優化環境氣場，助旺家宅運勢與健康財運', enDesc: 'Analyze your home or office layout to optimize energy flow and improve luck' },
-  { id: 'other', symbol: '🌸', twName: '梅花六壬', enName: 'Plum & Liu Ren', twDesc: '包含梅花易數與六壬神課，以數起卦或以時起課，精準預測具體事項', enDesc: 'Plum Blossom numerology and Liu Ren oracle for precise event prediction' },
-]
+interface VisibilityItem {
+  type: string
+  visible: boolean
+  order: number
+}
 
-// Map service id to visibility key
-const visKeyMap: Record<string, string> = { other: 'meihua' }
-const getVisKey = (id: string) => visKeyMap[id] || id
+const serviceMap: Record<string, { symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }> = {
+  bazi: { symbol: '☰', twName: '八字命理', enName: 'BaZi (Four Pillars)', twDesc: '以生辰八字為基礎，分析命主的命運走向、性格特點、事業財運與婚姻', enDesc: 'Analyze destiny through birth date and time — career, wealth, relationships and personality' },
+  liuyao: { symbol: '☯', twName: '六爻占卜', enName: 'Liu Yao Divination', twDesc: '以銅錢搖卦起六爻，配合六親、世應、用神，精準斷事吉凶', enDesc: 'Cast hexagrams with coins, analyze six lines with six relatives for precise event prediction' },
+  iching: { symbol: '☯', twName: '易經占卜', enName: 'I Ching Oracle', twDesc: '通過六十四卦解讀當下疑惑，洞察事物發展趨勢，指引前行方向', enDesc: 'Consult the 64 hexagrams for insight on current situations and future trends' },
+  ziwei: { symbol: '⭐', twName: '紫微斗數', enName: 'Zi Wei Dou Shu', twDesc: '以出生時間排列星盤，分析十二宮位，全面揭示人生各方面的吉凶', enDesc: 'Birth chart of stars across 12 palaces — a comprehensive life analysis system' },
+  qimen: { symbol: '⚡', twName: '奇門遁甲', enName: 'Qi Men Dun Jia', twDesc: '古代最高級預測術，用於擇時、選地、謀事，把握最佳時機', enDesc: 'Advanced divination for timing decisions, choosing directions, and strategic planning' },
+  fengshui: { symbol: '🏯', twName: '風水佈局', enName: 'Feng Shui', twDesc: '分析居所風水格局，優化環境氣場，助旺家宅運勢與健康財運', enDesc: 'Analyze your home or office layout to optimize energy flow and improve luck' },
+  meihua: { symbol: '🌸', twName: '梅花六壬', enName: 'Plum & Liu Ren', twDesc: '包含梅花易數與六壬神課，以數起卦或以時起課，精準預測具體事項', enDesc: 'Plum Blossom numerology and Liu Ren oracle for precise event prediction' },
+}
+
+// Map visibility type keys to route ids
+const routeIdMap: Record<string, string> = { meihua: 'other' }
+const getRouteId = (type: string) => routeIdMap[type] || type
 
 export default function DivinationPage() {
   const { lang } = useLang()
   const { data: session } = useSession()
   const router = useRouter()
-  const [visibleServices, setVisibleServices] = useState(services)
+  const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
 
   useEffect(() => {
     fetch('/api/divination/visibility')
       .then(r => r.json())
-      .then((vis: Record<string, boolean>) => {
-        setVisibleServices(services.filter(s => vis[getVisKey(s.id)] !== false))
+      .then((items: VisibilityItem[]) => {
+        const ordered = items
+          .filter(item => item.visible && serviceMap[item.type])
+          .sort((a, b) => a.order - b.order)
+          .map(item => ({
+            id: getRouteId(item.type),
+            ...serviceMap[item.type],
+          }))
+        setVisibleServices(ordered)
       })
-      .catch(() => {})
+      .catch(() => {
+        setVisibleServices(Object.entries(serviceMap).map(([type, info]) => ({ id: getRouteId(type), ...info })))
+      })
   }, [])
 
   const handleClick = (svcId: string, _e: React.MouseEvent) => {

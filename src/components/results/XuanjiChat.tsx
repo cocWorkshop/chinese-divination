@@ -19,19 +19,19 @@ const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 const suggestedQuestions: Record<string, { zh: string; en: string }[]> = {
   bazi: [
-    { zh: '破解我命格中的隱藏格局', en: 'Decode the hidden patterns in my chart' },
-    { zh: '我的大運轉折點在哪裡？', en: 'Where are the turning points in my cycles?' },
-    { zh: '五行喜忌對事業有何影響？', en: 'How do my elemental preferences affect career?' },
+    { zh: '命中有哪些隱患？如何化解？', en: 'What hidden risks exist? How to resolve them?' },
+    { zh: '哪步大運最需警惕？如何破解？', en: 'Which cycle needs most caution? How to counter it?' },
+    { zh: '我的命格有什麼突破口？', en: 'Where is the breakthrough point in my chart?' },
   ],
   ziwei: [
-    { zh: '破解我命宮主星的深層含義', en: 'Decode the deeper meaning of my main stars' },
-    { zh: '四化飛星揭示了什麼天機？', en: 'What secrets do the Four Transformations reveal?' },
-    { zh: '我命盤中最有利的宮位是哪個？', en: 'Which palace is most favorable in my chart?' },
+    { zh: '命盤中有哪些煞星需要化解？', en: 'Which malefic stars need resolving?' },
+    { zh: '如何借助吉星破解困局？', en: 'How to leverage auspicious stars to overcome obstacles?' },
+    { zh: '最大的命理阻礙是什麼？怎麼破？', en: 'What is the biggest obstacle? How to break through?' },
   ],
   liuyao: [
-    { zh: '用神旺衰如何？事情成敗關鍵是什麼？', en: 'How strong is the Yong Shen? What determines success?' },
-    { zh: '應期在什麼時候？', en: 'When will this matter come to fruition?' },
-    { zh: '變卦暗示了什麼最終結果？', en: 'What final outcome does the changed hexagram suggest?' },
+    { zh: '卦中有什麼凶險？如何趨吉避凶？', en: 'What dangers exist? How to seek fortune and avoid harm?' },
+    { zh: '事情最大的阻礙在哪？如何破解？', en: 'Where is the biggest obstacle? How to resolve it?' },
+    { zh: '應期之前有什麼需要注意的？', en: 'What should I watch for before the timing arrives?' },
   ],
 }
 
@@ -155,7 +155,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
                 {T(lang, '玄機破', 'Xuanji Po')}
               </h3>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {T(lang, '破解命盤玄機，洞悉天機奧秘', 'Decode the mysteries of your destiny')}
+                {T(lang, '破解命盤隱患，化險為夷', 'Decode hidden risks, turn danger into fortune')}
               </p>
             </div>
             <div className="space-y-2 max-w-sm mx-auto">

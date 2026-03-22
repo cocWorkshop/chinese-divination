@@ -50,7 +50,7 @@ const schemas: Record<string, object> = {
     },
     keyAdvice: ['建议一', '建议二', '建议三'],
     luckyInfo: { numbers: [1, 2], colors: ['颜色'], directions: ['方位'] },
-    suggestedQuestions: ['基于本次解读内容的跟进问题1(20字内)', '跟进问题2', '跟进问题3'],
+    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
   },
   iching: {
     type: 'iching',
@@ -64,7 +64,7 @@ const schemas: Record<string, object> = {
     changingLines: [{ position: 3, text: '变爻说明' }],
     advice: '具体建议(100+字)', outcome: '吉/凶/中/大吉/小凶',
     keyPoints: ['要点一', '要点二', '要点三'],
-    suggestedQuestions: ['基于本次解读内容的跟进问题1(20字内)', '跟进问题2', '跟进问题3'],
+    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
   },
   liuyao: {
     type: 'liuyao',
@@ -78,7 +78,7 @@ const schemas: Record<string, object> = {
     advice: '具体建议(100字以上)',
     outcome: '吉/凶/中/大吉/小凶',
     keyPoints: ['要点一', '要点二', '要点三'],
-    suggestedQuestions: ['基于本次解读内容的跟进问题1(20字内)', '跟进问题2', '跟进问题3'],
+    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
   },
   ziwei: {
     type: 'ziwei',
@@ -100,7 +100,7 @@ const schemas: Record<string, object> = {
     sections: { overview: '总论(100+字)', career: '事业官禄(100+字)', marriage: '夫妻感情(100+字)', wealth: '财运(100+字)' },
     keyAdvice: ['建议一', '建议二'],
     luckyInfo: { numbers: [], colors: [], directions: [] },
-    suggestedQuestions: ['基于本次解读内容的跟进问题1(20字内)', '跟进问题2', '跟进问题3'],
+    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
   },
   qimen: {
     type: 'qimen',
@@ -109,7 +109,7 @@ const schemas: Record<string, object> = {
     outcome: '吉/凶/中',
     keyAdvice: ['建议一', '建议二'],
     luckyInfo: { timing: '宜在...', direction: '向...方行动' },
-    suggestedQuestions: ['基于本次解读内容的跟进问题1(20字内)', '跟进问题2', '跟进问题3'],
+    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
   },
   fengshui: {
     type: 'fengshui',
@@ -118,7 +118,7 @@ const schemas: Record<string, object> = {
     sections: { overall: '整体格局(100+字)', wealth: '财位(100+字)', health: '健康(100+字)', relationships: '人际感情(100+字)' },
     remedies: [{ issue: '问题', solution: '解决方案' }],
     keyAdvice: ['建议一', '建议二'],
-    suggestedQuestions: ['基于本次解读内容的跟进问题1(20字内)', '跟进问题2', '跟进问题3'],
+    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
   },
   other: {
     type: 'other',
@@ -131,7 +131,7 @@ const schemas: Record<string, object> = {
     sections: { situation: '体卦分析(100+字)', inquiry: '用卦分析(100+字)', interaction: '体用关系(100+字)', timeline: '时间推断(100+字)' },
     outcome: '吉/凶/中',
     keyAdvice: ['建议一', '建议二', '建议三'],
-    suggestedQuestions: ['基于本次解读内容的跟进问题1(20字内)', '跟进问题2', '跟进问题3'],
+    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
   },
 }
 
