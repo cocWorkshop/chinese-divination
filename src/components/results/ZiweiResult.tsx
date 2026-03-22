@@ -400,29 +400,26 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
           )}
         </div>
         <AnimatePresence mode="wait">
-          {activeSection === 'xuanji' ? (
-            <motion.div
-              key="xuanji"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              className="rounded-xl p-5 border-2 border-gold/30 text-white/80 text-sm leading-relaxed"
-              style={{ background: 'linear-gradient(145deg, rgba(15,10,30,0.95), rgba(10,15,30,0.9))' }}
-            >
-              <XuanjiChat readingResult={rawResult || ''} readingType="ziwei" />
-            </motion.div>
-          ) : (
-            <motion.div
-              key={activeSection}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap"
-            >
-              {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
-            </motion.div>
-          )}
+          <motion.div
+            key={activeSection === 'xuanji' ? 'sections' : activeSection}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+          >
+            {activeSection !== 'xuanji' && (
+              <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+                {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
+              </div>
+            )}
+          </motion.div>
         </AnimatePresence>
+        {!isShared && (
+          <div className={`rounded-xl p-5 border-2 border-gold/30 text-white/80 text-sm leading-relaxed mt-4 ${activeSection === 'xuanji' ? '' : 'hidden'}`}
+            style={{ background: 'linear-gradient(145deg, rgba(15,10,30,0.95), rgba(10,15,30,0.9))' }}
+          >
+            <XuanjiChat readingResult={rawResult || ''} readingType="ziwei" />
+          </div>
+        )}
       </motion.div>
 
       {/* Key Advice */}
