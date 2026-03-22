@@ -15,6 +15,7 @@ export default function SharePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copied, setCopied] = useState(false)
   const [bonus1, setBonus1] = useState(20)
+  const [bonusChat, setBonusChat] = useState(5)
 
   const shareUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/share/${code}` 
@@ -25,6 +26,7 @@ export default function SharePage() {
       .then(r => r.json())
       .then(data => {
         if (data.divination) setBonus1(data.divination)
+        if (data.chat) setBonusChat(data.chat)
       })
       .catch(catchAndReport('/api/share'))
   }, [])
@@ -113,6 +115,11 @@ export default function SharePage() {
                 <div className="text-white/50 text-xs mt-1">🔮 占卜額度</div>
                 <div className="text-white/30 text-[10px]">Divination Credits</div>
               </div>
+              <div className="px-4 py-3 rounded-xl bg-gold/10 border border-gold/20">
+                <div className="text-2xl font-bold text-gold">{bonusChat}</div>
+                <div className="text-white/50 text-xs mt-1">💬 聊天額度</div>
+                <div className="text-white/30 text-[10px]">Chat Credits</div>
+              </div>
             </div>
 
             <p className="text-white/30 text-xs">
@@ -122,7 +129,7 @@ export default function SharePage() {
 
           {/* Divination types preview */}
           <div className="glass-card rounded-2xl p-6">
-            <h3 className="text-sm font-serif text-gold mb-3 text-center">六大占卜 · Six Divination Arts</h3>
+            <h3 className="text-sm font-serif text-gold mb-3 text-center">七大占卜 · Seven Divination Arts</h3>
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
                 { icon: '🏛', zh: '八字', en: 'BaZi' },
@@ -131,6 +138,7 @@ export default function SharePage() {
                 { icon: '🧭', zh: '奇門', en: 'Qi Men' },
                 { icon: '🏠', zh: '風水', en: 'Feng Shui' },
                 { icon: '🌸', zh: '梅花', en: 'Meihua' },
+                { icon: '🎲', zh: '六爻', en: 'Liu Yao' },
               ].map(d => (
                 <div key={d.en} className="py-2 px-1 rounded-lg bg-white/5">
                   <div className="text-lg">{d.icon}</div>
@@ -223,6 +231,7 @@ export default function SharePage() {
             <p className="text-gold/80 text-xs font-medium mb-1.5">🎁 分享永久額度</p>
             <div className="flex justify-center gap-4 text-xs">
               <span className="text-white/60">🔮 占卜 ×{bonus1}</span>
+              <span className="text-white/60">💬 聊天 ×{bonusChat}</span>
             </div>
           </div>
         </div>
