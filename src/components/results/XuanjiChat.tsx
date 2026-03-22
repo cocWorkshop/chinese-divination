@@ -39,9 +39,13 @@ export default function XuanjiChat({ readingResult, readingType }: {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Scroll to latest message within the chat area (internal scroll only)
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+      const container = messagesEndRef.current.parentElement
+      if (container) {
+        container.scrollTop = container.scrollHeight
+      }
     }
   }, [messages])
 
@@ -108,7 +112,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
   return (
     <div className="flex flex-col" style={{ minHeight: '400px' }}>
       {/* Messages area */}
-      <div className="flex-1 space-y-4 mb-4" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+      <div className="flex-1 space-y-4 mb-4 scrollbar-hide" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
         {messages.length === 0 ? (
           /* Welcome + suggested questions */
           <div className="text-center py-8">

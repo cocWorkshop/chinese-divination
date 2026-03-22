@@ -195,7 +195,7 @@ export default function ProfilePage() {
   )
 
   return (
-    <div className="min-h-screen py-12 px-4 max-w-2xl mx-auto">
+    <div className="min-h-screen py-8 sm:py-12 px-3 sm:px-4 max-w-2xl mx-auto">
       {/* Page Header Card */}
       <div className="glass-card rounded-2xl p-6 sm:p-8 mb-6 text-center relative overflow-hidden">
         <div className="absolute inset-0 rounded-2xl border border-gold/20 pointer-events-none" />
@@ -218,7 +218,7 @@ export default function ProfilePage() {
             <span className="text-lg">🏷️</span>
             <h2 className="text-lg font-serif text-gold">{T(lang, '個人信息', 'Personal Info')}</h2>
           </div>
-          <div className="p-6 space-y-5">
+          <div className="p-4 sm:p-6 space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelCls}>{T(lang, '姓名', 'Name')}</label>
@@ -255,7 +255,7 @@ export default function ProfilePage() {
             <span className="text-lg">📅</span>
             <h2 className="text-lg font-serif text-gold">{T(lang, '生辰信息', 'Birth Info')}</h2>
           </div>
-          <div className="p-6 space-y-5">
+          <div className="p-4 sm:p-6 space-y-5">
             {/* Calendar + Date row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -360,7 +360,7 @@ export default function ProfilePage() {
             </button>
           )}
         </div>
-        <div className="p-6 space-y-3">
+        <div className="p-4 sm:p-6 space-y-3">
           {familyMembers.length === 0 && !addingMember && (
             <p className="text-white/40 text-sm text-center py-4">{T(lang, '尚未新增家庭成員', 'No family members added yet')}</p>
           )}
@@ -575,7 +575,7 @@ export default function ProfilePage() {
             <span className="text-lg">✦</span>
             <h2 className="text-lg font-serif text-gold">{T(lang, '額度信息', 'Credits')}</h2>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { key: 'model1', label: T(lang, '⚡ 標準', '⚡ Standard'), data: credits.model1 },
@@ -626,7 +626,7 @@ export default function ProfilePage() {
           <span className="text-lg">💬</span>
           <h2 className="text-lg font-serif text-gold">{T(lang, '意見回饋', 'Feedback')}</h2>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {fbSent ? (
             <div className="py-6 text-center rounded-xl" style={{ backgroundColor: 'rgba(45,212,137,0.08)', border: '1px solid rgba(45,212,137,0.2)' }}>
               <span className="text-2xl">🙏</span>
@@ -708,7 +708,7 @@ export default function ProfilePage() {
           <span className="text-lg">🔒</span>
           <h2 className="text-lg font-serif text-gold">{T(lang, '數據管理', 'Data Management')}</h2>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <p className="text-sm text-white/50 mb-4">
             {T(lang,
               '根據 GDPR 和 PIPEDA，您有權導出或刪除您的所有個人數據。',

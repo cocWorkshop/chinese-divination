@@ -11,6 +11,9 @@ interface Pillar {
   stem: string; branch: string; element: string; nayin: string
   hiddenStems?: string[]
   tenGods?: TenGodEntry[]
+  changSheng?: string
+  kongWang?: string[]
+  shenSha?: ShenShaEntry[]
 }
 interface TrueSolarTimeInfo {
   originalTime: string
@@ -242,23 +245,57 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
         </div>
       </motion.div>
 
-      {/* Shen Sha */}
-      {d.shenSha && d.shenSha.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}
-          className="glass-card rounded-xl p-4 border border-gold/20">
-          <h3 className="text-gold font-serif text-sm mb-3">神煞</h3>
-          <div className="flex flex-wrap gap-2">
-            {d.shenSha.map((ss, i) => (
-              <div key={i} className="group relative px-3 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-gold text-xs cursor-default">
-                {ss.name}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-navy-800 border border-gold/30 rounded text-white/70 text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  {ss.description}
-                </div>
+      {/* Shen Sha — per pillar */}
+      {(() => {
+        const pillarLabels = [
+          { key: 'year', label: '年柱' }, { key: 'month', label: '月柱' },
+          { key: 'day', label: '日柱' }, { key: 'hour', label: '時柱' },
+        ] as const
+        const pillars = { year: d.pillars.year, month: d.pillars.month, day: d.pillars.day, hour: d.pillars.hour }
+        const hasPillarShenSha = pillarLabels.some(p => (pillars[p.key]?.shenSha?.length || 0) > 0)
+        // Fallback to flat shenSha for old data
+        const hasFlat = d.shenSha && d.shenSha.length > 0
+        if (!hasPillarShenSha && !hasFlat) return null
+        return (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}
+            className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
+            <h3 className="text-gold font-serif text-sm mb-3">神煞</h3>
+            {hasPillarShenSha ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {pillarLabels.map(p => {
+                  const ss = pillars[p.key]?.shenSha || []
+                  return (
+                    <div key={p.key}>
+                      <div className="text-white/40 text-xs mb-1.5">{p.label}</div>
+                      <div className="space-y-1">
+                        {ss.length > 0 ? ss.map((s, i) => (
+                          <div key={i} className="group relative px-2 py-1 rounded border border-gold/20 bg-gold/5 text-gold text-xs cursor-default">
+                            {s.name}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-navy-800 border border-gold/30 rounded text-white/70 text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                              {s.description}
+                            </div>
+                          </div>
+                        )) : <div className="text-white/20 text-xs">—</div>}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {d.shenSha!.map((ss, i) => (
+                  <div key={i} className="group relative px-3 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-gold text-xs cursor-default">
+                    {ss.name}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-navy-800 border border-gold/30 rounded text-white/70 text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      {ss.description}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )
+      })()}
 
       {/* Da Yun (大运) Timeline */}
       {d.daYun && d.daYun.length > 0 && (
@@ -315,7 +352,7 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
 
       {/* Sections Tabs */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <div className="flex overflow-x-auto gap-1 mb-4 pb-1">
+        <div className="flex flex-wrap gap-1 mb-4">
           {sectionsList.map(s => (
             <button
               key={s.key}

@@ -58,7 +58,7 @@ export default function DivinationPage() {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4 max-w-6xl mx-auto">
+    <div className="min-h-screen py-8 sm:py-12 px-3 sm:px-4 max-w-6xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -82,7 +82,7 @@ export default function DivinationPage() {
           >
             <div
               onClick={(e) => handleClick(svc.id, e)}
-              className="glass-card rounded-2xl p-8 h-full hover:shadow-xl transition-all group cursor-pointer relative"
+              className="glass-card rounded-2xl p-5 sm:p-8 h-full hover:shadow-xl transition-all group cursor-pointer relative"
               style={{ borderColor: 'var(--card-border)' }}
             >
               {tiers[svc.id] && tiers[svc.id] !== 'arcane' && (

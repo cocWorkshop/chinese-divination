@@ -90,15 +90,38 @@ const KE_MAP: Record<string, string> = { '木': '土', '土': '水', '水': '火
 function isKe(a: string, b: string): boolean { return KE_MAP[a] === b }
 
 // Shen Sha calculations
-function calculateShenSha(
-  yearBranch: string, dayBranch: string, dayStem: string,
-  monthBranch: string, hourBranch: string
-): { name: string; description: string }[] {
-  const result: { name: string; description: string }[] = []
+// Per-pillar shen sha calculation
+// Returns { year: [...], month: [...], day: [...], hour: [...] }
+function calculateShenShaPerPillar(
+  yearStem: string, yearBranch: string,
+  monthStem: string, monthBranch: string,
+  dayStem: string, dayBranch: string,
+  hourStem: string, hourBranch: string
+): Record<'year' | 'month' | 'day' | 'hour', { name: string; description: string }[]> {
+  const result: Record<'year' | 'month' | 'day' | 'hour', { name: string; description: string }[]> = {
+    year: [], month: [], day: [], hour: [],
+  }
+  const pillarKeys: ('year' | 'month' | 'day' | 'hour')[] = ['year', 'month', 'day', 'hour']
   const allBranches = [yearBranch, monthBranch, dayBranch, hourBranch]
-  const bi = (b: string) => (BRANCHES as readonly string[]).indexOf(b)
+  const allStems = [yearStem, monthStem, dayStem, hourStem]
 
-  // 天乙贵人 (by day stem)
+  // Helper: add shensha to the pillar where the triggering branch is found
+  function addToPillar(branch: string, sha: { name: string; description: string }) {
+    for (let i = 0; i < 4; i++) {
+      if (allBranches[i] === branch) {
+        result[pillarKeys[i]].push(sha)
+      }
+    }
+  }
+  function addToPillarByStem(stem: string, sha: { name: string; description: string }) {
+    for (let i = 0; i < 4; i++) {
+      if (allStems[i] === stem) {
+        result[pillarKeys[i]].push(sha)
+      }
+    }
+  }
+
+  // 天乙贵人 (by day stem, check all branches)
   const tianyiMap: Record<string, string[]> = {
     '甲': ['丑','未'], '戊': ['丑','未'], '庚': ['丑','未'],
     '乙': ['子','申'], '己': ['子','申'],
@@ -109,22 +132,84 @@ function calculateShenSha(
   const tianyiBranches = tianyiMap[dayStem] || []
   for (const b of allBranches) {
     if (tianyiBranches.includes(b)) {
-      result.push({ name: '天乙贵人', description: '逢凶化吉，贵人相助' })
-      break
+      addToPillar(b, { name: '天乙贵人', description: '逢凶化吉，贵人相助' })
     }
   }
 
-  // 文昌 (by day stem)
+  // 文昌贵人 (by day stem)
   const wenchangMap: Record<string, string> = {
     '甲': '巳', '乙': '午', '丙': '申', '丁': '酉', '戊': '申',
     '己': '酉', '庚': '亥', '辛': '子', '壬': '寅', '癸': '卯',
   }
   const wc = wenchangMap[dayStem]
-  if (wc && allBranches.includes(wc)) {
-    result.push({ name: '文昌', description: '聪明好学，利于考试功名' })
+  if (wc) addToPillar(wc, { name: '文昌贵人', description: '聪明好学，利于考试功名' })
+
+  // 太极贵人 (by day stem)
+  const taijiMap: Record<string, string[]> = {
+    '甲': ['子','午'], '乙': ['子','午'],
+    '丙': ['卯','酉'], '丁': ['卯','酉'],
+    '戊': ['辰','戌','丑','未'], '己': ['辰','戌','丑','未'],
+    '庚': ['寅','亥'], '辛': ['寅','亥'],
+    '壬': ['巳','申'], '癸': ['巳','申'],
+  }
+  for (const b of allBranches) {
+    if ((taijiMap[dayStem] || []).includes(b)) {
+      addToPillar(b, { name: '太极贵人', description: '近道修行，聪明好学' })
+    }
   }
 
-  // 驿马 (by year branch or day branch)
+  // 天厨贵人 (by day stem)
+  const tianchuMap: Record<string, string> = {
+    '甲': '巳', '乙': '午', '丙': '巳', '丁': '午', '戊': '巳',
+    '己': '午', '庚': '申', '辛': '酉', '壬': '亥', '癸': '子',
+  }
+  const tc = tianchuMap[dayStem]
+  if (tc) {
+    for (const b of allBranches) {
+      if (b === tc) addToPillar(b, { name: '天厨贵人', description: '食禄丰厚，衣食无忧' })
+    }
+  }
+
+  // 国印贵人 (by year branch)
+  const guoyinMap: Record<string, string> = {
+    '寅': '戌', '卯': '亥', '辰': '子', '巳': '丑',
+    '午': '寅', '未': '卯', '申': '辰', '酉': '巳',
+    '戌': '午', '亥': '未', '子': '申', '丑': '酉',
+  }
+  const gy = guoyinMap[yearBranch]
+  if (gy) addToPillar(gy, { name: '国印贵人', description: '掌权印信，利于仕途' })
+
+  // 德秀贵人 (by month branch, checks day stem)
+  const dexiuMap: Record<string, string[]> = {
+    '寅': ['丙','丁'], '卯': ['丙','丁'], '辰': ['戊','癸'],
+    '巳': ['庚','辛'], '午': ['庚','辛'], '未': ['壬','癸'],
+    '申': ['壬','癸'], '酉': ['甲','乙'], '戌': ['甲','乙'],
+    '亥': ['甲','乙'], '子': ['丙','丁'], '丑': ['戊','己'],
+  }
+  if ((dexiuMap[monthBranch] || []).includes(dayStem)) {
+    result.day.push({ name: '德秀贵人', description: '秀气端庄，聪慧有德' })
+  }
+
+  // 天德合 (by month branch)
+  const tiandeheMap: Record<string, string> = {
+    '寅': '壬', '卯': '癸', '辰': '丁', '巳': '丙',
+    '午': '甲', '未': '己', '申': '戊', '酉': '辛',
+    '戌': '辛', '亥': '庚', '子': '庚', '丑': '乙',
+  }
+  const tdh = tiandeheMap[monthBranch]
+  if (tdh) addToPillarByStem(tdh, { name: '天德合', description: '天德合，化灾解厄' })
+
+  // 月德合 (by month branch)
+  const yuedeheMap: Record<string, string> = {
+    '寅': '辛', '午': '辛', '戌': '辛',
+    '申': '丁', '子': '丁', '辰': '丁',
+    '巳': '乙', '酉': '乙', '丑': '乙',
+    '亥': '己', '卯': '己', '未': '己',
+  }
+  const ydh = yuedeheMap[monthBranch]
+  if (ydh) addToPillarByStem(ydh, { name: '月德合', description: '月德合，贵人扶助' })
+
+  // 驿马 (by year branch)
   const yimaMap: Record<string, string> = {
     '寅': '申', '午': '申', '戌': '申',
     '申': '寅', '子': '寅', '辰': '寅',
@@ -132,11 +217,9 @@ function calculateShenSha(
     '亥': '巳', '卯': '巳', '未': '巳',
   }
   const yima = yimaMap[yearBranch]
-  if (yima && allBranches.includes(yima)) {
-    result.push({ name: '驿马', description: '主奔波劳碌，利于出行变动' })
-  }
+  if (yima) addToPillar(yima, { name: '驿马', description: '主奔波劳碌，利于出行变动' })
 
-  // 桃花 (by year branch or day branch)
+  // 桃花 (by year branch)
   const taohuaMap: Record<string, string> = {
     '寅': '卯', '午': '卯', '戌': '卯',
     '申': '酉', '子': '酉', '辰': '酉',
@@ -144,9 +227,7 @@ function calculateShenSha(
     '亥': '子', '卯': '子', '未': '子',
   }
   const taohua = taohuaMap[yearBranch]
-  if (taohua && allBranches.includes(taohua)) {
-    result.push({ name: '桃花', description: '人缘好，异性缘佳' })
-  }
+  if (taohua) addToPillar(taohua, { name: '桃花', description: '人缘好，异性缘佳' })
 
   // 华盖 (by year branch)
   const huagaiMap: Record<string, string> = {
@@ -156,9 +237,7 @@ function calculateShenSha(
     '亥': '未', '卯': '未', '未': '未',
   }
   const huagai = huagaiMap[yearBranch]
-  if (huagai && allBranches.includes(huagai)) {
-    result.push({ name: '华盖', description: '聪慧孤高，利于艺术宗教' })
-  }
+  if (huagai) addToPillar(huagai, { name: '华盖', description: '聪慧孤高，利于艺术宗教' })
 
   // 将星 (by year branch)
   const jiangxingMap: Record<string, string> = {
@@ -168,9 +247,7 @@ function calculateShenSha(
     '亥': '卯', '卯': '卯', '未': '卯',
   }
   const jx = jiangxingMap[yearBranch]
-  if (jx && allBranches.includes(jx)) {
-    result.push({ name: '将星', description: '有领导才能，权威之象' })
-  }
+  if (jx) addToPillar(jx, { name: '将星', description: '有领导才能，权威之象' })
 
   // 劫煞 (by year branch)
   const jieshaMap: Record<string, string> = {
@@ -180,9 +257,7 @@ function calculateShenSha(
     '亥': '申', '卯': '申', '未': '申',
   }
   const js = jieshaMap[yearBranch]
-  if (js && allBranches.includes(js)) {
-    result.push({ name: '劫煞', description: '主劫难波折，需小心防范' })
-  }
+  if (js) addToPillar(js, { name: '劫煞', description: '主劫难波折，需小心防范' })
 
   // 亡神 (by year branch)
   const wangshenMap: Record<string, string> = {
@@ -192,22 +267,24 @@ function calculateShenSha(
     '亥': '寅', '卯': '寅', '未': '寅',
   }
   const ws = wangshenMap[yearBranch]
-  if (ws && allBranches.includes(ws)) {
-    result.push({ name: '亡神', description: '主精神不安，需注意心态调整' })
-  }
+  if (ws) addToPillar(ws, { name: '亡神', description: '主精神不安，需注意心态调整' })
 
-  // 天德 (by month branch)
+  // 天德 (by month branch, matches stems)
   const tiandeMap: Record<string, string> = {
     '寅': '丁', '卯': '申', '辰': '壬', '巳': '辛',
     '午': '亥', '未': '甲', '申': '癸', '酉': '寅',
     '戌': '丙', '亥': '乙', '子': '巳', '丑': '庚',
   }
   const td = tiandeMap[monthBranch]
-  if (td && (STEMS.includes(td as any) ? [dayStem].includes(td) : allBranches.includes(td))) {
-    result.push({ name: '天德', description: '逢凶化吉，福德深厚' })
+  if (td) {
+    if ((STEMS as readonly string[]).includes(td)) {
+      addToPillarByStem(td, { name: '天德', description: '逢凶化吉，福德深厚' })
+    } else {
+      addToPillar(td, { name: '天德', description: '逢凶化吉，福德深厚' })
+    }
   }
 
-  // 月德 (by month branch)
+  // 月德 (by month branch, matches stems)
   const yuedeMap: Record<string, string> = {
     '寅': '丙', '午': '丙', '戌': '丙',
     '申': '壬', '子': '壬', '辰': '壬',
@@ -215,9 +292,90 @@ function calculateShenSha(
     '亥': '甲', '卯': '甲', '未': '甲',
   }
   const yd = yuedeMap[monthBranch]
-  if (yd && [dayStem].includes(yd)) {
-    result.push({ name: '月德', description: '品德高尚，遇难呈祥' })
+  if (yd) addToPillarByStem(yd, { name: '月德', description: '品德高尚，遇难呈祥' })
+
+  // 飞刃 (by day stem — yang stems only)
+  const feirenMap: Record<string, string> = {
+    '甲': '酉', '丙': '子', '戊': '子', '庚': '卯', '壬': '午',
   }
+  const fr = feirenMap[dayStem]
+  if (fr) addToPillar(fr, { name: '飞刃', description: '性刚好胜，防意外伤害' })
+
+  // 羊刃 (by day stem)
+  const yangrenMap: Record<string, string> = {
+    '甲': '卯', '丙': '午', '戊': '午', '庚': '酉', '壬': '子',
+    '乙': '寅', '丁': '巳', '己': '巳', '辛': '申', '癸': '亥',
+  }
+  const yr = yangrenMap[dayStem]
+  if (yr) addToPillar(yr, { name: '羊刃', description: '刚烈好胜，防血光之灾' })
+
+  // 禄神 (by day stem)
+  const lushenMap: Record<string, string> = {
+    '甲': '寅', '乙': '卯', '丙': '巳', '丁': '午', '戊': '巳',
+    '己': '午', '庚': '申', '辛': '酉', '壬': '亥', '癸': '子',
+  }
+  const ls = lushenMap[dayStem]
+  if (ls) addToPillar(ls, { name: '禄神', description: '自带衣食之禄' })
+
+  // 阴差阳错 (specific day pillars)
+  const yinchaStems = ['丙','丁','戊','辛','壬','癸']
+  const yinchaBranches = ['子','午','卯','酉','辰','戌','丑','未']
+  const yinchaDay: Record<string, string[]> = {
+    '丙': ['子','午'], '丁': ['丑','未'], '戊': ['寅','申'],
+    '辛': ['卯','酉'], '壬': ['辰','戌'], '癸': ['巳','亥'],
+  }
+  if (yinchaDay[dayStem] && yinchaDay[dayStem].includes(dayBranch)) {
+    result.day.push({ name: '阴差阳错', description: '婚姻感情需注意，防错配' })
+  }
+
+  // 九丑日 (specific stem+branch combos on day pillar)
+  const jiuchouDays = ['壬子','壬午','戊午','戊子','己酉','己卯','乙酉','乙卯','辛酉','辛卯']
+  if (jiuchouDays.includes(dayStem + dayBranch)) {
+    result.day.push({ name: '九丑日', description: '桃花纠纷，感情宜谨慎' })
+  }
+
+  // 八专日 (specific day pillars)
+  const bazhuanDays = ['甲寅','乙卯','己未','丁未','庚申','辛酉','壬子','癸亥']
+  if (bazhuanDays.includes(dayStem + dayBranch)) {
+    result.day.push({ name: '八专日', description: '夫妻之道需经营' })
+  }
+
+  // 红艳煞 (by day stem)
+  const hongyanMap: Record<string, string> = {
+    '甲': '午', '乙': '午', '丙': '寅', '丁': '未',
+    '戊': '辰', '己': '辰', '庚': '戌', '辛': '酉',
+    '壬': '子', '癸': '申',
+  }
+  const hy = hongyanMap[dayStem]
+  if (hy) addToPillar(hy, { name: '红艳煞', description: '异性缘重，感情丰富' })
+
+  // 灾煞 (by year branch)
+  const zaishaMap: Record<string, string> = {
+    '寅': '午', '午': '午', '戌': '午',
+    '申': '子', '子': '子', '辰': '子',
+    '巳': '酉', '酉': '酉', '丑': '酉',
+    '亥': '卯', '卯': '卯', '未': '卯',
+  }
+  const zs = zaishaMap[yearBranch]
+  if (zs) addToPillar(zs, { name: '灾煞', description: '注意灾祸，宜防范' })
+
+  // 吊客 (by year branch, counter-clockwise 2 from year branch)
+  const diaokeMap: Record<string, string> = {
+    '子': '戌', '丑': '亥', '寅': '子', '卯': '丑',
+    '辰': '寅', '巳': '卯', '午': '辰', '未': '巳',
+    '申': '午', '酉': '未', '戌': '申', '亥': '酉',
+  }
+  const dk = diaokeMap[yearBranch]
+  if (dk) addToPillar(dk, { name: '吊客', description: '主孝服丧事之事' })
+
+  // 天医 (by month branch)
+  const tianyiMedMap: Record<string, string> = {
+    '寅': '丑', '卯': '寅', '辰': '卯', '巳': '辰',
+    '午': '巳', '未': '午', '申': '未', '酉': '申',
+    '戌': '酉', '亥': '戌', '子': '亥', '丑': '子',
+  }
+  const tym = tianyiMedMap[monthBranch]
+  if (tym) addToPillar(tym, { name: '天医', description: '利于从医或养生' })
 
   return result
 }
@@ -233,6 +391,9 @@ export interface PillarData {
   nayin: string
   hiddenStems: string[]
   tenGods: { stem: string; god: string }[]
+  changSheng: string        // 十二长生 stage for day stem
+  kongWang: string[]         // 空亡 branches for this pillar's jiazi xun
+  shenSha: { name: string; description: string }[]  // 神煞 belonging to this pillar
 }
 
 export interface DaYunPillar {
@@ -274,7 +435,6 @@ export interface BaziChart {
   strengthLabel: string
   luckyElements: string[]
   avoidElements: string[]
-  shenSha: { name: string; description: string }[]
   trueSolarTime?: {
     originalTime: string
     correctedTime: string
@@ -289,6 +449,50 @@ export interface BaziChart {
 }
 
 // 60 Jiazi cycle for Da Yun calculation
+// 十二长生 (Twelve Stages of Life)
+const CHANG_SHENG_STAGES = ['长生','沐浴','冠带','临官','帝旺','衰','病','死','墓','绝','胎','养'] as const
+// 阳干长生起点 (yang stems start at these branches)
+const YANG_CHANG_SHENG_START: Record<string, number> = {
+  '甲': 0,  // 长生在亥 (branch index 11 → we use forward from 亥)
+  '丙': 2,  // 长生在寅
+  '戊': 2,  // 长生在寅 (same as 丙)
+  '庚': 5,  // 长生在巳
+  '壬': 8,  // 长生在申
+}
+// For each yang stem, the branch index where 长生 falls
+const CHANG_SHENG_MAP: Record<string, number> = {
+  '甲': 11, '乙': 6, '丙': 2, '丁': 9, '戊': 2,
+  '己': 9, '庚': 5, '辛': 0, '壬': 8, '癸': 3,
+}
+
+function getChangSheng(dayStem: string, branch: string): string {
+  const branchIdx = (BRANCHES as readonly string[]).indexOf(branch)
+  const startIdx = CHANG_SHENG_MAP[dayStem]
+  if (startIdx === undefined || branchIdx < 0) return ''
+  const isYang = STEM_YINYANG[dayStem] === '阳'
+  let offset: number
+  if (isYang) {
+    offset = (branchIdx - startIdx + 12) % 12
+  } else {
+    // 阴干逆排
+    offset = (startIdx - branchIdx + 12) % 12
+  }
+  return CHANG_SHENG_STAGES[offset]
+}
+
+// 空亡 (Void) calculation — each jiazi xun has 2 empty branches
+function getKongWang(stem: string, branch: string): string[] {
+  const stemIdx = (STEMS as readonly string[]).indexOf(stem)
+  const branchIdx = (BRANCHES as readonly string[]).indexOf(branch)
+  if (stemIdx < 0 || branchIdx < 0) return []
+  // Find the start of the xun (旬首): go back stemIdx positions
+  const xunStartBranch = (branchIdx - stemIdx + 12) % 12
+  // The two void branches are the ones NOT covered by this xun (10 out of 12)
+  const void1 = (xunStartBranch + 10) % 12
+  const void2 = (xunStartBranch + 11) % 12
+  return [BRANCHES[void1], BRANCHES[void2]]
+}
+
 const JIAZI_CYCLE: string[] = []
 for (let i = 0; i < 60; i++) {
   JIAZI_CYCLE.push(STEMS[i % 10] + BRANCHES[i % 12])
@@ -566,11 +770,15 @@ export function calculateBazi(
   const dStem = dayGZ[0], dBranch = dayGZ[1]
   const hStem = hourGZ[0], hBranch = hourGZ[1]
 
-  function makePillar(stem: string, branch: string, dayStem: string): PillarData {
+  // Calculate per-pillar shen sha
+  const shenShaPerPillar = calculateShenShaPerPillar(
+    yStem, yBranch, mStem, mBranch, dStem, dBranch, hStem, hBranch
+  )
+
+  function makePillar(stem: string, branch: string, dayStem: string, pillarKey: 'year' | 'month' | 'day' | 'hour'): PillarData {
     const gz = stem + branch
     const hidden = HIDDEN_STEMS[branch] || []
     const gods = hidden.map(hs => ({ stem: hs, god: tenGod(dayStem, hs) }))
-    // Add the main stem's ten god too
     return {
       stem,
       branch,
@@ -578,13 +786,16 @@ export function calculateBazi(
       nayin: NAYIN[gz] || '',
       hiddenStems: hidden,
       tenGods: [{ stem, god: tenGod(dayStem, stem) }, ...gods],
+      changSheng: getChangSheng(dayStem, branch),
+      kongWang: getKongWang(stem, branch),
+      shenSha: shenShaPerPillar[pillarKey],
     }
   }
 
-  const yearPillar = makePillar(yStem, yBranch, dStem)
-  const monthPillar = makePillar(mStem, mBranch, dStem)
-  const dayPillar = makePillar(dStem, dBranch, dStem)
-  const hourPillar = makePillar(hStem, hBranch, dStem)
+  const yearPillar = makePillar(yStem, yBranch, dStem, 'year')
+  const monthPillar = makePillar(mStem, mBranch, dStem, 'month')
+  const dayPillar = makePillar(dStem, dBranch, dStem, 'day')
+  const hourPillar = makePillar(hStem, hBranch, dStem, 'hour')
 
   // Five elements count with weights
   const fiveElements = { metal: 0, wood: 0, water: 0, fire: 0, earth: 0 }
@@ -664,9 +875,6 @@ export function calculateBazi(
     luckyElements.push(sameAsMe)
   }
 
-  // Shen Sha
-  const shenSha = calculateShenSha(yBranch, dBranch, dStem, mBranch, hBranch)
-
   // Da Yun (大运) and Qi Yun (起运)
   const daYunDirection = getDaYunDirection(yStem, gender)
   const qiYunResult = calculateQiYun(year, month, day, solarHour, daYunDirection)
@@ -688,7 +896,6 @@ export function calculateBazi(
     strengthLabel,
     luckyElements: luckyElements.filter(Boolean),
     avoidElements: avoidElements.filter(Boolean),
-    shenSha,
     trueSolarTime: trueSolarTimeInfo,
     daYun,
     xiaoYun,

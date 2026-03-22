@@ -270,7 +270,6 @@ ${JSON.stringify({
   strengthLabel: baziChart.strengthLabel,
   luckyElements: baziChart.luckyElements,
   avoidElements: baziChart.avoidElements,
-  shenSha: baziChart.shenSha,
   qiYun: baziChart.qiYun,
   daYun: baziChart.daYun,
 }, null, 2)}
@@ -284,7 +283,7 @@ ${inputData.birthEnvironment ? `- 出生地环境：${inputData.birthEnvironment
 ${question ? `- 特别关注：${question}` : ''}
 
 ## 解盘要求
-你是资深命理师，请基于以上命盘进行精批。重点：
+你是资深命理师，请基于以上命盘进行精批。数据中每柱包含：十神(tenGods)、十二长生(changSheng)、空亡(kongWang)、神煞(shenSha)，请充分利用。
 1. **overview**：命主性格、出身家庭、六亲关系（150字以上）
 2. **career**：事业方向、适合行业、贵人运（150字以上）
 3. **marriage**：配偶特征、婚姻质量、感情运势（150字以上）
@@ -679,7 +678,6 @@ ${question ? `特别关注：${question}` : ''}`
         strengthLabel: baziChart.strengthLabel,
       }
       structuredResult.fiveElements = baziChart.fiveElements
-      structuredResult.shenSha = baziChart.shenSha
       if (baziChart.trueSolarTime) {
         structuredResult.trueSolarTime = baziChart.trueSolarTime
       }
