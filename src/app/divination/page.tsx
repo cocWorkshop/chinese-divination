@@ -29,7 +29,7 @@ export default function DivinationPage() {
   }
 
   return (
-    <div className="min-h-screen py-8 sm:py-12 px-3 sm:px-4 max-w-6xl mx-auto">
+    <div className="py-8 sm:py-12 px-3 sm:px-4 max-w-6xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

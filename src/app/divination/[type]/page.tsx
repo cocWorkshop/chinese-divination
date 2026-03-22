@@ -767,7 +767,7 @@ export default function DivinationFormPage() {
                           <span className="text-jade text-sm font-semibold">✅ {T(lang, '六爻已成，可以解卦', 'All 6 lines cast, ready to divine')}</span>
                         </div>
                       )}
-                      {lines.length > 0 && (
+                      {lines.length > 0 && currentLine < 6 && (
                         <button type="button" onClick={resetLines}
                           className="px-3 py-2 text-white/40 hover:text-white/70 text-xs transition-colors">
                           {T(lang, '重擲', 'Reset')}
