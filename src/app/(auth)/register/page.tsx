@@ -54,11 +54,8 @@ function RegisterInner() {
     if (res.ok) {
       const data = await res.json()
       if (data.needsVerification) {
-        // Show verification prompt instead of redirecting to login
         setVerificationSent(true)
-        if (data.bonusModel1) {
-          toast.success(lang === 'zh-TW' ? `🎁 註冊成功！獲得 ⚡×${data.bonusModel1} 額外次數` : `🎁 Registered! Got ⚡×${data.bonusModel1} bonus`, { duration: 4000 })
-        }
+        toast.success(lang === 'zh-TW' ? '🎁 註冊成功！已獲得 3 次占卜 + 3 次問答額度' : '🎁 Registered! You got 3 divination + 3 chat credits', { duration: 5000 })
         return
       }
       router.push('/login')
@@ -117,6 +114,15 @@ function RegisterInner() {
               ? `我們已發送驗證郵件至 ${form.email}，請點擊郵件中的連結完成驗證。`
               : `We've sent a verification email to ${form.email}. Click the link to verify.`}
           </p>
+          <div className="my-5 py-3 px-4 rounded-lg text-left text-xs" style={{ backgroundColor: 'rgba(212, 168, 83, 0.08)', border: '1px solid rgba(212, 168, 83, 0.2)' }}>
+            <p className="font-medium mb-1.5" style={{ color: 'var(--gold)' }}>
+              🎁 {lang === 'zh-TW' ? '您的免費額度' : 'Your free credits'}
+            </p>
+            <div className="space-y-1" style={{ color: 'var(--text-secondary)' }}>
+              <p>✦ {lang === 'zh-TW' ? '占卜 3 次 + 問答 3 次（已到帳）' : '3 divination + 3 chat (credited)'}</p>
+              <p>✦ {lang === 'zh-TW' ? '每日登入再送 占卜 +1 / 問答 +1' : 'Daily login bonus: +1 / +1'}</p>
+            </div>
+          </div>
           <div className="my-6 h-px bg-gold/20" />
           <div className="py-3 px-4 rounded-lg bg-yellow-500/5 border border-yellow-500/15 mb-4">
             <p className="text-yellow-300/70 text-xs">
@@ -161,6 +167,18 @@ function RegisterInner() {
             🎁 {lang === 'zh-TW' ? '透過分享連結註冊，您將獲得永久額度！' : 'Register via referral to earn permanent credits!'}
           </div>
         )}
+
+        {/* Free credits info */}
+        <div className="mb-6 py-3 px-4 rounded-xl text-sm" style={{ backgroundColor: 'rgba(212, 168, 83, 0.08)', border: '1px solid rgba(212, 168, 83, 0.2)' }}>
+          <p className="font-medium mb-2" style={{ color: 'var(--gold)' }}>
+            🎁 {lang === 'zh-TW' ? '註冊即享免費額度' : 'Register for free credits'}
+          </p>
+          <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <p>✦ {lang === 'zh-TW' ? '新用戶註冊：占卜 3 次 + 問答 3 次' : 'New user: 3 divination + 3 chat credits'}</p>
+            <p>✦ {lang === 'zh-TW' ? '每日登入：占卜 +1 + 問答 +1' : 'Daily login: +1 divination + +1 chat'}</p>
+            <p>✦ {lang === 'zh-TW' ? '分享給朋友：雙方皆可獲得額度' : 'Share with friends: both earn credits'}</p>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {field('name', lang === 'zh-TW' ? '姓名（可選）' : 'Name (optional)')}
