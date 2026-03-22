@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { message, history } = await req.json()
+    const { message, history, readingContext, readingType } = await req.json()
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
     }
@@ -92,7 +92,8 @@ ${user.chatSummary || '（暂无）'}
 
 请根据以上信息，用专业的命理知识回答用户问题。保持对话自然流畅，可以引用用户的具体命盘数据。回答简洁而有深度，避免过于冗长。
 当用户提到家人（如"老婆"、"儿子"、"爸爸"等），自然关联到对应家庭成员的命盘记录进行分析。
-如果用户对之前的预测有反馈（评分或文字），要参考其反馈来调整分析侧重点：低评分说明用户觉得不准，可以换角度深入分析；高评分可以在此基础上延伸。`
+如果用户对之前的预测有反馈（评分或文字），要参考其反馈来调整分析侧重点：低评分说明用户觉得不准，可以换角度深入分析；高评分可以在此基础上延伸。
+${readingContext ? `\n【当前正在查看的命盘详情（${readingType || '未知类型'}）】\n${readingContext.substring(0, 3000)}\n\n用户正在查看这份命盘解读，请重点基于这份命盘来回答问题。回答要有深度、有依据，引用具体的命盘数据（如天干地支、星曜、宫位等）。` : ''}`
 
     // Read configurable timeout and chat model
     const [timeoutSetting, chatModelSetting, model1Setting] = await Promise.all([

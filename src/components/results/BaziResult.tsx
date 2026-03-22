@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '../LanguageContext'
+import dynamic from 'next/dynamic'
+const XuanjiChat = dynamic(() => import('./XuanjiChat'), { ssr: false })
 
 interface TenGodEntry { stem: string; god: string }
 interface Pillar {
@@ -70,7 +72,7 @@ const sectionsList = [
   { key: 'daYunDetail', label: '大運精批', icon: '🔮' },
 ]
 
-export default function BaziResult({ data }: { data: Record<string, unknown> }) {
+export default function BaziResult({ data, isShared, rawResult }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string }) {
   const d = data as unknown as BaziData
   const { lang } = useLang()
   const [activeSection, setActiveSection] = useState('overview')
@@ -323,17 +325,42 @@ export default function BaziResult({ data }: { data: Record<string, unknown> }) 
               {s.icon} {s.label}
             </button>
           ))}
+          {!isShared && (
+            <button
+              onClick={() => setActiveSection('xuanji')}
+              className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
+                activeSection === 'xuanji'
+                  ? 'bg-gradient-to-r from-amber-600 to-gold text-navy-950 font-semibold shadow-lg shadow-gold/20'
+                  : 'text-gold/70 hover:text-gold border border-gold/30 bg-gold/5'
+              }`}
+            >
+              ☯ 玄機
+            </button>
+          )}
         </div>
         <AnimatePresence mode="wait">
-          <motion.div
-            key={activeSection}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap"
-          >
-            {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
-          </motion.div>
+          {activeSection === 'xuanji' ? (
+            <motion.div
+              key="xuanji"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="rounded-xl p-5 border-2 border-gold/30 text-white/80 text-sm leading-relaxed"
+              style={{ background: 'linear-gradient(145deg, rgba(15,10,30,0.95), rgba(10,15,30,0.9))' }}
+            >
+              <XuanjiChat readingResult={rawResult || ''} readingType="bazi" />
+            </motion.div>
+          ) : (
+            <motion.div
+              key={activeSection}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap"
+            >
+              {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
+            </motion.div>
+          )}
         </AnimatePresence>
       </motion.div>
 

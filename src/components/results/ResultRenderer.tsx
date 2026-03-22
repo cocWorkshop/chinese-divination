@@ -8,7 +8,7 @@ import QimenResult from './QimenResult'
 import FengshuiResult from './FengshuiResult'
 import OtherResult from './OtherResult'
 
-export default function ResultRenderer({ result, type }: { result: string; type: string }) {
+export default function ResultRenderer({ result, type, isShared }: { result: string; type: string; isShared?: boolean }) {
   let parsed: Record<string, unknown>
   try {
     const raw = result.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
@@ -18,9 +18,9 @@ export default function ResultRenderer({ result, type }: { result: string; type:
   }
 
   switch (type) {
-    case 'bazi': return <BaziResult data={parsed} />
+    case 'bazi': return <BaziResult data={parsed} isShared={isShared} rawResult={result} />
     case 'iching': return <IChingResult data={parsed} />
-    case 'ziwei': return <ZiweiResult data={parsed} />
+    case 'ziwei': return <ZiweiResult data={parsed} isShared={isShared} rawResult={result} />
     case 'qimen': return <QimenResult data={parsed} />
     case 'fengshui': return <FengshuiResult data={parsed} />
     default: return <OtherResult data={parsed} />
