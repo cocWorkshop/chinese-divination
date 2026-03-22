@@ -45,6 +45,7 @@ export default function PublicReadingPage() {
   const [data, setData] = useState<ReadingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [shareBonus, setShareBonus] = useState<{divination: number, chat: number} | null>(null)
 
   // Hide navbar, chat widget, and remove top padding for public page
   useEffect(() => {
@@ -74,6 +75,7 @@ export default function PublicReadingPage() {
         if (d) { setData(d); setLoading(false) }
       })
       .catch((err) => { catchAndReport('/api/claim')(err); setNotFound(true); setLoading(false) })
+    fetch('/api/share/bonus').then(r => r.json()).then(setShareBonus).catch(catchAndReport('/api/share/bonus'))
   }, [token])
 
   if (loading) {
@@ -144,11 +146,18 @@ export default function PublicReadingPage() {
 
         {/* CTA */}
         <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
-          <p className="text-white/60 text-sm mb-4">
+          <p className="text-white/60 text-sm mb-2">
             {lang === 'en'
               ? '✨ Want your own divination? Try Xuanji for free!'
               : '✨ 想知道自己的命運？來玄機免費體驗！'}
           </p>
+          {shareBonus && (
+            <p className="text-xs mb-4" style={{ color: 'var(--gold)' }}>
+              🎁 {lang === 'en'
+                ? `Register & claim to earn ${shareBonus.divination} divination + ${shareBonus.chat} chat credits!`
+                : `註冊領取可獲得 ${shareBonus.divination} 占卜額度 + ${shareBonus.chat} 玄機破聊天額度！`}
+            </p>
+          )}
           <div className="flex justify-center gap-3">
             <Link
               href="/register"
