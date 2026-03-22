@@ -40,7 +40,7 @@ export default function RootLayout({
           <LanguageProvider>
             <ThemeProvider>
             <Navbar />
-            <main className="pt-16 flex-1">
+            <main className="pt-16 flex-1 flex flex-col">
               {children}
             </main>
 
