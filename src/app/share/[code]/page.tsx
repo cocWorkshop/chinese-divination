@@ -16,6 +16,7 @@ export default function SharePage() {
   const [copied, setCopied] = useState(false)
   const [bonus1, setBonus1] = useState(20)
   const [bonusChat, setBonusChat] = useState(5)
+  const [visibleTypes, setVisibleTypes] = useState<string[]>([])
 
   const shareUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/share/${code}` 
@@ -29,6 +30,10 @@ export default function SharePage() {
         if (data.chat) setBonusChat(data.chat)
       })
       .catch(catchAndReport('/api/share'))
+    fetch('/api/divination/visibility')
+      .then(r => r.json())
+      .then((data: {type: string, visible: boolean}[]) => setVisibleTypes(data.filter(d => d.visible).map(d => d.type)))
+      .catch(catchAndReport('/api/divination/visibility'))
   }, [])
 
   // QR code for logged-in share management view
@@ -128,18 +133,21 @@ export default function SharePage() {
           </div>
 
           {/* Divination types preview */}
+          {visibleTypes.length > 0 && (
           <div className="glass-card rounded-2xl p-6">
-            <h3 className="text-sm font-serif text-gold mb-3 text-center">七大占卜 · Seven Divination Arts</h3>
+            <h3 className="text-sm font-serif text-gold mb-3 text-center">
+              {visibleTypes.length === 1 ? '占卜 · Divination' : `${visibleTypes.length}大占卜 · ${visibleTypes.length} Divination Arts`}
+            </h3>
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
-                { icon: '🏛', zh: '八字', en: 'BaZi' },
-                { icon: '☰', zh: '易經', en: 'I Ching' },
-                { icon: '⭐', zh: '紫微', en: 'Zi Wei' },
-                { icon: '🧭', zh: '奇門', en: 'Qi Men' },
-                { icon: '🏠', zh: '風水', en: 'Feng Shui' },
-                { icon: '🌸', zh: '梅花', en: 'Meihua' },
-                { icon: '🎲', zh: '六爻', en: 'Liu Yao' },
-              ].map(d => (
+                { key: 'bazi', icon: '🏛', zh: '八字', en: 'BaZi' },
+                { key: 'iching', icon: '☰', zh: '易經', en: 'I Ching' },
+                { key: 'ziwei', icon: '⭐', zh: '紫微', en: 'Zi Wei' },
+                { key: 'qimen', icon: '🧭', zh: '奇門', en: 'Qi Men' },
+                { key: 'fengshui', icon: '🏠', zh: '風水', en: 'Feng Shui' },
+                { key: 'meihua', icon: '🌸', zh: '梅花', en: 'Meihua' },
+                { key: 'liuyao', icon: '🎲', zh: '六爻', en: 'Liu Yao' },
+              ].filter(d => visibleTypes.includes(d.key)).map(d => (
                 <div key={d.en} className="py-2 px-1 rounded-lg bg-white/5">
                   <div className="text-lg">{d.icon}</div>
                   <div className="text-white/70 text-xs">{d.zh}</div>
@@ -148,6 +156,7 @@ export default function SharePage() {
               ))}
             </div>
           </div>
+          )}
 
           {/* CTA buttons - same as result share page */}
           <div className="glass-card rounded-2xl p-6 text-center">
