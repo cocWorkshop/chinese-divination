@@ -32,7 +32,8 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/start.js ./start.js
 COPY --from=builder /app/package.json ./package.json
-RUN npm install prisma --no-save
+COPY --from=builder /app/package-lock.json ./package-lock.json
+RUN npm install prisma @prisma/config effect --no-save
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
