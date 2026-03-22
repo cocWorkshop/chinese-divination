@@ -194,8 +194,8 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
           className="glass-card rounded-xl p-4 border border-gold/20">
           <h3 className="text-gold font-serif text-sm mb-3">四化飛星</h3>
           <div className="flex flex-wrap gap-2">
-            {chart.siHua.map((sh, i) => (
-              <div key={i} className={`px-3 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-center`}>
+            {chart.siHua.map((sh) => (
+              <div key={`${sh.star}-${sh.type}`} className={`px-3 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-center`}>
                 <span className={`font-serif text-sm ${mutagenColor[sh.type] || 'text-gold'}`}>
                   {sh.star}化{sh.type}
                 </span>
@@ -211,8 +211,8 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-5 border border-gold/20">
           <h3 className="text-gold font-serif mb-3">主星配置</h3>
           <div className="flex flex-wrap gap-2">
-            {(d.mainStars || []).map((star, i) => (
-              <div key={i} className="px-3 py-1.5 rounded-lg border border-gold/30 bg-gold/10 text-center">
+            {(d.mainStars || []).map((star) => (
+              <div key={star.name} className="px-3 py-1.5 rounded-lg border border-gold/30 bg-gold/10 text-center">
                 <div className="text-gold font-serif text-sm">
                   {star.name}
                   {star.mutagen && <span className={`ml-1 ${mutagenColor[star.mutagen] || ''}`}>({star.mutagen})</span>}
@@ -280,7 +280,7 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
                   )}
                   <div className="flex flex-wrap gap-x-1 gap-y-0">
                     {(pData?.majorStars || []).map((star, i) => (
-                      <span key={`m-${i}`} className={`text-[10px] sm:text-xs font-serif font-semibold ${
+                      <span key={`major-${star.name}`} className={`text-[10px] sm:text-xs font-serif font-semibold ${
                         star.mutagen ? mutagenColor[star.mutagen] || 'text-gold' : 'text-gold'
                       }`}>
                         {star.name}
@@ -290,7 +290,7 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
                   </div>
                   <div className="flex flex-wrap gap-x-1 gap-y-0 mt-0.5">
                     {(pData?.minorStars || []).slice(0, 4).map((star, i) => (
-                      <span key={`s-${i}`} className={`text-[9px] sm:text-[10px] ${
+                      <span key={`minor-${star.name}`} className={`text-[9px] sm:text-[10px] ${
                         star.mutagen ? mutagenColor[star.mutagen] || 'text-white/50' : 'text-white/40'
                       }`}>
                         {star.name}
@@ -302,7 +302,7 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
                   {(pData?.majorStars || []).some(s => s.brightness) && (
                     <div className="flex gap-1 mt-0.5">
                       {(pData?.majorStars || []).filter(s => s.brightness).map((star, i) => (
-                        <span key={`b-${i}`} className={`text-[8px] sm:text-[9px] ${brightnessColor[star.brightness || ''] || 'text-white/30'}`}>
+                        <span key={`bright-${star.name}`} className={`text-[8px] sm:text-[9px] ${brightnessColor[star.brightness || ''] || 'text-white/30'}`}>
                           {star.brightness}
                         </span>
                       ))}
@@ -340,7 +340,7 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
             {/* Stars detail */}
             <div className="flex flex-wrap gap-2 mb-3">
               {(selectedPalaceData.majorStars || []).map((star, i) => (
-                <div key={`major-${i}`} className="px-2 py-1 rounded border border-gold/30 bg-gold/10">
+                <div key={`detail-major-${star.name}`} className="px-2 py-1 rounded border border-gold/30 bg-gold/10">
                   <span className={`text-sm font-serif font-semibold ${star.mutagen ? mutagenColor[star.mutagen] : 'text-gold'}`}>
                     {star.name}
                   </span>
@@ -353,7 +353,7 @@ export default function ZiweiResult({ data }: { data: Record<string, unknown> })
                 </div>
               ))}
               {(selectedPalaceData.minorStars || []).map((star, i) => (
-                <div key={`minor-${i}`} className="px-2 py-1 rounded border border-white/10 bg-white/5">
+                <div key={`detail-minor-${star.name}`} className="px-2 py-1 rounded border border-white/10 bg-white/5">
                   <span className={`text-xs ${star.mutagen ? mutagenColor[star.mutagen] : 'text-white/60'}`}>
                     {star.name}
                     {star.mutagen && <span className="ml-0.5">化{star.mutagen}</span>}

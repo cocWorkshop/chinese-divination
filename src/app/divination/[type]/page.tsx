@@ -11,7 +11,7 @@ import ResultRenderer from '@/components/results/ResultRenderer'
 import ReadingFeedback from '@/components/ReadingFeedback'
 import BirthplaceInput from '@/components/BirthplaceInput'
 import YinYangIcon from '@/components/YinYangIcon'
-import { reportError } from '@/lib/errorReporter'
+import { reportError, catchAndReport } from '@/lib/errorReporter'
 
 const shichen = [
   { value: 'zi', zh: '子時 (23:00-01:00)', en: 'Zi (23:00-01:00)' },
@@ -181,7 +181,7 @@ export default function DivinationFormPage() {
           toast.success(T(lang, '已從檔案自動填充生辰資訊', 'Profile info auto-filled'), { icon: '📋' })
         }
       })
-      .catch(() => {})
+      .catch(catchAndReport('/api/profile'))
   }, [session, type, profileLoaded, lang])
 
   // Fetch credits
@@ -191,9 +191,9 @@ export default function DivinationFormPage() {
       setCredits(data)
       if (data.llmTimeoutSeconds) setLlmTimeoutMs(data.llmTimeoutSeconds * 1000)
 
-    }).catch(() => {})
+    }).catch(catchAndReport('/api/credits'))
     // Fetch share bonus info
-    fetch('/api/share/bonus').then(r => r.json()).then(setShareBonus).catch(() => {})
+    fetch('/api/share/bonus').then(r => r.json()).then(setShareBonus).catch(catchAndReport('/api/share/bonus'))
   }, [session])
 
   // Fetch family members
@@ -201,7 +201,7 @@ export default function DivinationFormPage() {
     if (!session) return
     fetch('/api/family-members').then(r => r.json()).then(data => {
       setFamilyMembers(data.members || [])
-    }).catch(() => {})
+    }).catch(catchAndReport('/api/family-members'))
   }, [session])
 
   const setField = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
@@ -298,7 +298,7 @@ export default function DivinationFormPage() {
           setResultType(type)
           setReadingId(found.id)
           toast.success(T(lang, '結果已就緒', 'Result ready!'))
-          fetch('/api/credits').then(r => r.json()).then(setCredits).catch(() => {})
+          fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
         } else {
           toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
           reportError({ endpoint: '/api/divination', status: res.status, error: 'Polling timeout after 600s — no result found', context: `type=${type}, modelTier=${modelTier}` })
@@ -314,7 +314,7 @@ export default function DivinationFormPage() {
           toast.success(T(lang, '已使用之前的八字分析結果', 'Using cached BaZi analysis'), { icon: '📦' })
         }
         // Refresh credits
-        fetch('/api/credits').then(r => r.json()).then(setCredits).catch(() => {})
+        fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
       } else {
         toast.error(data.error || 'Error')
         reportError({ endpoint: '/api/divination', status: res.status, error: data.error || 'Unknown error', context: `type=${type}, modelTier=${modelTier}` })
@@ -329,7 +329,7 @@ export default function DivinationFormPage() {
         setResultType(type)
         setReadingId(found.id)
         toast.success(T(lang, '結果已就緒', 'Result ready!'))
-        fetch('/api/credits').then(r => r.json()).then(setCredits).catch(() => {})
+        fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
       } else {
         toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
         reportError({ endpoint: '/api/divination', error: `Polling timeout after 600s — original error: ${msg}`, context: `type=${type}, modelTier=${modelTier}` })

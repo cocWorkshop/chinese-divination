@@ -57,6 +57,9 @@ model Reading {
   targetType     String        @default("self")
   familyMemberId String?
   familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
+  calculationData String?     @db.Text  // Raw programmatic calculation output (JSON) — BaZi/Ziwei/Qimen/Meihua
+  llmPrompt       String?     @db.Text  // Full LLM prompt (system + user message)
+  llmRawOutput    String?     @db.Text  // Raw LLM response before merge
   rating         Int?          // 1-5 star rating (denormalized from ReadingFeedback)
   shareToken     String?       @unique
   deletedAt      DateTime?
@@ -142,8 +145,9 @@ model LlmLog {
   latencyMs     Int      @default(0)
   status        String   @default("success") // "success" | "error"
   errorMessage  String?
-  inputPreview  String?  @db.Text // first 200 chars of user message
-  outputPreview String?  @db.Text // first 200 chars of response
+  inputPreview  String?  @db.Text // user message (full)
+  outputPreview String?  @db.Text // LLM response (full)
+  systemPrompt  String?  @db.Text // system prompt (full)
   createdAt     DateTime @default(now())
 
   @@index([userId])

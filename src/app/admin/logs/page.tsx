@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import ResultRenderer from '@/components/results/ResultRenderer'
 
-type Tab = 'llm' | 'errors' | 'auth'
+type Tab = 'llm' | 'errors' | 'auth' | 'readings'
 
 interface LogEntry {
   id: string; userId: string | null; endpoint: string; model: string; modelTier: string | null
@@ -20,6 +21,23 @@ interface FrontendError {
 interface AuthLogEntry {
   id: string; action: string; status: string; email: string; userId: string | null
   reason: string | null; ip: string | null; userAgent: string | null; createdAt: string
+}
+
+interface ReadingRow {
+  id: string; type: string; modelTier: string; question: string | null
+  inputData: Record<string, string>; targetType: string; rating: number | null; createdAt: string
+  user: { id: string; name: string | null; email: string | null }
+  familyMember: { name: string | null; relation: string } | null
+}
+
+interface ReadingDetail {
+  id: string; type: string; modelTier: string; question: string | null
+  inputData: Record<string, unknown>; result: string
+  calculationData: string | null; llmPrompt: string | null; llmRawOutput: string | null
+  language: string; targetType: string; rating: number | null; createdAt: string
+  user: { id: string; name: string | null; email: string | null }
+  familyMember: { name: string | null; relation: string } | null
+  feedbacks: { rating: number | null; feedback: string | null; createdAt: string }[]
 }
 
 interface LlmStats { totalCalls: number; totalTokens: number; avgLatencyMs: number; errorCount: number }
@@ -56,6 +74,16 @@ export default function AdminSystemLogs() {
   const [authActionFilter, setAuthActionFilter] = useState('all')
   const [authDateFrom, setAuthDateFrom] = useState('')
   const [authDateTo, setAuthDateTo] = useState('')
+
+  // Reading log state
+  const [readings, setReadings] = useState<ReadingRow[]>([])
+  const [readingsTotal, setReadingsTotal] = useState(0)
+  const [readingsPage, setReadingsPage] = useState(1)
+  const [readingsPages, setReadingsPages] = useState(1)
+  const [readingsTypeFilter, setReadingsTypeFilter] = useState('')
+  const [readingsLoading, setReadingsLoading] = useState(true)
+  const [readingDetail, setReadingDetail] = useState<ReadingDetail | null>(null)
+  const [readingDetailTab, setReadingDetailTab] = useState<'result' | 'input' | 'calculation' | 'llmPrompt' | 'llmOutput'>('result')
 
   const fetchLogs = useCallback((p: number, filter: string) => {
     setLlmLoading(true)
@@ -101,9 +129,31 @@ export default function AdminSystemLogs() {
       .finally(() => setErrLoading(false))
   }, [])
 
+  const fetchReadings = useCallback((p: number, type: string) => {
+    setReadingsLoading(true)
+    const params = new URLSearchParams({ page: String(p), limit: '20' })
+    if (type) params.set('type', type)
+    fetch(`/api/admin/readings?${params}`)
+      .then(r => r.json())
+      .then(d => {
+        setReadings(d.readings || [])
+        setReadingsTotal(d.total || 0)
+        setReadingsPage(d.page || 1)
+        setReadingsPages(d.pages || 1)
+      })
+      .finally(() => setReadingsLoading(false))
+  }, [])
+
+  const fetchReadingDetail = useCallback((id: string) => {
+    fetch(`/api/admin/readings/${id}`)
+      .then(r => r.json())
+      .then(d => { setReadingDetail(d.reading); setReadingDetailTab('result') })
+  }, [])
+
   useEffect(() => { fetchLogs(1, 'all') }, [fetchLogs])
   useEffect(() => { if (tab === 'errors') fetchErrors(1) }, [tab, fetchErrors])
   useEffect(() => { if (tab === 'auth') fetchAuthLogs(1, 'all', 'all', '', '') }, [tab, fetchAuthLogs])
+  useEffect(() => { if (tab === 'readings') fetchReadings(1, '') }, [tab, fetchReadings])
 
   const Pagination = ({ page, pages, onChange }: { page: number; pages: number; onChange: (p: number) => void }) => {
     if (pages <= 1) return null
@@ -147,6 +197,7 @@ export default function AdminSystemLogs() {
         {[
           { key: 'llm' as Tab, label: '📋 LLM 調用', count: llmTotal },
           { key: 'auth' as Tab, label: '🔐 登入日誌', count: authTotal },
+          { key: 'readings' as Tab, label: '🔮 占卜日誌', count: readingsTotal },
           { key: 'errors' as Tab, label: '🐛 前端錯誤', count: errTotal },
         ].map(t => (
           <button
@@ -340,6 +391,141 @@ export default function AdminSystemLogs() {
             </div>
           )}
           <Pagination page={authPage} pages={authPages} onChange={p => fetchAuthLogs(p, authStatusFilter, authActionFilter, authDateFrom, authDateTo)} />
+        </>
+      )}
+
+      {/* ===== Readings Tab ===== */}
+      {tab === 'readings' && (
+        <>
+          {readingDetail ? (
+            /* Detail View */
+            <div>
+              <button onClick={() => setReadingDetail(null)} className="text-gold/60 hover:text-gold text-sm mb-4">← 返回列表</button>
+              <div className="glass-card rounded-xl p-4 border border-gold/20 mb-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-white/40 text-xs block">用戶</span>
+                    <span className="text-white/80">{readingDetail.user.name || readingDetail.user.email?.split('@')[0]}</span>
+                    <span className="text-white/30 text-xs block">{readingDetail.user.email}</span>
+                  </div>
+                  <div>
+                    <span className="text-white/40 text-xs block">類型</span>
+                    <span className="text-gold">{readingDetail.type}</span>
+                    <span className="text-white/30 text-xs block">{readingDetail.modelTier === 'model2' ? '✨ Premium' : 'Standard'}</span>
+                  </div>
+                  <div>
+                    <span className="text-white/40 text-xs block">對象</span>
+                    <span className="text-white/80">
+                      {readingDetail.targetType === 'family' && readingDetail.familyMember
+                        ? `${readingDetail.familyMember.relation} ${readingDetail.familyMember.name || ''}`
+                        : '本人'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-white/40 text-xs block">時間</span>
+                    <span className="text-white/80">{new Date(readingDetail.createdAt).toLocaleString('zh-TW')}</span>
+                    {readingDetail.rating && <span className="text-xs block mt-0.5">{'⭐'.repeat(readingDetail.rating)}</span>}
+                  </div>
+                </div>
+                {readingDetail.question && (
+                  <div className="mt-3 pt-3 border-t border-gold/10">
+                    <span className="text-white/40 text-xs">問題：</span>
+                    <span className="text-white/70 text-sm ml-1">{readingDetail.question}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-1 mb-4 flex-wrap">
+                {([
+                  { key: 'result' as const, label: '📜 解讀結果', available: true },
+                  { key: 'input' as const, label: '📝 用戶輸入', available: true },
+                  { key: 'calculation' as const, label: '🔢 程序計算', available: !!readingDetail.calculationData },
+                  { key: 'llmPrompt' as const, label: '🤖 LLM輸入', available: !!readingDetail.llmPrompt },
+                  { key: 'llmOutput' as const, label: '💬 LLM輸出', available: !!readingDetail.llmRawOutput },
+                ]).map(t => (
+                  <button key={t.key} onClick={() => setReadingDetailTab(t.key)} disabled={!t.available}
+                    className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                      readingDetailTab === t.key ? 'bg-gold text-navy-950 font-semibold'
+                        : t.available ? 'text-white/50 border border-gold/15 hover:text-gold' : 'text-white/20 border border-white/5 cursor-not-allowed'
+                    }`}>{t.label}</button>
+                ))}
+              </div>
+
+              <div className="glass-card rounded-xl border border-gold/20 overflow-hidden">
+                {readingDetailTab === 'result' && (
+                  <div className="p-4"><ResultRenderer type={readingDetail.type} result={readingDetail.result} /></div>
+                )}
+                {readingDetailTab === 'input' && (
+                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed">{JSON.stringify(readingDetail.inputData, null, 2)}</pre>
+                )}
+                {readingDetailTab === 'calculation' && readingDetail.calculationData && (
+                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{JSON.stringify(JSON.parse(readingDetail.calculationData), null, 2)}</pre>
+                )}
+                {readingDetailTab === 'llmPrompt' && readingDetail.llmPrompt && (
+                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{readingDetail.llmPrompt}</pre>
+                )}
+                {readingDetailTab === 'llmOutput' && readingDetail.llmRawOutput && (
+                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{readingDetail.llmRawOutput}</pre>
+                )}
+              </div>
+
+              {readingDetail.feedbacks.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-gold font-serif text-sm mb-2">用戶反饋</h3>
+                  {readingDetail.feedbacks.map((fb, i) => (
+                    <div key={i} className="glass-card rounded-xl p-3 border border-gold/10 mb-2 text-xs">
+                      {fb.rating && <span>{'⭐'.repeat(fb.rating)}</span>}
+                      {fb.feedback && <p className="text-white/70 mt-1">{fb.feedback}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* List View */
+            <>
+              <div className="flex gap-1.5 mb-4">
+                {[
+                  { key: '', label: '全部' },
+                  { key: 'bazi', label: '八字' },
+                  { key: 'ziwei', label: '紫微' },
+                  { key: 'qimen', label: '奇門' },
+                  { key: 'iching', label: '易經' },
+                  { key: 'fengshui', label: '風水' },
+                  { key: 'other', label: '梅花' },
+                ].map(f => (
+                  <button key={f.key}
+                    onClick={() => { setReadingsTypeFilter(f.key); fetchReadings(1, f.key) }}
+                    className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                      readingsTypeFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                    }`}>{f.label}</button>
+                ))}
+              </div>
+
+              {readingsLoading ? (
+                <div className="text-gold animate-pulse p-8 text-center">Loading...</div>
+              ) : readings.length === 0 ? (
+                <div className="glass-card rounded-xl p-12 text-center text-white/40">暫無占卜記錄</div>
+              ) : (
+                <div className="space-y-2">
+                  {readings.map(r => (
+                    <div key={r.id}
+                      onClick={() => fetchReadingDetail(r.id)}
+                      className="glass-card rounded-xl p-3 border border-gold/10 hover:border-gold/30 cursor-pointer transition-colors flex items-center gap-3 text-xs">
+                      <span className="px-2 py-0.5 bg-gold/15 text-gold rounded-full">{r.type}</span>
+                      <span className="text-white/70 flex-1 truncate">{r.user.name || r.user.email?.split('@')[0] || '—'}</span>
+                      <span className="text-white/40">{r.targetType === 'family' && r.familyMember ? r.familyMember.relation : '本人'}</span>
+                      <span className="text-white/40">{r.inputData?.birthDate || '—'} {r.inputData?.birthTime || ''}</span>
+                      <span className="text-white/30">{r.modelTier === 'model2' ? '✨' : '○'}</span>
+                      <span className="text-white/30">{r.rating ? '⭐'.repeat(r.rating) : '—'}</span>
+                      <span className="text-white/25">{new Date(r.createdAt).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Pagination page={readingsPage} pages={readingsPages} onChange={p => fetchReadings(p, readingsTypeFilter)} />
+            </>
+          )}
         </>
       )}
 

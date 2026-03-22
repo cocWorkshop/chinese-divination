@@ -531,6 +531,7 @@ ${question ? `特别关注：${question}` : ''}`
           latencyMs: Date.now() - llmStart,
           status: 'success',
           inputPreview: userMessage,
+          systemPrompt,
           outputPreview: resultText,
         })
       } catch (proxyErr: unknown) {
@@ -544,6 +545,7 @@ ${question ? `特别关注：${question}` : ''}`
           status: 'error',
           errorMessage: err?.message || 'Proxy error',
           inputPreview: userMessage,
+          systemPrompt,
         })
         return NextResponse.json(
           { error: language !== 'en' ? `本地代理錯誤：${err?.message || '未知錯誤'}` : `Local proxy error: ${err?.message || 'Unknown'}` },
@@ -587,6 +589,7 @@ ${question ? `特别关注：${question}` : ''}`
           latencyMs: Date.now() - llmStart,
           status: 'success',
           inputPreview: userMessage,
+          systemPrompt,
           outputPreview: resultText,
         })
       } catch (apiErr: unknown) {
@@ -603,6 +606,7 @@ ${question ? `特别关注：${question}` : ''}`
           status: 'error',
           errorMessage: err?.message || 'Unknown error',
           inputPreview: userMessage,
+          systemPrompt,
         })
 
         if (err?.status === 401) {
@@ -794,6 +798,15 @@ ${question ? `特别关注：${question}` : ''}`
 
     const resultToStore = JSON.stringify(structuredResult)
 
+    // Build calculation data for logging
+    const calculationData: Record<string, unknown> = {}
+    if (baziChart) calculationData.bazi = baziChart
+    if (ziweiChart) calculationData.ziwei = ziweiChart
+    if (qimenChart) calculationData.qimen = qimenChart
+    if (meihuaChart) calculationData.meihua = meihuaChart
+    const calculationDataStr = Object.keys(calculationData).length > 0 ? JSON.stringify(calculationData) : null
+    const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
+
     // Increment usage after successful generation
     await incrementModelUsage(session.user.id, modelTier)
 
@@ -821,6 +834,9 @@ ${question ? `特别关注：${question}` : ''}`
           question: question || null,
           inputData,
           result: resultToStore,
+          calculationData: calculationDataStr,
+          llmPrompt: llmPromptStr,
+          llmRawOutput: resultText,
           language: language || 'zh-TW',
           targetType,
           familyMemberId: resolvedFamilyMemberId,

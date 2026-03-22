@@ -18,3 +18,14 @@ export function reportError(params: {
     // never throw
   }
 }
+
+/**
+ * Create a .catch() handler that reports the error to admin error logs.
+ * Usage: fetch(...).then(...).catch(catchAndReport('/api/profile'))
+ */
+export function catchAndReport(endpoint: string, context?: string) {
+  return (err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err)
+    reportError({ endpoint, error: message, context })
+  }
+}

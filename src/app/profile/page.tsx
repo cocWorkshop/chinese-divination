@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
 import BirthplaceInput from '@/components/BirthplaceInput'
+import { catchAndReport } from '@/lib/errorReporter'
 
 const relationPresets = [
   { value: 'spouse', zh: '配偶', en: 'Spouse' },
@@ -126,13 +127,13 @@ export default function ProfilePage() {
             calendarType: data.calendarType || 'solar',
           }))
         }
-      }).catch(() => {})
-      fetch('/api/family-members').then(r => r.json()).then(data => setFamilyMembers(data.members || [])).catch(() => {})
-      fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(() => {})
+      }).catch(catchAndReport('/api/profile'))
+      fetch('/api/family-members').then(r => r.json()).then(data => setFamilyMembers(data.members || [])).catch(catchAndReport('/api/family-members'))
+      fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(catchAndReport('/api/site-feedback'))
       fetch('/api/credits').then(r => r.json()).then(data => {
         setCredits(data)
         if (data.bonusModel1 !== undefined) setUserBonus({ model1: data.bonusModel1 || 0, model2: data.bonusModel2 || 0, chat: data.bonusChat || 0 })
-      }).catch(() => {})
+      }).catch(catchAndReport('/api/credits'))
     }
   }, [session])
 
@@ -670,7 +671,7 @@ export default function ProfilePage() {
                       setFbSent(true)
                       toast.success(T(lang, '感謝回饋！', 'Thanks!'))
                       setTimeout(() => { setFbSent(false); setFbRating(0); setFbText('') }, 3000)
-                      fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(() => {})
+                      fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(catchAndReport('/api/site-feedback'))
                     }
                   } catch { toast.error('Error') }
                   setFbSending(false)
