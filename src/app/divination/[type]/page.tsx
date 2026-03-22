@@ -135,6 +135,11 @@ export default function DivinationFormPage() {
       .then(data => {
         if (!data) return
 
+        // Daily bonus toast
+        if (data.dailyBonusGranted) {
+          toast.success(T(lang, '🎁 每日登入獎勵：占卜 +1、問答 +1', '🎁 Daily login bonus: Divination +1, Chat +1'), { duration: 4000 })
+        }
+
         // Credits
         if (data.credits) {
           setCredits(data.credits)

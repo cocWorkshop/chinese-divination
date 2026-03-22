@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkDivinationCredits, checkChatCredits } from '@/lib/rateLimit'
+import { checkDivinationCredits, checkChatCredits, grantDailyBonus } from '@/lib/rateLimit'
 
 const DEFAULT_VISIBILITY = [
   { type: 'bazi', visible: true, order: 1 },
@@ -58,6 +58,9 @@ export async function GET() {
 
   const userId = session.user.id
 
+  // Grant daily bonus first (before checking credits so counts reflect bonus)
+  const dailyBonusGranted = await grantDailyBonus(userId)
+
   const [divination, chat, timeoutSetting, bonusDiv, bonusChat, user, familyMembers, visibility] = await Promise.all([
     checkDivinationCredits(userId),
     checkChatCredits(userId),
@@ -93,5 +96,6 @@ export async function GET() {
     },
     familyMembers,
     visibility,
+    dailyBonusGranted,
   })
 }
