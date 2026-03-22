@@ -33,7 +33,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin', label: '概覽', enLabel: 'Overview', icon: '📊' },
     { href: '/admin/users', label: '用戶管理', enLabel: 'Users', icon: '👥' },
     { href: '/admin/logs', label: '系統日誌', enLabel: 'System Logs', icon: '📋' },
-    { href: '/admin/readings', label: '占卜日誌', enLabel: 'Readings', icon: '🔮' },
     { href: '/admin/feedback', label: '用戶反饋', enLabel: 'Feedback', icon: '💬' },
     { href: '/admin/compensation', label: '用戶補償', enLabel: 'Compensation', icon: '🎁' },
     { href: '/admin/settings', label: '系統設置', enLabel: 'Settings', icon: '⚙️' },
