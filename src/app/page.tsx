@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -18,10 +18,24 @@ const services = [
   { id: 'other', symbol: '🌸', twName: '梅花六壬', enName: 'Others', twDesc: '梅花易數·六壬神課', enDesc: 'Plum Blossom & Liu Ren' },
 ]
 
+// Map service id to visibility key
+const visKeyMap: Record<string, string> = { other: 'meihua' }
+const getVisKey = (id: string) => visKeyMap[id] || id
+
 export default function HomePage() {
   const { lang } = useLang()
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [visibleServices, setVisibleServices] = useState(services)
+
+  useEffect(() => {
+    fetch('/api/divination/visibility')
+      .then(r => r.json())
+      .then((vis: Record<string, boolean>) => {
+        setVisibleServices(services.filter(s => vis[getVisKey(s.id)] !== false))
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (status === 'authenticated' && session) {
@@ -101,7 +115,7 @@ export default function HomePage() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((svc, i) => (
+          {visibleServices.map((svc, i) => (
             <motion.div
               key={svc.id}
               initial={{ opacity: 0, y: 30 }}

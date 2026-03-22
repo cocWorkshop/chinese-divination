@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { DivinationIcon } from '@/components/DivinationIcons'
@@ -20,10 +21,25 @@ const services = [
   { id: 'other', symbol: '🌸', twName: '梅花六壬', enName: 'Plum & Liu Ren', twDesc: '包含梅花易數與六壬神課，以數起卦或以時起課，精準預測具體事項', enDesc: 'Plum Blossom numerology and Liu Ren oracle for precise event prediction' },
 ]
 
+// Map service id to visibility key
+const visKeyMap: Record<string, string> = { other: 'meihua' }
+const getVisKey = (id: string) => visKeyMap[id] || id
+
 export default function DivinationPage() {
   const { lang } = useLang()
   const { data: session } = useSession()
   const router = useRouter()
+  const [visibleServices, setVisibleServices] = useState(services)
+
+  useEffect(() => {
+    fetch('/api/divination/visibility')
+      .then(r => r.json())
+      .then((vis: Record<string, boolean>) => {
+        setVisibleServices(services.filter(s => vis[getVisKey(s.id)] !== false))
+      })
+      .catch(() => {})
+  }, [])
+
   const handleClick = (svcId: string, _e: React.MouseEvent) => {
     router.push(`/divination/${svcId}`)
   }
@@ -44,7 +60,7 @@ export default function DivinationPage() {
       </motion.div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((svc, i) => (
+        {visibleServices.map((svc, i) => (
           <motion.div
             key={svc.id}
             initial={{ opacity: 0, y: 30 }}

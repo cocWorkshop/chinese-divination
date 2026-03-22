@@ -3,7 +3,28 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
+const DEFAULT_VISIBILITY: Record<string, boolean> = {
+  bazi: true,
+  iching: false,
+  liuyao: true,
+  ziwei: true,
+  qimen: true,
+  fengshui: true,
+  meihua: true,
+}
+
+const DIVINATION_TYPES = [
+  { key: 'bazi', symbol: '☰', label: '八字命理 / BaZi' },
+  { key: 'iching', symbol: '☯', label: '易經占卜 / I Ching' },
+  { key: 'liuyao', symbol: '☯', label: '六爻占卜 / Liu Yao' },
+  { key: 'ziwei', symbol: '⭐', label: '紫微斗數 / Zi Wei' },
+  { key: 'qimen', symbol: '⚡', label: '奇門遁甲 / Qi Men' },
+  { key: 'fengshui', symbol: '🏯', label: '風水佈局 / Feng Shui' },
+  { key: 'meihua', symbol: '🌸', label: '梅花六壬 / Plum & Liu Ren' },
+]
+
 export default function AdminSettings() {
+  const [visibility, setVisibility] = useState<Record<string, boolean>>(DEFAULT_VISIBILITY)
   const [settings, setSettings] = useState<Record<string, string>>({
     divinationType_bazi_tier: 'normal',
     divinationType_iching_tier: 'normal',
@@ -25,18 +46,25 @@ export default function AdminSettings() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    fetch('/api/admin/stats')
-      .then(r => r.json())
-      .then(d => { if (d.settings) setSettings(s => ({ ...s, ...d.settings })) })
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch('/api/admin/stats').then(r => r.json()),
+      fetch('/api/divination/visibility').then(r => r.json()),
+    ]).then(([statsData, visData]) => {
+      if (statsData.settings) setSettings(s => ({ ...s, ...statsData.settings }))
+      if (visData) setVisibility(v => ({ ...v, ...visData }))
+    }).finally(() => setLoading(false))
   }, [])
 
   const save = async () => {
     setSaving(true)
+    const allSettings = {
+      ...settings,
+      divination_visibility: JSON.stringify(visibility),
+    }
     const res = await fetch('/api/admin/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settings),
+      body: JSON.stringify(allSettings),
     })
     if (res.ok) toast.success('Settings saved')
     else toast.error('Failed to save')
@@ -99,6 +127,39 @@ export default function AdminSettings() {
             <span>🔗</span> 分享設置 / Share Settings
           </h2>
           {numberField('shareBonus', '分享獎勵占卜額度 / Divination credits per share', '分享者和受邀者各獲得此數量的占卜額度')}
+        </div>
+
+        {/* Divination Visibility */}
+        <div className="glass-card rounded-xl p-6">
+          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
+            <span>👁</span> 占卜類型顯示 / Divination Visibility
+          </h2>
+          <p className="text-white/40 text-xs mb-4">控制首頁和選擇頁面顯示哪些占卜類型 / Control which types appear on the home and selection pages</p>
+          <div className="space-y-3">
+            {DIVINATION_TYPES.map(item => {
+              const visible = visibility[item.key] ?? true
+              return (
+                <label key={item.key} className="flex items-center justify-between cursor-pointer group">
+                  <span className="text-white/80 text-sm">{item.symbol} {item.label}</span>
+                  <div className="relative flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={visible}
+                      onChange={e => setVisibility(v => ({ ...v, [item.key]: e.target.checked }))}
+                      className="sr-only"
+                    />
+                    <div className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
+                      visible ? 'bg-jade' : 'bg-navy-800 border border-white/20'
+                    }`}>
+                      <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                        visible ? 'translate-x-5' : 'translate-x-0'
+                      }`} />
+                    </div>
+                  </div>
+                </label>
+              )
+            })}
+          </div>
         </div>
 
         {/* Divination Type Tiers */}
