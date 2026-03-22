@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { useLang } from '@/components/LanguageContext'
 import Link from 'next/link'
+import { CREDIT_PACKS, type PackId } from '@/lib/creditPacks'
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
@@ -12,19 +13,37 @@ export default function SubscribePage() {
   const { data: session } = useSession()
   const { lang } = useLang()
   const searchParams = useSearchParams()
-  const [loading, setLoading] = useState(false)
+  const [loadingPack, setLoadingPack] = useState<PackId | null>(null)
+  const [credits, setCredits] = useState<{ divination: number; chat: number } | null>(null)
 
   const success = searchParams.get('success')
   const canceled = searchParams.get('canceled')
 
-  const handleSubscribe = async () => {
+  useEffect(() => {
+    if (session) {
+      fetch('/api/credits')
+        .then(r => r.json())
+        .then(data => {
+          if (data.divination && data.chat) {
+            setCredits({ divination: data.divination.remaining, chat: data.chat.remaining })
+          }
+        })
+        .catch(() => {})
+    }
+  }, [session])
+
+  const handlePurchase = async (packId: PackId) => {
     if (!session) {
       window.location.href = '/login'
       return
     }
-    setLoading(true)
+    setLoadingPack(packId)
     try {
-      const res = await fetch('/api/stripe/checkout', { method: 'POST' })
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packId }),
+      })
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
@@ -32,182 +51,125 @@ export default function SubscribePage() {
     } catch {
       // ignore
     }
-    setLoading(false)
+    setLoadingPack(null)
   }
 
-  const handleManage = async () => {
-    const res = await fetch('/api/stripe/portal')
-    const data = await res.json()
-    if (data.url) {
-      window.location.href = data.url
-    }
-  }
+  const packs = Object.entries(CREDIT_PACKS) as [PackId, typeof CREDIT_PACKS[PackId]][]
 
   return (
     <div className="flex-1 pt-24 pb-16 px-3 sm:px-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-serif mb-3" style={{ color: 'var(--gold)' }}>
-            {T(lang, '選擇你的命途', 'Choose Your Path')}
+            {T(lang, '額度商店', 'Credits Store')}
           </h1>
           <p style={{ color: 'var(--text-secondary)' }}>
-            {T(lang, '解鎖更深層的命理洞察', 'Unlock deeper divination insights')}
+            {T(lang, '購買額度，探索更深層的命理奧秘', 'Purchase credits to unlock deeper divination insights')}
           </p>
         </div>
+
+        {/* Current credits display */}
+        {session && credits && (
+          <div className="glass-card rounded-xl p-4 mb-8 max-w-md mx-auto text-center" style={{ border: '1px solid var(--border-gold)' }}>
+            <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+              {T(lang, '當前額度', 'Current Credits')}
+            </p>
+            <div className="flex justify-center gap-8">
+              <div>
+                <span className="text-2xl font-bold" style={{ color: 'var(--gold)' }}>{credits.divination}</span>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  {T(lang, '占卜額度', 'Divination')}
+                </p>
+              </div>
+              <div>
+                <span className="text-2xl font-bold" style={{ color: 'var(--gold)' }}>{credits.chat}</span>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  {T(lang, '問答額度', 'Chat')}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Status messages */}
         {success && (
           <div className="mb-8 p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#22c55e' }}>
-            {T(lang, '✨ 訂閱成功！歡迎進入「知命」之境。', '✨ Subscription activated! Welcome to the Ethereal tier.')}
+            {T(lang, '✨ 購買成功！額度已添加到你的帳戶。', '✨ Purchase successful! Credits have been added to your account.')}
           </div>
         )}
         {canceled && (
           <div className="mb-8 p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', color: '#eab308' }}>
-            {T(lang, '訂閱已取消，你可以隨時重新訂閱。', 'Subscription canceled. You can subscribe anytime.')}
+            {T(lang, '購買已取消，你可以隨時再次購買。', 'Purchase canceled. You can buy anytime.')}
           </div>
         )}
 
-        {/* Pricing cards */}
+        {/* Pack cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-          {/* Tier 1: Arcane */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 flex flex-col" style={{ border: '1px solid var(--border-gold)' }}>
-            <div className="mb-6">
-              <h2 className="text-xl font-serif mb-1" style={{ color: 'var(--gold)' }}>
-                {T(lang, '問命：啟示', 'Arcane: Revelation')}
-              </h2>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {T(lang, '免費方案', 'Free Plan')}
-              </p>
-            </div>
-            <div className="mb-6">
-              <span className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>$0</span>
-              <span className="text-sm ml-1" style={{ color: 'var(--text-muted)' }}>
-                /{T(lang, '月', 'mo')}
-              </span>
-            </div>
-            <ul className="space-y-3 mb-8 flex-1">
-              <li className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <span style={{ color: 'var(--gold)' }}>✦</span>
-                {T(lang,
-                  '2次/每日 高級模型預測（八字命理+六爻占卜）',
-                  '2/day premium model predictions (BaZi + Liuyao)'
-                )}
-              </li>
-              <li className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <span style={{ color: 'var(--gold)' }}>✦</span>
-                {T(lang,
-                  '2次/每日 玄機破問答（適用於八字命理和紫微斗數）',
-                  '2/day Q&A sessions (BaZi & Ziwei)'
-                )}
-              </li>
-            </ul>
-            <div className="mt-auto">
-              <div className="py-3 text-center rounded-lg text-sm" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--text-muted)', border: '1px solid var(--border-gold)' }}>
-                {T(lang, '當前方案', 'Current Plan')}
-              </div>
-            </div>
-          </div>
-
-          {/* Tier 2: Ethereal (Featured) */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 flex flex-col relative" style={{ border: '2px solid var(--gold)', boxShadow: '0 0 30px rgba(212, 168, 83, 0.15)' }}>
-            {/* Featured badge */}
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}>
-              {T(lang, '推薦', 'RECOMMENDED')}
-            </div>
-            <div className="mb-6">
-              <h2 className="text-xl font-serif mb-1" style={{ color: 'var(--gold)' }}>
-                {T(lang, '知命：洞察', 'Ethereal: Insight')}
-              </h2>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {T(lang, '月度訂閱', 'Monthly Subscription')}
-              </p>
-            </div>
-            <div className="mb-6">
-              <span className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>$19.99</span>
-              <span className="text-sm ml-1" style={{ color: 'var(--text-muted)' }}>
-                /{T(lang, '月', 'mo')}
-              </span>
-            </div>
-            <ul className="space-y-3 mb-8 flex-1">
-              <li className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <span style={{ color: 'var(--gold)' }}>✦</span>
-                {T(lang,
-                  '5次/每日 高級模型預測（八字命理+六爻占卜+紫微斗數+更多開放中）',
-                  '5/day premium model predictions (BaZi + Liuyao + Ziwei + more)'
-                )}
-              </li>
-              <li className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <span style={{ color: 'var(--gold)' }}>✦</span>
-                {T(lang,
-                  '10次/每日 玄機破問答（適用於八字命理和紫微斗數）',
-                  '10/day Q&A sessions (BaZi & Ziwei)'
-                )}
-              </li>
-              <li className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <span style={{ color: 'var(--gold)' }}>✦</span>
-                {T(lang,
-                  '50輪/永久 玄機破問答',
-                  '50 bonus Q&A rounds (permanent)'
-                )}
-              </li>
-            </ul>
-            <div className="mt-auto">
-              <button
-                onClick={handleSubscribe}
-                disabled={loading}
-                className="w-full py-3 rounded-lg font-medium text-sm transition-all hover:opacity-90 disabled:opacity-50"
-                style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}
-              >
-                {loading
-                  ? T(lang, '處理中...', 'Processing...')
-                  : T(lang, '立即訂閱', 'Subscribe Now')
-                }
-              </button>
-              {session && (
-                <button
-                  onClick={handleManage}
-                  className="w-full mt-2 py-2 text-center text-xs transition-colors hover:underline"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  {T(lang, '管理現有訂閱', 'Manage existing subscription')}
-                </button>
+          {packs.map(([packId, pack]) => (
+            <div
+              key={packId}
+              className="glass-card rounded-2xl p-6 sm:p-8 flex flex-col relative transition-transform hover:scale-[1.02]"
+              style={{
+                border: pack.popular ? '2px solid var(--gold)' : '1px solid var(--border-gold)',
+                boxShadow: pack.popular ? '0 0 30px rgba(212, 168, 83, 0.15)' : undefined,
+              }}
+            >
+              {/* Popular badge */}
+              {pack.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}>
+                  {T(lang, '推薦', 'POPULAR')}
+                </div>
               )}
-            </div>
-          </div>
 
-          {/* Tier 3: Prestige */}
-          <div className="glass-card rounded-2xl p-6 sm:p-8 flex flex-col opacity-70" style={{ border: '1px solid var(--border-gold)' }}>
-            <div className="mb-6">
-              <h2 className="text-xl font-serif mb-1" style={{ color: 'var(--gold)' }}>
-                {T(lang, '掌命：大師', 'Prestige: Master')}
-              </h2>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {T(lang, '即將開放', 'Coming Soon')}
-              </p>
-            </div>
-            <div className="mb-6">
-              <span className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>???</span>
-              <span className="text-sm ml-1" style={{ color: 'var(--text-muted)' }}>
-                /{T(lang, '月', 'mo')}
-              </span>
-            </div>
-            <ul className="space-y-3 mb-8 flex-1">
-              <li className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <span style={{ color: 'var(--gold)' }}>✦</span>
-                {T(lang, '更多功能即將揭曉...', 'More features coming soon...')}
-              </li>
-            </ul>
-            <div className="mt-auto">
-              <div className="py-3 text-center rounded-lg text-sm" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--text-muted)', border: '1px solid var(--border-gold)' }}>
-                {T(lang, '即將開放', 'Coming Soon')}
+              <div className="text-center mb-6">
+                <span className="text-4xl">{pack.icon}</span>
+                <h2 className="text-xl font-serif mt-2" style={{ color: 'var(--gold)' }}>
+                  {lang === 'en' ? pack.name.en : pack.name.zh}
+                </h2>
+              </div>
+
+              <div className="text-center mb-6">
+                <span className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                  ${(pack.price / 100).toFixed(2)}
+                </span>
+              </div>
+
+              <ul className="space-y-3 mb-8 flex-1">
+                <li className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <span style={{ color: 'var(--gold)' }}>✦</span>
+                  {pack.divination} {T(lang, '次占卜額度', ' divination credits')}
+                </li>
+                <li className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <span style={{ color: 'var(--gold)' }}>✦</span>
+                  {pack.chat} {T(lang, '次問答額度', ' chat credits')}
+                </li>
+              </ul>
+
+              <div className="mt-auto">
+                <button
+                  onClick={() => handlePurchase(packId)}
+                  disabled={loadingPack !== null}
+                  className="w-full py-3 rounded-lg font-medium text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                  style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}
+                >
+                  {loadingPack === packId
+                    ? T(lang, '處理中...', 'Processing...')
+                    : T(lang, '購買', 'Purchase')
+                  }
+                </button>
               </div>
             </div>
-          </div>
+          ))}
         </div>
 
+        {/* Bottom note */}
+        <p className="text-center mt-8 text-sm" style={{ color: 'var(--text-muted)' }}>
+          {T(lang, '💫 額度永久有效，不會過期', '💫 Credits never expire')}
+        </p>
+
         {/* Back link */}
-        <div className="text-center mt-10">
+        <div className="text-center mt-6">
           <Link href="/divination" className="text-sm hover:underline" style={{ color: 'var(--text-muted)' }}>
             ← {T(lang, '返回占卜', 'Back to Divination')}
           </Link>

@@ -14,55 +14,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session
-      const userId = session.metadata?.userId
-      if (userId && session.subscription) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            role: 'ethereal',
-            stripeSubscriptionId: session.subscription as string,
-            subscriptionStatus: 'active',
-          },
-        })
-      }
-      break
-    }
-    case 'customer.subscription.updated': {
-      const sub = event.data.object as Stripe.Subscription
-      const customer = await prisma.user.findUnique({
-        where: { stripeCustomerId: sub.customer as string },
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    const userId = session.metadata?.userId
+    const divinationCredits = parseInt(session.metadata?.divinationCredits || '0', 10)
+    const chatCredits = parseInt(session.metadata?.chatCredits || '0', 10)
+
+    if (userId && (divinationCredits > 0 || chatCredits > 0)) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          divinationCredits: { increment: divinationCredits },
+          chatCredits: { increment: chatCredits },
+        },
       })
-      if (customer) {
-        const status = sub.status
-        await prisma.user.update({
-          where: { id: customer.id },
-          data: {
-            subscriptionStatus: status,
-            role: status === 'active' ? 'ethereal' : 'arcane',
-          },
-        })
-      }
-      break
-    }
-    case 'customer.subscription.deleted': {
-      const sub = event.data.object as Stripe.Subscription
-      const customer = await prisma.user.findUnique({
-        where: { stripeCustomerId: sub.customer as string },
-      })
-      if (customer) {
-        await prisma.user.update({
-          where: { id: customer.id },
-          data: {
-            role: 'arcane',
-            subscriptionStatus: 'canceled',
-            stripeSubscriptionId: null,
-          },
-        })
-      }
-      break
     }
   }
 
