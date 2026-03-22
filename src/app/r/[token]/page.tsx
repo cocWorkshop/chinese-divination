@@ -51,13 +51,16 @@ export default function PublicReadingPage() {
     const nav = document.querySelector('nav')
     const chat = document.querySelector('.fixed.bottom-6')
     const main = document.querySelector('main')
+    const footer = document.querySelector('footer')
     if (nav) nav.style.display = 'none'
     if (chat) (chat as HTMLElement).style.display = 'none'
     if (main) main.style.paddingTop = '0'
+    if (footer) footer.style.display = 'none'
     return () => {
       if (nav) nav.style.display = ''
       if (chat) (chat as HTMLElement).style.display = ''
       if (main) main.style.paddingTop = ''
+      if (footer) footer.style.display = ''
     }
   }, [])
 
