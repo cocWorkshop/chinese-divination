@@ -103,11 +103,8 @@ export default function XuanjiChat({ readingResult, readingType }: {
           setChatRemaining(0)
           setMessages(prev => [...prev, {
             role: 'assistant',
-            content: T(lang,
-              '問答額度已用完。你可以：\n💰 前往額度商店購買更多額度\n🎁 分享你的占卜結果給朋友，雙方都能獲得額度獎勵',
-              'Chat credits exhausted. You can:\n💰 Purchase more at the Credits Store\n🎁 Share your reading with friends — both earn credits'
-            ),
-            link: { text: T(lang, '💰 額度商店 →', '💰 Credits Store →'), href: '/subscribe' },
+            content: T(lang, '問答額度已用完', 'Chat credits exhausted'),
+            link: { text: T(lang, '購買更多額度 →', 'Purchase more credits →'), href: '/subscribe' },
           }])
         } else {
           setMessages(prev => [...prev, {
