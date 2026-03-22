@@ -162,6 +162,9 @@ ${user.chatSummary || '（暂无）'}
     // Increment chat usage
     await incrementChatUsage(session.user.id)
 
+    // Fetch updated usage to return to frontend
+    const updatedUsage = await checkChatLimit(session.user.id)
+
     // Generate condensed summary in background (fire-and-forget)
     const conversationForSummary = [
       ...messages,
@@ -171,7 +174,13 @@ ${user.chatSummary || '（暂无）'}
     // Update chat summary asynchronously
     updateChatSummary(client, user.chatSummary, conversationForSummary, session.user.id, chatModel).catch(console.error)
 
-    return NextResponse.json({ reply })
+    return NextResponse.json({
+      reply,
+      chatUsage: {
+        used: updatedUsage.used,
+        limit: updatedUsage.dailyLimit === -1 ? -1 : updatedUsage.dailyLimit + updatedUsage.bonus,
+      },
+    })
   } catch (e: unknown) {
     const err = e as Error
     console.error('Chat route error:', err?.message, err?.stack)
