@@ -794,6 +794,15 @@ ${question ? `特别关注：${question}` : ''}`
 
     const resultToStore = JSON.stringify(structuredResult)
 
+    // Build calculation data for logging
+    const calculationData: Record<string, unknown> = {}
+    if (baziChart) calculationData.bazi = baziChart
+    if (ziweiChart) calculationData.ziwei = ziweiChart
+    if (qimenChart) calculationData.qimen = qimenChart
+    if (meihuaChart) calculationData.meihua = meihuaChart
+    const calculationDataStr = Object.keys(calculationData).length > 0 ? JSON.stringify(calculationData) : null
+    const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
+
     // Increment usage after successful generation
     await incrementModelUsage(session.user.id, modelTier)
 
@@ -821,6 +830,9 @@ ${question ? `特别关注：${question}` : ''}`
           question: question || null,
           inputData,
           result: resultToStore,
+          calculationData: calculationDataStr,
+          llmPrompt: llmPromptStr,
+          llmRawOutput: resultText,
           language: language || 'zh-TW',
           targetType,
           familyMemberId: resolvedFamilyMemberId,
