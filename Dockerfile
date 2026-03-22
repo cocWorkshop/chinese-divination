@@ -10,6 +10,11 @@ COPY . .
 RUN npx prisma generate
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_ENV_VALIDATION=1
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV STRIPE_SECRET_KEY="sk_dummy_build"
+ENV STRIPE_WEBHOOK_SECRET="whsec_dummy_build"
+ENV RESEND_API_KEY="re_dummy_build"
+ENV NEXTAUTH_SECRET="dummy-build-secret"
 RUN npm run build
 
 FROM node:20-alpine AS runner
