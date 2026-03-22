@@ -353,8 +353,8 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
           </motion.div>
         </AnimatePresence>
         {!isShared && (
-          <div className={`rounded-xl p-5 border-2 border-gold/30 text-white/80 text-sm leading-relaxed mt-4 ${activeSection === 'xuanji' ? '' : 'hidden'}`}
-            style={{ background: 'linear-gradient(145deg, rgba(15,10,30,0.95), rgba(10,15,30,0.9))' }}
+          <div className={`rounded-xl p-5 text-sm leading-relaxed mt-4 ${activeSection === 'xuanji' ? '' : 'hidden'}`}
+            style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--border-gold)' }}
           >
             <XuanjiChat readingResult={rawResult || ''} readingType="bazi" />
           </div>

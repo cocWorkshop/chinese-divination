@@ -96,8 +96,9 @@ export default function XuanjiChat({ readingResult, readingType }: {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
         <YinYangIcon size={48} />
-        <p className="text-white/50 text-sm">{T(lang, '請登入後使用玄機破', 'Please sign in to use Xuanji Po')}</p>
-        <a href="/login" className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold hover:bg-gold-light transition-colors">
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{T(lang, '請登入後使用玄機破', 'Please sign in to use Xuanji Po')}</p>
+        <a href="/login" className="px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-80 transition-colors"
+          style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}>
           {T(lang, '登入帳號', 'Sign In')}
         </a>
       </div>
@@ -113,10 +114,10 @@ export default function XuanjiChat({ readingResult, readingType }: {
           <div className="text-center py-8">
             <div className="mb-6">
               <YinYangIcon size={40} className="mx-auto mb-3" />
-              <h3 className="text-gold font-serif text-lg mb-1">
+              <h3 className="font-serif text-lg mb-1" style={{ color: 'var(--gold)' }}>
                 {T(lang, '玄機破', 'Xuanji Po')}
               </h3>
-              <p className="text-white/40 text-xs">
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {T(lang, '破解命盤玄機，洞悉天機奧秘', 'Decode the mysteries of your destiny')}
               </p>
             </div>
@@ -125,11 +126,12 @@ export default function XuanjiChat({ readingResult, readingType }: {
                 <button
                   key={i}
                   onClick={() => sendMessage(lang === 'en' ? q.en : q.zh)}
-                  className="w-full text-left px-4 py-3 rounded-xl text-sm transition-all
-                    border border-gold/15 hover:border-gold/40 text-white/60 hover:text-gold
-                    bg-transparent hover:bg-gold/5"
+                  className="w-full text-left px-4 py-3 rounded-xl text-sm transition-all hover:opacity-80"
+                  style={{ border: '1px solid var(--border-gold)', color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--gold)' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
                 >
-                  <span className="text-gold/60 mr-2">💬</span>
+                  <span style={{ color: 'var(--gold)', opacity: 0.6 }} className="mr-2">💬</span>
                   {lang === 'en' ? q.en : q.zh}
                 </button>
               ))}
@@ -141,16 +143,19 @@ export default function XuanjiChat({ readingResult, readingType }: {
             {messages.map((msg, i) => (
               <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 bg-gold/15 border border-gold/20">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
+                    style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.15)', border: '1px solid var(--border-gold)' }}>
                     <YinYangIcon size={18} />
                   </div>
                 )}
                 <div
                   className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                    msg.role === 'user'
-                      ? 'max-w-[70%] bg-gold text-navy-950 rounded-br-sm'
-                      : 'max-w-[85%] bg-navy-900/60 text-white/80 border border-gold/10 rounded-bl-sm'
+                    msg.role === 'user' ? 'max-w-[70%] rounded-br-sm' : 'max-w-[85%] rounded-bl-sm'
                   }`}
+                  style={msg.role === 'user'
+                    ? { backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }
+                    : { backgroundColor: 'var(--accent-bg)', color: 'var(--text-secondary)', border: '1px solid var(--border-gold)' }
+                  }
                 >
                   {msg.content}
                 </div>
@@ -158,10 +163,12 @@ export default function XuanjiChat({ readingResult, readingType }: {
             ))}
             {loading && (
               <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gold/15 border border-gold/20">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.15)', border: '1px solid var(--border-gold)' }}>
                   <YinYangIcon size={18} />
                 </div>
-                <div className="rounded-2xl rounded-bl-sm px-4 py-3 bg-navy-900/60 border border-gold/10">
+                <div className="rounded-2xl rounded-bl-sm px-4 py-3"
+                  style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--border-gold)' }}>
                   <MysticalLoader lang={lang} variant="chat" />
                 </div>
               </div>
@@ -172,7 +179,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-gold/15 pt-3 mt-auto">
+      <div className="pt-3 mt-auto" style={{ borderTop: '1px solid var(--border-gold)' }}>
         <div className="flex gap-2">
           <input
             ref={inputRef}
@@ -181,15 +188,19 @@ export default function XuanjiChat({ readingResult, readingType }: {
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={T(lang, '破解什麼玄機？', 'What mystery to decode?')}
-            className="flex-1 rounded-xl px-4 py-2.5 text-sm bg-navy-900/80 border border-gold/15
-              text-white/90 placeholder-white/30 focus:outline-none focus:border-gold/40 transition-colors"
+            className="flex-1 rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+            style={{
+              backgroundColor: 'var(--input-bg)',
+              border: '1px solid var(--border-gold)',
+              color: 'var(--text-primary)',
+            }}
             disabled={loading}
           />
           <button
             onClick={() => sendMessage()}
             disabled={loading || !input.trim()}
-            className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-gold text-navy-950
-              hover:bg-gold-light transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
           >
             {T(lang, '發送', 'Send')}
           </button>
