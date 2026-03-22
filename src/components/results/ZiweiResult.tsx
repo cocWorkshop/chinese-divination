@@ -282,7 +282,7 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
                     <span className="text-purple-400 text-[9px]">身</span>
                   )}
                   <div className="flex flex-wrap gap-x-1 gap-y-0">
-                    {(pData?.majorStars || []).map((star, i) => (
+                    {(pData?.majorStars || []).map((star) => (
                       <span key={`major-${star.name}`} className={`text-[10px] sm:text-xs font-serif font-semibold ${
                         star.mutagen ? mutagenColor[star.mutagen] || 'text-gold' : 'text-gold'
                       }`}>
@@ -292,7 +292,7 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
                     ))}
                   </div>
                   <div className="flex flex-wrap gap-x-1 gap-y-0 mt-0.5">
-                    {(pData?.minorStars || []).slice(0, 4).map((star, i) => (
+                    {(pData?.minorStars || []).slice(0, 4).map((star) => (
                       <span key={`minor-${star.name}`} className={`text-[9px] sm:text-[10px] ${
                         star.mutagen ? mutagenColor[star.mutagen] || 'text-white/50' : 'text-white/40'
                       }`}>
@@ -304,7 +304,7 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
                   {/* Brightness indicators for major stars */}
                   {(pData?.majorStars || []).some(s => s.brightness) && (
                     <div className="flex gap-1 mt-0.5">
-                      {(pData?.majorStars || []).filter(s => s.brightness).map((star, i) => (
+                      {(pData?.majorStars || []).filter(s => s.brightness).map((star) => (
                         <span key={`bright-${star.name}`} className={`text-[8px] sm:text-[9px] ${brightnessColor[star.brightness || ''] || 'text-white/30'}`}>
                           {star.brightness}
                         </span>
@@ -342,7 +342,7 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
             </div>
             {/* Stars detail */}
             <div className="flex flex-wrap gap-2 mb-3">
-              {(selectedPalaceData.majorStars || []).map((star, i) => (
+              {(selectedPalaceData.majorStars || []).map((star) => (
                 <div key={`detail-major-${star.name}`} className="px-2 py-1 rounded border border-gold/30 bg-gold/10">
                   <span className={`text-sm font-serif font-semibold ${star.mutagen ? mutagenColor[star.mutagen] : 'text-gold'}`}>
                     {star.name}
@@ -355,7 +355,7 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
                   {star.mutagen && <span className={`ml-1 text-xs ${mutagenColor[star.mutagen]}`}>化{star.mutagen}</span>}
                 </div>
               ))}
-              {(selectedPalaceData.minorStars || []).map((star, i) => (
+              {(selectedPalaceData.minorStars || []).map((star) => (
                 <div key={`detail-minor-${star.name}`} className="px-2 py-1 rounded border border-white/10 bg-white/5">
                   <span className={`text-xs ${star.mutagen ? mutagenColor[star.mutagen] : 'text-white/60'}`}>
                     {star.name}
@@ -427,9 +427,9 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <h3 className="text-gold font-serif mb-3">核心建議</h3>
           <div className="grid gap-3">
-            {d.keyAdvice.map((advice, i) => (
-              <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
-                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{i + 1}</span>
+            {d.keyAdvice.map((advice, idx) => (
+              <div key={`advice-${idx}`} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
+                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{idx + 1}</span>
                 <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
               </div>
             ))}
