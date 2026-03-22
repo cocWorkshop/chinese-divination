@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from './LanguageContext'
 import toast from 'react-hot-toast'
+import { reportError } from '@/lib/errorReporter'
 
 const T = (lang: string, zhTW: string, en: string) => lang === 'en' ? en : zhTW
 
@@ -53,7 +54,7 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
           }
           setFeedbackLoaded(true)
         })
-        .catch(() => setFeedbackLoaded(true))
+        .catch((err) => { reportError({ endpoint: `/api/readings/${readingId}/feedback`, error: err instanceof Error ? err.message : String(err) }); setFeedbackLoaded(true) })
     }
   }, [readingId, initialRating, feedbackLoaded])
 
@@ -82,7 +83,7 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
           toast.success(T(lang, '感謝評分！', 'Thanks for rating!'), { icon: ratingLabels[newRating].emoji, duration: 1500 })
         }
       }
-    } catch { /* silent */ }
+    } catch (err) { reportError({ endpoint: `/api/readings/${readingId}/feedback`, error: err instanceof Error ? err.message : String(err), context: 'rating' }) }
     setSaving(false)
   }
 
@@ -99,7 +100,7 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
           body: JSON.stringify({ feedback: text }),
         })
         if (res.ok) setFeedbackSaved(true)
-      } catch { /* silent */ }
+      } catch (err) { reportError({ endpoint: `/api/readings/${readingId}/feedback`, error: err instanceof Error ? err.message : String(err), context: 'feedback-text' }) }
     }, 1000)
   }
 

@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
+import { catchAndReport } from '@/lib/errorReporter'
 
 const T = (lang: string, zhTW: string, en: string) =>
   lang === 'en' ? en : zhTW
@@ -30,7 +31,7 @@ export default function DivinationPage() {
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    fetch('/api/divination-tiers').then(r => r.json()).then(setTiers).catch(() => {})
+    fetch('/api/divination-tiers').then(r => r.json()).then(setTiers).catch(catchAndReport('/api/divination-tiers'))
   }, [])
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function DivinationPage() {
     fetch('/api/profile').then(r => r.json()).then(data => {
       if (data?.role) setUserRole(data.role)
       if (data?.isAdmin) setIsAdmin(true)
-    }).catch(() => {})
+    }).catch(catchAndReport('/api/credits'))
   }, [session])
 
   const roleLevel: Record<string, number> = { admin: 3, prestige: 3, ethereal: 2, arcane: 1 }

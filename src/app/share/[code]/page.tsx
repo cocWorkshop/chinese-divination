@@ -7,6 +7,7 @@ import YinYangIcon from '@/components/YinYangIcon'
 import toast from 'react-hot-toast'
 import QRCode from 'qrcode'
 import Link from 'next/link'
+import { catchAndReport } from '@/lib/errorReporter'
 
 export default function SharePage() {
   const { code } = useParams<{ code: string }>()
@@ -27,7 +28,7 @@ export default function SharePage() {
         if (data.model1) setBonus1(data.model1)
         if (data.model2) setBonus2(data.model2)
       })
-      .catch(() => {})
+      .catch(catchAndReport('/api/share'))
   }, [])
 
   // QR code for logged-in share management view
