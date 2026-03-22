@@ -29,6 +29,9 @@ model User {
   resetTokenExpiry  DateTime?
   deleteToken       String?   @unique
   deleteTokenExpiry DateTime?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?
+  subscriptionStatus   String?   // active, canceled, past_due
   chatSummary  String?     @db.Text
   hourlyQuota  Int         @default(10)
   bonusModel1  Int         @default(0)
