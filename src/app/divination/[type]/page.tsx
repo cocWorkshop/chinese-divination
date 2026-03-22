@@ -377,7 +377,7 @@ export default function DivinationFormPage() {
   if (!tierChecked) return null
 
   return (
-    <div className="min-h-screen py-8 sm:py-12 px-3 sm:px-4 max-w-2xl mx-auto">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col py-8 sm:py-12 px-3 sm:px-4 max-w-2xl mx-auto">
       {/* Bazi cache dialog */}
       {showCacheDialog && cachedReading && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1055,17 +1055,19 @@ export default function DivinationFormPage() {
       )}
 
       {loading && (
-        <>
+        <div className="flex-1 flex flex-col">
           <LoadingOracle divinationType={type} />
-          <div className="glass-card rounded-xl p-4 mt-4 text-center" style={{ borderColor: 'var(--card-border)' }}>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {T(lang,
-                '🔮 天機推演中，此過程約需數分鐘。您可先行離開，稍後於「歷史記錄」中查閱結果。',
-                '🔮 The oracle is processing your reading — this may take a few minutes. Feel free to step away; your result will be saved to your reading history.'
-              )}
-            </p>
+          <div className="mt-auto pt-8">
+            <div className="glass-card rounded-xl p-4 text-center" style={{ borderColor: 'var(--card-border)' }}>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                {T(lang,
+                  '🔮 天機推演中，此過程約需數分鐘。您可先行離開，稍後於「歷史記錄」中查閱結果。',
+                  '🔮 The oracle is processing your reading — this may take a few minutes. Feel free to step away; your result will be saved to your reading history.'
+                )}
+              </p>
+            </div>
           </div>
-        </>
+        </div>
       )}
 
       {result && (
