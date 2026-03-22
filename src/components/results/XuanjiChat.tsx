@@ -10,6 +10,7 @@ import YinYangIcon from '@/components/YinYangIcon'
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  link?: { text: string; href: string }
 }
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
@@ -94,7 +95,17 @@ export default function XuanjiChat({ readingResult, readingType }: {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
         if (data.chatCredits) setChatRemaining(data.chatCredits.remaining)
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: `${T(lang, '錯誤', 'Error')}：${data.error || T(lang, '請稍後再試', 'Please try again')}` }])
+        const isCreditsExhausted = res.status === 429 || (data.error && /額度|credit/i.test(data.error))
+        if (isCreditsExhausted) {
+          setChatRemaining(0)
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: T(lang, '問答額度已用完', 'Chat credits exhausted'),
+            link: { text: T(lang, '購買更多額度 →', 'Purchase more credits →'), href: '/subscribe' },
+          }])
+        } else {
+          setMessages(prev => [...prev, { role: 'assistant', content: `${T(lang, '錯誤', 'Error')}：${data.error || T(lang, '請稍後再試', 'Please try again')}` }])
+        }
         reportError({ endpoint: '/api/chat', status: res.status, error: data.error || 'Unknown', context: 'xuanji-chat-tab' })
       }
     } catch (e) {
@@ -182,6 +193,11 @@ export default function XuanjiChat({ readingResult, readingType }: {
                   }
                 >
                   {msg.content}
+                  {msg.link && (
+                    <a href={msg.link.href} className="block mt-2 text-sm font-semibold underline hover:opacity-80" style={{ color: 'var(--gold)' }}>
+                      {msg.link.text}
+                    </a>
+                  )}
                 </div>
               </div>
             ))}
@@ -220,27 +236,17 @@ export default function XuanjiChat({ readingResult, readingType }: {
             }}
             disabled={loading || (chatRemaining !== null && chatRemaining <= 0)}
           />
-          {chatRemaining !== null && chatRemaining <= 0 ? (
-            <a
-              href="/pricing"
-              className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-colors text-center whitespace-nowrap"
-              style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
-            >
-              {T(lang, '訂閱', 'Subscribe')}
-            </a>
-          ) : (
-            <button
-              onClick={() => sendMessage()}
-              disabled={loading || !input.trim()}
-              className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
-              style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
-            >
-              {chatRemaining !== null
-                ? `${T(lang, '發送', 'Send')} (${chatRemaining})`
-                : T(lang, '發送', 'Send')
-              }
-            </button>
-          )}
+          <button
+            onClick={() => sendMessage()}
+            disabled={loading || !input.trim() || (chatRemaining !== null && chatRemaining <= 0)}
+            className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+            style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
+          >
+            {chatRemaining !== null
+              ? `${T(lang, '發送', 'Send')} (${chatRemaining})`
+              : T(lang, '發送', 'Send')
+            }
+          </button>
         </div>
       </div>
     </div>
