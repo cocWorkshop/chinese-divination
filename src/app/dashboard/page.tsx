@@ -72,14 +72,14 @@ export default function DashboardPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <MysticalLoader lang={lang} variant="page" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen py-8 sm:py-12 px-3 sm:px-4 max-w-4xl mx-auto">
+    <div className="flex-1 py-8 sm:py-12 px-3 sm:px-4 max-w-4xl mx-auto">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-10">
         <h1 className="text-3xl font-serif text-gold mb-2">
           {lang === 'zh-TW' ? '占卜歷史' : 'Reading History'}

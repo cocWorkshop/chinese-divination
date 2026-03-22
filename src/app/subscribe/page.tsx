@@ -44,7 +44,7 @@ export default function SubscribePage() {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-3 sm:px-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="flex-1 pt-24 pb-16 px-3 sm:px-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

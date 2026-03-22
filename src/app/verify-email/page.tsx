@@ -39,7 +39,7 @@ function VerifyEmailContent() {
   const c = content[status]
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4">
+    <div className="flex-1 flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
         <div className="glass-card rounded-2xl p-8 text-center relative overflow-hidden">
           <div className="absolute inset-0 rounded-2xl border-2 border-gold/30 pointer-events-none" />
@@ -129,7 +129,7 @@ function ResendButton() {
 export default function VerifyEmailPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <div className="animate-pulse"><YinYangIcon size={30} /></div>
       </div>
     }>

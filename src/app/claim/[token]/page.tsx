@@ -80,7 +80,7 @@ export default function ClaimPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(180deg, #0a0f1e 0%, #111827 100%)' }}>
+    <div className="flex-1 flex items-center justify-center p-4" style={{ background: 'linear-gradient(180deg, #0a0f1e 0%, #111827 100%)' }}>
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">

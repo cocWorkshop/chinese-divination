@@ -12,7 +12,7 @@ export default function TermsPage() {
   const { lang } = useLang()
 
   return (
-    <div className="min-h-screen px-4 py-12" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex-1 px-4 py-12" style={{ background: 'var(--bg-primary)' }}>
       <div className="max-w-3xl mx-auto">
         <div className="glass-card rounded-2xl p-8 md:p-12 border" style={{ borderColor: 'var(--card-border)' }}>
           <h1 className="text-3xl font-serif mb-2" style={{ color: 'var(--gold)' }}>

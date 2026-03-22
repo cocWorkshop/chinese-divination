@@ -30,7 +30,7 @@ export default function HomePage() {
   }, [status, session, router])
 
   return (
-    <div className="min-h-screen bg-navy-950">
+    <div className="flex-1 bg-navy-950">
       {/* Hero */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
         <StarField />

@@ -187,13 +187,13 @@ export default function ProfilePage() {
   const labelCls = "block text-white/70 text-sm mb-1"
 
   if (status === 'loading') return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="flex-1 flex items-center justify-center">
       <MysticalLoader lang={lang} variant="page" />
     </div>
   )
 
   return (
-    <div className="min-h-screen py-8 sm:py-12 px-3 sm:px-4 max-w-2xl mx-auto">
+    <div className="flex-1 py-8 sm:py-12 px-3 sm:px-4 max-w-2xl mx-auto">
       {/* Page Header Card */}
       <div className="glass-card rounded-2xl p-6 sm:p-8 mb-6 text-center relative overflow-hidden">
         <div className="absolute inset-0 rounded-2xl border border-gold/20 pointer-events-none" />

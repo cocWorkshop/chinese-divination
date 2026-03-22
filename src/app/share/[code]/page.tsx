@@ -70,7 +70,7 @@ export default function SharePage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         <div className="animate-pulse"><YinYangIcon size={30} /></div>
       </div>
     )
@@ -79,7 +79,7 @@ export default function SharePage() {
   // ========== WELCOME LANDING PAGE (not logged in) ==========
   if (!session) {
     return (
-      <div className="min-h-screen py-12 px-4 flex items-center justify-center">
+      <div className="flex-1 py-12 px-4 flex items-center justify-center">
         <div className="max-w-md w-full space-y-6">
           {/* Hero */}
           <div className="glass-card rounded-2xl p-8 text-center relative overflow-hidden">
@@ -175,7 +175,7 @@ export default function SharePage() {
 
   // ========== SHARE MANAGEMENT PAGE (logged in) ==========
   return (
-    <div className="min-h-screen py-12 px-4 flex items-center justify-center">
+    <div className="flex-1 py-12 px-4 flex items-center justify-center">
       <div className="max-w-md w-full">
         <div className="glass-card rounded-2xl p-8 text-center relative overflow-hidden">
           <div className="absolute inset-0 rounded-2xl border-2 border-gold/30 pointer-events-none" />

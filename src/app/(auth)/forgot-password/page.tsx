@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
+      <div className="flex-1 flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
         <div className="glass-card rounded-2xl p-8 w-full max-w-md text-center">
           <div className="text-5xl mb-4">📧</div>
           <h1 className="text-2xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex-1 flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
       <div className="glass-card rounded-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <div className="text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>玄機</div>
