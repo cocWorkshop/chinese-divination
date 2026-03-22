@@ -58,7 +58,7 @@ export default function Navbar() {
               </Link>
             )}
             <Link href="/subscribe" className="text-white/80 hover:text-gold transition-colors">
-              {lang === 'en' ? 'Subscribe' : '訂閱'}
+              {lang === 'en' ? 'Credits' : '額度'}
             </Link>
             {session && (
               <button
@@ -158,7 +158,7 @@ export default function Navbar() {
             {lang === 'en' ? 'Divination' : '占卜'}
           </Link>
           <Link href="/subscribe" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
-            {lang === 'en' ? 'Subscribe' : '訂閱'}
+            {lang === 'en' ? 'Credits' : '額度'}
           </Link>
           {session && (
             <Link href="/dashboard" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
