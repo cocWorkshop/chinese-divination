@@ -50,7 +50,7 @@ const schemas: Record<string, object> = {
     },
     keyAdvice: ['建议一', '建议二', '建议三'],
     luckyInfo: { numbers: [1, 2], colors: ['颜色'], directions: ['方位'] },
-    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
+    suggestedQuestions: ['根据此人命局，提一个最让人好奇「命中注定」的问题(15字内)', '此人一生中最大的转机藏在哪里？据此提一个让人想深挖的问题(15字内)', '此人命中有什么隐藏的危机？提一个让人警醒的问题(15字内)'],
   },
   iching: {
     type: 'iching',
@@ -64,7 +64,7 @@ const schemas: Record<string, object> = {
     changingLines: [{ position: 3, text: '变爻说明' }],
     advice: '具体建议(100+字)', outcome: '吉/凶/中/大吉/小凶',
     keyPoints: ['要点一', '要点二', '要点三'],
-    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
+    suggestedQuestions: ['此卦暗示的最大变数是什么？提一个让人想追问的问题(15字内)', '如何借卦象之势扭转局面？提一个实用的破局问题(15字内)', '此卦最容易忽略的警示是什么？提一个让人警觉的问题(15字内)'],
   },
   liuyao: {
     type: 'liuyao',
@@ -78,7 +78,7 @@ const schemas: Record<string, object> = {
     advice: '具体建议(100字以上)',
     outcome: '吉/凶/中/大吉/小凶',
     keyPoints: ['要点一', '要点二', '要点三'],
-    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
+    suggestedQuestions: ['卦中用神透露了什么关键信息？提一个让人迫切想知道的问题(15字内)', '此卦的应期暗示了什么？提一个关于时机把握的问题(15字内)', '世应之间藏着什么玄机？提一个让人意外的破解问题(15字内)'],
   },
   ziwei: {
     type: 'ziwei',
@@ -100,7 +100,7 @@ const schemas: Record<string, object> = {
     sections: { overview: '总论(100+字)', career: '事业官禄(100+字)', marriage: '夫妻感情(100+字)', wealth: '财运(100+字)' },
     keyAdvice: ['建议一', '建议二'],
     luckyInfo: { numbers: [], colors: [], directions: [] },
-    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
+    suggestedQuestions: ['命盘中最强的一颗星暗示了什么命运走向？据此提问(15字内)', '哪个宫位藏着此人最大的人生变局？据此提问(15字内)', '命盘中有什么被忽视的贵人或机遇？据此提问(15字内)'],
   },
   qimen: {
     type: 'qimen',
@@ -109,7 +109,7 @@ const schemas: Record<string, object> = {
     outcome: '吉/凶/中',
     keyAdvice: ['建议一', '建议二'],
     luckyInfo: { timing: '宜在...', direction: '向...方行动' },
-    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
+    suggestedQuestions: ['此局中最关键的时机窗口在哪？提一个让人想立刻行动的问题(15字内)', '奇门格局暗示的最大陷阱是什么？提一个避险问题(15字内)', '如何借此局之势实现最大突破？提一个策略性问题(15字内)'],
   },
   fengshui: {
     type: 'fengshui',
@@ -118,7 +118,7 @@ const schemas: Record<string, object> = {
     sections: { overall: '整体格局(100+字)', wealth: '财位(100+字)', health: '健康(100+字)', relationships: '人际感情(100+字)' },
     remedies: [{ issue: '问题', solution: '解决方案' }],
     keyAdvice: ['建议一', '建议二'],
-    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
+    suggestedQuestions: ['当前格局中最影响财运的风水要素是什么？据此提问(15字内)', '家中哪个方位藏着最大的隐患？提一个化解问题(15字内)', '如何用最小的改动获得最大的风水提升？据此提问(15字内)'],
   },
   other: {
     type: 'other',
@@ -131,7 +131,7 @@ const schemas: Record<string, object> = {
     sections: { situation: '体卦分析(100+字)', inquiry: '用卦分析(100+字)', interaction: '体用关系(100+字)', timeline: '时间推断(100+字)' },
     outcome: '吉/凶/中',
     keyAdvice: ['建议一', '建议二', '建议三'],
-    suggestedQuestions: ['针对命盘中的隐患或阻碍，提出一个破解问题(20字内)', '针对命盘中的优势或机遇，提出一个深入问题(20字内)', '针对命盘中最值得关注的转折点，提出一个问题(20字内)'],
+    suggestedQuestions: ['体用之间的生克揭示了什么关键走向？据此提问(15字内)', '此卦最容易被忽略的变数是什么？提一个深入问题(15字内)', '如何借势破局？提一个最实用的行动问题(15字内)'],
   },
 }
 
