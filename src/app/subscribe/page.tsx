@@ -15,11 +15,15 @@ export default function SubscribePage() {
   const searchParams = useSearchParams()
   const [loadingPack, setLoadingPack] = useState<PackId | null>(null)
   const [credits, setCredits] = useState<{ divination: number; chat: number } | null>(null)
+  const [shareBonus, setShareBonus] = useState<{ divination: number; chat: number }>({ divination: 1, chat: 2 })
 
   const success = searchParams.get('success')
   const canceled = searchParams.get('canceled')
 
   useEffect(() => {
+    fetch('/api/share/bonus').then(r => r.json()).then(data => {
+      if (data.divination) setShareBonus(data)
+    }).catch(() => {})
     if (session) {
       fetch('/api/credits')
         .then(r => r.json())
@@ -108,7 +112,7 @@ export default function SubscribePage() {
             </div>
             <div className="flex items-center justify-between">
               <span>{T(lang, '🔗 分享給朋友', '🔗 Share with friends')}</span>
-              <span style={{ color: 'var(--gold)' }}>{T(lang, '占卜 1 + 問答 2', '1 divination + 2 chat')}</span>
+              <span style={{ color: 'var(--gold)' }}>{T(lang, `占卜 ${shareBonus.divination} + 問答 ${shareBonus.chat}`, `${shareBonus.divination} divination + ${shareBonus.chat} chat`)}</span>
             </div>
           </div>
         </div>

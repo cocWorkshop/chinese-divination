@@ -6,7 +6,7 @@ import OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logLlmCall } from '@/lib/llmLogger'
-import { checkChatCredits, deductChatCredit, grantDailyBonus } from '@/lib/rateLimit'
+import { checkChatCredits, deductChatCredit } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,10 +26,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Too many history entries (max 10)' }, { status: 400 })
     }
 
-    // Grant daily bonus on first activity
-    await grantDailyBonus(session.user.id)
-
-    // Check chat credits
+        // Check chat credits
     const chatLimit = await checkChatCredits(session.user.id)
     if (!chatLimit.allowed) {
       return NextResponse.json({

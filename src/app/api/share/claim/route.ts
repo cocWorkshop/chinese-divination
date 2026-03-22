@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
     prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } }),
     prisma.adminSetting.findUnique({ where: { key: 'shareBonusChat' } }),
   ])
-  const bonus = parseInt(bonusSetting?.value ?? '20')
-  const chatBonus = parseInt(chatBonusSetting?.value ?? '5')
+  const bonus = parseInt(bonusSetting?.value ?? '1')
+  const chatBonus = parseInt(chatBonusSetting?.value ?? '2')
 
   const ops = [
     prisma.shareLink.update({

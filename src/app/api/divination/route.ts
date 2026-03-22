@@ -8,7 +8,7 @@ import path from 'path'
 import OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkDivinationCredits, deductDivinationCredit, grantDailyBonus } from '@/lib/rateLimit'
+import { checkDivinationCredits, deductDivinationCredit } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
 import { calculateZiwei, ZiweiChart } from '@/lib/ziweiCalculator'
 import { calculateQimen, QimenChart } from '@/lib/qimenCalculator'
@@ -170,9 +170,6 @@ export async function POST(req: NextRequest) {
         { status: 503 }
       )
     }
-
-    // Grant daily bonus on first activity
-    await grantDailyBonus(session.user.id)
 
     const rl = await checkDivinationCredits(session.user.id)
     if (!rl.allowed) {

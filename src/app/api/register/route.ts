@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
           prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } }),
           prisma.adminSetting.findUnique({ where: { key: 'shareBonusChat' } }),
         ])
-        bonus1 = parseInt(s1?.value ?? '20')
-        bonusChat = parseInt(s2?.value ?? '5')
+        bonus1 = parseInt(s1?.value ?? '1')
+        bonusChat = parseInt(s2?.value ?? '2')
       }
     }
 
@@ -57,8 +57,8 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: {
         email, password: hashed, name: name || null, language: language || 'zh-TW',
-        bonusModel1: bonus1,
-        bonusChat: bonusChat,
+        divinationCredits: 3 + bonus1,
+        chatCredits: 3 + bonusChat,
         emailVerified: false,
         verificationToken: vToken,
         tokenExpiry: tokenExpiry(24),
@@ -85,8 +85,8 @@ export async function POST(req: NextRequest) {
         prisma.user.update({
           where: { id: shareLink.userId },
           data: {
-            bonusModel1: { increment: bonus1 },
-            ...(bonusChat > 0 && { bonusChat: { increment: bonusChat } }),
+            divinationCredits: { increment: bonus1 },
+            ...(bonusChat > 0 && { chatCredits: { increment: bonusChat } }),
           },
         }),
       ])
