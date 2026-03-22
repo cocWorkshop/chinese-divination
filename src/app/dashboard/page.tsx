@@ -7,6 +7,7 @@ import YinYangIcon from '@/components/YinYangIcon'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
+import LoadingOracle from '@/components/LoadingOracle'
 import ResultRenderer from '@/components/results/ResultRenderer'
 import ReadingFeedback from '@/components/ReadingFeedback'
 import ShareResultButton from '@/components/ShareResultButton'
@@ -26,6 +27,7 @@ const relationLabels: Record<string, { zh: string; en: string }> = {
 interface Reading {
   id: string
   type: string
+  status?: string  // pending | completed | failed
   question: string | null
   result: string
   language: string
@@ -53,6 +55,7 @@ export default function DashboardPage() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
   }, [status, router])
@@ -64,6 +67,47 @@ export default function DashboardPage() {
         .then(data => { setReadings(data.readings || []); setLoading(false) })
     }
   }, [session])
+
+  // Poll pending readings when expanded
+  useEffect(() => {
+    if (!expanded) return
+    const reading = readings.find(r => r.id === expanded)
+    if (!reading || (reading.status !== 'pending' && reading.status !== undefined)) return
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/readings/${expanded}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (data.reading?.status === 'completed' || data.reading?.status === 'failed') {
+          setReadings(prev => prev.map(r => r.id === expanded ? { ...r, ...data.reading } : r))
+        }
+      } catch { /* ignore */ }
+    }, 10000)
+
+    return () => clearInterval(interval)
+  }, [expanded, readings])
+
+  // Auto-poll all pending readings (even when not expanded)
+  useEffect(() => {
+    const pendingReadings = readings.filter(r => r.status === 'pending')
+    if (pendingReadings.length === 0) return
+
+    const interval = setInterval(async () => {
+      for (const pr of pendingReadings) {
+        try {
+          const res = await fetch(`/api/readings/${pr.id}`)
+          if (!res.ok) continue
+          const data = await res.json()
+          if (data.reading?.status !== 'pending') {
+            setReadings(prev => prev.map(r => r.id === pr.id ? { ...r, ...data.reading } : r))
+          }
+        } catch { /* ignore */ }
+      }
+    }, 15000)
+
+    return () => clearInterval(interval)
+  }, [readings])
 
   const deleteReading = async (id: string) => {
     await fetch(`/api/readings/${id}`, { method: 'DELETE' })
@@ -105,7 +149,7 @@ export default function DashboardPage() {
               className="glass-card rounded-2xl overflow-hidden"
             >
               <div
-                className="p-5 cursor-pointer hover:bg-white/5 transition-colors"
+                className={`p-5 cursor-pointer hover:bg-white/5 transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''}`}
                 onClick={() => setExpanded(expanded === r.id ? null : r.id)}
               >
                 <div className="flex justify-between items-start">
@@ -113,6 +157,17 @@ export default function DashboardPage() {
                     <span className="px-2 py-0.5 bg-gold/20 text-gold text-xs rounded-full mr-2">
                       {typeLabels[r.type]?.[lang === 'en' ? 'en' : 'zh-TW'] || r.type}
                     </span>
+                    {r.status === 'pending' && (
+                      <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-300 text-xs rounded-full mr-2 inline-flex items-center gap-1">
+                        <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
+                        {lang === 'en' ? 'Processing...' : '解讀中...'}
+                      </span>
+                    )}
+                    {r.status === 'failed' && (
+                      <span className="px-2 py-0.5 bg-red-500/20 text-red-300 text-xs rounded-full mr-2">
+                        {lang === 'en' ? 'Failed' : '解讀失敗'}
+                      </span>
+                    )}
                     {r.targetType === 'family' && r.familyMember && (
                       <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs rounded-full mr-2">
                         {lang === 'en'
@@ -141,7 +196,11 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <p className="text-white/50 text-sm mt-2 line-clamp-2">
-                  {(() => {
+                  {r.status === 'pending'
+                    ? (lang === 'en' ? 'Your reading is being generated...' : '正在為您解讀命盤...')
+                    : r.status === 'failed'
+                    ? (lang === 'en' ? 'This reading failed to generate. You may retry.' : '解讀生成失敗，可重新嘗試。')
+                    : (() => {
                     try {
                       const parsed = JSON.parse(r.result)
                       const summary = parsed.sections?.overview
@@ -149,11 +208,11 @@ export default function DashboardPage() {
                         || parsed.interpretation
                         || (parsed.outcome ? `${parsed.palace?.inquiry || ''} → ${parsed.outcome}` : '')
                         || ''
-                      return (summary || r.result).slice(0, 120)
+                      return (summary || r.result).slice(0, 120) + '...'
                     } catch {
-                      return r.result.slice(0, 120)
+                      return r.result.slice(0, 120) + '...'
                     }
-                  })()}...
+                  })()}
                 </p>
               </div>
               <AnimatePresence>
@@ -164,14 +223,28 @@ export default function DashboardPage() {
                     exit={{ height: 0, opacity: 0 }}
                     className="border-t border-gold/10 px-5 pb-5 pt-4"
                   >
-                    <ResultRenderer result={r.result} type={r.type} />
-                    <div className="mt-4">
-                      <ReadingFeedback
-                        readingId={r.id}
-                        initialRating={r.rating}
-                      />
-                    </div>
-                    <ShareResultButton readingId={r.id} shareToken={r.shareToken} lang={lang} />
+                    {r.status === 'pending' ? (
+                      <LoadingOracle divinationType={r.type} />
+                    ) : r.status === 'failed' ? (
+                      <div className="text-center py-8 text-red-300">
+                        <p className="text-2xl mb-2">⚠️</p>
+                        <p>{lang === 'en' ? 'This reading failed to generate.' : '解讀生成失敗'}</p>
+                        <p className="text-sm text-white/40 mt-1">
+                          {lang === 'en' ? 'Your credit was not deducted. Please try again.' : '額度未被扣除，請重新嘗試。'}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <ResultRenderer result={r.result} type={r.type} />
+                        <div className="mt-4">
+                          <ReadingFeedback
+                            readingId={r.id}
+                            initialRating={r.rating}
+                          />
+                        </div>
+                        <ShareResultButton readingId={r.id} shareToken={r.shareToken} lang={lang} />
+                      </>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

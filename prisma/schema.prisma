@@ -63,6 +63,7 @@ model Reading {
   targetType     String        @default("self")
   familyMemberId String?
   familyMember   FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull)
+  status          String        @default("completed") // pending | completed | failed
   calculationData String?     @db.Text  // Raw programmatic calculation output (JSON) — BaZi/Ziwei/Qimen/Meihua
   llmPrompt       String?     @db.Text  // Full LLM prompt (system + user message)
   llmRawOutput    String?     @db.Text  // Raw LLM response before merge

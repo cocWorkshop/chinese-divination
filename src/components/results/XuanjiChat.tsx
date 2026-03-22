@@ -6,6 +6,8 @@ import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
 import { reportError } from '@/lib/errorReporter'
 import YinYangIcon from '@/components/YinYangIcon'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -184,7 +186,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
                   </div>
                 )}
                 <div
-                  className={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                  className={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 text-sm leading-relaxed ${msg.role === 'user' ? 'whitespace-pre-wrap' : ''} ${
                     msg.role === 'user' ? 'max-w-[80%] sm:max-w-[70%] rounded-br-sm' : 'max-w-[92%] sm:max-w-[85%] rounded-bl-sm'
                   }`}
                   style={msg.role === 'user'
@@ -192,7 +194,13 @@ export default function XuanjiChat({ readingResult, readingType }: {
                     : { backgroundColor: 'var(--accent-bg)', color: 'var(--text-secondary)', border: '1px solid var(--border-gold)' }
                   }
                 >
-                  {msg.content}
+                  {msg.role === 'assistant' ? (
+                    <div className="prose prose-invert prose-sm prose-gold max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>h1]:text-gold [&>h2]:text-gold [&>h3]:text-gold [&>h4]:text-gold [&>strong]:text-gold/90 [&>ul>li::marker]:text-gold/50 [&>ol>li::marker]:text-gold/50">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    msg.content
+                  )}
                   {msg.link && (
                     <a href={msg.link.href} className="block mt-2 text-sm font-semibold underline hover:opacity-80" style={{ color: 'var(--gold)' }}>
                       {msg.link.text}

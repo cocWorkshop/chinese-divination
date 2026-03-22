@@ -561,7 +561,40 @@ ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 ${question ? `特别关注：${question}` : ''}`
     }
 
+    // Build calculation data early for the pending reading
+    const earlyCalculationData: Record<string, unknown> = {}
+    if (baziChart) earlyCalculationData.bazi = baziChart
+    if (ziweiChart) earlyCalculationData.ziwei = ziweiChart
+    if (qimenChart) earlyCalculationData.qimen = qimenChart
+    if (meihuaChart) earlyCalculationData.meihua = meihuaChart
+    if (liuyaoChart) earlyCalculationData.liuyao = liuyaoChart
+    const earlyCalculationDataStr = Object.keys(earlyCalculationData).length > 0 ? JSON.stringify(earlyCalculationData) : null
+
+    // Create pending reading immediately so it's not lost if user navigates away
+    let pendingReadingId: string | null = null
+    if (shouldSaveHistory) {
+      const pendingReading = await prisma.reading.create({
+        data: {
+          userId: session.user.id,
+          type,
+          modelTier: "model1",
+          status: 'pending',
+          question: question || null,
+          inputData,
+          result: '',  // Will be filled after LLM completes
+          calculationData: earlyCalculationDataStr,
+          language: language || 'zh-TW',
+          targetType,
+          familyMemberId: resolvedFamilyMemberId,
+        },
+      })
+      pendingReadingId = pendingReading.id
+    }
+
     if (!process.env.OPENROUTER_API_KEY) {
+      if (pendingReadingId) {
+        await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'AI service not configured' } }).catch(() => {})
+      }
       return NextResponse.json(
         { error: language !== 'en' ? 'AI服務未配置，請聯繫管理員。' : 'AI service not configured.' },
         { status: 503 }
@@ -637,6 +670,9 @@ ${question ? `特别关注：${question}` : ''}`
           inputPreview: userMessage,
           systemPrompt,
         })
+        if (pendingReadingId) {
+          await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: err?.message || 'Proxy error' } }).catch(() => {})
+        }
         return NextResponse.json(
           { error: language !== 'en' ? `本地代理錯誤：${err?.message || '未知錯誤'}` : `Local proxy error: ${err?.message || 'Unknown'}` },
           { status: 502 }
@@ -698,6 +734,11 @@ ${question ? `特别关注：${question}` : ''}`
           inputPreview: userMessage,
           systemPrompt,
         })
+
+        // Mark pending reading as failed
+        if (pendingReadingId) {
+          await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: err?.message || 'LLM error' } }).catch(() => {})
+        }
 
         if (err?.status === 401) {
           return NextResponse.json(
@@ -887,14 +928,6 @@ ${question ? `特别关注：${question}` : ''}`
 
     const resultToStore = JSON.stringify(structuredResult)
 
-    // Build calculation data for logging
-    const calculationData: Record<string, unknown> = {}
-    if (baziChart) calculationData.bazi = baziChart
-    if (ziweiChart) calculationData.ziwei = ziweiChart
-    if (qimenChart) calculationData.qimen = qimenChart
-    if (meihuaChart) calculationData.meihua = meihuaChart
-    if (liuyaoChart) calculationData.liuyao = liuyaoChart
-    const calculationDataStr = Object.keys(calculationData).length > 0 ? JSON.stringify(calculationData) : null
     const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
 
     // Deduct divination credit after successful generation
@@ -915,21 +948,15 @@ ${question ? `特别关注：${question}` : ''}`
       }
     }
 
-    if (shouldSaveHistory) {
-      const reading = await prisma.reading.create({
+    if (shouldSaveHistory && pendingReadingId) {
+      // Update the pending reading with completed result
+      const reading = await prisma.reading.update({
+        where: { id: pendingReadingId },
         data: {
-          userId: session.user.id,
-          type,
-          modelTier: "model1",
-          question: question || null,
-          inputData,
+          status: 'completed',
           result: resultToStore,
-          calculationData: calculationDataStr,
           llmPrompt: llmPromptStr,
           llmRawOutput: resultText,
-          language: language || 'zh-TW',
-          targetType,
-          familyMemberId: resolvedFamilyMemberId,
         },
       })
       return NextResponse.json({ reading: { ...reading, result: resultToStore }, saved: true })
