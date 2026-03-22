@@ -19,6 +19,12 @@ export async function POST(req: NextRequest) {
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
     }
+    if (typeof message === 'string' && message.length > 2000) {
+      return NextResponse.json({ error: 'Message too long (max 2000 characters)' }, { status: 400 })
+    }
+    if (Array.isArray(history) && history.length > 10) {
+      return NextResponse.json({ error: 'Too many history entries (max 10)' }, { status: 400 })
+    }
 
     // Grant daily bonus on first activity
     await grantDailyBonus(session.user.id)
@@ -186,7 +192,7 @@ ${user.chatSummary || '（暂无）'}
   } catch (e: unknown) {
     const err = e as Error
     console.error('Chat route error:', err?.message, err?.stack)
-    return NextResponse.json({ error: `Server error: ${err?.message || 'Unknown'}` }, { status: 500 })
+    return NextResponse.json({ error: 'An internal error occurred. Please try again later.' }, { status: 500 })
   }
 }
 

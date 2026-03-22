@@ -2,8 +2,16 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rateLimiter'
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 10 per minute per IP
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') || null
+  if (ip && !rateLimit(`errors:${ip}`, 10, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
   try {
     const session = await auth()
     const { endpoint, status, error, context } = await req.json()

@@ -3,3 +3,4 @@ node_modules
 .git
 *.md
 !divination-refs
+.env*

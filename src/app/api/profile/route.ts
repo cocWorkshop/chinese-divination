@@ -27,6 +27,12 @@ export async function PUT(req: NextRequest) {
     if (!currentPassword) {
       return NextResponse.json({ error: 'Current password required' }, { status: 400 })
     }
+    if (newPassword.length < 8) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
+    }
+    if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      return NextResponse.json({ error: 'Password must contain uppercase, lowercase, and a number' }, { status: 400 })
+    }
     const user = await prisma.user.findUnique({ where: { id: session.user.id } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
     const valid = await compare(currentPassword, user.password)

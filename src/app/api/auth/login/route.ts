@@ -3,11 +3,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { compare } from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { logAuth } from '@/lib/authLog'
+import { rateLimit } from '@/lib/rateLimiter'
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     req.headers.get('x-real-ip') || null
   const userAgent = req.headers.get('user-agent') || null
+
+  // Rate limit: 5 attempts per minute per IP
+  if (ip && !rateLimit(`login:${ip}`, 5, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many login attempts. Please try again later.' }, { status: 429 })
+  }
 
   try {
     const { email, password } = await req.json()

@@ -148,6 +148,9 @@ export async function POST(req: NextRequest) {
     if (!type || !inputData) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
+    if (typeof question === 'string' && question.length > 500) {
+      return NextResponse.json({ error: 'Question too long (max 500 characters)' }, { status: 400 })
+    }
 
     const shouldSaveHistory = saveHistory !== false
     const shouldSaveProfile = saveProfile === true

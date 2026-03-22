@@ -2,8 +2,16 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateToken, sendPasswordResetEmail } from '@/lib/email'
+import { rateLimit } from '@/lib/rateLimiter'
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 3 attempts per hour per IP
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') || null
+  if (ip && !rateLimit(`forgot:${ip}`, 3, 60 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+  }
+
   try {
     const { email } = await req.json()
     if (!email) {
