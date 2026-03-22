@@ -15,11 +15,29 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
       createdAt: true,
       question: true,
       inputData: true,
+      targetType: true,
       user: { select: { name: true } },
+      familyMember: { select: { name: true, relation: true } },
     },
   })
 
   if (!reading) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  // Determine the subject name (who the reading is about)
+  const inputData = reading.inputData as Record<string, unknown> || {}
+  let subjectName: string | null = null
+  if (reading.targetType === 'family' && reading.familyMember) {
+    subjectName = reading.familyMember.name || reading.familyMember.relation || null
+  } else {
+    subjectName = reading.user?.name || null
+  }
+
+  // Extract birth info from inputData if applicable
+  const birthInfo: Record<string, string | unknown> = {}
+  if (inputData.birthDate) birthInfo.birthDate = inputData.birthDate
+  if (inputData.birthTime) birthInfo.birthTime = inputData.birthTime
+  if (inputData.gender) birthInfo.gender = inputData.gender
+  if (inputData.lunarToggle) birthInfo.calendarType = inputData.lunarToggle
 
   return NextResponse.json({
     type: reading.type,
@@ -28,6 +46,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     createdAt: reading.createdAt,
     question: reading.question,
     inputData: reading.inputData,
-    authorName: reading.user?.name || null,
+    subjectName,
+    birthInfo: Object.keys(birthInfo).length > 0 ? birthInfo : null,
+    targetType: reading.targetType,
   })
 }

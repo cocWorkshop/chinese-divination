@@ -17,6 +17,17 @@ const typeLabels: Record<string, { zh: string; en: string }> = {
   other: { zh: '梅花易數 / 六壬', en: 'Meihua / Liuren' },
 }
 
+const genderLabels: Record<string, { zh: string; en: string }> = {
+  male: { zh: '男', en: 'Male' },
+  female: { zh: '女', en: 'Female' },
+}
+
+const timeLabels: Record<string, string> = {
+  zi: '子時 (23-01)', chou: '丑時 (01-03)', yin: '寅時 (03-05)', mao: '卯時 (05-07)',
+  chen: '辰時 (07-09)', si: '巳時 (09-11)', wu: '午時 (11-13)', wei: '未時 (13-15)',
+  shen: '申時 (15-17)', you: '酉時 (17-19)', xu: '戌時 (19-21)', hai: '亥時 (21-23)',
+}
+
 interface ReadingData {
   type: string
   result: string
@@ -24,7 +35,9 @@ interface ReadingData {
   createdAt: string
   question: string | null
   inputData: Record<string, unknown>
-  authorName: string | null
+  subjectName: string | null
+  birthInfo: { birthDate?: string; birthTime?: string; gender?: string; calendarType?: string } | null
+  targetType: string
 }
 
 export default function PublicReadingPage() {
@@ -102,10 +115,23 @@ export default function PublicReadingPage() {
           {data.question && (
             <p className="text-white/50 text-sm mt-2">❓ {data.question}</p>
           )}
-          <div className="flex justify-center gap-4 mt-3 text-xs text-white/30">
+          <div className="flex flex-wrap justify-center gap-3 mt-3 text-xs text-white/30">
             <span>🕐 {new Date(data.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')}</span>
-            {data.authorName && <span>👤 {data.authorName}</span>}
+            {data.subjectName && <span>👤 {data.subjectName}</span>}
           </div>
+          {data.birthInfo && (data.type === 'bazi' || data.type === 'ziwei' || data.type === 'qimen' || data.type === 'other') && (
+            <div className="flex flex-wrap justify-center gap-3 mt-2 text-xs text-white/40">
+              {data.birthInfo.birthDate && (
+                <span>📅 {data.birthInfo.birthDate}{data.birthInfo.calendarType === 'lunar' ? ' (農曆)' : ''}</span>
+              )}
+              {data.birthInfo.birthTime && (
+                <span>🕐 {timeLabels[data.birthInfo.birthTime] || data.birthInfo.birthTime}</span>
+              )}
+              {data.birthInfo.gender && (
+                <span>{data.birthInfo.gender === 'male' ? '♂' : '♀'} {lang === 'en' ? genderLabels[data.birthInfo.gender]?.en : genderLabels[data.birthInfo.gender]?.zh}</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Result */}
