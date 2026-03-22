@@ -12,5 +12,5 @@ export async function GET() {
   return NextResponse.json({
     divination: parseInt(s1?.value ?? '20'),
     chat: parseInt(s2?.value ?? '5'),
-  })
+  }, { headers: { 'Cache-Control': 'public, max-age=300' } })
 }

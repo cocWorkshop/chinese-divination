@@ -127,60 +127,56 @@ export default function DivinationFormPage() {
     setTierChecked(true)
   }, [type, session, lang, router])
 
-  // Auto-fill from saved profile (bazi & ziwei only)
+  // Unified init fetch — profile, credits, share bonus, family members
   useEffect(() => {
-    if (!session || profileLoaded) return
-    if (!['bazi', 'ziwei'].includes(type)) return
-    fetch('/api/profile')
+    if (!session) return
+    fetch('/api/init')
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         if (!data) return
-        setForm(f => ({
-          ...f,
-          birthDate:  data.birthDate  || f.birthDate,
-          birthTime:  data.birthTime  || f.birthTime,
-          birthPlace: data.birthPlace || f.birthPlace,
-          gender:     data.gender     || f.gender,
-          lunarToggle: data.calendarType || f.lunarToggle,
-          timeMode:   data.timeMode   || f.timeMode,
-          birthEnvironment: data.birthEnvironment || f.birthEnvironment,
-        }))
-        selfProfileRef.current = {
-          birthDate: data.birthDate || '',
-          birthTime: data.birthTime || '',
-          birthPlace: data.birthPlace || '',
-          gender: data.gender || '',
-          lunarToggle: data.calendarType || 'solar',
-          timeMode: data.timeMode || 'fuzzy',
-          birthEnvironment: data.birthEnvironment || '',
+
+        // Credits
+        if (data.credits) {
+          setCredits(data.credits)
+          if (data.credits.llmTimeoutSeconds) setLlmTimeoutMs(data.credits.llmTimeoutSeconds * 1000)
         }
-        setProfileLoaded(true)
-        if (data.birthDate || data.birthTime) {
-          toast.success(T(lang, '已從檔案自動填充生辰資訊', 'Profile info auto-filled'), { icon: '📋' })
+
+        // Share bonus
+        if (data.shareBonus) setShareBonus(data.shareBonus)
+
+        // Family members
+        if (data.familyMembers) setFamilyMembers(data.familyMembers)
+
+        // Profile auto-fill (bazi & ziwei only)
+        if (!profileLoaded && ['bazi', 'ziwei'].includes(type) && data.profile) {
+          const p = data.profile
+          setForm(f => ({
+            ...f,
+            birthDate:  p.birthDate  || f.birthDate,
+            birthTime:  p.birthTime  || f.birthTime,
+            birthPlace: p.birthPlace || f.birthPlace,
+            gender:     p.gender     || f.gender,
+            lunarToggle: p.calendarType || f.lunarToggle,
+            timeMode:   p.timeMode   || f.timeMode,
+            birthEnvironment: p.birthEnvironment || f.birthEnvironment,
+          }))
+          selfProfileRef.current = {
+            birthDate: p.birthDate || '',
+            birthTime: p.birthTime || '',
+            birthPlace: p.birthPlace || '',
+            gender: p.gender || '',
+            lunarToggle: p.calendarType || 'solar',
+            timeMode: p.timeMode || 'fuzzy',
+            birthEnvironment: p.birthEnvironment || '',
+          }
+          setProfileLoaded(true)
+          if (p.birthDate || p.birthTime) {
+            toast.success(T(lang, '已從檔案自動填充生辰資訊', 'Profile info auto-filled'), { icon: '📋' })
+          }
         }
       })
-      .catch(catchAndReport('/api/profile'))
+      .catch(catchAndReport('/api/init'))
   }, [session, type, profileLoaded, lang])
-
-  // Fetch credits
-  useEffect(() => {
-    if (!session) return
-    fetch('/api/credits').then(r => r.json()).then(data => {
-      setCredits(data)
-      if (data.llmTimeoutSeconds) setLlmTimeoutMs(data.llmTimeoutSeconds * 1000)
-
-    }).catch(catchAndReport('/api/credits'))
-    // Fetch share bonus info
-    fetch('/api/share/bonus').then(r => r.json()).then(setShareBonus).catch(catchAndReport('/api/share/bonus'))
-  }, [session])
-
-  // Fetch family members
-  useEffect(() => {
-    if (!session) return
-    fetch('/api/family-members').then(r => r.json()).then(data => {
-      setFamilyMembers(data.members || [])
-    }).catch(catchAndReport('/api/family-members'))
-  }, [session])
 
   const setField = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
