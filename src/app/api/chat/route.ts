@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { message, history } = await req.json()
+    const { message, history, readingContext, readingType } = await req.json()
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
     }
@@ -42,80 +42,60 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'AI service not configured.' }, { status: 503 })
     }
 
-    // Load user profile and family members
+    // Load minimal user info (no family members, no readings - context comes from frontend)
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { name: true, birthDate: true, birthTime: true, birthPlace: true, gender: true, chatSummary: true, familyMembers: true },
+      select: { name: true, birthDate: true, birthTime: true, birthPlace: true, gender: true, chatSummary: true },
     })
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Load last 5 readings with family member info
-    const readings = await prisma.reading.findMany({
-      where: { userId: session.user.id, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: { type: true, result: true, createdAt: true, targetType: true, familyMember: { select: { relation: true, name: true } }, feedbacks: { where: { userId: session.user.id }, select: { rating: true, feedback: true }, take: 1 } },
-    })
-
-    const relationLabel: Record<string, string> = { spouse: '配偶', father: '父亲', mother: '母亲', son: '儿子', daughter: '女儿', brother: '兄弟', sister: '姐妹', friend: '朋友', other: '其他' }
-
-    const readingsSummary = readings.map(r => {
-      let sections: Record<string, string> = {}
+    // Parse reading context from frontend (the current divination result)
+    let readingData = ''
+    if (readingContext) {
       try {
-        const parsed = JSON.parse(r.result)
-        sections = parsed.sections || {}
+        const parsed = JSON.parse(readingContext)
+        readingData = JSON.stringify(parsed, null, 0).substring(0, 3000)
       } catch {
-        sections = { overview: r.result.substring(0, 300) }
+        readingData = typeof readingContext === 'string' ? readingContext.substring(0, 3000) : ''
       }
-      const targetInfo = r.targetType === 'family' && r.familyMember
-        ? `（为${relationLabel[r.familyMember.relation] || r.familyMember.relation}${r.familyMember.name ? `「${r.familyMember.name}」` : ''}所做）`
-        : ''
-      const fb = r.feedbacks?.[0]
-      const fbInfo = fb ? `\n用户反馈：${fb.rating ? `${fb.rating}/5星` : ''}${fb.feedback ? ` — "${fb.feedback}"` : ''}` : ''
-      return `【${r.type} - ${r.createdAt.toLocaleDateString('zh-CN')}${targetInfo}】\n${JSON.stringify(sections).substring(0, 500)}${fbInfo}`
-    }).join('\n\n')
+    }
 
-    const familyInfo = user.familyMembers && user.familyMembers.length > 0
-      ? user.familyMembers.map(m => `- ${relationLabel[m.relation] || m.relation}${m.name ? `（${m.name}）` : ''}：生日${m.birthDate || '未知'}，时辰${m.birthTime || '未知'}，出生地${m.birthPlace || '未知'}，性别${m.gender || '未知'}`).join('\n')
-      : '（暂无）'
+    const typeLabel: Record<string, string> = {
+      bazi: '八字命理', ziwei: '紫微斗数', liuyao: '六爻', iching: '易经',
+      qimen: '奇门遁甲', fengshui: '风水', meihua: '梅花易数', other: '命理',
+    }
+    const currentType = typeLabel[readingType] || '命理'
 
-    const systemPrompt = `你是一位专业命理师，基于用户的命盘和基本信息进行分析。。
-用户信息：
+    const systemPrompt = `你是一位专业的${currentType}解盘师。你正在帮助用户深入分析他们刚刚获得的${currentType}预测结果。
+
+事主信息：
 - 姓名：${user.name || '未知'}
 - 出生日期：${user.birthDate || '未填写'}
 - 出生时辰：${user.birthTime || '未填写'}
 - 出生地：${user.birthPlace || '未填写'}
 - 性别：${user.gender || '未填写'}
 
-家庭成员：
-${familyInfo}
-
-历史命盘记录：
-${readingsSummary || '（暂无历史记录）'}
+当前${currentType}预测结果：
+${readingData || '（无预测数据）'}
 
 以往对话要点：
 ${user.chatSummary || '（暂无）'}
 
-请根据以上信息，用专业的命理知识回答用户问题。保持对话自然流畅，可以引用用户的具体命盘数据，要往正面方向引导，积极的态度看待问题。回答简洁而有深度，避免过于冗长，尽量控制在200字以内。
-当用户提到家人（如"老婆"、"儿子"、"爸爸"等），自然关联到对应家庭成员的命盘记录进行分析。
-如果用户对之前的预测有反馈（评分或文字），要参考其反馈来调整分析侧重点：低评分说明用户觉得不准，可以换角度深入分析；高评分可以在此基础上延伸。
-回答结果要专业且贴近用户实际情况，避免过于笼统的命理术语。
+【核心职责】
+你的唯一任务是围绕上述预测结果进行深入解读和分析。用户的每个问题都应该结合这份具体的预测结果来回答。
 
-【核心原则】
-- 引用用户命盘中的具体数据（年柱、月柱、日柱、时柱、五行格局等），避免泛泛而谈
-- 以积极正向的视角引导，即使是不利格局也要指出应对之道
-- 回答简洁有深度，控制在 200 字以内
-【家庭成员处理】
-用户提及家庭成员时（如"老婆""儿子""爸爸"等），自动调取对应成员的命盘记录进行关联分析
-【反馈自适应】
-- 用户给出低评分或负面反馈 → 说明当前角度不准，换维度重新切入（如从大运、流年、六亲宫位等不同层面分析）
-- 用户给出高评分或正面反馈 → 在已准确的方向上进一步延伸细化
-【对话风格】
-- 语言自然流畅，像与用户面对面交流
-- 专业术语需结合实际情境解释，避免堆砌术语
-- 每次回答聚焦一个核心问题，不做大而全的铺陈
+【分析原则】
+- 必须引用预测结果中的具体数据（如具体的星曜、卦象、爻辞、柱位、五行等），不做泛泛而谈
+- 将专业术语转化为用户能理解的实际影响和建议
+- 以积极正向的视角引导，不利格局也要指出化解之道
+- 每次回答聚焦用户的具体问题，给出有针对性的分析
+
+【回答要求】
+- 控制在 200 字以内，简洁有深度
+- 语言自然流畅，像面对面解盘
+- 不要重复已经在预测结果中说过的内容，要在此基础上深入或换角度分析
 `
 
     // Read configurable timeout and chat model
