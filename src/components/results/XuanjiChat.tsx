@@ -13,6 +13,7 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   link?: { text: string; href: string }
+  retryMessage?: string // store failed user message for retry
 }
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
@@ -106,17 +107,39 @@ export default function XuanjiChat({ readingResult, readingType }: {
             link: { text: T(lang, '購買更多額度 →', 'Purchase more credits →'), href: '/subscribe' },
           }])
         } else {
-          setMessages(prev => [...prev, { role: 'assistant', content: `${T(lang, '錯誤', 'Error')}：${data.error || T(lang, '請稍後再試', 'Please try again')}` }])
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: `${T(lang, '錯誤', 'Error')}：${data.error || T(lang, '請稍後再試', 'Please try again')}`,
+            retryMessage: userMsg,
+          }])
         }
         reportError({ endpoint: '/api/chat', status: res.status, error: data.error || 'Unknown', context: 'xuanji-chat-tab' })
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Network error'
-      setMessages(prev => [...prev, { role: 'assistant', content: T(lang, '網路錯誤，請檢查連接後重試。', 'Network error, please check your connection.') }])
-      reportError({ endpoint: '/api/chat', error: msg, context: 'xuanji-chat-tab' })
+      const errMsg = e instanceof Error ? e.message : 'Network error'
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: T(lang, '網路連接錯誤', 'Network connection error'),
+        retryMessage: userMsg,
+      }])
+      reportError({ endpoint: '/api/chat', error: errMsg, context: 'xuanji-chat-tab' })
     }
     setLoading(false)
     setTimeout(() => inputRef.current?.focus(), 100)
+  }
+
+  const handleRetry = (retryMsg: string, errorIndex: number) => {
+    // Remove the error message and the failed user message before it
+    setMessages(prev => {
+      const newMsgs = [...prev]
+      newMsgs.splice(errorIndex, 1) // remove error
+      if (errorIndex > 0 && newMsgs[errorIndex - 1]?.role === 'user' && newMsgs[errorIndex - 1]?.content === retryMsg) {
+        newMsgs.splice(errorIndex - 1, 1) // remove failed user msg
+      }
+      return newMsgs
+    })
+    // Resend
+    setTimeout(() => sendMessage(retryMsg), 100)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -205,6 +228,15 @@ export default function XuanjiChat({ readingResult, readingType }: {
                     <a href={msg.link.href} className="block mt-2 text-sm font-semibold underline hover:opacity-80" style={{ color: 'var(--gold)' }}>
                       {msg.link.text}
                     </a>
+                  )}
+                  {msg.retryMessage && (
+                    <button
+                      onClick={() => handleRetry(msg.retryMessage!, i)}
+                      className="block mt-2 text-sm font-semibold underline hover:opacity-80 cursor-pointer"
+                      style={{ color: 'var(--gold)', background: 'none', border: 'none', padding: 0 }}
+                    >
+                      🔄 {T(lang, '點擊重試', 'Click to retry')}
+                    </button>
                   )}
                 </div>
               </div>
