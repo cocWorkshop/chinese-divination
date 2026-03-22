@@ -19,10 +19,9 @@ const { execSync } = require('child_process')
 const path = require('path')
 try {
   console.log('> Running database migrations...')
-  const prismaBin = path.join(__dirname, 'node_modules', '.bin', 'prisma')
-  execSync(`${prismaBin} migrate deploy --schema=./prisma/schema.prisma`, {
+  execSync(`npx prisma migrate deploy --schema=./prisma/schema.prisma`, {
     stdio: 'inherit',
-    env: { ...process.env, PATH: `${path.join(__dirname, 'node_modules', '.bin')}:${process.env.PATH || ''}` }
+    env: { ...process.env }
   })
   console.log('> Migrations complete')
 } catch (e) {

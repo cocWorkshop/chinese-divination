@@ -29,10 +29,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/divination-refs ./divination-refs
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/.bin/ ./node_modules/.bin/
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/start.js ./start.js
+COPY --from=builder /app/package.json ./package.json
+RUN npm install prisma --no-save
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
