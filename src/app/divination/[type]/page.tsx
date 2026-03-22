@@ -58,6 +58,7 @@ interface FamilyMember {
 const typeInfo: Record<string, { zhName: string; twName: string; enName: string; symbol: string }> = {
   bazi: { zhName: '八字命理', twName: '八字命理', enName: 'BaZi Analysis', symbol: '☰' },
   iching: { zhName: '易经占卜', twName: '易經占卜', enName: 'I Ching Oracle', symbol: '☯' },
+  liuyao: { zhName: '六爻占卜', twName: '六爻占卜', enName: 'Liu Yao Divination', symbol: '☯' },
   ziwei: { zhName: '紫微斗数', twName: '紫微斗數', enName: 'Zi Wei Dou Shu', symbol: '⭐' },
   qimen: { zhName: '奇门遁甲', twName: '奇門遁甲', enName: 'Qi Men Dun Jia', symbol: '⚡' },
   fengshui: { zhName: '风水布局', twName: '風水佈局', enName: 'Feng Shui Analysis', symbol: '🏯' },
@@ -85,6 +86,7 @@ export default function DivinationFormPage() {
     yearBuilt: '',
     ownerInfo: '',
     readingDateTime: new Date().toISOString().slice(0, 16),
+    liuyaoLines: '', // JSON string of 6 lines, each {coins: [0|1, 0|1, 0|1], value: 6|7|8|9}
     subType: 'meihua',
     lunarToggle: 'solar',
     birthEnvironment: '',
@@ -697,6 +699,112 @@ export default function DivinationFormPage() {
             </div>
           </>}
 
+          {/* Liu Yao 六爻 */}
+          {type === 'liuyao' && <>
+            <div>
+              <label className={labelCls}>{T(lang, '您的問題', 'Your Question')}</label>
+              <textarea className={inputCls + ' h-24 resize-none'} value={form.question} onChange={e => setField('question', e.target.value)} required placeholder={T(lang, '心中默念所問之事，一事一占，問題越具體越好...', 'Focus on one specific question...')} />
+            </div>
+            <div className="border border-gold/20 rounded-xl p-3 sm:p-4 bg-navy-900/50 space-y-4">
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+                🪙 {T(lang, '搖卦（三枚銅錢法）', 'Cast Hexagram (Three Coin Method)')}
+              </p>
+              <p className="text-white/40 text-xs leading-relaxed">
+                {T(lang,
+                  '每次擲三枚銅錢，字面為陰（值2），背面為陽（值3）。三枚合計：6=老陰（變爻）、7=少陽、8=少陰、9=老陽（變爻）。共擲六次，從初爻到上爻。',
+                  'Toss 3 coins each time. Heads=2 (Yin), Tails=3 (Yang). Sum: 6=Old Yin (changing), 7=Young Yang, 8=Young Yin, 9=Old Yang (changing). Toss 6 times, from bottom to top.'
+                )}
+              </p>
+              {(() => {
+                const lines: { coins: number[]; value: number }[] = form.liuyaoLines ? JSON.parse(form.liuyaoLines) : []
+                const currentLine = lines.length
+                const yaoNames = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻']
+                const yaoNamesEn = ['1st Line', '2nd Line', '3rd Line', '4th Line', '5th Line', '6th Line']
+                const valueLabels: Record<number, { zh: string; en: string; type: string }> = {
+                  6: { zh: '老陰 ⚋✕', en: 'Old Yin ⚋✕', type: 'changing' },
+                  7: { zh: '少陽 ⚊', en: 'Young Yang ⚊', type: 'stable' },
+                  8: { zh: '少陰 ⚋', en: 'Young Yin ⚋', type: 'stable' },
+                  9: { zh: '老陽 ⚊✕', en: 'Old Yang ⚊✕', type: 'changing' },
+                }
+
+                const tossCoins = () => {
+                  const coins: number[] = [0, 0, 0].map(() => Math.random() < 0.5 ? 2 : 3) // 2=yin(字), 3=yang(背)
+                  const value = coins.reduce((a, b) => a + b, 0)
+                  const newLines = [...lines, { coins, value }]
+                  setField('liuyaoLines', JSON.stringify(newLines))
+                }
+
+                const resetLines = () => {
+                  setField('liuyaoLines', '')
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {/* Cast lines display */}
+                    {lines.length > 0 && (
+                      <div className="space-y-1.5">
+                        {[...lines].reverse().map((line, ri) => {
+                          const i = lines.length - 1 - ri
+                          const label = valueLabels[line.value]
+                          const isChanging = line.value === 6 || line.value === 9
+                          return (
+                            <div key={i} className={`flex items-center gap-3 px-3 py-1.5 rounded-lg ${isChanging ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-navy-800/50'}`}>
+                              <span className="text-white/40 text-xs w-10">{T(lang, yaoNames[i], yaoNamesEn[i])}</span>
+                              <div className="flex gap-1">
+                                {line.coins.map((c, ci) => (
+                                  <span key={ci} className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${c === 2 ? 'bg-navy-700 text-white/60 border border-white/20' : 'bg-gold/80 text-navy-900'}`}>
+                                    {c === 2 ? T(lang, '字', 'H') : T(lang, '背', 'T')}
+                                  </span>
+                                ))}
+                              </div>
+                              <span className="text-gold text-xs font-mono">{line.value}</span>
+                              <span className={`text-xs ${isChanging ? 'text-amber-400' : 'text-white/50'}`}>
+                                {T(lang, label.zh, label.en)}
+                              </span>
+                              {/* Line visual */}
+                              <div className="ml-auto flex items-center gap-0.5">
+                                {(line.value === 7 || line.value === 9) ? (
+                                  <div className={`w-12 h-1.5 rounded ${isChanging ? 'bg-amber-400' : 'bg-gold/60'}`} />
+                                ) : (
+                                  <>
+                                    <div className={`w-5 h-1.5 rounded ${isChanging ? 'bg-amber-400' : 'bg-gold/40'}`} />
+                                    <div className="w-1.5" />
+                                    <div className={`w-5 h-1.5 rounded ${isChanging ? 'bg-amber-400' : 'bg-gold/40'}`} />
+                                  </>
+                                )}
+                                {isChanging && <span className="text-amber-400 text-xs ml-1">✕</span>}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Toss button or complete */}
+                    <div className="flex items-center gap-3">
+                      {currentLine < 6 ? (
+                        <button type="button" onClick={tossCoins}
+                          className="flex-1 px-5 py-3 border border-gold/50 text-gold rounded-xl hover:border-gold hover:bg-gold/10 transition-all text-center">
+                          🪙 {T(lang, `擲第${currentLine + 1}次 — ${yaoNames[currentLine]}`, `Toss #${currentLine + 1} — ${yaoNamesEn[currentLine]}`)}
+                        </button>
+                      ) : (
+                        <div className="flex-1 text-center py-2">
+                          <span className="text-jade text-sm font-semibold">✅ {T(lang, '六爻已成，可以解卦', 'All 6 lines cast, ready to divine')}</span>
+                        </div>
+                      )}
+                      {lines.length > 0 && (
+                        <button type="button" onClick={resetLines}
+                          className="px-3 py-2 text-white/40 hover:text-white/70 text-xs transition-colors">
+                          {T(lang, '重擲', 'Reset')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          </>}
+
           {/* Zi Wei */}
           {type === 'ziwei' && <>
             <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-4">
@@ -995,7 +1103,7 @@ export default function DivinationFormPage() {
 
           <button
             type="submit"
-            disabled={isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)}
+            disabled={(isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) || (type === 'liuyao' && (!form.liuyaoLines || (JSON.parse(form.liuyaoLines || '[]')).length < 6))}
             className="w-full py-4 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {T(lang, '解卦 →', 'Consult Oracle →')}

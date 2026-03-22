@@ -16,21 +16,15 @@ interface Pillar {
   shenSha?: ShenShaEntry[]
 }
 interface TrueSolarTimeInfo {
-  originalTime: string
-  correctedTime: string
-  correctionMinutes: number
-  longitude: number
-  shichen: string
-  shichenChanged: boolean
+  originalTime: string; correctedTime: string; correctionMinutes: number
+  longitude: number; shichen: string; shichenChanged: boolean
 }
 interface ShenShaEntry { name: string; description: string }
 interface DaYunEntry {
   stem: string; branch: string; nayin: string
   startAge: number; startYear: number; endAge: number; endYear: number
 }
-interface XiaoYunEntry {
-  stem: string; branch: string; age: number; year: number
-}
+interface XiaoYunEntry { stem: string; branch: string; age: number; year: number }
 interface QiYunInfo {
   direction: string; startAge: number; startAgeLabel: string
   startYear: number; startMonth: number
@@ -57,13 +51,16 @@ const STEM_ELEMENT_MAP: Record<string, string> = {
   '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水',
 }
 
-const elementColor: Record<string, string> = {
+const elClr: Record<string, string> = {
   金: 'text-gray-300', 木: 'text-green-400', 水: 'text-blue-400', 火: 'text-red-400', 土: 'text-yellow-500',
   metal: 'text-gray-300', wood: 'text-green-400', water: 'text-blue-400', fire: 'text-red-400', earth: 'text-yellow-500',
 }
-const elementBg: Record<string, string> = {
+const elBg: Record<string, string> = {
   金: 'bg-gray-300/10 border-gray-300/30', 木: 'bg-green-400/10 border-green-400/30',
   水: 'bg-blue-400/10 border-blue-400/30', 火: 'bg-red-400/10 border-red-400/30', 土: 'bg-yellow-500/10 border-yellow-500/30',
+}
+const elBar: Record<string, string> = {
+  木: 'bg-green-400', 火: 'bg-red-400', 土: 'bg-yellow-500', 金: 'bg-gray-300', 水: 'bg-blue-400',
 }
 
 const sectionsList = [
@@ -75,17 +72,20 @@ const sectionsList = [
   { key: 'daYunDetail', label: '大運精批', icon: '🔮' },
 ]
 
+const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+
 export default function BaziResult({ data, isShared, rawResult }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string }) {
   const d = data as unknown as BaziData
   const { lang } = useLang()
   const [activeSection, setActiveSection] = useState('overview')
   const [showChart, setShowChart] = useState(lang !== 'en')
+  const [showExtra, setShowExtra] = useState(false)
 
   const pillars = [
-    { label: '年柱', data: d.pillars?.year },
-    { label: '月柱', data: d.pillars?.month },
-    { label: '日柱', data: d.pillars?.day },
-    { label: '時柱', data: d.pillars?.hour },
+    { label: '年柱', en: 'Year', data: d.pillars?.year },
+    { label: '月柱', en: 'Month', data: d.pillars?.month },
+    { label: '日柱', en: 'Day', data: d.pillars?.day },
+    { label: '時柱', en: 'Hour', data: d.pillars?.hour },
   ]
 
   const fe = d.fiveElements || {}
@@ -93,27 +93,20 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
     ['木', fe.wood || 0], ['火', fe.fire || 0], ['土', fe.earth || 0], ['金', fe.metal || 0], ['水', fe.water || 0],
   ]
   const feMax = Math.max(...feEntries.map(([, v]) => v), 1)
-
   const tst = d.trueSolarTime
 
+  // Collect all shenSha
+  const allPillarShenSha = pillars.some(p => (p.data?.shenSha?.length || 0) > 0)
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-4">
       {/* Chart toggle for English mode */}
       {lang === 'en' && (
-        <button
-          onClick={() => setShowChart(!showChart)}
-          className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all text-sm"
-          style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--gold)' }}
-        >
-          <span className="font-serif flex items-center gap-2">
-            ☰ BaZi Chart Details
-          </span>
-          <motion.span
-            animate={{ rotate: showChart ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            ▼
-          </motion.span>
+        <button onClick={() => setShowChart(!showChart)}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
+          style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--gold)' }}>
+          <span className="font-serif flex items-center gap-2">☰ BaZi Chart</span>
+          <motion.span animate={{ rotate: showChart ? 180 : 0 }} transition={{ duration: 0.2 }}>▼</motion.span>
         </button>
       )}
 
@@ -124,253 +117,287 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="space-y-6 overflow-hidden"
+          className="space-y-3 overflow-hidden"
         >
 
-      {/* True Solar Time Info Bar */}
-      {tst && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="glass-card rounded-xl p-3 sm:p-4 border border-blue-400/30 bg-blue-400/5">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-blue-400 text-xs sm:text-sm">🕐 真太陽時校正</span>
-          </div>
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
-            <div>
-              <span className="text-white/40">標準時間：</span>
-              <span className="text-white/80">{tst.originalTime}</span>
-            </div>
-            <div>
-              <span className="text-white/40">真太陽時：</span>
-              <span className="text-white/80">{tst.correctedTime}</span>
-            </div>
-            <div>
-              <span className="text-white/40">出生經度：</span>
-              <span className="text-white/80">{tst.longitude}°E</span>
-            </div>
-            <div>
-              <span className="text-white/40">時差修正：</span>
-              <span className={`${tst.correctionMinutes >= 0 ? 'text-green-400' : 'text-orange-400'}`}>
-                {tst.correctionMinutes >= 0 ? '+' : ''}{tst.correctionMinutes.toFixed(1)}分鐘
-              </span>
-            </div>
-          </div>
-          {tst.shichenChanged && (
-            <div className="mt-2 text-orange-400 text-xs font-semibold">
-              ⚠️ 真太陽時校正後時辰發生變化，已自動調整為{tst.shichen}
-            </div>
-          )}
-        </motion.div>
-      )}
+      {/* ═══ COMPACT FOUR PILLARS TABLE ═══ */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        className="glass-card rounded-xl p-2 sm:p-4 border border-gold/20">
 
-      {/* Four Pillars */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-5">
-        <h3 className="text-gold font-serif text-lg mb-4 text-center">四柱命盤</h3>
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
-          {pillars.map(({ label, data: p }) => {
-            const stemTenGod = p?.tenGods?.find(t => t.stem === p.stem)
-            return (
-              <div key={label} className={`rounded-xl border p-2 sm:p-3 text-center ${p ? elementBg[p.element] || 'border-gold/20' : 'border-gold/20'}`}>
-                <div className="text-white/50 text-[10px] sm:text-xs mb-1 sm:mb-2">{label}</div>
-                <div className={`text-xl sm:text-2xl font-serif font-bold ${p ? elementColor[p.element] : 'text-white'}`}>
-                  {p?.stem || '?'}
-                </div>
-                {stemTenGod && label !== '日柱' && (
-                  <div className="text-white/40 text-[9px] sm:text-[10px]">({stemTenGod.god})</div>
-                )}
-                {label === '日柱' && (
-                  <div className="text-gold text-[9px] sm:text-[10px]">(日主)</div>
-                )}
-                <div className={`text-lg sm:text-xl font-serif mt-0.5 sm:mt-1 ${p ? elementColor[p.element] : 'text-white'}`}>
-                  {p?.branch || '?'}
-                </div>
-                {/* Hidden Stems */}
-                {p?.hiddenStems && p.hiddenStems.length > 0 && (
-                  <div className="text-white/30 text-[9px] sm:text-[10px] mt-0.5 sm:mt-1">
-                    藏: {p.hiddenStems.join(' ')}
-                  </div>
-                )}
-                <div className="text-white/50 text-[10px] sm:text-xs mt-0.5 sm:mt-1">{p?.element || ''}</div>
-                <div className="text-white/40 text-[9px] sm:text-[10px]">{p?.nayin || ''}</div>
-              </div>
-            )
-          })}
-        </div>
+        {/* True Solar Time — tiny indicator */}
+        {tst && (
+          <div className="flex items-center gap-1.5 mb-2 px-1">
+            <span className="text-blue-400 text-[10px]">🕐</span>
+            <span className="text-white/40 text-[10px]">
+              {tst.originalTime} → {tst.correctedTime} ({tst.correctionMinutes >= 0 ? '+' : ''}{tst.correctionMinutes.toFixed(0)}min)
+            </span>
+            {tst.shichenChanged && <span className="text-amber-400 text-[10px]">⚠️時辰已變</span>}
+          </div>
+        )}
+
+        {/* Table-style pillars */}
+        <table className="w-full text-center border-collapse">
+          <thead>
+            <tr>
+              <td className="text-white/30 text-[10px] sm:text-xs py-1 w-12 sm:w-16"></td>
+              {pillars.map(p => (
+                <td key={p.label} className="text-white/50 text-[10px] sm:text-xs py-1 font-medium">
+                  {T(lang, p.label, p.en)}
+                </td>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {/* Row: 主星 (Ten God of stem) */}
+            <tr className="border-t border-white/5">
+              <td className="text-white/30 text-[10px] py-1">{T(lang, '主星', 'God')}</td>
+              {pillars.map(({ label, data: p }) => {
+                const god = label === '日柱' ? '日主' : p?.tenGods?.[0]?.god || ''
+                return <td key={label} className="text-white/60 text-[10px] sm:text-xs py-1">{god}</td>
+              })}
+            </tr>
+            {/* Row: 天干 */}
+            <tr className="border-t border-white/10">
+              <td className="text-white/30 text-[10px] py-1">{T(lang, '天干', 'Stem')}</td>
+              {pillars.map(({ label, data: p }) => (
+                <td key={label} className="py-1.5">
+                  <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[p?.element || ''] || 'text-white'}`}>
+                    {p?.stem || '?'}
+                  </span>
+                </td>
+              ))}
+            </tr>
+            {/* Row: 地支 */}
+            <tr className="border-t border-white/10">
+              <td className="text-white/30 text-[10px] py-1">{T(lang, '地支', 'Branch')}</td>
+              {pillars.map(({ label, data: p }) => (
+                <td key={label} className="py-1.5">
+                  <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[p?.element || ''] || 'text-white'}`}>
+                    {p?.branch || '?'}
+                  </span>
+                </td>
+              ))}
+            </tr>
+            {/* Row: 藏干 */}
+            <tr className="border-t border-white/5">
+              <td className="text-white/30 text-[10px] py-1">{T(lang, '藏干', 'Hidden')}</td>
+              {pillars.map(({ label, data: p }) => (
+                <td key={label} className="text-white/40 text-[10px] py-1 leading-tight">
+                  {(p?.hiddenStems || []).map((hs, i) => {
+                    const hEl = STEM_ELEMENT_MAP[hs] || ''
+                    return <span key={i} className={`${elClr[hEl] || 'text-white/40'}`}>{hs}{hEl} </span>
+                  })}
+                </td>
+              ))}
+            </tr>
+            {/* Row: 副星 (hidden stem gods) */}
+            <tr className="border-t border-white/5">
+              <td className="text-white/30 text-[10px] py-1">{T(lang, '副星', 'Sub')}</td>
+              {pillars.map(({ label, data: p }) => (
+                <td key={label} className="text-white/30 text-[10px] py-1 leading-tight">
+                  {(p?.tenGods || []).slice(1).map((tg, i) => (
+                    <div key={i}>{tg.god}</div>
+                  ))}
+                </td>
+              ))}
+            </tr>
+            {/* Row: 十二长生 */}
+            <tr className="border-t border-white/5">
+              <td className="text-white/30 text-[10px] py-1">{T(lang, '長生', 'Stage')}</td>
+              {pillars.map(({ label, data: p }) => (
+                <td key={label} className="text-white/40 text-[10px] py-1">{p?.changSheng || ''}</td>
+              ))}
+            </tr>
+            {/* Row: 纳音 */}
+            <tr className="border-t border-white/5">
+              <td className="text-white/30 text-[10px] py-1">{T(lang, '納音', 'Nayin')}</td>
+              {pillars.map(({ label, data: p }) => (
+                <td key={label} className="text-white/30 text-[10px] py-1">{p?.nayin || ''}</td>
+              ))}
+            </tr>
+            {/* Row: 空亡 */}
+            <tr className="border-t border-white/5">
+              <td className="text-white/30 text-[10px] py-1">{T(lang, '空亡', 'Void')}</td>
+              {pillars.map(({ label, data: p }) => (
+                <td key={label} className="text-white/30 text-[10px] py-1">{(p?.kongWang || []).join('')}</td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
       </motion.div>
 
-      {/* Day Master + Five Elements */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        <div className="glass-card rounded-xl p-4 sm:p-5 text-center border border-gold/20">
-          <h3 className="text-gold font-serif text-sm mb-2 sm:mb-3">日主</h3>
-          <div className={`text-3xl sm:text-4xl font-serif font-bold mb-1 ${elementColor[d.dayMaster?.element || '']}`}>{d.dayMaster?.stem}</div>
-          <div className={`text-sm ${elementColor[d.dayMaster?.element || '']}`}>
-            {d.dayMaster?.yinYang || ''}{d.dayMaster?.element}
+      {/* ═══ COMPACT: Day Master + Five Elements + Lucky/Avoid ═══ */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+        className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
+        <div className="flex items-start gap-3 sm:gap-4">
+          {/* Day Master badge */}
+          <div className="text-center flex-shrink-0">
+            <div className={`text-2xl sm:text-3xl font-serif font-bold ${elClr[d.dayMaster?.element || '']}`}>
+              {d.dayMaster?.stem}
+            </div>
+            <div className={`text-[10px] ${elClr[d.dayMaster?.element || '']}`}>
+              {d.dayMaster?.yinYang || ''}{d.dayMaster?.element}
+            </div>
+            <div className="mt-1 px-2 py-0.5 rounded-full bg-gold/10 border border-gold/30 text-gold text-[10px]">
+              {d.dayMaster?.strengthLabel || d.dayMaster?.strength}
+            </div>
           </div>
-          <div className="mt-2 sm:mt-3 px-3 py-1 rounded-full bg-gold/10 border border-gold/30 text-gold text-xs inline-block">
-            {d.dayMaster?.strengthLabel || d.dayMaster?.strength}
-          </div>
-        </div>
 
-        <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
-          <h3 className="text-gold font-serif text-sm mb-2 sm:mb-3">五行分佈</h3>
-          <div className="space-y-2">
+          {/* Five Elements bars */}
+          <div className="flex-1 space-y-1">
             {feEntries.map(([el, count]) => (
-              <div key={el} className="flex items-center gap-2">
-                <div className={`w-5 text-xs ${elementColor[el]}`}>{el}</div>
-                <div className="flex-1 bg-navy-900 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full transition-all ${el === '木' ? 'bg-green-400' : el === '火' ? 'bg-red-400' : el === '土' ? 'bg-yellow-500' : el === '金' ? 'bg-gray-300' : 'bg-blue-400'}`}
-                    style={{ width: `${(count / feMax) * 100}%` }}
-                  />
+              <div key={el} className="flex items-center gap-1.5">
+                <span className={`w-4 text-[10px] ${elClr[el]}`}>{el}</span>
+                <div className="flex-1 bg-navy-900 rounded-full h-1.5">
+                  <div className={`h-1.5 rounded-full ${elBar[el]}`} style={{ width: `${(count / feMax) * 100}%` }} />
                 </div>
-                <div className="text-white/50 text-xs w-6 text-right">{count}</div>
+                <span className="text-white/40 text-[10px] w-4 text-right">{count}</span>
               </div>
             ))}
           </div>
+
+          {/* Lucky/Avoid compact */}
+          <div className="flex-shrink-0 text-right space-y-1">
+            <div>
+              <span className="text-white/40 text-[10px]">{T(lang, '喜', 'Lucky')}: </span>
+              {(d.luckyElements || []).map(el => (
+                <span key={el} className={`text-[10px] sm:text-xs font-bold ${elClr[el] || ''}`}>{el}</span>
+              ))}
+            </div>
+            <div>
+              <span className="text-white/40 text-[10px]">{T(lang, '忌', 'Avoid')}: </span>
+              {(d.avoidElements || []).map(el => (
+                <span key={el} className="text-red-400 text-[10px] sm:text-xs font-bold">{el}</span>
+              ))}
+            </div>
+          </div>
         </div>
       </motion.div>
 
-      {/* Lucky/Avoid */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-6 flex-wrap">
-        <div>
-          <span className="text-white/50 text-xs mr-2">喜用神:</span>
-          {(d.luckyElements || []).map(el => (
-            <span key={el} className={`inline-block px-2 py-0.5 rounded-full border text-xs mr-1 ${elementBg[el] || ''} ${elementColor[el] || ''}`}>{el}</span>
-          ))}
-        </div>
-        <div>
-          <span className="text-white/50 text-xs mr-2">忌神:</span>
-          {(d.avoidElements || []).map(el => (
-            <span key={el} className="inline-block px-2 py-0.5 rounded-full border border-red-400/30 bg-red-400/10 text-red-400 text-xs mr-1">{el}</span>
-          ))}
-        </div>
-      </motion.div>
+      {/* ═══ COLLAPSIBLE: Shen Sha + Da Yun + Xiao Yun ═══ */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+        <button onClick={() => setShowExtra(!showExtra)}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all"
+          style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)' }}>
+          <span className="flex items-center gap-2">
+            {T(lang, '📋 神煞 · 大運 · 小運', '📋 Spirits · Da Yun · Xiao Yun')}
+          </span>
+          <motion.span animate={{ rotate: showExtra ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-gold">▼</motion.span>
+        </button>
 
-      {/* Shen Sha — per pillar */}
-      {(() => {
-        const pillarLabels = [
-          { key: 'year', label: '年柱' }, { key: 'month', label: '月柱' },
-          { key: 'day', label: '日柱' }, { key: 'hour', label: '時柱' },
-        ] as const
-        const pillars = { year: d.pillars.year, month: d.pillars.month, day: d.pillars.day, hour: d.pillars.hour }
-        const hasPillarShenSha = pillarLabels.some(p => (pillars[p.key]?.shenSha?.length || 0) > 0)
-        // Fallback to flat shenSha for old data
-        const hasFlat = d.shenSha && d.shenSha.length > 0
-        if (!hasPillarShenSha && !hasFlat) return null
-        return (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}
-            className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
-            <h3 className="text-gold font-serif text-sm mb-3">神煞</h3>
-            {hasPillarShenSha ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {pillarLabels.map(p => {
-                  const ss = pillars[p.key]?.shenSha || []
-                  return (
-                    <div key={p.key}>
-                      <div className="text-white/40 text-xs mb-1.5">{p.label}</div>
-                      <div className="space-y-1">
-                        {ss.length > 0 ? ss.map((s, i) => (
-                          <div key={i} className="group relative px-2 py-1 rounded border border-gold/20 bg-gold/5 text-gold text-xs cursor-default">
-                            {s.name}
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-navy-800 border border-gold/30 rounded text-white/70 text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                              {s.description}
-                            </div>
+        <AnimatePresence>
+        {showExtra && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden space-y-3 mt-2"
+          >
+            {/* Shen Sha per pillar */}
+            {(allPillarShenSha || (d.shenSha && d.shenSha.length > 0)) && (
+              <div className="glass-card rounded-xl p-3 border border-gold/20">
+                <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '神煞', 'Shen Sha')}</h3>
+                {allPillarShenSha ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {(['year','month','day','hour'] as const).map(key => {
+                      const p = d.pillars[key]
+                      const ss = p?.shenSha || []
+                      const label = key === 'year' ? '年' : key === 'month' ? '月' : key === 'day' ? '日' : '時'
+                      return (
+                        <div key={key}>
+                          <div className="text-white/40 text-[10px] mb-1">{label}</div>
+                          <div className="flex flex-wrap gap-0.5">
+                            {ss.length > 0 ? ss.map((s, i) => (
+                              <span key={i} className="group relative px-1.5 py-0.5 rounded border border-gold/20 bg-gold/5 text-gold text-[10px] cursor-default">
+                                {s.name}
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-navy-800 border border-gold/30 rounded text-white/70 text-[9px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                  {s.description}
+                                </span>
+                              </span>
+                            )) : <span className="text-white/15 text-[10px]">—</span>}
                           </div>
-                        )) : <div className="text-white/20 text-xs">—</div>}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {d.shenSha!.map((ss, i) => (
-                  <div key={i} className="group relative px-3 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-gold text-xs cursor-default">
-                    {ss.name}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-navy-800 border border-gold/30 rounded text-white/70 text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      {ss.description}
-                    </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                ))}
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {d.shenSha!.map((ss, i) => (
+                      <span key={i} className="px-1.5 py-0.5 rounded border border-gold/20 bg-gold/5 text-gold text-[10px]">{ss.name}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Da Yun */}
+            {d.daYun && d.daYun.length > 0 && (
+              <div className="glass-card rounded-xl p-3 border border-gold/20">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-gold font-serif text-xs">{T(lang, '大運', 'Da Yun')}</h3>
+                  {d.qiYun && (
+                    <span className="text-white/30 text-[9px]">
+                      {d.qiYun.direction} · {d.qiYun.startAgeLabel}{T(lang, '起運', ' start')}
+                    </span>
+                  )}
+                </div>
+                <div className="overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-1.5 min-w-max">
+                    {d.daYun.map((dy, i) => {
+                      const el = STEM_ELEMENT_MAP[dy.stem] || ''
+                      return (
+                        <div key={i} className={`rounded-lg border px-2 py-1.5 text-center min-w-[60px] ${elBg[el] || 'border-gold/20'}`}>
+                          <div className="text-white/30 text-[9px]">{dy.startAge}-{dy.endAge}</div>
+                          <div className={`text-sm font-serif font-bold ${elClr[el] || 'text-white'}`}>{dy.stem}{dy.branch}</div>
+                          <div className="text-white/20 text-[9px]">{dy.startYear}-{dy.endYear}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Xiao Yun */}
+            {d.xiaoYun && d.xiaoYun.length > 0 && (
+              <div className="glass-card rounded-xl p-3 border border-gold/20">
+                <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '小運（起運前）', 'Xiao Yun')}</h3>
+                <div className="flex flex-wrap gap-1">
+                  {d.xiaoYun.map((xy, i) => (
+                    <div key={i} className="px-1.5 py-1 rounded border border-white/10 bg-white/5 text-center">
+                      <div className="text-white/20 text-[8px]">{xy.age}{T(lang, '歲', '')}</div>
+                      <div className="text-white/60 text-xs font-serif">{xy.stem}{xy.branch}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </motion.div>
-        )
-      })()}
-
-      {/* Da Yun (大运) Timeline */}
-      {d.daYun && d.daYun.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
-          className="glass-card rounded-xl p-5 border border-gold/20">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-1">
-            <h3 className="text-gold font-serif text-sm">大運</h3>
-            {d.qiYun && (
-              <div className="text-white/40 text-[9px] sm:text-[10px]">
-                {d.qiYun.direction} | {d.qiYun.startAgeLabel}起運 | {d.qiYun.nearestJieQi}（{d.qiYun.nearestJieQiDate}）
-              </div>
-            )}
-          </div>
-          <div className="overflow-x-auto">
-            <div className="flex gap-2 min-w-max">
-              {d.daYun.map((dy, i) => {
-                const el = STEM_ELEMENT_MAP[dy.stem] || ''
-                return (
-                  <div key={i} className={`rounded-lg border p-2.5 text-center min-w-[72px] ${elementBg[el] || 'border-gold/20'}`}>
-                    <div className="text-white/40 text-[10px] mb-1">{dy.startAge}-{dy.endAge}歲</div>
-                    <div className={`text-lg font-serif font-bold ${elementColor[el] || 'text-white'}`}>
-                      {dy.stem}{dy.branch}
-                    </div>
-                    <div className="text-white/40 text-[10px]">{dy.nayin}</div>
-                    <div className="text-white/30 text-[9px] mt-0.5">{dy.startYear}-{dy.endYear}</div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Xiao Yun (小运) */}
-      {d.xiaoYun && d.xiaoYun.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.19 }}
-          className="glass-card rounded-xl p-4 border border-gold/20">
-          <h3 className="text-gold font-serif text-sm mb-3">小運（起運前）</h3>
-          <div className="flex flex-wrap gap-2">
-            {d.xiaoYun.map((xy, i) => (
-              <div key={i} className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-center">
-                <div className="text-white/30 text-[9px]">{xy.age}歲</div>
-                <div className="text-white/70 text-sm font-serif">{xy.stem}{xy.branch}</div>
-                <div className="text-white/30 text-[9px]">{xy.year}</div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
+        )}
+        </AnimatePresence>
+      </motion.div>
 
         </motion.div>
       )}
       </AnimatePresence>
 
-      {/* Sections Tabs */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <div className="flex flex-wrap gap-1 mb-4">
+      {/* ═══ SECTIONS TABS ═══ */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <div className="flex flex-wrap gap-1 mb-3">
           {sectionsList.map(s => (
-            <button
-              key={s.key}
-              onClick={() => setActiveSection(s.key)}
-              className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}
-            >
+            <button key={s.key} onClick={() => setActiveSection(s.key)}
+              className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}>
               {s.icon} {s.label}
             </button>
           ))}
           {!isShared && (
-            <button
-              onClick={() => setActiveSection('xuanji')}
-              className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
+            <button onClick={() => setActiveSection('xuanji')}
+              className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 font-semibold shadow-lg shadow-gold/20 ${
                 activeSection === 'xuanji'
-                  ? 'bg-gradient-to-r from-amber-600 to-gold text-navy-950 font-semibold shadow-lg shadow-gold/20'
-                  : 'text-gold/70 hover:text-gold border border-gold/30 bg-gold/5'
-              }`}
-            >
+                  ? 'bg-gradient-to-r from-amber-600 to-gold text-navy-950'
+                  : 'bg-gradient-to-r from-amber-600/80 to-gold/80 text-navy-950/90 ring-1 ring-gold/50'
+              }`}>
               ☯ 玄機破
             </button>
           )}
@@ -383,16 +410,15 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
             exit={{ opacity: 0, x: -10 }}
           >
             {activeSection !== 'xuanji' && (
-              <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
-                {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
+              <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+                {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
               </div>
             )}
           </motion.div>
         </AnimatePresence>
         {!isShared && (
-          <div className={`rounded-xl p-5 text-sm leading-relaxed mt-4 ${activeSection === 'xuanji' ? '' : 'hidden'}`}
-            style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--border-gold)' }}
-          >
+          <div className={`rounded-xl p-2 sm:p-5 text-sm leading-relaxed mt-2 sm:mt-4 ${activeSection === 'xuanji' ? '' : 'hidden'}`}
+            style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--border-gold)' }}>
             <XuanjiChat readingResult={rawResult || ''} readingType="bazi" />
           </div>
         )}
@@ -400,12 +426,12 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
 
       {/* Key Advice */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <h3 className="text-gold font-serif mb-3">核心建議</h3>
-          <div className="grid gap-3">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <h3 className="text-gold font-serif text-sm mb-2">{T(lang, '核心建議', 'Key Advice')}</h3>
+          <div className="grid gap-2">
             {d.keyAdvice.map((advice, i) => (
-              <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
-                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
+              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">
+                <span className="w-5 h-5 rounded-full bg-gold/20 text-gold text-[10px] flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
                 <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
               </div>
             ))}
@@ -415,18 +441,18 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
 
       {/* Lucky Info */}
       {d.luckyInfo && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="grid grid-cols-3 gap-2 sm:gap-3">
-          <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-            <div className="text-white/40 text-xs mb-1">吉数</div>
-            <div className="text-gold font-serif">{(d.luckyInfo.numbers || []).join(' · ')}</div>
-          </div>
-          <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-            <div className="text-white/40 text-xs mb-1">吉色</div>
-            <div className="text-gold font-serif text-sm">{(d.luckyInfo.colors || []).join(' ')}</div>
-          </div>
-          <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-            <div className="text-white/40 text-xs mb-1">吉方</div>
-            <div className="text-gold font-serif text-sm">{(d.luckyInfo.directions || []).join(' ')}</div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+          className="glass-card rounded-xl p-3 border border-gold/20">
+          <div className="flex flex-wrap gap-4 text-xs">
+            {d.luckyInfo.numbers?.length > 0 && (
+              <div><span className="text-white/40">{T(lang, '幸運數:', 'Lucky #:')}</span> <span className="text-gold">{d.luckyInfo.numbers.join(', ')}</span></div>
+            )}
+            {d.luckyInfo.colors?.length > 0 && (
+              <div><span className="text-white/40">{T(lang, '幸運色:', 'Colors:')}</span> <span className="text-gold">{d.luckyInfo.colors.join(', ')}</span></div>
+            )}
+            {d.luckyInfo.directions?.length > 0 && (
+              <div><span className="text-white/40">{T(lang, '吉方位:', 'Directions:')}</span> <span className="text-gold">{d.luckyInfo.directions.join(', ')}</span></div>
+            )}
           </div>
         </motion.div>
       )}
