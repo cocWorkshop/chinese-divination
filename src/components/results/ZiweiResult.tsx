@@ -389,10 +389,10 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
           {!isShared && (
             <button
               onClick={() => setActiveSection('xuanji')}
-              className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-1.5 font-semibold shadow-lg shadow-gold/20 ${
                 activeSection === 'xuanji'
-                  ? 'bg-gradient-to-r from-amber-600 to-gold text-navy-950 font-semibold shadow-lg shadow-gold/20'
-                  : 'text-gold/70 hover:text-gold border border-gold/30 bg-gold/5'
+                  ? 'bg-gradient-to-r from-amber-600 to-gold text-navy-950'
+                  : 'bg-gradient-to-r from-amber-600/80 to-gold/80 text-navy-950/90 ring-1 ring-gold/50'
               }`}
             >
               ☯ 玄機破
@@ -414,7 +414,7 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
           </motion.div>
         </AnimatePresence>
         {!isShared && (
-          <div className={`rounded-xl p-5 text-sm leading-relaxed mt-4 ${activeSection === 'xuanji' ? '' : 'hidden'}`}
+          <div className={`rounded-xl p-2 sm:p-5 text-sm leading-relaxed mt-2 sm:mt-4 ${activeSection === 'xuanji' ? '' : 'hidden'}`}
             style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--border-gold)' }}
           >
             <XuanjiChat readingResult={rawResult || ''} readingType="ziwei" />

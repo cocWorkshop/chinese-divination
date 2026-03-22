@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { message, history, readingContext, readingType } = await req.json()
+    const { message, history } = await req.json()
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
     }
@@ -72,8 +72,7 @@ export async function POST(req: NextRequest) {
       ? user.familyMembers.map(m => `- ${relationLabel[m.relation] || m.relation}${m.name ? `（${m.name}）` : ''}：生日${m.birthDate || '未知'}，时辰${m.birthTime || '未知'}，出生地${m.birthPlace || '未知'}，性别${m.gender || '未知'}`).join('\n')
       : '（暂无）'
 
-    const systemPrompt = `你是玄机命理助手，专门回答用户关于命理、占卜的问题。
-
+    const systemPrompt = `你是一位专业命理师，基于用户的命盘和基本信息进行分析。。
 用户信息：
 - 姓名：${user.name || '未知'}
 - 出生日期：${user.birthDate || '未填写'}
@@ -90,10 +89,25 @@ ${readingsSummary || '（暂无历史记录）'}
 以往对话要点：
 ${user.chatSummary || '（暂无）'}
 
-请根据以上信息，用专业的命理知识回答用户问题。保持对话自然流畅，可以引用用户的具体命盘数据。回答简洁而有深度，避免过于冗长。
+请根据以上信息，用专业的命理知识回答用户问题。保持对话自然流畅，可以引用用户的具体命盘数据，要往正面方向引导，积极的态度看待问题。回答简洁而有深度，避免过于冗长，尽量控制在200字以内。
 当用户提到家人（如"老婆"、"儿子"、"爸爸"等），自然关联到对应家庭成员的命盘记录进行分析。
 如果用户对之前的预测有反馈（评分或文字），要参考其反馈来调整分析侧重点：低评分说明用户觉得不准，可以换角度深入分析；高评分可以在此基础上延伸。
-${readingContext ? `\n【当前正在查看的命盘详情（${readingType || '未知类型'}）】\n${readingContext.substring(0, 3000)}\n\n用户正在查看这份命盘解读，请重点基于这份命盘来回答问题。回答要有深度、有依据，引用具体的命盘数据（如天干地支、星曜、宫位等）。` : ''}`
+回答结果要专业且贴近用户实际情况，避免过于笼统的命理术语。
+
+【核心原则】
+- 引用用户命盘中的具体数据（年柱、月柱、日柱、时柱、五行格局等），避免泛泛而谈
+- 以积极正向的视角引导，即使是不利格局也要指出应对之道
+- 回答简洁有深度，控制在 200 字以内
+【家庭成员处理】
+用户提及家庭成员时（如"老婆""儿子""爸爸"等），自动调取对应成员的命盘记录进行关联分析
+【反馈自适应】
+- 用户给出低评分或负面反馈 → 说明当前角度不准，换维度重新切入（如从大运、流年、六亲宫位等不同层面分析）
+- 用户给出高评分或正面反馈 → 在已准确的方向上进一步延伸细化
+【对话风格】
+- 语言自然流畅，像与用户面对面交流
+- 专业术语需结合实际情境解释，避免堆砌术语
+- 每次回答聚焦一个核心问题，不做大而全的铺陈
+`
 
     // Read configurable timeout and chat model
     const [timeoutSetting, chatModelSetting, model1Setting] = await Promise.all([

@@ -25,6 +25,11 @@ const suggestedQuestions: Record<string, { zh: string; en: string }[]> = {
     { zh: '四化飛星揭示了什麼天機？', en: 'What secrets do the Four Transformations reveal?' },
     { zh: '我命盤中最有利的宮位是哪個？', en: 'Which palace is most favorable in my chart?' },
   ],
+  liuyao: [
+    { zh: '用神旺衰如何？事情成敗關鍵是什麼？', en: 'How strong is the Yong Shen? What determines success?' },
+    { zh: '應期在什麼時候？', en: 'When will this matter come to fruition?' },
+    { zh: '變卦暗示了什麼最終結果？', en: 'What final outcome does the changed hexagram suggest?' },
+  ],
 }
 
 export default function XuanjiChat({ readingResult, readingType }: {
@@ -36,6 +41,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [chatUsage, setChatUsage] = useState<{ used: number; limit: number } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -74,6 +80,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
       const data = await res.json()
       if (res.ok) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+        if (data.chatUsage) setChatUsage(data.chatUsage)
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: `${T(lang, '錯誤', 'Error')}：${data.error || T(lang, '請稍後再試', 'Please try again')}` }])
         reportError({ endpoint: '/api/chat', status: res.status, error: data.error || 'Unknown', context: 'xuanji-chat-tab' })
@@ -112,11 +119,11 @@ export default function XuanjiChat({ readingResult, readingType }: {
   return (
     <div className="flex flex-col" style={{ minHeight: '400px' }}>
       {/* Messages area */}
-      <div className="flex-1 space-y-4 mb-4 scrollbar-hide" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+      <div className="flex-1 space-y-3 sm:space-y-4 mb-3 sm:mb-4 scrollbar-hide" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
         {messages.length === 0 ? (
           /* Welcome + suggested questions */
-          <div className="text-center py-8">
-            <div className="mb-6">
+          <div className="text-center py-4 sm:py-8">
+            <div className="mb-4 sm:mb-6">
               <YinYangIcon size={40} className="mx-auto mb-3" />
               <h3 className="font-serif text-lg mb-1" style={{ color: 'var(--gold)' }}>
                 {T(lang, '玄機破', 'Xuanji Po')}
@@ -130,7 +137,7 @@ export default function XuanjiChat({ readingResult, readingType }: {
                 <button
                   key={i}
                   onClick={() => sendMessage(lang === 'en' ? q.en : q.zh)}
-                  className="w-full text-left px-4 py-3 rounded-xl text-sm transition-all hover:opacity-80"
+                  className="w-full text-left px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl text-sm transition-all hover:opacity-80"
                   style={{ border: '1px solid var(--border-gold)', color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
                   onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--gold)' }}
                   onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
@@ -145,16 +152,16 @@ export default function XuanjiChat({ readingResult, readingType }: {
           /* Chat messages */
           <>
             {messages.map((msg, i) => (
-              <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={i} className={`flex gap-2 sm:gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
                     style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.15)', border: '1px solid var(--border-gold)' }}>
-                    <YinYangIcon size={18} />
+                    <YinYangIcon size={14} className="sm:hidden" /><YinYangIcon size={18} className="hidden sm:block" />
                   </div>
                 )}
                 <div
-                  className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                    msg.role === 'user' ? 'max-w-[70%] rounded-br-sm' : 'max-w-[85%] rounded-bl-sm'
+                  className={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                    msg.role === 'user' ? 'max-w-[80%] sm:max-w-[70%] rounded-br-sm' : 'max-w-[92%] sm:max-w-[85%] rounded-bl-sm'
                   }`}
                   style={msg.role === 'user'
                     ? { backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }
@@ -166,12 +173,12 @@ export default function XuanjiChat({ readingResult, readingType }: {
               </div>
             ))}
             {loading && (
-              <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              <div className="flex gap-2 sm:gap-3 justify-start">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.15)', border: '1px solid var(--border-gold)' }}>
-                  <YinYangIcon size={18} />
+                  <YinYangIcon size={14} className="sm:hidden" /><YinYangIcon size={18} className="hidden sm:block" />
                 </div>
-                <div className="rounded-2xl rounded-bl-sm px-4 py-3"
+                <div className="rounded-2xl rounded-bl-sm px-3 py-2 sm:px-4 sm:py-3"
                   style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--border-gold)' }}>
                   <MysticalLoader lang={lang} variant="chat" />
                 </div>
@@ -183,8 +190,8 @@ export default function XuanjiChat({ readingResult, readingType }: {
       </div>
 
       {/* Input area */}
-      <div className="pt-3 mt-auto" style={{ borderTop: '1px solid var(--border-gold)' }}>
-        <div className="flex gap-2">
+      <div className="pt-2 sm:pt-3 mt-auto" style={{ borderTop: '1px solid var(--border-gold)' }}>
+        <div className="flex gap-1.5 sm:gap-2">
           <input
             ref={inputRef}
             type="text"
@@ -192,22 +199,35 @@ export default function XuanjiChat({ readingResult, readingType }: {
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={T(lang, '破解什麼玄機？', 'What mystery to decode?')}
-            className="flex-1 rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+            className="flex-1 rounded-xl px-3 py-2 sm:px-4 sm:py-2.5 text-sm focus:outline-none transition-colors"
             style={{
               backgroundColor: 'var(--input-bg)',
               border: '1px solid var(--border-gold)',
               color: 'var(--text-primary)',
             }}
-            disabled={loading}
+            disabled={loading || (chatUsage !== null && chatUsage.used >= chatUsage.limit)}
           />
-          <button
-            onClick={() => sendMessage()}
-            disabled={loading || !input.trim()}
-            className="px-4 py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
-          >
-            {T(lang, '發送', 'Send')}
-          </button>
+          {chatUsage !== null && chatUsage.used >= chatUsage.limit ? (
+            <a
+              href="/pricing"
+              className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-colors text-center whitespace-nowrap"
+              style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
+            >
+              {T(lang, '訂閱', 'Subscribe')}
+            </a>
+          ) : (
+            <button
+              onClick={() => sendMessage()}
+              disabled={loading || !input.trim()}
+              className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl text-sm font-semibold hover:opacity-80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
+              style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}
+            >
+              {chatUsage && chatUsage.limit > 0
+                ? `${T(lang, '發送', 'Send')} ${chatUsage.used}/${chatUsage.limit}`
+                : T(lang, '發送', 'Send')
+              }
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -57,6 +57,9 @@ export default function Navbar() {
                 {lang === 'zh-TW' ? '歷史' : 'History'}
               </Link>
             )}
+            <Link href="/subscribe" className="text-white/80 hover:text-gold transition-colors">
+              {lang === 'en' ? 'Subscribe' : '訂閱'}
+            </Link>
             {session && (
               <button
                 onClick={handleShare}
@@ -153,6 +156,9 @@ export default function Navbar() {
         <div className="md:hidden border-t px-4 py-4 flex flex-col gap-3" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-gold)' }}>
           <Link href="/divination" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
             {lang === 'en' ? 'Divination' : '占卜'}
+          </Link>
+          <Link href="/subscribe" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+            {lang === 'en' ? 'Subscribe' : '訂閱'}
           </Link>
           {session && (
             <Link href="/dashboard" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>

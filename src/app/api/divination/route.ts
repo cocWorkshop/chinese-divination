@@ -12,6 +12,7 @@ import { checkModelLimit, incrementModelUsage } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
 import { calculateZiwei, ZiweiChart } from '@/lib/ziweiCalculator'
 import { calculateQimen, QimenChart } from '@/lib/qimenCalculator'
+import { calculateLiuYao, LiuYaoChart } from '@/lib/liuyaoCalculator'
 import { calculateMeihua, MeihuaChart } from '@/lib/meihuaCalculator'
 import { logLlmCall } from '@/lib/llmLogger'
 import { Lunar } from 'lunar-typescript'
@@ -19,6 +20,7 @@ import { Lunar } from 'lunar-typescript'
 const refFileMap: Record<string, string> = {
   bazi: 'bazi.md',
   iching: 'iching.md',
+  liuyao: 'liuyao.md',
   ziwei: 'ziwei.md',
   qimen: 'qimen.md',
   fengshui: 'fengshui.md',
@@ -60,6 +62,19 @@ const schemas: Record<string, object> = {
     judgment: '卦辞原文', image: '象辞解析', interpretation: '针对问题的解读(100+字)',
     changingLines: [{ position: 3, text: '变爻说明' }],
     advice: '具体建议(100+字)', outcome: '吉/凶/中/大吉/小凶',
+    keyPoints: ['要点一', '要点二', '要点三'],
+  },
+  liuyao: {
+    type: 'liuyao',
+    guaCi: '卦辞原文及解析(100字以上)',
+    yaoCi: '相关爻辞解析(100字以上，重点变爻)',
+    interpretation: '针对问题的综合解读(200字以上)',
+    sixRelativeAnalysis: '六亲分析：用神、原神、忌神、仇神关系(150字以上)',
+    shiYingAnalysis: '世应分析(100字以上)',
+    changingAnalysis: '变卦分析(若有变爻，100字以上)',
+    timing: '应期判断：事情可能发生的时间(50字以上)',
+    advice: '具体建议(100字以上)',
+    outcome: '吉/凶/中/大吉/小凶',
     keyPoints: ['要点一', '要点二', '要点三'],
   },
   ziwei: {
@@ -234,6 +249,7 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
     let baziChart: BaziChart | null = null
     let ziweiChart: ZiweiChart | null = null
     let qimenChart: QimenChart | null = null
+    let liuyaoChart: LiuYaoChart | null = null
     let meihuaChart: MeihuaChart | null = null
 
     // Lunar→Solar conversion if user selected lunar calendar
@@ -458,6 +474,74 @@ ${question ? `- 求测问题：${question}` : '- 求测问题：综合运势'}
       } catch (e) {
         console.error('Meihua calculation error:', e)
         userMessage = `请为我进行${type}分析。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+输入信息：${JSON.stringify(inputData, null, 2)}
+${question ? `特别关注：${question}` : ''}`
+      }
+    } else if (type === 'liuyao' && inputData.liuyaoLines) {
+      try {
+        const rawLines = JSON.parse(inputData.liuyaoLines)
+        liuyaoChart = calculateLiuYao(rawLines)
+        const orig = liuyaoChart.originalHexagram
+        const changed = liuyaoChart.changedHexagram
+        userMessage = `请为我进行六爻占卜解卦。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+## 程序预计算的六爻卦象（已验证准确，请直接使用）
+${JSON.stringify({
+  originalHexagram: {
+    name: orig.name,
+    fullName: orig.fullName,
+    number: orig.number,
+    palace: orig.palace,
+    palaceElement: orig.palaceElement,
+    upperTrigram: { name: orig.upperTrigram.name, symbol: orig.upperTrigram.symbol, element: orig.upperTrigram.element, nature: orig.upperTrigram.nature },
+    lowerTrigram: { name: orig.lowerTrigram.name, symbol: orig.lowerTrigram.symbol, element: orig.lowerTrigram.element, nature: orig.lowerTrigram.nature },
+    lines: orig.lines.map(l => ({
+      position: l.position,
+      yaoName: l.yaoName,
+      value: l.value,
+      isYang: l.isYang,
+      isChanging: l.isChanging,
+      branch: l.branch,
+      element: l.element,
+      sixRelative: l.sixRelative,
+      isShiYao: l.isShiYao,
+      isYingYao: l.isYingYao,
+    })),
+  },
+  changedHexagram: changed ? {
+    name: changed.name,
+    fullName: changed.fullName,
+    number: changed.number,
+    lines: changed.lines.map(l => ({
+      position: l.position,
+      branch: l.branch,
+      element: l.element,
+      sixRelative: l.sixRelative,
+    })),
+  } : null,
+  changingLines: liuyaoChart.changingLines,
+  castTime: liuyaoChart.castTime,
+}, null, 2)}
+
+## 用户问题
+${question || '综合问事'}
+
+## 解卦要求
+你是资深六爻术数师，请基于以上程序排出的卦象进行断卦。重点：
+1. **guaCi**：本卦（${orig.fullName}）卦辞及解析（100字以上）
+2. **yaoCi**：相关爻辞解析，重点变爻（100字以上）
+3. **interpretation**：针对问题的综合解读，结合六亲、世应、用神分析（200字以上）
+4. **sixRelativeAnalysis**：六亲关系分析——确定用神、原神、忌神、仇神（150字以上）
+5. **shiYingAnalysis**：世应分析——世爻代表求卦人，应爻代表对方/事物（100字以上）
+${changed ? `6. **changingAnalysis**：变卦（${changed.fullName}）分析——事物最终走向（100字以上）` : ''}
+7. **timing**：应期判断——事情可能发生的时间（50字以上）
+8. **advice**：具体建议（100字以上）
+
+卦象数据以程序计算结果为准，你只负责解卦分析。`
+      } catch (e) {
+        console.error('LiuYao calculation error:', e)
+        userMessage = `请为我进行六爻占卜分析。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 输入信息：${JSON.stringify(inputData, null, 2)}
 ${question ? `特别关注：${question}` : ''}`
@@ -802,6 +886,7 @@ ${question ? `特别关注：${question}` : ''}`
     if (ziweiChart) calculationData.ziwei = ziweiChart
     if (qimenChart) calculationData.qimen = qimenChart
     if (meihuaChart) calculationData.meihua = meihuaChart
+    if (liuyaoChart) calculationData.liuyao = liuyaoChart
     const calculationDataStr = Object.keys(calculationData).length > 0 ? JSON.stringify(calculationData) : null
     const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
 
