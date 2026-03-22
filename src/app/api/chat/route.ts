@@ -135,6 +135,12 @@ ${user.chatSummary || '（暂无）'}
 
     const reply = completion.choices[0]?.message?.content
     if (!reply) {
+      await logLlmCall({
+        userId: session.user.id, endpoint: 'chat', model: chatModel,
+        promptTokens: completion.usage?.prompt_tokens, completionTokens: completion.usage?.completion_tokens,
+        totalTokens: completion.usage?.total_tokens, latencyMs: Date.now() - chatStart,
+        status: 'error', inputPreview: message, outputPreview: 'Empty reply from LLM',
+      })
       return NextResponse.json({ error: 'AI 未能生成回覆，額度未扣除。\nAI failed to generate a reply. Credits not deducted.' }, { status: 502 })
     }
 
@@ -175,6 +181,17 @@ ${user.chatSummary || '（暂无）'}
   } catch (e: unknown) {
     const err = e as Error
     console.error('Chat route error:', err?.message, err?.stack)
+    // Log error to LlmLog if we have user context
+    try {
+      const session = await auth()
+      if (session?.user?.id) {
+        await logLlmCall({
+          userId: session.user.id, endpoint: 'chat', model: 'unknown',
+          latencyMs: 0, status: 'error',
+          inputPreview: 'Chat request failed', outputPreview: err?.message || 'Unknown error',
+        })
+      }
+    } catch { /* ignore logging errors */ }
     return NextResponse.json({ error: 'An internal error occurred. Please try again later.' }, { status: 500 })
   }
 }
