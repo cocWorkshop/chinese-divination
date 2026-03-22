@@ -1025,13 +1025,26 @@ export default function DivinationFormPage() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={(isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) || (type === 'liuyao' && (!form.liuyaoLines || (JSON.parse(form.liuyaoLines || '[]')).length < 6))}
-            className="w-full py-4 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {T(lang, '解卦 →', 'Consult Oracle →')}
-          </button>
+          {session && credits && credits.divination && credits.divination.remaining !== 999 && credits.divination.remaining <= 0 ? (
+            <button
+              type="button"
+              onClick={() => router.push('/subscribe')}
+              className="w-full py-4 rounded-xl font-semibold text-lg transition-colors bg-gradient-to-r from-amber-600 to-gold text-navy-950 hover:opacity-90"
+            >
+              {T(lang, '額度不足 · 購買額度 →', 'No Credits · Purchase Credits →')}
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={(isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) || (type === 'liuyao' && (!form.liuyaoLines || (JSON.parse(form.liuyaoLines || '[]')).length < 6))}
+              className="w-full py-4 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {session && credits?.divination && credits.divination.remaining !== 999
+                ? `${T(lang, '解卦', 'Consult Oracle')} (${credits.divination.remaining}) →`
+                : T(lang, '解卦 →', 'Consult Oracle →')
+              }
+            </button>
+          )}
 
           {!session && (
             <p className="text-center text-white/50 text-sm">
