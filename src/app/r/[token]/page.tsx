@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import ResultRenderer from '@/components/results/ResultRenderer'
 import MysticalLoader from '@/components/MysticalLoader'
+import { catchAndReport } from '@/lib/errorReporter'
 
 const typeLabels: Record<string, { zh: string; en: string }> = {
   bazi: { zh: '八字命理', en: 'BaZi Analysis' },
@@ -56,7 +57,7 @@ export default function PublicReadingPage() {
       .then(d => {
         if (d) { setData(d); setLoading(false) }
       })
-      .catch(() => { setNotFound(true); setLoading(false) })
+      .catch((err) => { catchAndReport('/api/claim')(err); setNotFound(true); setLoading(false) })
   }, [token])
 
   if (loading) {

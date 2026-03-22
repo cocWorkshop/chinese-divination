@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useLang } from '@/components/LanguageContext'
+import { catchAndReport } from '@/lib/errorReporter'
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
@@ -24,7 +25,7 @@ export default function ConsentPopup() {
     fetch('/api/consent')
       .then(r => r.json())
       .then(d => { if (d.needsConsent) setNeedsConsent(true) })
-      .catch(() => {})
+      .catch(catchAndReport('/api/consent'))
   }, [session])
 
   const handleAgree = async () => {
