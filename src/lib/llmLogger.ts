@@ -13,6 +13,7 @@ interface LlmLogEntry {
   errorMessage?: string
   inputPreview?: string
   outputPreview?: string
+  systemPrompt?: string
 }
 
 export async function logLlmCall(entry: LlmLogEntry): Promise<void> {
@@ -29,8 +30,9 @@ export async function logLlmCall(entry: LlmLogEntry): Promise<void> {
         latencyMs: entry.latencyMs || 0,
         status: entry.status || 'success',
         errorMessage: entry.errorMessage || null,
-        inputPreview: entry.inputPreview?.slice(0, 500) || null,
-        outputPreview: entry.outputPreview?.slice(0, 500) || null,
+        inputPreview: entry.inputPreview || null,
+        outputPreview: entry.outputPreview || null,
+        systemPrompt: entry.systemPrompt || null,
       },
     })
   } catch (err) {

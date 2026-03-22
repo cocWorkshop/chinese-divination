@@ -145,8 +145,9 @@ model LlmLog {
   latencyMs     Int      @default(0)
   status        String   @default("success") // "success" | "error"
   errorMessage  String?
-  inputPreview  String?  @db.Text // first 200 chars of user message
-  outputPreview String?  @db.Text // first 200 chars of response
+  inputPreview  String?  @db.Text // user message (full)
+  outputPreview String?  @db.Text // LLM response (full)
+  systemPrompt  String?  @db.Text // system prompt (full)
   createdAt     DateTime @default(now())
 
   @@index([userId])

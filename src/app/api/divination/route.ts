@@ -531,6 +531,7 @@ ${question ? `特别关注：${question}` : ''}`
           latencyMs: Date.now() - llmStart,
           status: 'success',
           inputPreview: userMessage,
+          systemPrompt,
           outputPreview: resultText,
         })
       } catch (proxyErr: unknown) {
@@ -544,6 +545,7 @@ ${question ? `特别关注：${question}` : ''}`
           status: 'error',
           errorMessage: err?.message || 'Proxy error',
           inputPreview: userMessage,
+          systemPrompt,
         })
         return NextResponse.json(
           { error: language !== 'en' ? `本地代理錯誤：${err?.message || '未知錯誤'}` : `Local proxy error: ${err?.message || 'Unknown'}` },
@@ -587,6 +589,7 @@ ${question ? `特别关注：${question}` : ''}`
           latencyMs: Date.now() - llmStart,
           status: 'success',
           inputPreview: userMessage,
+          systemPrompt,
           outputPreview: resultText,
         })
       } catch (apiErr: unknown) {
@@ -603,6 +606,7 @@ ${question ? `特别关注：${question}` : ''}`
           status: 'error',
           errorMessage: err?.message || 'Unknown error',
           inputPreview: userMessage,
+          systemPrompt,
         })
 
         if (err?.status === 401) {
