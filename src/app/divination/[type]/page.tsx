@@ -1027,13 +1027,21 @@ export default function DivinationFormPage() {
           )}
 
           {session && credits && credits.divination && credits.divination.remaining !== 999 && credits.divination.remaining <= 0 ? (
-            <button
-              type="button"
-              onClick={() => router.push('/subscribe')}
-              className="w-full py-4 rounded-xl font-semibold text-lg transition-colors bg-gradient-to-r from-amber-600 to-gold text-navy-950 hover:opacity-90"
-            >
-              {T(lang, '額度不足 · 購買額度 →', 'No Credits · Purchase Credits →')}
-            </button>
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => router.push('/subscribe')}
+                className="w-full py-4 rounded-xl font-semibold text-lg transition-colors bg-gradient-to-r from-amber-600 to-gold text-navy-950 hover:opacity-90"
+              >
+                {T(lang, '額度不足 · 購買額度 →', 'No Credits · Purchase Credits →')}
+              </button>
+              <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+                {T(lang,
+                  '💡 每日登入 +1 | 分享給朋友 +1 | 更多方式見額度商店',
+                  '💡 Daily login +1 | Share with friends +1 | More at Credits Store'
+                )}
+              </p>
+            </div>
           ) : (
             <button
               type="submit"

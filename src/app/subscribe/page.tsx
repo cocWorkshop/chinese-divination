@@ -92,6 +92,27 @@ export default function SubscribePage() {
           </div>
         )}
 
+        {/* Free credits policy */}
+        <div className="glass-card rounded-xl p-5 sm:p-6 mb-8 max-w-lg mx-auto" style={{ border: '1px solid var(--border-gold)' }}>
+          <h3 className="text-sm font-semibold mb-3 text-center" style={{ color: 'var(--gold)' }}>
+            🎁 {T(lang, '免費獲取額度', 'Earn Free Credits')}
+          </h3>
+          <div className="space-y-2.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            <div className="flex items-center justify-between">
+              <span>{T(lang, '📝 新用戶註冊', '📝 New user registration')}</span>
+              <span style={{ color: 'var(--gold)' }}>{T(lang, '占卜 3 + 問答 3', '3 divination + 3 chat')}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>{T(lang, '📅 每日登入', '📅 Daily login')}</span>
+              <span style={{ color: 'var(--gold)' }}>{T(lang, '占卜 1 + 問答 1', '1 divination + 1 chat')}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>{T(lang, '🔗 分享給朋友', '🔗 Share with friends')}</span>
+              <span style={{ color: 'var(--gold)' }}>{T(lang, '占卜 1 + 問答 2', '1 divination + 2 chat')}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Status messages */}
         {success && (
           <div className="mb-8 p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#22c55e' }}>
