@@ -42,8 +42,38 @@ export default function XuanjiChat({ readingResult, readingType }: {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [chatRemaining, setChatRemaining] = useState<number | null>(null)
+  const [dynamicQuestions, setDynamicQuestions] = useState<{ zh: string; en: string }[] | null>(null)
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Fetch dynamic suggested questions based on reading content
+  useEffect(() => {
+    if (!session || !readingResult) return
+    setSuggestionsLoading(true)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000)
+
+    fetch('/api/chat/suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ readingResult, readingType, lang }),
+      signal: controller.signal,
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.questions?.length >= 3) {
+          setDynamicQuestions(data.questions.map((q: string) => ({ zh: q, en: q })))
+        }
+      })
+      .catch(() => { /* fallback to static */ })
+      .finally(() => {
+        clearTimeout(timeout)
+        setSuggestionsLoading(false)
+      })
+
+    return () => { clearTimeout(timeout); controller.abort() }
+  }, [session, readingResult, readingType, lang])
 
   // Scroll to latest message within the chat area (internal scroll only)
   useEffect(() => {
@@ -101,7 +131,8 @@ export default function XuanjiChat({ readingResult, readingType }: {
     }
   }
 
-  const questions = suggestedQuestions[readingType] || suggestedQuestions.bazi
+  const staticQuestions = suggestedQuestions[readingType] || suggestedQuestions.bazi
+  const questions = dynamicQuestions || staticQuestions
 
   if (!session) {
     return (
@@ -133,19 +164,29 @@ export default function XuanjiChat({ readingResult, readingType }: {
               </p>
             </div>
             <div className="space-y-2 max-w-sm mx-auto">
-              {questions.map((q, i) => (
-                <button
-                  key={i}
-                  onClick={() => sendMessage(lang === 'en' ? q.en : q.zh)}
-                  className="w-full text-left px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl text-sm transition-all hover:opacity-80"
-                  style={{ border: '1px solid var(--border-gold)', color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--gold)' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-                >
-                  <span style={{ color: 'var(--gold)', opacity: 0.6 }} className="mr-2">💬</span>
-                  {lang === 'en' ? q.en : q.zh}
-                </button>
-              ))}
+              {suggestionsLoading ? (
+                [0, 1, 2].map(i => (
+                  <div
+                    key={i}
+                    className="w-full px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl animate-pulse"
+                    style={{ border: '1px solid var(--border-gold)', backgroundColor: 'var(--accent-bg)', opacity: 0.5, height: '44px' }}
+                  />
+                ))
+              ) : (
+                questions.map((q, i) => (
+                  <button
+                    key={i}
+                    onClick={() => sendMessage(lang === 'en' ? q.en : q.zh)}
+                    className="w-full text-left px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl text-sm transition-all hover:opacity-80"
+                    style={{ border: '1px solid var(--border-gold)', color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--gold)' }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+                  >
+                    <span style={{ color: 'var(--gold)', opacity: 0.6 }} className="mr-2">💬</span>
+                    {lang === 'en' ? q.en : q.zh}
+                  </button>
+                ))
+              )}
             </div>
           </div>
         ) : (

@@ -377,7 +377,7 @@ export default function DivinationFormPage() {
   if (!tierChecked) return null
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col py-8 sm:py-12 px-3 sm:px-4 max-w-2xl mx-auto">
+    <div className={`flex flex-col py-8 sm:py-12 px-3 sm:px-4 max-w-2xl mx-auto ${loading ? '' : 'min-h-[calc(100vh-4rem)]'}`}>
       {/* Bazi cache dialog */}
       {showCacheDialog && cachedReading && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">

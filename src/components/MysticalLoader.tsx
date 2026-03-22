@@ -104,7 +104,7 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
 
   return (
     <motion.div
-      className="flex flex-col items-center justify-center py-16 gap-8"
+      className="flex flex-col items-center justify-center py-8 gap-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1.2, ease: 'easeOut' }}
