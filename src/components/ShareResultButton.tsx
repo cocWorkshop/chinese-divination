@@ -5,6 +5,28 @@ import toast from 'react-hot-toast'
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    // Fallback for browsers that block clipboard API outside user gesture
+    try {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      return true
+    } catch {
+      return false
+    }
+  }
+}
+
 export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW' }: {
   readingId: string
   shareToken?: string | null
@@ -23,8 +45,12 @@ export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW
       if (data.token) {
         const link = `${window.location.origin}/r/${data.token}`
         setUrl(link)
-        navigator.clipboard.writeText(link)
-        toast.success(T(lang, '連結已複製！', 'Link copied!'))
+        const copied = await copyToClipboard(link)
+        if (copied) {
+          toast.success(T(lang, '連結已複製！', 'Link copied!'))
+        } else {
+          toast.success(T(lang, '分享連結已生成', 'Share link generated'))
+        }
       }
     } catch { toast.error('Error') }
     setLoading(false)
@@ -36,7 +62,7 @@ export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW
         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>🔗</span>
         <code className="text-xs break-all px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--gold)' }}>{url}</code>
         <button
-          onClick={() => { navigator.clipboard.writeText(url); toast.success(T(lang, '已複製', 'Copied!')) }}
+          onClick={() => { copyToClipboard(url).then(ok => { if (ok) toast.success(T(lang, '已複製', 'Copied!')) }) }}
           className="px-2 py-0.5 text-xs rounded transition-colors"
           style={{ backgroundColor: 'rgba(212, 168, 83, 0.1)', color: 'var(--gold)' }}
         >
