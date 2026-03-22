@@ -1119,7 +1119,7 @@ export default function DivinationFormPage() {
 
       {loading && (
         <>
-          <LoadingOracle />
+          <LoadingOracle divinationType={type} />
           <div className="glass-card rounded-xl p-4 mt-4 text-center" style={{ borderColor: 'var(--card-border)' }}>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
               {T(lang,

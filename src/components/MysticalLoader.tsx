@@ -1,8 +1,9 @@
 'use client'
 import YinYangIcon from '@/components/YinYangIcon'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getRandomPlaylist, TipPlaylist } from './divinationTips'
 
 const divinationQuotes = {
   'zh-TW': [
@@ -34,11 +35,31 @@ const divinationQuotes = {
 interface MysticalLoaderProps {
   lang: string
   variant?: 'divination' | 'chat' | 'page'
+  divinationType?: string
 }
 
-export default function MysticalLoader({ lang, variant = 'divination' }: MysticalLoaderProps) {
+export default function MysticalLoader({ lang, variant = 'divination', divinationType }: MysticalLoaderProps) {
   const [quoteIndex, setQuoteIndex] = useState(0)
   const quotes = lang === 'en' ? divinationQuotes.en : divinationQuotes['zh-TW']
+
+  // Educational tips playlist (selected once on mount)
+  const playlistRef = useRef<TipPlaylist | null>(null)
+  if (divinationType && !playlistRef.current) {
+    playlistRef.current = getRandomPlaylist(divinationType)
+  }
+  const playlist = playlistRef.current
+  const hasTips = playlist && playlist.length > 0
+  const [tipIndex, setTipIndex] = useState(0)
+
+  useEffect(() => {
+    if (hasTips) {
+      // Show each tip for 7 seconds, cycle through playlist
+      const interval = setInterval(() => {
+        setTipIndex(i => (i + 1) % playlist!.length)
+      }, 7000)
+      return () => clearInterval(interval)
+    }
+  }, [hasTips, playlist])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -168,6 +189,29 @@ export default function MysticalLoader({ lang, variant = 'divination' }: Mystica
           </motion.p>
         </AnimatePresence>
       </motion.div>
+
+      {/* Educational tips */}
+      {hasTips && (
+        <motion.div
+          className="max-w-md mx-auto px-4 min-h-[3rem] flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 1.5 }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={tipIndex}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.6 }}
+              className="text-white/50 text-xs text-center leading-relaxed font-serif"
+            >
+              💡 {lang === 'en' ? playlist![tipIndex].en : playlist![tipIndex].zh}
+            </motion.p>
+          </AnimatePresence>
+        </motion.div>
+      )}
 
       {/* Progress dots */}
       <motion.div

@@ -200,45 +200,40 @@ export default function LiuYaoResult({ data, rawResult, isShared }: { data: Reco
               {t.icon} {t.label}
             </button>
           ))}
-          {!isShared && (
-            <button
-              onClick={() => setActiveTab('xuanji')}
-              className={`px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-1.5 ${
-                activeTab === 'xuanji'
-                  ? 'bg-gradient-to-r from-amber-600 to-gold text-navy-950 font-semibold shadow-lg shadow-gold/20'
-                  : 'text-gold/70 hover:text-gold border border-gold/30 bg-gold/5'
-              }`}
-            >
-              ☯ 玄機破
-            </button>
-          )}
+
         </div>
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeTab === 'xuanji' ? 'sections' : activeTab}
+            key={activeTab}
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
           >
-            {activeTab !== 'xuanji' && (
-              <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
-                {activeTab === 'interpretation' && (d.interpretation || T(lang, '暫無內容', 'No content'))}
-                {activeTab === 'sixRelative' && (d.sixRelativeAnalysis || T(lang, '暫無內容', 'No content'))}
-                {activeTab === 'shiYing' && (d.shiYingAnalysis || T(lang, '暫無內容', 'No content'))}
-                {activeTab === 'changing' && (d.changingAnalysis || T(lang, '暫無內容', 'No content'))}
-                {activeTab === 'advice' && (d.advice || T(lang, '暫無內容', 'No content'))}
-              </div>
-            )}
+            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+              {activeTab === 'interpretation' && (d.interpretation || T(lang, '暫無內容', 'No content'))}
+              {activeTab === 'sixRelative' && (d.sixRelativeAnalysis || T(lang, '暫無內容', 'No content'))}
+              {activeTab === 'shiYing' && (d.shiYingAnalysis || T(lang, '暫無內容', 'No content'))}
+              {activeTab === 'changing' && (d.changingAnalysis || T(lang, '暫無內容', 'No content'))}
+              {activeTab === 'advice' && (d.advice || T(lang, '暫無內容', 'No content'))}
+            </div>
           </motion.div>
         </AnimatePresence>
-        {!isShared && (
-          <div className={`rounded-xl p-2 sm:p-5 text-sm leading-relaxed mt-2 sm:mt-4 ${activeTab === 'xuanji' ? '' : 'hidden'}`}
-            style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--border-gold)' }}
-          >
+      </motion.div>
+
+      {/* Xuanji Chat */}
+      {!isShared && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <div className="glass-card rounded-xl p-4 sm:p-6 border-2 border-gold/30">
+            <h3 className="flex items-center gap-2 text-gold font-serif text-base sm:text-lg mb-3">
+              <span className="text-xl">☯</span>
+              <span className="bg-gradient-to-r from-amber-400 to-gold bg-clip-text text-transparent font-semibold">
+                {T(lang, '玄機破', 'Xuanji Po')}
+              </span>
+            </h3>
             <XuanjiChat readingResult={rawResult || ''} readingType="liuyao" />
           </div>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Key Points */}
       {d.keyPoints && d.keyPoints.length > 0 && (

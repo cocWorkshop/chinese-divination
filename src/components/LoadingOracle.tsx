@@ -3,7 +3,11 @@
 import MysticalLoader from './MysticalLoader'
 import { useLang } from './LanguageContext'
 
-export default function LoadingOracle() {
+interface LoadingOracleProps {
+  divinationType?: string
+}
+
+export default function LoadingOracle({ divinationType }: LoadingOracleProps) {
   const { lang } = useLang()
-  return <MysticalLoader lang={lang} variant="divination" />
+  return <MysticalLoader lang={lang} variant="divination" divinationType={divinationType} />
 }

@@ -386,41 +386,36 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
               {s.label}
             </button>
           ))}
-          {!isShared && (
-            <button
-              onClick={() => setActiveSection('xuanji')}
-              className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-1.5 font-semibold shadow-lg shadow-gold/20 ${
-                activeSection === 'xuanji'
-                  ? 'bg-gradient-to-r from-amber-600 to-gold text-navy-950'
-                  : 'bg-gradient-to-r from-amber-600/80 to-gold/80 text-navy-950/90 ring-1 ring-gold/50'
-              }`}
-            >
-              ☯ 玄機破
-            </button>
-          )}
+
         </div>
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeSection === 'xuanji' ? 'sections' : activeSection}
+            key={activeSection}
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
           >
-            {activeSection !== 'xuanji' && (
-              <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
-                {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
-              </div>
-            )}
+            <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+              {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
+            </div>
           </motion.div>
         </AnimatePresence>
-        {!isShared && (
-          <div className={`rounded-xl p-2 sm:p-5 text-sm leading-relaxed mt-2 sm:mt-4 ${activeSection === 'xuanji' ? '' : 'hidden'}`}
-            style={{ backgroundColor: 'var(--card-bg)', border: '2px solid var(--border-gold)' }}
-          >
+      </motion.div>
+
+      {/* Xuanji Chat */}
+      {!isShared && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <div className="glass-card rounded-xl p-4 sm:p-6 border-2 border-gold/30">
+            <h3 className="flex items-center gap-2 text-gold font-serif text-base sm:text-lg mb-3">
+              <span className="text-xl">☯</span>
+              <span className="bg-gradient-to-r from-amber-400 to-gold bg-clip-text text-transparent font-semibold">
+                玄機破
+              </span>
+            </h3>
             <XuanjiChat readingResult={rawResult || ''} readingType="ziwei" />
           </div>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Key Advice */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
