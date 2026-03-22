@@ -109,7 +109,7 @@ export default function DivinationFormPage() {
   const [cachedReading, setCachedReading] = useState<{ id: string; result: string; createdAt: string; count: number } | null>(null)
   const [credits, setCredits] = useState<{ divination?: { remaining: number }; chat?: { remaining: number } } | null>(null)
   const [llmTimeoutMs, setLlmTimeoutMs] = useState(240000)
-  const [shareBonus, setShareBonus] = useState<{divination: number} | null>(null)
+  const [shareBonus, setShareBonus] = useState<{divination: number, chat: number} | null>(null)
   const [targetType, setTargetType] = useState<'self' | 'family'>('self')
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
   const [selectedMemberId, setSelectedMemberId] = useState<string>('')

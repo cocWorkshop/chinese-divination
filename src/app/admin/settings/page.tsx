@@ -32,18 +32,12 @@ const DEFAULT_VISIBILITY: VisibilityItem[] = [
 export default function AdminSettings() {
   const [visibilityItems, setVisibilityItems] = useState<VisibilityItem[]>(DEFAULT_VISIBILITY)
   const [settings, setSettings] = useState<Record<string, string>>({
-    divinationType_bazi_tier: 'normal',
-    divinationType_iching_tier: 'normal',
-    divinationType_ziwei_tier: 'normal',
-    divinationType_qimen_tier: 'normal',
-    divinationType_fengshui_tier: 'normal',
-    divinationType_other_tier: 'normal',
-    defaultHourlyQuota: '10',
     divinationEnabled: 'true',
     maintenanceMode: 'false',
     model1Name: 'anthropic/claude-3-5-haiku',
     model1Label: '標準模型 / Standard',
     shareBonus: '20',
+    shareBonusChat: '5',
     llmTimeoutSeconds: '240',
     llmMaxTokens: '8192',
     chatModelName: '',
@@ -133,6 +127,7 @@ export default function AdminSettings() {
             <span>🔗</span> 分享設置 / Share Settings
           </h2>
           {numberField('shareBonus', '分享獎勵占卜額度 / Divination credits per share', '分享者和受邀者各獲得此數量的占卜額度')}
+          {numberField('shareBonusChat', '分享獎勵聊天額度 / Chat credits per share', '分享者和受邀者各獲得此數量的聊天額度')}
         </div>
 
         {/* Divination Visibility */}
@@ -204,58 +199,6 @@ export default function AdminSettings() {
               )
             })}
           </div>
-        </div>
-
-        {/* Divination Type Tiers */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
-            <span>✦</span> 預測類型分級 / Divination Type Tiers
-          </h2>
-          <div className="space-y-4">
-            {[
-              { key: 'bazi', label: '八字命理 / BaZi' },
-              { key: 'iching', label: '易經占卜 / I Ching' },
-              { key: 'ziwei', label: '紫微斗數 / Zi Wei' },
-              { key: 'qimen', label: '奇門遁甲 / Qi Men' },
-              { key: 'fengshui', label: '風水佈局 / Feng Shui' },
-              { key: 'other', label: '梅花六壬 / Plum & Liu Ren' },
-            ].map(item => {
-              const settingKey = `divinationType_${item.key}_tier`
-              const currentTier = settings[settingKey] || 'arcane'
-              const tierOptions = [
-                { value: 'arcane', label: '🔮 啟示 Arcane', cls: 'bg-white/10 text-white/50 border-white/20' },
-                { value: 'ethereal', label: '✧ 洞察 Ethereal', cls: 'bg-blue-500/15 text-blue-300 border-blue-400/30' },
-                { value: 'prestige', label: '✦ 大師 Prestige', cls: 'bg-gold/20 text-gold border-gold/40' },
-              ]
-              return (
-                <div key={item.key} className="flex items-center justify-between gap-2">
-                  <span className="text-white/80 text-sm flex-shrink-0">{item.label}</span>
-                  <div className="flex gap-1">
-                    {tierOptions.map(opt => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => set(settingKey, opt.value)}
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors border ${
-                          currentTier === opt.value ? opt.cls : 'bg-transparent text-white/20 border-white/10 hover:border-white/20'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Legacy Rate Limiting */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
-            <span>⏱</span> 舊版配額 / Legacy Quota
-          </h2>
-          {numberField('defaultHourlyQuota', '預設每小時配額（新用戶）/ Default hourly quota', '此設置已被新的每日限制系統取代')}
         </div>
 
         {/* LLM Timeout */}

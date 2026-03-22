@@ -39,17 +39,17 @@ export async function POST(req: NextRequest) {
     const hashed = await hash(password, 12)
 
     // Check referral code and get bonus amounts
-    let bonus1 = 0, bonus2 = 0
+    let bonus1 = 0, bonusChat = 0
     let shareLink: { id: string; userId: string; code: string; used: boolean } | null = null
     if (referralCode) {
       shareLink = await prisma.shareLink.findUnique({ where: { code: referralCode } })
       if (shareLink && !shareLink.used && shareLink.userId) {
         const [s1, s2] = await Promise.all([
           prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } }),
-          prisma.adminSetting.findUnique({ where: { key: 'shareBonusModel2' } }),
+          prisma.adminSetting.findUnique({ where: { key: 'shareBonusChat' } }),
         ])
         bonus1 = parseInt(s1?.value ?? '20')
-        bonus2 = parseInt(s2?.value ?? '0')
+        bonusChat = parseInt(s2?.value ?? '5')
       }
     }
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       data: {
         email, password: hashed, name: name || null, language: language || 'zh-TW',
         bonusModel1: bonus1,
-        bonusModel2: bonus2,
+        bonusChat: bonusChat,
         emailVerified: false,
         verificationToken: vToken,
         tokenExpiry: tokenExpiry(24),
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
           where: { id: shareLink.userId },
           data: {
             bonusModel1: { increment: bonus1 },
-            ...(bonus2 > 0 && { bonusModel2: { increment: bonus2 } }),
+            ...(bonusChat > 0 && { bonusChat: { increment: bonusChat } }),
           },
         }),
       ])
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
       id: user.id, email: user.email,
       needsVerification: true,
       ...(bonus1 > 0 && { bonusModel1: bonus1 }),
-      ...(bonus2 > 0 && { bonusModel2: bonus2 }),
+      ...(bonusChat > 0 && { bonusChat: bonusChat }),
     }, { status: 201 })
   } catch (e) {
     console.error(e)
