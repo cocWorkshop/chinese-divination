@@ -59,7 +59,7 @@ export async function GET() {
   const userId = session.user.id
 
   // Grant daily bonus first (before checking credits so counts reflect bonus)
-  const dailyBonusGranted = await grantDailyBonus(userId)
+  const dailyBonusResult = await grantDailyBonus(userId)
 
   const [divination, chat, timeoutSetting, bonusDiv, bonusChat, user, familyMembers, visibility] = await Promise.all([
     checkDivinationCredits(userId),
@@ -96,6 +96,7 @@ export async function GET() {
     },
     familyMembers,
     visibility,
-    dailyBonusGranted,
+    dailyBonusGranted: dailyBonusResult.granted,
+    dailyBonus: dailyBonusResult.granted ? { divination: dailyBonusResult.divination, chat: dailyBonusResult.chat } : undefined,
   })
 }

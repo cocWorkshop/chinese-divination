@@ -38,6 +38,8 @@ export default function AdminSettings() {
     model1Label: '標準模型 / Standard',
     shareBonus: '20',
     shareBonusChat: '5',
+    dailyBonusDivination: '1',
+    dailyBonusChat: '1',
     llmTimeoutSeconds: '240',
     llmMaxTokens: '8192',
     chatModelName: '',
@@ -128,6 +130,8 @@ export default function AdminSettings() {
           </h2>
           {numberField('shareBonus', '分享獎勵占卜額度 / Divination credits per share', '分享者和受邀者各獲得此數量的占卜額度')}
           {numberField('shareBonusChat', '分享獎勵聊天額度 / Chat credits per share', '分享者和受邀者各獲得此數量的聊天額度')}
+          {numberField('dailyBonusDivination', '每日登入占卜額度 / Daily login divination credits', '每日首次登入贈送的占卜額度')}
+          {numberField('dailyBonusChat', '每日登入聊天額度 / Daily login chat credits', '每日首次登入贈送的聊天額度')}
         </div>
 
         {/* Divination Visibility */}

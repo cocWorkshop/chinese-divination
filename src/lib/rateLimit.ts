@@ -50,26 +50,33 @@ export async function deductChatCredit(userId: string): Promise<void> {
   })
 }
 
-export async function grantDailyBonus(userId: string): Promise<boolean> {
+export async function grantDailyBonus(userId: string): Promise<{ granted: boolean; divination: number; chat: number }> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { isAdmin: true, lastDailyBonus: true },
   })
-  if (!user) return false
-  if (user.isAdmin) return false
+  if (!user) return { granted: false, divination: 0, chat: 0 }
+  if (user.isAdmin) return { granted: false, divination: 0, chat: 0 }
 
   const now = new Date()
   if (user.lastDailyBonus && isSameDay(user.lastDailyBonus, now)) {
-    return false // already granted today
+    return { granted: false, divination: 0, chat: 0 }
   }
+
+  const [divSetting, chatSetting] = await Promise.all([
+    prisma.adminSetting.findUnique({ where: { key: 'dailyBonusDivination' } }),
+    prisma.adminSetting.findUnique({ where: { key: 'dailyBonusChat' } }),
+  ])
+  const divBonus = parseInt(divSetting?.value ?? '1', 10) || 1
+  const chatBonus = parseInt(chatSetting?.value ?? '1', 10) || 1
 
   await prisma.user.update({
     where: { id: userId },
     data: {
-      divinationCredits: { increment: 1 },
-      chatCredits: { increment: 1 },
+      divinationCredits: { increment: divBonus },
+      chatCredits: { increment: chatBonus },
       lastDailyBonus: now,
     },
   })
-  return true
+  return { granted: true, divination: divBonus, chat: chatBonus }
 }
