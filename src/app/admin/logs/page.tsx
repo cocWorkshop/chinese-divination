@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import ResultRenderer from '@/components/results/ResultRenderer'
 
-type Tab = 'llm' | 'errors' | 'auth' | 'readings'
+type Tab = 'llm' | 'errors' | 'auth' | 'readings' | 'divination'
 
 interface LogEntry {
   id: string; userId: string | null; endpoint: string; model: string; modelTier: string | null
@@ -85,6 +85,26 @@ export default function AdminSystemLogs() {
   const [readingDetail, setReadingDetail] = useState<ReadingDetail | null>(null)
   const [readingDetailTab, setReadingDetailTab] = useState<'result' | 'input' | 'calculation' | 'llmPrompt' | 'llmOutput'>('result')
 
+  // Divination performance state
+  interface DivReading {
+    id: string; type: string; status: string; question: string | null; language: string
+    targetType: string; createdAt: string
+    user: { email: string; name: string | null }
+    familyMember: { name: string | null; relation: string } | null
+    llm: { latencyMs: number; promptTokens: number; completionTokens: number; totalTokens: number; model: string; status: string } | null
+  }
+  interface DivStats { avg_latency: number; total: number; completed: number; failed: number; pending: number }
+  interface DivTypeStats { type: string; count: number; avg_ms: number }
+  const [divReadings, setDivReadings] = useState<DivReading[]>([])
+  const [divTotal, setDivTotal] = useState(0)
+  const [divPage, setDivPage] = useState(1)
+  const [divPages, setDivPages] = useState(1)
+  const [divTypeFilter, setDivTypeFilter] = useState('')
+  const [divStatusFilter, setDivStatusFilter] = useState('')
+  const [divLoading, setDivLoading] = useState(true)
+  const [divStats, setDivStats] = useState<DivStats>({ avg_latency: 0, total: 0, completed: 0, failed: 0, pending: 0 })
+  const [divTypeStats, setDivTypeStats] = useState<DivTypeStats[]>([])
+
   const fetchLogs = useCallback((p: number, filter: string) => {
     setLlmLoading(true)
     fetch(`/api/admin/logs?page=${p}&limit=30&filter=${filter}`)
@@ -150,10 +170,29 @@ export default function AdminSystemLogs() {
       .then(d => { setReadingDetail(d.reading); setReadingDetailTab('result') })
   }, [])
 
+  const fetchDivLogs = useCallback((p: number, type: string, status: string) => {
+    setDivLoading(true)
+    const params = new URLSearchParams({ page: String(p), limit: '30' })
+    if (type) params.set('type', type)
+    if (status) params.set('status', status)
+    fetch(`/api/admin/divination-logs?${params}`)
+      .then(r => r.json())
+      .then(d => {
+        setDivReadings(d.readings || [])
+        setDivTotal(d.total || 0)
+        setDivPage(d.page || 1)
+        setDivPages(d.pages || 1)
+        if (d.stats) setDivStats(d.stats)
+        if (d.typeStats) setDivTypeStats(d.typeStats)
+      })
+      .finally(() => setDivLoading(false))
+  }, [])
+
   useEffect(() => { fetchLogs(1, 'all') }, [fetchLogs])
   useEffect(() => { if (tab === 'errors') fetchErrors(1) }, [tab, fetchErrors])
   useEffect(() => { if (tab === 'auth') fetchAuthLogs(1, 'all', 'all', '', '') }, [tab, fetchAuthLogs])
   useEffect(() => { if (tab === 'readings') fetchReadings(1, '') }, [tab, fetchReadings])
+  useEffect(() => { if (tab === 'divination') fetchDivLogs(1, '', '') }, [tab, fetchDivLogs])
 
   const Pagination = ({ page, pages, onChange }: { page: number; pages: number; onChange: (p: number) => void }) => {
     if (pages <= 1) return null
@@ -195,6 +234,7 @@ export default function AdminSystemLogs() {
       {/* Tabs */}
       <div className="flex gap-1 mb-6 p-1 bg-navy-900/50 rounded-xl w-fit border border-gold/10">
         {[
+          { key: 'divination' as Tab, label: '⏱️ 占卜耗時', count: divTotal },
           { key: 'llm' as Tab, label: '📋 LLM 調用', count: llmTotal },
           { key: 'auth' as Tab, label: '🔐 登入日誌', count: authTotal },
           { key: 'readings' as Tab, label: '🔮 占卜日誌', count: readingsTotal },
@@ -214,6 +254,111 @@ export default function AdminSystemLogs() {
           </button>
         ))}
       </div>
+
+      {/* ===== Divination Performance Tab ===== */}
+      {tab === 'divination' && (
+        <>
+          {/* Stats row */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+            {[
+              { label: '7日總數', value: divStats.total.toString(), color: 'text-gold' },
+              { label: '完成', value: divStats.completed.toString(), color: 'text-green-400' },
+              { label: '失敗', value: divStats.failed.toString(), color: divStats.failed > 0 ? 'text-red-400' : 'text-gold' },
+              { label: '進行中', value: divStats.pending.toString(), color: divStats.pending > 0 ? 'text-yellow-400' : 'text-gold' },
+              { label: '平均耗時', value: `${(divStats.avg_latency / 1000).toFixed(0)}s`, color: 'text-gold' },
+            ].map((s, i) => (
+              <div key={i} className="glass-card rounded-xl p-3 border border-gold/15 text-center">
+                <div className="text-white/40 text-[10px] uppercase tracking-wider">{s.label}</div>
+                <div className={`text-xl font-serif mt-0.5 ${s.color}`}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Per-type stats */}
+          {divTypeStats.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+              {divTypeStats.map(ts => (
+                <div key={ts.type} className="glass-card rounded-lg p-2.5 border border-gold/10 text-center">
+                  <div className="text-gold text-sm font-serif">{ts.type}</div>
+                  <div className="text-white/50 text-xs mt-0.5">{ts.count} 次 · 平均 {(ts.avg_ms / 1000).toFixed(0)}s</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Filters */}
+          <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex gap-1.5">
+              {[
+                { key: '', label: '全部類型' },
+                { key: 'bazi', label: '八字' },
+                { key: 'ziwei', label: '紫微' },
+                { key: 'qimen', label: '奇門' },
+                { key: 'meihua', label: '梅花' },
+                { key: 'liuyao', label: '六爻' },
+              ].map(f => (
+                <button key={f.key}
+                  onClick={() => { setDivTypeFilter(f.key); fetchDivLogs(1, f.key, divStatusFilter) }}
+                  className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                    divTypeFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                  }`}>{f.label}</button>
+              ))}
+            </div>
+            <div className="flex gap-1.5">
+              {[
+                { key: '', label: '全部狀態' },
+                { key: 'completed', label: '✅ 完成' },
+                { key: 'failed', label: '❌ 失敗' },
+                { key: 'pending', label: '⏳ 進行中' },
+              ].map(f => (
+                <button key={f.key}
+                  onClick={() => { setDivStatusFilter(f.key); fetchDivLogs(1, divTypeFilter, f.key) }}
+                  className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                    divStatusFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                  }`}>{f.label}</button>
+              ))}
+            </div>
+          </div>
+
+          {divLoading ? (
+            <div className="text-gold animate-pulse p-8 text-center">Loading...</div>
+          ) : divReadings.length === 0 ? (
+            <div className="glass-card rounded-xl p-12 text-center text-white/40">暫無記錄</div>
+          ) : (
+            <div className="space-y-2">
+              {divReadings.map(r => {
+                const latencySec = r.llm ? (r.llm.latencyMs / 1000).toFixed(0) : '—'
+                const latencyColor = !r.llm ? 'text-white/30' : r.llm.latencyMs > 120000 ? 'text-red-400' : r.llm.latencyMs > 60000 ? 'text-yellow-400' : 'text-green-400'
+                return (
+                  <div key={r.id} className="glass-card rounded-xl p-3 border border-gold/10 flex items-center gap-2 sm:gap-3 text-xs">
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                      r.status === 'completed' ? 'bg-green-400' : r.status === 'failed' ? 'bg-red-400' : 'bg-yellow-400 animate-pulse'
+                    }`} />
+                    <span className="px-2 py-0.5 bg-gold/15 text-gold rounded-full min-w-[3rem] text-center">{r.type}</span>
+                    <span className={`font-mono font-bold min-w-[3rem] text-right ${latencyColor}`}>
+                      {latencySec}s
+                    </span>
+                    {r.llm && (
+                      <span className="text-white/30 hidden sm:inline">
+                        {r.llm.promptTokens}+{r.llm.completionTokens} tk
+                      </span>
+                    )}
+                    <span className="text-white/50 flex-1 truncate hidden sm:inline">
+                      {r.user.name || r.user.email?.split('@')[0] || '—'}
+                    </span>
+                    <span className="text-white/40 truncate max-w-[120px]">{r.question || '—'}</span>
+                    {r.llm && <span className="text-white/20 hidden sm:inline truncate max-w-[100px]">{r.llm.model.split('/').pop()}</span>}
+                    <span className="text-white/25 flex-shrink-0">
+                      {new Date(r.createdAt).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          <Pagination page={divPage} pages={divPages} onChange={p => fetchDivLogs(p, divTypeFilter, divStatusFilter)} />
+        </>
+      )}
 
       {/* ===== LLM Logs Tab ===== */}
       {tab === 'llm' && (
