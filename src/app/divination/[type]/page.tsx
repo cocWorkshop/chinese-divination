@@ -1144,14 +1144,7 @@ export default function DivinationFormPage() {
                   {sharing ? '...' : `📤 ${T(lang, '分享結果給朋友', 'Share result with friends')}`}
                 </button>
               )}
-              {shareBonus && (
-                <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                  💡 {T(lang,
-                    `分享後雙方各獲得 ${shareBonus.divination} 占卜額度 + ${shareBonus.chat} 玄機破聊天額度`,
-                    `Both parties earn ${shareBonus.divination} divination + ${shareBonus.chat} chat credits`
-                  )}
-                </p>
-              )}
+
             </div>
           )}
         </motion.div>
