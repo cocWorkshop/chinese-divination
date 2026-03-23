@@ -241,7 +241,7 @@ export default function DivinationFormPage() {
     // Use instant scroll + setTimeout fallback for mobile browsers
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
     setTimeout(() => window.scrollTo({ top: 0 }), 100)
-    const requestStartTime = new Date().toISOString()
+    const requestStartTime = new Date(Date.now() - 30_000).toISOString() // 30s buffer for client/server clock skew
     try {
       const hasProfileData = ['bazi', 'ziwei'].includes(type)
       const formData = { ...form }
