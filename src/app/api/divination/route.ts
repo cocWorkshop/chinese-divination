@@ -155,23 +155,28 @@ export async function POST(req: NextRequest) {
     const shouldSaveHistory = saveHistory !== false
     const shouldSaveProfile = saveProfile === true
 
-    const maintenance = await prisma.adminSetting.findUnique({ where: { key: 'maintenanceMode' } })
-    if (maintenance?.value === 'true') {
+    // Batch: admin settings + credits check in parallel
+    const [adminSettings, rl] = await Promise.all([
+      prisma.adminSetting.findMany({
+        where: { key: { in: ['maintenanceMode', 'divinationEnabled', 'model1Name', 'llmTimeoutSeconds', 'llmMaxTokens'] } },
+      }),
+      checkDivinationCredits(session.user.id),
+    ])
+    const settingsMap = Object.fromEntries(adminSettings.map(s => [s.key, s.value]))
+
+    if (settingsMap.maintenanceMode === 'true') {
       return NextResponse.json(
         { error: language !== 'en' ? '系統維護中，請稍後再試。' : 'System under maintenance. Please try again later.' },
         { status: 503 }
       )
     }
 
-    const divinationEnabled = await prisma.adminSetting.findUnique({ where: { key: 'divinationEnabled' } })
-    if (divinationEnabled?.value === 'false') {
+    if (settingsMap.divinationEnabled === 'false') {
       return NextResponse.json(
         { error: language !== 'en' ? '占卜功能暫時關閉，請稍後再試。' : 'Divination service is temporarily disabled.' },
         { status: 503 }
       )
     }
-
-    const rl = await checkDivinationCredits(session.user.id)
     if (!rl.allowed) {
       return NextResponse.json(
         {
@@ -601,20 +606,12 @@ ${question ? `特别关注：${question}` : ''}`
       )
     }
 
-    // Get model name from admin settings (single model)
-    const modelSetting = await prisma.adminSetting.findUnique({ where: { key: 'model1Name' } })
-    const modelName = modelSetting?.value || 'anthropic/claude-3-5-haiku'
-
+    // Use pre-fetched admin settings
+    const modelName = settingsMap.model1Name || 'anthropic/claude-3-5-haiku'
     const isLocalProxy = modelName === 'local/claude-proxy'
     const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'http://127.0.0.1:8095'
-
-    // Read configurable timeout and max tokens
-    const [timeoutSetting, maxTokensSetting] = await Promise.all([
-      prisma.adminSetting.findUnique({ where: { key: 'llmTimeoutSeconds' } }),
-      prisma.adminSetting.findUnique({ where: { key: 'llmMaxTokens' } }),
-    ])
-    const llmTimeoutMs = (parseInt(timeoutSetting?.value || '240', 10) || 240) * 1000
-    const llmMaxTokens = parseInt(maxTokensSetting?.value || '8192', 10) || 8192
+    const llmTimeoutMs = (parseInt(settingsMap.llmTimeoutSeconds || '240', 10) || 240) * 1000
+    const llmMaxTokens = parseInt(settingsMap.llmMaxTokens || '8192', 10) || 8192
 
     let resultText: string
     const llmStart = Date.now()

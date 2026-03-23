@@ -32,6 +32,32 @@ const divinationQuotes = {
   ],
 }
 
+// Progress stages with estimated time thresholds (seconds)
+const progressStages = {
+  'zh-TW': [
+    { at: 0, label: '正在排盤計算...', pct: 5 },
+    { at: 3, label: '命盤數據準備完成', pct: 15 },
+    { at: 8, label: '正在連接天機...', pct: 20 },
+    { at: 15, label: '大師正在研讀命盤...', pct: 30 },
+    { at: 40, label: '深入分析命理格局...', pct: 50 },
+    { at: 70, label: '撰寫詳批報告中...', pct: 65 },
+    { at: 100, label: '精批大運流年...', pct: 80 },
+    { at: 140, label: '最終審閱中...', pct: 90 },
+    { at: 180, label: '即將完成，請稍候...', pct: 95 },
+  ],
+  en: [
+    { at: 0, label: 'Calculating chart...', pct: 5 },
+    { at: 3, label: 'Chart data ready', pct: 15 },
+    { at: 8, label: 'Connecting to oracle...', pct: 20 },
+    { at: 15, label: 'Master is studying your chart...', pct: 30 },
+    { at: 40, label: 'Analyzing destiny patterns...', pct: 50 },
+    { at: 70, label: 'Writing detailed analysis...', pct: 65 },
+    { at: 100, label: 'Analyzing life phases...', pct: 80 },
+    { at: 140, label: 'Final review...', pct: 90 },
+    { at: 180, label: 'Almost done, please wait...', pct: 95 },
+  ],
+}
+
 interface MysticalLoaderProps {
   lang: string
   variant?: 'divination' | 'chat' | 'page'
@@ -41,6 +67,7 @@ interface MysticalLoaderProps {
 export default function MysticalLoader({ lang, variant = 'divination', divinationType }: MysticalLoaderProps) {
   const [quoteIndex, setQuoteIndex] = useState(0)
   const quotes = lang === 'en' ? divinationQuotes.en : divinationQuotes['zh-TW']
+  const [elapsed, setElapsed] = useState(0)
 
   // Educational tips playlist (selected once on mount)
   const playlistRef = useRef<TipPlaylist | null>(null)
@@ -53,7 +80,6 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
 
   useEffect(() => {
     if (hasTips) {
-      // Show each tip for 7 seconds, cycle through playlist
       const interval = setInterval(() => {
         setTipIndex(i => (i + 1) % playlist!.length)
       }, 7000)
@@ -67,6 +93,16 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
     }, 3000)
     return () => clearInterval(interval)
   }, [quotes.length])
+
+  // Elapsed timer for progress bar
+  useEffect(() => {
+    if (variant !== 'divination') return
+    const start = Date.now()
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - start) / 1000))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [variant])
 
   if (variant === 'chat') {
     return (
@@ -213,24 +249,46 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
         </motion.div>
       )}
 
-      {/* Progress dots */}
-      <motion.div
-        className="flex gap-1.5"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 1.5 }}
-      >
-        {[0, 1, 2, 3, 4, 5].map(i => (
+      {/* Progress bar */}
+      {(() => {
+        const stages = lang === 'en' ? progressStages.en : progressStages['zh-TW']
+        const current = [...stages].reverse().find(s => elapsed >= s.at) || stages[0]
+        return (
           <motion.div
-            key={i}
-            className="w-1.5 h-1.5 rounded-full bg-gold/40"
-            animate={{
-              backgroundColor: ['rgba(212,168,83,0.3)', 'rgba(212,168,83,1)', 'rgba(212,168,83,0.3)'],
-            }}
-            transition={{ duration: 2, repeat: Infinity, delay: i * 0.3 }}
-          />
-        ))}
-      </motion.div>
+            className="w-full max-w-xs mx-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
+            <div className="flex justify-between items-center mb-1.5">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={current.label}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-xs font-serif"
+                  style={{ color: 'var(--gold)' }}
+                >
+                  {current.label}
+                </motion.span>
+              </AnimatePresence>
+              <span className="text-xs tabular-nums" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(212,168,83,0.1)' }}>
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: 'linear-gradient(90deg, rgba(212,168,83,0.6), rgba(212,168,83,1))' }}
+                initial={{ width: '0%' }}
+                animate={{ width: `${current.pct}%` }}
+                transition={{ duration: 1.5, ease: 'easeOut' }}
+              />
+            </div>
+          </motion.div>
+        )
+      })()}
     </motion.div>
   )
 }
