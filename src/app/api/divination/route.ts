@@ -136,6 +136,7 @@ const schemas: Record<string, object> = {
 }
 
 export async function POST(req: NextRequest) {
+  const apiStart = Date.now()
   try {
     const session = await auth()
     if (!session?.user?.id) {
@@ -614,6 +615,7 @@ ${question ? `特别关注：${question}` : ''}`
     const llmMaxTokens = parseInt(settingsMap.llmMaxTokens || '8192', 10) || 8192
 
     let resultText: string
+    const preLlmMs = Date.now() - apiStart
     const llmStart = Date.now()
 
     if (isLocalProxy) {
@@ -956,15 +958,24 @@ ${question ? `特别关注：${question}` : ''}`
           llmRawOutput: resultText,
         },
       })
+      const totalMs = Date.now() - apiStart
+      const llmMs = Date.now() - llmStart
+      const postLlmMs = totalMs - preLlmMs - llmMs
+      console.log(`[divination] type=${type} total=${totalMs}ms pre=${preLlmMs}ms llm=${llmMs}ms post=${postLlmMs}ms user=${session.user.id}`)
       return NextResponse.json({ reading: { ...reading, result: resultToStore }, saved: true })
     }
 
+    const totalMs = Date.now() - apiStart
+    const llmMs = Date.now() - llmStart
+    const postLlmMs = totalMs - preLlmMs - llmMs
+    console.log(`[divination] type=${type} total=${totalMs}ms pre=${preLlmMs}ms llm=${llmMs}ms post=${postLlmMs}ms user=${session.user.id} (unsaved)`)
     return NextResponse.json({
       reading: { id: null, result: resultToStore, type, createdAt: new Date() },
       saved: false,
     })
   } catch (e) {
-    console.error('Divination route error:', e)
+    const totalMs = Date.now() - apiStart
+    console.error(`[divination] ERROR total=${totalMs}ms`, e)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
