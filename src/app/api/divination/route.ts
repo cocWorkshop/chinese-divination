@@ -929,8 +929,26 @@ ${question ? `特别关注：${question}` : ''}`
 
     const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
 
-    // Deduct divination credit after successful generation
-    await deductDivinationCredit(session.user.id)
+    // CRITICAL: Save result + deduct credits immediately after LLM completes.
+    // These must complete even if client disconnects (Cloudflare 524 / timeout).
+    const postOps: Promise<unknown>[] = [
+      deductDivinationCredit(session.user.id),
+    ]
+
+    let savedReading: Record<string, unknown> | null = null
+    if (shouldSaveHistory && pendingReadingId) {
+      postOps.push(
+        prisma.reading.update({
+          where: { id: pendingReadingId },
+          data: {
+            status: 'completed',
+            result: resultToStore,
+            llmPrompt: llmPromptStr,
+            llmRawOutput: resultText,
+          },
+        }).then(r => { savedReading = r })
+      )
+    }
 
     if (shouldSaveProfile && (type === 'bazi' || type === 'ziwei')) {
       const profileUpdate: Record<string, string | null> = {}
@@ -940,35 +958,24 @@ ${question ? `特别关注：${question}` : ''}`
       if (inputData.gender) profileUpdate.gender = inputData.gender
       if (Object.keys(profileUpdate).length > 0) {
         if (targetType === 'family' && resolvedFamilyMemberId) {
-          await prisma.familyMember.update({ where: { id: resolvedFamilyMemberId }, data: profileUpdate })
+          postOps.push(prisma.familyMember.update({ where: { id: resolvedFamilyMemberId }, data: profileUpdate }))
         } else {
-          await prisma.user.update({ where: { id: session.user.id }, data: profileUpdate })
+          postOps.push(prisma.user.update({ where: { id: session.user.id }, data: profileUpdate }))
         }
       }
     }
 
-    if (shouldSaveHistory && pendingReadingId) {
-      // Update the pending reading with completed result
-      const reading = await prisma.reading.update({
-        where: { id: pendingReadingId },
-        data: {
-          status: 'completed',
-          result: resultToStore,
-          llmPrompt: llmPromptStr,
-          llmRawOutput: resultText,
-        },
-      })
-      const totalMs = Date.now() - apiStart
-      const llmMs = Date.now() - llmStart
-      const postLlmMs = totalMs - preLlmMs - llmMs
-      console.log(`[divination] type=${type} total=${totalMs}ms pre=${preLlmMs}ms llm=${llmMs}ms post=${postLlmMs}ms user=${session.user.id}`)
-      return NextResponse.json({ reading: { ...reading, result: resultToStore }, saved: true })
+    // Run all post-LLM DB operations in parallel
+    const postStart = Date.now()
+    await Promise.all(postOps)
+    const postLlmMs = Date.now() - postStart
+    const totalMs = Date.now() - apiStart
+    console.log(`[divination] type=${type} total=${totalMs}ms pre=${preLlmMs}ms llm=${postStart - llmStart}ms post=${postLlmMs}ms user=${session.user.id}`)
+
+    if (savedReading) {
+      return NextResponse.json({ reading: Object.assign({}, savedReading, { result: resultToStore }), saved: true })
     }
 
-    const totalMs = Date.now() - apiStart
-    const llmMs = Date.now() - llmStart
-    const postLlmMs = totalMs - preLlmMs - llmMs
-    console.log(`[divination] type=${type} total=${totalMs}ms pre=${preLlmMs}ms llm=${llmMs}ms post=${postLlmMs}ms user=${session.user.id} (unsaved)`)
     return NextResponse.json({
       reading: { id: null, result: resultToStore, type, createdAt: new Date() },
       saved: false,

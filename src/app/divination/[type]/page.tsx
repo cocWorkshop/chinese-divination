@@ -223,8 +223,8 @@ export default function DivinationFormPage() {
         const res = await fetch('/api/readings')
         if (!res.ok) continue
         const data = await res.json()
-        const found = data.readings?.find((r: { type: string; createdAt: string; id: string; result: string }) =>
-          r.type === readingType && new Date(r.createdAt) > new Date(afterTime)
+        const found = data.readings?.find((r: { type: string; createdAt: string; id: string; result: string; status?: string }) =>
+          r.type === readingType && new Date(r.createdAt) > new Date(afterTime) && r.result && r.result.length > 10 && r.status !== 'pending'
         )
         if (found) return { id: found.id, result: found.result }
       } catch { /* continue polling */ }
