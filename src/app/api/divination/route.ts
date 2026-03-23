@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { type, inputData, language, question, saveProfile, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember } = await req.json()
+    const { type, inputData, language, question, saveProfile, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember, readingId: preCreatedReadingId } = await req.json()
     const targetType = rawTargetType === 'family' ? 'family' : 'self'
 
     if (!type || !inputData) {
@@ -156,37 +156,36 @@ export async function POST(req: NextRequest) {
     const shouldSaveHistory = saveHistory !== false
     const shouldSaveProfile = saveProfile === true
 
-    // Batch: admin settings + credits check in parallel
-    const [adminSettings, rl] = await Promise.all([
-      prisma.adminSetting.findMany({
-        where: { key: { in: ['maintenanceMode', 'divinationEnabled', 'model1Name', 'llmTimeoutSeconds', 'llmMaxTokens'] } },
-      }),
-      checkDivinationCredits(session.user.id),
-    ])
+    // When readingId is provided (from /init), skip credit/maintenance checks (already done)
+    // Only fetch admin settings for model config
+    const adminSettings = await prisma.adminSetting.findMany({
+      where: { key: { in: preCreatedReadingId
+        ? ['model1Name', 'llmTimeoutSeconds', 'llmMaxTokens']
+        : ['maintenanceMode', 'divinationEnabled', 'model1Name', 'llmTimeoutSeconds', 'llmMaxTokens'] } },
+    })
     const settingsMap = Object.fromEntries(adminSettings.map(s => [s.key, s.value]))
 
-    if (settingsMap.maintenanceMode === 'true') {
-      return NextResponse.json(
-        { error: language !== 'en' ? '系統維護中，請稍後再試。' : 'System under maintenance. Please try again later.' },
-        { status: 503 }
-      )
-    }
-
-    if (settingsMap.divinationEnabled === 'false') {
-      return NextResponse.json(
-        { error: language !== 'en' ? '占卜功能暫時關閉，請稍後再試。' : 'Divination service is temporarily disabled.' },
-        { status: 503 }
-      )
-    }
-    if (!rl.allowed) {
-      return NextResponse.json(
-        {
-          error: language === 'en'
-            ? 'No divination credits remaining. Purchase more or share to earn credits.'
-            : '占卜額度已用完，請購買或分享獲取更多額度。',
-        },
-        { status: 429 }
-      )
+    if (!preCreatedReadingId) {
+      // Legacy path: no init call, do full validation
+      const rl = await checkDivinationCredits(session.user.id)
+      if (settingsMap.maintenanceMode === 'true') {
+        return NextResponse.json(
+          { error: language !== 'en' ? '系統維護中，請稍後再試。' : 'System under maintenance. Please try again later.' },
+          { status: 503 }
+        )
+      }
+      if (settingsMap.divinationEnabled === 'false') {
+        return NextResponse.json(
+          { error: language !== 'en' ? '占卜功能暫時關閉，請稍後再試。' : 'Divination service is temporarily disabled.' },
+          { status: 503 }
+        )
+      }
+      if (!rl.allowed) {
+        return NextResponse.json(
+          { error: language === 'en' ? 'No divination credits remaining. Purchase more or share to earn credits.' : '占卜額度已用完，請購買或分享獲取更多額度。' },
+          { status: 429 }
+        )
+      }
     }
 
     // Handle family member
@@ -576,9 +575,9 @@ ${question ? `特别关注：${question}` : ''}`
     if (liuyaoChart) earlyCalculationData.liuyao = liuyaoChart
     const earlyCalculationDataStr = Object.keys(earlyCalculationData).length > 0 ? JSON.stringify(earlyCalculationData) : null
 
-    // Create pending reading immediately so it's not lost if user navigates away
-    let pendingReadingId: string | null = null
-    if (shouldSaveHistory) {
+    // Use pre-created reading from /api/divination/init, or create one now as fallback
+    let pendingReadingId: string | null = preCreatedReadingId || null
+    if (shouldSaveHistory && !pendingReadingId) {
       const pendingReading = await prisma.reading.create({
         data: {
           userId: session.user.id,
@@ -587,7 +586,7 @@ ${question ? `特别关注：${question}` : ''}`
           status: 'pending',
           question: question || null,
           inputData,
-          result: '',  // Will be filled after LLM completes
+          result: '',
           calculationData: earlyCalculationDataStr,
           language: language || 'zh-TW',
           targetType,
@@ -595,6 +594,13 @@ ${question ? `特别关注：${question}` : ''}`
         },
       })
       pendingReadingId = pendingReading.id
+    }
+    // Update pre-created reading with calculation data if available
+    if (pendingReadingId && earlyCalculationDataStr && preCreatedReadingId) {
+      prisma.reading.update({
+        where: { id: pendingReadingId },
+        data: { calculationData: earlyCalculationDataStr },
+      }).catch(() => {})
     }
 
     if (!process.env.OPENROUTER_API_KEY) {

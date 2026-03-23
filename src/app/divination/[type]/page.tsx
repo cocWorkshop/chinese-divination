@@ -211,22 +211,26 @@ export default function DivinationFormPage() {
     toast.success(T(lang, `得卦：第${n}卦`, `Hexagram #${n}`))
   }
 
-  // Poll for a reading that was saved server-side after connection was lost
-  const pollForReading = async (afterTime: string, readingType: string): Promise<{ id: string; result: string } | null> => {
+  // Poll for a reading by ID until it's completed or failed
+  const pollForReadingById = async (readingId: string): Promise<{ id: string; result: string; status: string } | null> => {
     const maxPollTime = 600_000 // 600 seconds
-    const pollInterval = 8_000 // 8 seconds
+    const pollInterval = 5_000 // 5 seconds
     const startTime = Date.now()
 
     while (Date.now() - startTime < maxPollTime) {
       await new Promise(r => setTimeout(r, pollInterval))
       try {
-        const res = await fetch('/api/readings')
+        const res = await fetch(`/api/readings/${readingId}`)
         if (!res.ok) continue
         const data = await res.json()
-        const found = data.readings?.find((r: { type: string; createdAt: string; id: string; result: string; status?: string }) =>
-          r.type === readingType && new Date(r.createdAt) > new Date(afterTime) && r.result && r.result.length > 10 && r.status !== 'pending'
-        )
-        if (found) return { id: found.id, result: found.result }
+        const r = data.reading
+        if (r?.status === 'completed' && r.result && r.result.length > 10) {
+          return { id: r.id, result: r.result, status: r.status }
+        }
+        if (r?.status === 'failed') {
+          return { id: r.id, result: r.result || '', status: 'failed' }
+        }
+        // Still pending, continue polling
       } catch { /* continue polling */ }
     }
     return null
@@ -241,13 +245,46 @@ export default function DivinationFormPage() {
     // Use instant scroll + setTimeout fallback for mobile browsers
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
     setTimeout(() => window.scrollTo({ top: 0 }), 100)
-    const requestStartTime = new Date(Date.now() - 30_000).toISOString() // 30s buffer for client/server clock skew
-    try {
-      const hasProfileData = ['bazi', 'ziwei'].includes(type)
-      const formData = { ...form }
-      if (birthLat !== null) (formData as Record<string, unknown>).birthLat = birthLat
-      if (birthLng !== null) (formData as Record<string, unknown>).birthLng = birthLng
 
+    const formData = { ...form }
+    if (birthLat !== null) (formData as Record<string, unknown>).birthLat = birthLat
+    if (birthLng !== null) (formData as Record<string, unknown>).birthLng = birthLng
+
+    // Step 1: Create pending reading via /api/divination/init (fast, <1s)
+    let pendingReadingId: string | null = null
+    try {
+      const initRes = await fetch('/api/divination/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type,
+          inputData: formData,
+          language: lang,
+          question: form.question,
+          saveHistory,
+          targetType,
+          familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
+          newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, name: newMemberName || undefined } : undefined,
+        }),
+      })
+      const initData = await initRes.json()
+      if (!initRes.ok) {
+        toast.error(initData.error || 'Error')
+        reportError({ endpoint: '/api/divination/init', status: initRes.status, error: initData.error || 'Unknown error', context: `type=${type}` })
+        setLoading(false)
+        return
+      }
+      pendingReadingId = initData.readingId
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Network error'
+      toast.error(T(lang, '網絡錯誤，請重試', 'Network error, please retry'))
+      reportError({ endpoint: '/api/divination/init', error: msg, context: `type=${type}` })
+      setLoading(false)
+      return
+    }
+
+    // Step 2: Fire LLM request + poll by ID as fallback
+    try {
       const fetchController = new AbortController()
       const fetchTimeout = setTimeout(() => fetchController.abort(), llmTimeoutMs + 10000)
       const res = await fetch('/api/divination', {
@@ -263,6 +300,7 @@ export default function DivinationFormPage() {
           targetType,
           familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
           newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, name: newMemberName || undefined } : undefined,
+          readingId: pendingReadingId,
         }),
         signal: fetchController.signal,
       })
@@ -271,18 +309,22 @@ export default function DivinationFormPage() {
       try {
         data = await res.json()
       } catch {
-        // Response is not JSON (e.g. Cloudflare 524 HTML) — fall back to polling
-        toast(T(lang, '⏳ 伺服器仍在處理中，等待結果...', '⏳ Server still processing, waiting for result...'), { icon: '🔄', duration: 5000 })
-        const found = await pollForReading(requestStartTime, type)
-        if (found) {
-          setResult(found.result)
-          setResultType(type)
-          setReadingId(found.id)
-          toast.success(T(lang, '結果已就緒', 'Result ready!'))
-          fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
+        // Response is not JSON (e.g. Cloudflare 524 HTML) — fall back to polling by ID
+        if (pendingReadingId) {
+          toast(T(lang, '⏳ 伺服器仍在處理中，等待結果...', '⏳ Server still processing, waiting for result...'), { icon: '🔄', duration: 5000 })
+          const found = await pollForReadingById(pendingReadingId)
+          if (found && found.status === 'completed') {
+            setResult(found.result)
+            setResultType(type)
+            setReadingId(found.id)
+            toast.success(T(lang, '結果已就緒', 'Result ready!'))
+            fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
+          } else {
+            toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
+            reportError({ endpoint: '/api/divination', status: res.status, error: `Polling timeout — readingId=${pendingReadingId}`, context: `type=${type}` })
+          }
         } else {
           toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
-          reportError({ endpoint: '/api/divination', status: res.status, error: 'Polling timeout after 600s — no result found', context: `type=${type}, type=${type}` })
         }
         setLoading(false)
         return
@@ -290,7 +332,7 @@ export default function DivinationFormPage() {
       if (res.ok) {
         setResult(data.reading.result)
         setResultType(type)
-        setReadingId(data.reading.id || null)
+        setReadingId(data.reading.id || pendingReadingId || null)
         if (data.cached) {
           toast.success(T(lang, '已使用之前的八字分析結果', 'Using cached BaZi analysis'), { icon: '📦' })
         }
@@ -298,22 +340,27 @@ export default function DivinationFormPage() {
         fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
       } else {
         toast.error(data.error || 'Error')
-        reportError({ endpoint: '/api/divination', status: res.status, error: data.error || 'Unknown error', context: `type=${type}, type=${type}` })
+        reportError({ endpoint: '/api/divination', status: res.status, error: data.error || 'Unknown error', context: `type=${type}` })
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Network error'
-      // Network error or abort — try polling as fallback
-      toast(T(lang, '⏳ 連接中斷，等待伺服器處理結果...', '⏳ Connection lost, waiting for server result...'), { icon: '🔄', duration: 5000 })
-      const found = await pollForReading(requestStartTime, type)
-      if (found) {
-        setResult(found.result)
-        setResultType(type)
-        setReadingId(found.id)
-        toast.success(T(lang, '結果已就緒', 'Result ready!'))
-        fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
+      // Network error or abort — poll by ID as fallback
+      if (pendingReadingId) {
+        toast(T(lang, '⏳ 連接中斷，等待伺服器處理結果...', '⏳ Connection lost, waiting for server result...'), { icon: '🔄', duration: 5000 })
+        const found = await pollForReadingById(pendingReadingId)
+        if (found && found.status === 'completed') {
+          setResult(found.result)
+          setResultType(type)
+          setReadingId(found.id)
+          toast.success(T(lang, '結果已就緒', 'Result ready!'))
+          fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
+        } else {
+          toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
+          reportError({ endpoint: '/api/divination', error: `Polling timeout — readingId=${pendingReadingId}, original: ${msg}`, context: `type=${type}` })
+        }
       } else {
         toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
-        reportError({ endpoint: '/api/divination', error: `Polling timeout after 600s — original error: ${msg}`, context: `type=${type}, type=${type}` })
+        reportError({ endpoint: '/api/divination', error: `No readingId, original: ${msg}`, context: `type=${type}` })
       }
     }
     setLoading(false)
