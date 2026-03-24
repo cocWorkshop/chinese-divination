@@ -163,7 +163,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="space-y-3 overflow-hidden"
+          className="space-y-3 overflow-hidden max-w-[calc(100vw-2rem)]"
         >
 
       {/* ═══ COMPACT FOUR PILLARS TABLE ═══ */}
@@ -348,7 +348,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           >
             {/* Shen Sha per pillar */}
             {(allPillarShenSha || (d.shenSha && d.shenSha.length > 0)) && (
-              <div className="glass-card rounded-xl p-3 border border-gold/20">
+              <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
                 <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '神煞', 'Shen Sha')}</h3>
                 {allPillarShenSha ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -385,7 +385,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
 
             {/* Da Yun */}
             {d.daYun && d.daYun.length > 0 && (
-              <div className="glass-card rounded-xl p-3 border border-gold/20">
+              <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-gold font-serif text-xs">{T(lang, '大運', 'Da Yun')}</h3>
                   {d.qiYun && (
@@ -416,7 +416,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
 
             {/* Xiao Yun */}
             {d.xiaoYun && d.xiaoYun.length > 0 && (
-              <div className="glass-card rounded-xl p-3 border border-gold/20">
+              <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
                 <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '小運（起運前）', 'Xiao Yun')}</h3>
                 <div className="flex flex-wrap gap-1">
                   {d.xiaoYun.map((xy, i) => (

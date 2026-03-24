@@ -318,7 +318,9 @@ export async function POST(req: NextRequest) {
     const langText = language === 'en' ? 'English' : '繁體中文（Traditional Chinese）'
     const textLang = language === 'en' ? 'English' : '繁體中文'
 
+    const todayStr = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
     const systemPrompt = `You are a master of Chinese traditional divination with deep expertise in ${type}.
+Today's date: ${todayStr}.
 
 Reference knowledge:
 ${refContent}

@@ -48,6 +48,22 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(false)
   const [chatRemaining, setChatRemaining] = useState<number | null>(null)
+  const [usedQuestionIndexes, setUsedQuestionIndexes] = useState<Set<number>>(() => {
+    if (typeof window === 'undefined' || !readingId) return new Set()
+    try {
+      const stored = localStorage.getItem(`xuanji_used_q_${readingId}`)
+      return stored ? new Set(JSON.parse(stored)) : new Set()
+    } catch { return new Set() }
+  })
+  const markQuestionUsed = (i: number) => {
+    setUsedQuestionIndexes(s => {
+      const next = new Set(s).add(i)
+      if (readingId) {
+        try { localStorage.setItem(`xuanji_used_q_${readingId}`, JSON.stringify(Array.from(next))) } catch {}
+      }
+      return next
+    })
+  }
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -223,7 +239,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
               {questions.map((q, i) => (
                   <button
                     key={i}
-                    onClick={() => sendMessage(lang === 'en' ? q.en : q.zh)}
+                    onClick={() => { markQuestionUsed(i); sendMessage(lang === 'en' ? q.en : q.zh) }}
                     className="w-full text-left px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl text-sm transition-all hover:opacity-80"
                     style={{ border: '1px solid var(--border-gold)', color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
                     onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--gold)' }}
@@ -295,6 +311,29 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
           </>
         )}
       </div>
+
+      {/* Remaining suggested questions (hide ones already clicked) */}
+      {messages.length > 0 && !loading && (() => {
+        const remaining = questions.map((q, i) => ({ q, i })).filter(({ i }) => !usedQuestionIndexes.has(i))
+        if (remaining.length === 0) return null
+        return (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {remaining.map(({ q, i }) => (
+              <button
+                key={i}
+                onClick={() => { markQuestionUsed(i); sendMessage(lang === 'en' ? q.en : q.zh) }}
+                className="text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:opacity-80"
+                style={{ border: '1px solid var(--border-gold)', color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--gold)' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+              >
+                <span style={{ color: 'var(--gold)', opacity: 0.6 }} className="mr-1">💬</span>
+                {lang === 'en' ? q.en : q.zh}
+              </button>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Input area */}
       <div className="pt-2 sm:pt-3 mt-auto" style={{ borderTop: '1px solid var(--border-gold)' }}>

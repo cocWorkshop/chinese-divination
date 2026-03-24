@@ -39,7 +39,6 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
   const [saved, setSaved] = useState(!!initialRating)
   const [feedbackSaved, setFeedbackSaved] = useState(false)
   const [feedbackLoaded, setFeedbackLoaded] = useState(false)
-  const debounceRef = useRef<NodeJS.Timeout | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Load existing feedback from API
@@ -58,55 +57,43 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
     }
   }, [readingId, initialRating, feedbackLoaded])
 
-  // Auto-save rating on click
-  const handleRate = async (star: number) => {
+  // Select rating (no auto-save)
+  const handleRate = (star: number) => {
     const newRating = star === rating ? null : star
     setRating(newRating)
     setSaved(false)
+    setFeedbackSaved(false)
 
     if (newRating !== null) {
       setShowFeedback(true)
-      // Focus textarea after animation
       setTimeout(() => textareaRef.current?.focus(), 300)
     }
+  }
 
+  // Update feedback text (no auto-save)
+  const handleFeedbackChange = (text: string) => {
+    setFeedback(text)
+    setFeedbackSaved(false)
+  }
+
+  // Submit rating + feedback together
+  const handleSubmit = async () => {
+    if (!rating) return
     try {
       setSaving(true)
       const res = await fetch(`/api/readings/${readingId}/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating: newRating }),
+        body: JSON.stringify({ rating, feedback: feedback || undefined }),
       })
       if (res.ok) {
         setSaved(true)
-        if (newRating !== null) {
-          toast.success(T(lang, '感謝評分！', 'Thanks for rating!'), { icon: ratingLabels[newRating].emoji, duration: 1500 })
-        }
+        setFeedbackSaved(true)
+        toast.success(T(lang, '感謝您的反饋！', 'Thanks for your feedback!'), { icon: ratingLabels[rating].emoji, duration: 1500 })
       }
-    } catch (err) { reportError({ endpoint: `/api/readings/${readingId}/feedback`, error: err instanceof Error ? err.message : String(err), context: 'rating' }) }
+    } catch (err) { reportError({ endpoint: `/api/readings/${readingId}/feedback`, error: err instanceof Error ? err.message : String(err), context: 'submit' }) }
     setSaving(false)
   }
-
-  // Debounced auto-save for feedback text
-  const handleFeedbackChange = (text: string) => {
-    setFeedback(text)
-    setFeedbackSaved(false)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/readings/${readingId}/feedback`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ feedback: text }),
-        })
-        if (res.ok) setFeedbackSaved(true)
-      } catch (err) { reportError({ endpoint: `/api/readings/${readingId}/feedback`, error: err instanceof Error ? err.message : String(err), context: 'feedback-text' }) }
-    }, 1000)
-  }
-
-  useEffect(() => {
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [])
 
   const displayStar = hoveredStar ?? rating ?? 0
   const activeLabel = hoveredStar ? ratingLabels[hoveredStar] : (rating ? ratingLabels[rating] : null)
@@ -127,16 +114,7 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
             {T(lang, '您的評價', 'Your Feedback')}
           </h3>
         </div>
-        {saved && rating && (
-          <motion.span
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full"
-            style={{ backgroundColor: 'rgba(45, 212, 137, 0.1)', color: '#2dd489', border: '1px solid rgba(45, 212, 137, 0.3)' }}
-          >
-            ✓ {T(lang, '已保存', 'Saved')}
-          </motion.span>
-        )}
+
       </div>
 
       {/* Rating Stars */}
@@ -221,20 +199,22 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
                   }}
                   placeholder={T(lang, '分享您的感受...', 'Share your thoughts...')}
                 />
-                <div className="flex justify-between items-center mt-1">
+                <div className="flex justify-between items-center mt-2">
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                     {feedback.length}/500
                   </span>
-                  {feedbackSaved && feedback && (
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-[10px]"
-                      style={{ color: '#2dd489' }}
-                    >
-                      ✓ {T(lang, '已自動保存', 'Auto-saved')}
-                    </motion.span>
-                  )}
+                  <button
+                    onClick={handleSubmit}
+                    disabled={saving || saved}
+                    className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50"
+                    style={{
+                      backgroundColor: saved ? 'rgba(45, 212, 137, 0.15)' : 'var(--gold)',
+                      color: saved ? '#2dd489' : 'var(--bg-primary)',
+                      border: saved ? '1px solid rgba(45, 212, 137, 0.3)' : 'none',
+                    }}
+                  >
+                    {saving ? T(lang, '提交中...', 'Submitting...') : saved ? `✓ ${T(lang, '已提交', 'Submitted')}` : T(lang, '提交反饋', 'Submit')}
+                  </button>
                 </div>
               </div>
             </div>

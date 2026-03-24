@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
     if (typeof message === 'string' && message.length > 2000) {
       return NextResponse.json({ error: 'Message too long (max 2000 characters)' }, { status: 400 })
     }
-    if (Array.isArray(history) && history.length > 10) {
-      return NextResponse.json({ error: 'Too many history entries (max 10)' }, { status: 400 })
+    if (Array.isArray(history) && history.length > 200) {
+      return NextResponse.json({ error: 'Too many history entries' }, { status: 400 })
     }
 
         // Check chat credits
@@ -65,7 +65,9 @@ export async function POST(req: NextRequest) {
     }
     const currentType = typeLabel[readingType] || '命理'
 
+    const todayStr = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
     const systemPrompt = `你是一位专业的${currentType}解盘师。你正在帮助用户深入分析他们刚刚获得的${currentType}预测结果。
+今天日期：${todayStr}。
 
 事主信息：
 - 姓名：${user.name || '未知'}
@@ -96,13 +98,15 @@ ${user.chatSummary || '（暂无）'}
 `
 
     // Read configurable timeout and chat model
-    const [timeoutSetting, chatModelSetting, model1Setting] = await Promise.all([
+    const [timeoutSetting, chatModelSetting, model1Setting, maxTurnsSetting] = await Promise.all([
       prisma.adminSetting.findUnique({ where: { key: 'llmTimeoutSeconds' } }),
       prisma.adminSetting.findUnique({ where: { key: 'chatModelName' } }),
       prisma.adminSetting.findUnique({ where: { key: 'model1Name' } }),
+      prisma.adminSetting.findUnique({ where: { key: 'chatMaxTurns' } }),
     ])
     const llmTimeoutMs = (parseInt(timeoutSetting?.value || '240', 10) || 240) * 1000
     const chatModel = chatModelSetting?.value || model1Setting?.value || 'anthropic/claude-3-5-haiku'
+    const maxTurns = parseInt(maxTurnsSetting?.value || '100', 10) || 100
 
     const client = new OpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
@@ -116,7 +120,7 @@ ${user.chatSummary || '（暂无）'}
 
     // Build conversation messages
     const messages: { role: 'user' | 'assistant'; content: string }[] = [
-      ...((history || []) as { role: 'user' | 'assistant'; content: string }[]).slice(-10),
+      ...((history || []) as { role: 'user' | 'assistant'; content: string }[]).slice(-maxTurns * 2),
       { role: 'user', content: message },
     ]
 
