@@ -132,61 +132,8 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Hexagram Display */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="glass-card rounded-xl p-3 sm:p-6 border border-gold/20">
-
-        {d.changedHexagram ? (
-          <div className="grid grid-cols-2 gap-2 sm:gap-6">
-            <div>
-              <HexagramVisual hex={d.originalHexagram!} label={T(lang, '本卦', 'Original')} showDetails lang={lang} />
-            </div>
-            <div>
-              <HexagramVisual hex={d.changedHexagram} label={T(lang, '變卦', 'Changed')} showDetails lang={lang} />
-            </div>
-          </div>
-        ) : d.originalHexagram ? (
-          <HexagramVisual hex={d.originalHexagram} showDetails lang={lang} />
-        ) : null}
-
-        {/* Outcome Badge */}
-        <div className="text-center mt-4">
-          <span className={`inline-block px-4 py-1.5 rounded-full border text-sm font-semibold ${ocClass}`}>
-            {oc}
-          </span>
-        </div>
-      </motion.div>
-
-      {/* Gua Ci & Yao Ci */}
-      {(d.guaCi || d.yaoCi) && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          {d.guaCi && (
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
-              <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '卦辭', 'Hexagram Text')}</h4>
-              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{d.guaCi}</p>
-            </div>
-          )}
-          {d.yaoCi && (
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
-              <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '爻辭', 'Line Text')}</h4>
-              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{d.yaoCi}</p>
-            </div>
-          )}
-        </motion.div>
-      )}
-
-      {/* Timing */}
-      {d.timing && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-          className="glass-card rounded-xl p-4 sm:p-5 border border-amber-500/30 bg-amber-500/5">
-          <h4 className="text-amber-400 font-serif text-sm mb-2">⏳ {T(lang, '應期', 'Timing')}</h4>
-          <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.timing}</p>
-        </motion.div>
-      )}
-
-      {/* Tabs */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+      {/* Tabs (Analysis/Interpretation) */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
         <div className="flex flex-wrap gap-1 mb-4">
           {tabs.map(t => (
             <button
@@ -219,9 +166,37 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
         </AnimatePresence>
       </motion.div>
 
+      {/* Gua Ci & Yao Ci */}
+      {(d.guaCi || d.yaoCi) && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {d.guaCi && (
+            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
+              <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '卦辭', 'Hexagram Text')}</h4>
+              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{d.guaCi}</p>
+            </div>
+          )}
+          {d.yaoCi && (
+            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
+              <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '爻辭', 'Line Text')}</h4>
+              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{d.yaoCi}</p>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Timing */}
+      {d.timing && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="glass-card rounded-xl p-4 sm:p-5 border border-amber-500/30 bg-amber-500/5">
+          <h4 className="text-amber-400 font-serif text-sm mb-2">⏳ {T(lang, '應期', 'Timing')}</h4>
+          <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.timing}</p>
+        </motion.div>
+      )}
+
       {/* Key Points */}
       {d.keyPoints && d.keyPoints.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
           className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
           <h4 className="text-gold font-serif mb-3">{T(lang, '要點', 'Key Points')}</h4>
           <ul className="space-y-2">
@@ -235,8 +210,33 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
         </motion.div>
       )}
 
+      {/* Hexagram Display */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+        className="glass-card rounded-xl p-3 sm:p-6 border border-gold/20">
+
+        {d.changedHexagram ? (
+          <div className="grid grid-cols-2 gap-2 sm:gap-6">
+            <div>
+              <HexagramVisual hex={d.originalHexagram!} label={T(lang, '本卦', 'Original')} showDetails lang={lang} />
+            </div>
+            <div>
+              <HexagramVisual hex={d.changedHexagram} label={T(lang, '變卦', 'Changed')} showDetails lang={lang} />
+            </div>
+          </div>
+        ) : d.originalHexagram ? (
+          <HexagramVisual hex={d.originalHexagram} showDetails lang={lang} />
+        ) : null}
+
+        {/* Outcome Badge */}
+        <div className="text-center mt-4">
+          <span className={`inline-block px-4 py-1.5 rounded-full border text-sm font-semibold ${ocClass}`}>
+            {oc}
+          </span>
+        </div>
+      </motion.div>
+
       {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="liuyao" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.25} />
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="liuyao" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.2} />
     </div>
   )
 }
