@@ -73,12 +73,12 @@ const elBar: Record<string, string> = {
 }
 
 const sectionsList = [
-  { key: 'overview', label: '總覽', icon: '☰' },
-  { key: 'career', label: '事業', icon: '💼' },
-  { key: 'marriage', label: '婚姻', icon: '💕' },
-  { key: 'wealth', label: '財運', icon: '💰' },
-  { key: 'health', label: '健康', icon: '🌿' },
-  { key: 'daYunDetail', label: '大運精批', icon: '🔮' },
+  { key: 'overview', label: '總覽', en: 'Overview', icon: '☰' },
+  { key: 'career', label: '事業', en: 'Career', icon: '💼' },
+  { key: 'marriage', label: '婚姻', en: 'Marriage', icon: '💕' },
+  { key: 'wealth', label: '財運', en: 'Wealth', icon: '💰' },
+  { key: 'health', label: '健康', en: 'Health', icon: '🌿' },
+  { key: 'daYunDetail', label: '大運精批', en: 'Life Phases', icon: '🔮' },
 ]
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
@@ -140,7 +140,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
             <span className="text-white/40 text-[10px]">
               {tst.originalTime} → {tst.correctedTime} ({tst.correctionMinutes >= 0 ? '+' : ''}{tst.correctionMinutes.toFixed(0)}min)
             </span>
-            {tst.shichenChanged && <span className="text-amber-400 text-[10px]">⚠️時辰已變</span>}
+            {tst.shichenChanged && <span className="text-amber-400 text-[10px]">{T(lang, '⚠️時辰已變', '⚠️ Hour shifted')}</span>}
           </div>
         )}
 
@@ -161,7 +161,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
             <tr className="border-t border-white/5">
               <td className="text-white/30 text-[10px] py-1">{T(lang, '主星', 'God')}</td>
               {pillars.map(({ label, data: p }) => {
-                const god = label === '日柱' ? '日主' : p?.tenGods?.[0]?.god || ''
+                const god = label === '日柱' ? T(lang, '日主', 'Self') : p?.tenGods?.[0]?.god || ''
                 return <td key={label} className="text-white/60 text-[10px] sm:text-xs py-1">{god}</td>
               })}
             </tr>
@@ -318,7 +318,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                     {(['year','month','day','hour'] as const).map(key => {
                       const p = d.pillars[key]
                       const ss = p?.shenSha || []
-                      const label = key === 'year' ? '年' : key === 'month' ? '月' : key === 'day' ? '日' : '時'
+                      const label = lang === 'en' ? (key === 'year' ? 'Year' : key === 'month' ? 'Month' : key === 'day' ? 'Day' : 'Hour') : (key === 'year' ? '年' : key === 'month' ? '月' : key === 'day' ? '日' : '時')
                       return (
                         <div key={key}>
                           <div className="text-white/40 text-[10px] mb-1">{label}</div>
@@ -409,7 +409,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           {sectionsList.map(s => (
             <button key={s.key} onClick={() => setActiveSection(s.key)}
               className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}>
-              {s.icon} {s.label}
+              {s.icon} {lang === 'en' ? s.en : s.label}
             </button>
           ))}
 
