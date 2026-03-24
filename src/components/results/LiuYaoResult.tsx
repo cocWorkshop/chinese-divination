@@ -50,12 +50,12 @@ const outcomeColor: Record<string, string> = {
   '小凶': 'text-orange-300 border-orange-300/40 bg-orange-300/10',
 }
 
-function HexagramVisual({ hex, label, showDetails }: { hex: HexagramData; label?: string; showDetails?: boolean }) {
+function HexagramVisual({ hex, label, showDetails, lang }: { hex: HexagramData; label?: string; showDetails?: boolean; lang: string }) {
   return (
     <div className="text-center">
       {label && <div className="text-white/40 text-xs mb-2">{label}</div>}
       <h3 className="text-gold font-serif text-xl mb-1">{hex.fullName}</h3>
-      {hex.palace && <div className="text-white/50 text-xs mb-3">{hex.palace}宫 · {hex.palaceElement}</div>}
+      {hex.palace && <div className="text-white/50 text-xs mb-3">{hex.palace}{T(lang, '宫', ' Palace')} · {hex.palaceElement}</div>}
 
       {/* Lines — displayed bottom to top */}
       <div className="flex flex-col items-center gap-1 my-4">
@@ -105,7 +105,7 @@ function HexagramVisual({ hex, label, showDetails }: { hex: HexagramData; label?
             <div key={i} className="text-center">
               <div className="text-lg">{item.t.symbol}</div>
               <div className="text-gold text-xs">{item.t.name}({item.t.nature})</div>
-              <div className="text-white/30 text-[10px]">{item.label} · {item.t.element}</div>
+              <div className="text-white/30 text-[10px]">{T(lang, item.label, item.label === '上卦' ? 'Upper' : 'Lower')} · {item.t.element}</div>
             </div>
           ))}
         </div>
@@ -139,14 +139,14 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
         {d.changedHexagram ? (
           <div className="grid grid-cols-2 gap-2 sm:gap-6">
             <div>
-              <HexagramVisual hex={d.originalHexagram!} label={T(lang, '本卦', 'Original')} showDetails />
+              <HexagramVisual hex={d.originalHexagram!} label={T(lang, '本卦', 'Original')} showDetails lang={lang} />
             </div>
             <div>
-              <HexagramVisual hex={d.changedHexagram} label={T(lang, '變卦', 'Changed')} showDetails />
+              <HexagramVisual hex={d.changedHexagram} label={T(lang, '變卦', 'Changed')} showDetails lang={lang} />
             </div>
           </div>
         ) : d.originalHexagram ? (
-          <HexagramVisual hex={d.originalHexagram} showDetails />
+          <HexagramVisual hex={d.originalHexagram} showDetails lang={lang} />
         ) : null}
 
         {/* Outcome Badge */}
@@ -163,13 +163,13 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
           className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           {d.guaCi && (
             <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
-              <h4 className="text-gold font-serif text-sm mb-2">卦辭</h4>
+              <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '卦辭', 'Hexagram Text')}</h4>
               <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{d.guaCi}</p>
             </div>
           )}
           {d.yaoCi && (
             <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
-              <h4 className="text-gold font-serif text-sm mb-2">爻辭</h4>
+              <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '爻辭', 'Line Text')}</h4>
               <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{d.yaoCi}</p>
             </div>
           )}

@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLang } from '../LanguageContext'
+
+const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 interface QimenPalace {
   name: string
@@ -67,14 +70,8 @@ const divinityColor: Record<string, string> = {
   '玄武': 'text-gray-300',
 }
 
-const accordionSections = [
-  { key: 'situation', label: '當前局勢', icon: '⚡' },
-  { key: 'trend', label: '事態走向', icon: '🔮' },
-  { key: 'timing', label: '最佳時機', icon: '⏰' },
-  { key: 'strategy', label: '行動策略', icon: '🎯' },
-]
-
 export default function QimenResult({ data }: { data: Record<string, unknown> }) {
+  const { lang } = useLang()
   const d = data as unknown as QimenData
   const [openSection, setOpenSection] = useState<string | null>('situation')
   const [selectedPalace, setSelectedPalace] = useState<QimenPalace | null>(null)
@@ -84,6 +81,13 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
   const chart = d.qimenChart
   const hasProgrammaticData = !!chart?.palaces?.length
 
+  const accordionSections = [
+    { key: 'situation', label: '當前局勢', en: 'Current Situation', icon: '⚡' },
+    { key: 'trend', label: '事態走向', en: 'Trend', icon: '🔮' },
+    { key: 'timing', label: '最佳時機', en: 'Best Timing', icon: '⏰' },
+    { key: 'strategy', label: '行動策略', en: 'Strategy', icon: '🎯' },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Chart Info Bar */}
@@ -91,24 +95,24 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="glass-card rounded-xl p-3 sm:p-4 border border-cyan-400/30 bg-cyan-400/5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-cyan-400 text-xs sm:text-sm">奇門遁甲盤</span>
+            <span className="text-cyan-400 text-xs sm:text-sm">{T(lang, '奇門遁甲盤', 'Qi Men Dun Jia Chart')}</span>
             <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
             <div>
-              <span className="text-white/40">干支：</span>
+              <span className="text-white/40">{T(lang, '干支：', 'Stems: ')}</span>
               <span className="text-white/80">{chart.year} {chart.month} {chart.day} {chart.hour}</span>
             </div>
             <div>
-              <span className="text-white/40">節氣：</span>
+              <span className="text-white/40">{T(lang, '節氣：', 'Solar Term: ')}</span>
               <span className="text-white/80">{chart.solarTerm}</span>
             </div>
             <div>
-              <span className="text-white/40">局數：</span>
+              <span className="text-white/40">{T(lang, '局數：', 'Formation: ')}</span>
               <span className="text-cyan-300 font-semibold">{chart.roundLabel}</span>
             </div>
             <div>
-              <span className="text-white/40">值符/值使：</span>
+              <span className="text-white/40">{T(lang, '值符/值使：', 'Duty Star/Door: ')}</span>
               <span className="text-yellow-300">{chart.zhiFu}</span>
               <span className="text-white/40"> / </span>
               <span className="text-blue-300">{chart.zhiShi}</span>
@@ -121,7 +125,7 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
       {hasProgrammaticData && chart.grid ? (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="glass-card rounded-xl p-3 sm:p-5 border border-gold/20">
-          <h3 className="text-gold font-serif mb-3">九宮盤</h3>
+          <h3 className="text-gold font-serif mb-3">{T(lang, '九宮盤', 'Nine Palace Chart')}</h3>
           <div className="grid grid-cols-3 gap-[2px] sm:gap-1 bg-gold/10 rounded-lg overflow-hidden">
             {chart.grid.map((row, ri) =>
               row.map((palace, ci) => {
@@ -161,10 +165,10 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
                     {/* Heaven/Earth stems */}
                     <div className="flex items-center gap-1 mt-0.5">
                       {palace.heavenStem && (
-                        <span className="text-[9px] sm:text-[10px] text-cyan-400/70">天{palace.heavenStem}</span>
+                        <span className="text-[9px] sm:text-[10px] text-cyan-400/70">{T(lang, '天', 'H')}{palace.heavenStem}</span>
                       )}
                       {palace.earthStem && (
-                        <span className="text-[9px] sm:text-[10px] text-orange-400/60">地{palace.earthStem}</span>
+                        <span className="text-[9px] sm:text-[10px] text-orange-400/60">{T(lang, '地', 'E')}{palace.earthStem}</span>
                       )}
                     </div>
                   </div>
@@ -177,16 +181,16 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
         /* Fallback: original palace cards */
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-5 border border-gold/20">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gold font-serif">奇門格局</h3>
+            <h3 className="text-gold font-serif">{T(lang, '奇門格局', 'Qi Men Formation')}</h3>
             <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
           </div>
           <div className="grid grid-cols-5 gap-2">
             {[
-              { label: '问事宫', value: d.palace?.inquiry },
-              { label: '结果宫', value: d.palace?.outcome },
-              { label: '值符神', value: d.palace?.god },
-              { label: '值符星', value: d.palace?.star },
-              { label: '当值门', value: d.palace?.door },
+              { label: T(lang, '问事宫', 'Inquiry'), value: d.palace?.inquiry },
+              { label: T(lang, '结果宫', 'Outcome'), value: d.palace?.outcome },
+              { label: T(lang, '值符神', 'Divinity'), value: d.palace?.god },
+              { label: T(lang, '值符星', 'Star'), value: d.palace?.star },
+              { label: T(lang, '当值门', 'Door'), value: d.palace?.door },
             ].map(({ label, value }) => (
               <div key={label} className="rounded-lg border border-gold/20 bg-gold/5 p-2 text-center">
                 <div className="text-white/40 text-xs mb-1">{label}</div>
@@ -208,27 +212,27 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-cyan-300 font-serif">{selectedPalace.name} · {selectedPalace.direction}</h3>
-              <button onClick={() => setSelectedPalace(null)} className="text-white/40 text-xs hover:text-white/60">收起</button>
+              <button onClick={() => setSelectedPalace(null)} className="text-white/40 text-xs hover:text-white/60">{T(lang, '收起', 'Close')}</button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
               <div className="rounded-lg border border-gold/20 bg-gold/5 p-2 text-center">
-                <div className="text-white/40 text-[10px] mb-1">八神</div>
+                <div className="text-white/40 text-[10px] mb-1">{T(lang, '八神', 'Divinity')}</div>
                 <div className={`font-serif ${divinityColor[selectedPalace.divinity] || 'text-white/60'}`}>{selectedPalace.divinity || '—'}</div>
               </div>
               <div className="rounded-lg border border-gold/20 bg-gold/5 p-2 text-center">
-                <div className="text-white/40 text-[10px] mb-1">八門</div>
+                <div className="text-white/40 text-[10px] mb-1">{T(lang, '八門', 'Door')}</div>
                 <div className={`font-serif ${doorColor[selectedPalace.door] || 'text-gold'}`}>{selectedPalace.door || '—'}</div>
               </div>
               <div className="rounded-lg border border-gold/20 bg-gold/5 p-2 text-center">
-                <div className="text-white/40 text-[10px] mb-1">九星</div>
+                <div className="text-white/40 text-[10px] mb-1">{T(lang, '九星', 'Star')}</div>
                 <div className="text-white/70 font-serif">{selectedPalace.star || '—'}</div>
               </div>
               <div className="rounded-lg border border-gold/20 bg-gold/5 p-2 text-center">
-                <div className="text-white/40 text-[10px] mb-1">天干</div>
+                <div className="text-white/40 text-[10px] mb-1">{T(lang, '天干', 'Stems')}</div>
                 <div className="font-serif">
-                  <span className="text-cyan-400">天{selectedPalace.heavenStem}</span>
+                  <span className="text-cyan-400">{T(lang, '天', 'H')}{selectedPalace.heavenStem}</span>
                   {' '}
-                  <span className="text-orange-400">地{selectedPalace.earthStem}</span>
+                  <span className="text-orange-400">{T(lang, '地', 'E')}{selectedPalace.earthStem}</span>
                 </div>
               </div>
             </div>
@@ -241,15 +245,15 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="glass-card rounded-xl p-4 border border-gold/20">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-gold font-serif text-sm">格局要素</h3>
+            <h3 className="text-gold font-serif text-sm">{T(lang, '格局要素', 'Formation Elements')}</h3>
           </div>
           <div className="grid grid-cols-5 gap-2">
             {[
-              { label: '问事宫', value: d.palace?.inquiry },
-              { label: '结果宫', value: d.palace?.outcome },
-              { label: '值符', value: chart.zhiFu },
-              { label: '值使', value: chart.zhiShi },
-              { label: '当值门', value: d.palace?.door },
+              { label: T(lang, '问事宫', 'Inquiry'), value: d.palace?.inquiry },
+              { label: T(lang, '结果宫', 'Outcome'), value: d.palace?.outcome },
+              { label: T(lang, '值符', 'Duty Star'), value: chart.zhiFu },
+              { label: T(lang, '值使', 'Duty Door'), value: chart.zhiShi },
+              { label: T(lang, '当值门', 'Door'), value: d.palace?.door },
             ].map(({ label, value }) => (
               <div key={label} className="rounded-lg border border-gold/20 bg-gold/5 p-2 text-center">
                 <div className="text-white/40 text-[10px] mb-0.5">{label}</div>
@@ -268,7 +272,7 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
               onClick={() => setOpenSection(openSection === s.key ? null : s.key)}
               className="w-full px-5 py-4 flex items-center justify-between text-left"
             >
-              <span className="text-gold font-serif">{s.icon} {s.label}</span>
+              <span className="text-gold font-serif">{s.icon} {lang === 'en' ? s.en : s.label}</span>
               <span className="text-white/40">{openSection === s.key ? '▲' : '▼'}</span>
             </button>
             <AnimatePresence>
@@ -280,7 +284,7 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
                   className="overflow-hidden"
                 >
                   <div className="px-5 pb-4 text-white/70 text-sm leading-relaxed border-t border-gold/10 pt-3 whitespace-pre-wrap">
-                    {d.sections?.[s.key as keyof typeof d.sections] || '暫無內容'}
+                    {d.sections?.[s.key as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
                   </div>
                 </motion.div>
               )}
@@ -294,13 +298,13 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="grid grid-cols-2 gap-3">
           {d.luckyInfo.timing && (
             <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-              <div className="text-white/40 text-xs mb-1">吉時</div>
+              <div className="text-white/40 text-xs mb-1">{T(lang, '吉時', 'Auspicious Time')}</div>
               <div className="text-gold text-sm">{d.luckyInfo.timing}</div>
             </div>
           )}
           {d.luckyInfo.direction && (
             <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-              <div className="text-white/40 text-xs mb-1">吉方</div>
+              <div className="text-white/40 text-xs mb-1">{T(lang, '吉方', 'Auspicious Direction')}</div>
               <div className="text-gold text-sm">{d.luckyInfo.direction}</div>
             </div>
           )}
@@ -310,7 +314,7 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
       {/* Key Advice */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <h3 className="text-gold font-serif mb-3">核心建議</h3>
+          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
           <div className="grid gap-3">
             {d.keyAdvice.map((advice, i) => (
               <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">

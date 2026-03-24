@@ -112,14 +112,17 @@ function findPalace(palaces: Record<string, ZiweiPalaceData>, canonicalName: str
   return undefined
 }
 
+const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+
 const sectionTabs = [
-  { key: 'overview', label: '總覽' },
-  { key: 'career', label: '事業' },
-  { key: 'marriage', label: '婚姻' },
-  { key: 'wealth', label: '財運' },
+  { key: 'overview', label: '總覽', en: 'Overview' },
+  { key: 'career', label: '事業', en: 'Career' },
+  { key: 'marriage', label: '婚姻', en: 'Marriage' },
+  { key: 'wealth', label: '財運', en: 'Wealth' },
 ]
 
 export default function ZiweiResult({ data, isShared, rawResult, readingId, chatMessages }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
+  const { lang } = useLang()
   const d = data as unknown as ZiweiData
   const [activeSection, setActiveSection] = useState('overview')
   const [selectedPalace, setSelectedPalace] = useState<string | null>(null)
@@ -155,35 +158,35 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="glass-card rounded-xl p-3 sm:p-4 border border-purple-400/30 bg-purple-400/5">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-purple-400 text-xs sm:text-sm">命盤資訊</span>
+            <span className="text-purple-400 text-xs sm:text-sm">{T(lang, '命盤資訊', 'Chart Info')}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
             <div>
-              <span className="text-white/40">農曆：</span>
+              <span className="text-white/40">{T(lang, '農曆：', 'Lunar: ')}</span>
               <span className="text-white/80">{chart.lunarDate}</span>
             </div>
             <div>
-              <span className="text-white/40">干支：</span>
+              <span className="text-white/40">{T(lang, '干支：', 'Stems: ')}</span>
               <span className="text-white/80">{chart.chineseDate}</span>
             </div>
             <div>
-              <span className="text-white/40">時辰：</span>
+              <span className="text-white/40">{T(lang, '時辰：', 'Hour: ')}</span>
               <span className="text-white/80">{chart.time} ({chart.timeRange})</span>
             </div>
             <div>
-              <span className="text-white/40">生肖：</span>
+              <span className="text-white/40">{T(lang, '生肖：', 'Zodiac: ')}</span>
               <span className="text-white/80">{chart.zodiac}</span>
             </div>
             <div>
-              <span className="text-white/40">五行局：</span>
+              <span className="text-white/40">{T(lang, '五行局：', 'Five Elements: ')}</span>
               <span className="text-purple-300 font-semibold">{chart.fiveElementsClass}</span>
             </div>
             <div>
-              <span className="text-white/40">命主：</span>
+              <span className="text-white/40">{T(lang, '命主：', 'Soul Lord: ')}</span>
               <span className="text-gold">{chart.soul}</span>
             </div>
             <div>
-              <span className="text-white/40">身主：</span>
+              <span className="text-white/40">{T(lang, '身主：', 'Body Lord: ')}</span>
               <span className="text-gold">{chart.body}</span>
             </div>
           </div>
@@ -194,7 +197,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       {chart?.siHua && chart.siHua.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="glass-card rounded-xl p-4 border border-gold/20">
-          <h3 className="text-gold font-serif text-sm mb-3">四化飛星</h3>
+          <h3 className="text-gold font-serif text-sm mb-3">{T(lang, '四化飛星', 'Four Transformations')}</h3>
           <div className="flex flex-wrap gap-2">
             {chart.siHua.map((sh) => (
               <div key={`${sh.star}-${sh.type}`} className={`px-3 py-1.5 rounded-lg border border-gold/20 bg-gold/5 text-center`}>
@@ -211,7 +214,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       {/* Main Stars - shown when no programmatic data or as compact view */}
       {!hasProgrammaticData && (d.mainStars || []).length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-5 border border-gold/20">
-          <h3 className="text-gold font-serif mb-3">主星配置</h3>
+          <h3 className="text-gold font-serif mb-3">{T(lang, '主星配置', 'Main Stars')}</h3>
           <div className="flex flex-wrap gap-2">
             {(d.mainStars || []).map((star) => (
               <div key={star.name} className="px-3 py-1.5 rounded-lg border border-gold/30 bg-gold/10 text-center">
@@ -229,7 +232,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       {/* Traditional 12-Palace Grid (4x4 with center area) */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="glass-card rounded-xl p-3 sm:p-5 border border-gold/20">
-        <h3 className="text-gold font-serif mb-3">命盤</h3>
+        <h3 className="text-gold font-serif mb-3">{T(lang, '命盤', 'Natal Chart')}</h3>
         <div className="grid grid-cols-4 gap-[2px] sm:gap-1 bg-gold/10 rounded-lg overflow-hidden">
           {[0, 1, 2, 3].map(row => (
             [0, 1, 2, 3].map(col => {
@@ -241,11 +244,11 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                 if (row === 1 && col === 1) {
                   return (
                     <div key={`${row}-${col}`} className="col-span-2 row-span-2 bg-navy-950/90 p-2 sm:p-3 flex flex-col items-center justify-center text-center">
-                      <div className="text-gold font-serif text-sm sm:text-base mb-1">紫微斗數</div>
+                      <div className="text-gold font-serif text-sm sm:text-base mb-1">{T(lang, '紫微斗數', 'Zi Wei Dou Shu')}</div>
                       {hasProgrammaticData && (
                         <>
                           <div className="text-white/50 text-[10px] sm:text-xs">{chart.fiveElementsClass}</div>
-                          <div className="text-white/40 text-[10px] sm:text-xs mt-1">命主 {chart.soul} · 身主 {chart.body}</div>
+                          <div className="text-white/40 text-[10px] sm:text-xs mt-1">{T(lang, '命主', 'Soul')} {chart.soul} · {T(lang, '身主', 'Body')} {chart.body}</div>
                         </>
                       )}
                     </div>
@@ -337,7 +340,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-purple-300 font-serif">{selectedPalace}</h3>
-              <button onClick={() => setSelectedPalace(null)} className="text-white/40 text-xs hover:text-white/60">收起</button>
+              <button onClick={() => setSelectedPalace(null)} className="text-white/40 text-xs hover:text-white/60">{T(lang, '收起', 'Close')}</button>
             </div>
             {/* Stars detail */}
             <div className="flex flex-wrap gap-2 mb-3">
@@ -382,7 +385,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
               onClick={() => setActiveSection(s.key)}
               className={`px-4 py-2 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}
             >
-              {s.label}
+              {lang === 'en' ? s.en : s.label}
             </button>
           ))}
 
@@ -395,7 +398,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
             exit={{ opacity: 0, x: -10 }}
           >
             <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
-              {d.sections?.[activeSection as keyof typeof d.sections] || '暫無內容'}
+              {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
             </div>
           </motion.div>
         </AnimatePresence>
@@ -404,7 +407,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       {/* Key Advice */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <h3 className="text-gold font-serif mb-3">核心建議</h3>
+          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
           <div className="grid gap-3">
             {d.keyAdvice.map((advice, idx) => (
               <div key={`advice-${idx}`} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
@@ -424,19 +427,19 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="grid grid-cols-3 gap-2 sm:gap-3">
           {d.luckyInfo.numbers?.length > 0 && (
             <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-              <div className="text-white/40 text-xs mb-1">吉数</div>
+              <div className="text-white/40 text-xs mb-1">{T(lang, '吉数', 'Lucky Numbers')}</div>
               <div className="text-gold font-serif">{d.luckyInfo.numbers.join(' · ')}</div>
             </div>
           )}
           {d.luckyInfo.colors?.length > 0 && (
             <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-              <div className="text-white/40 text-xs mb-1">吉色</div>
+              <div className="text-white/40 text-xs mb-1">{T(lang, '吉色', 'Lucky Colors')}</div>
               <div className="text-gold font-serif text-sm">{d.luckyInfo.colors.join(' ')}</div>
             </div>
           )}
           {d.luckyInfo.directions?.length > 0 && (
             <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-              <div className="text-white/40 text-xs mb-1">吉方</div>
+              <div className="text-white/40 text-xs mb-1">{T(lang, '吉方', 'Lucky Directions')}</div>
               <div className="text-gold font-serif text-sm">{d.luckyInfo.directions.join(' ')}</div>
             </div>
           )}

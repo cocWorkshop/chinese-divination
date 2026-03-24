@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import YinYangIcon from '@/components/YinYangIcon'
+import { useLang } from '../LanguageContext'
+
+const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 interface MeihuaTrigram {
   name: string
@@ -73,13 +76,6 @@ const relationColor: Record<string, string> = {
   '用克体': 'text-red-400 border-red-400/40 bg-red-400/10',
 }
 
-const accordionSections = [
-  { key: 'situation', label: '體卦分析', icon: '☰' },
-  { key: 'inquiry', label: '用卦分析', icon: '☯' },
-  { key: 'interaction', label: '體用關係', icon: '⚡' },
-  { key: 'timeline', label: '時間推斷', icon: '⏰' },
-]
-
 // Render a single hexagram line
 function HexagramLine({ yang, isChanging, index }: { yang: boolean; isChanging: boolean; index: number }) {
   return (
@@ -99,7 +95,7 @@ function HexagramLine({ yang, isChanging, index }: { yang: boolean; isChanging: 
 }
 
 // Render a full hexagram (6 lines from top to bottom visually, but data is bottom-to-top)
-function HexagramDisplay({ hexagram, changingLine, label }: { hexagram: MeihuaHexagram; changingLine?: number; label: string }) {
+function HexagramDisplay({ hexagram, changingLine, label, lang }: { hexagram: MeihuaHexagram; changingLine?: number; label: string; lang: string }) {
   const lines = hexagram.lines || []
   return (
     <div className="rounded-xl border border-gold/20 bg-gold/5 p-3 sm:p-4 text-center">
@@ -129,6 +125,7 @@ function HexagramDisplay({ hexagram, changingLine, label }: { hexagram: MeihuaHe
 }
 
 export default function OtherResult({ data }: { data: Record<string, unknown> }) {
+  const { lang } = useLang()
   const d = data as unknown as OtherData
   const [openSection, setOpenSection] = useState<string | null>('situation')
 
@@ -137,6 +134,13 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
   const mc = d.meihuaChart
   const hasMeihuaData = !!mc?.benGua
 
+  const accordionSections = [
+    { key: 'situation', label: '體卦分析', en: 'Ti Trigram Analysis', icon: '☰' },
+    { key: 'inquiry', label: '用卦分析', en: 'Yong Trigram Analysis', icon: '☯' },
+    { key: 'interaction', label: '體用關係', en: 'Ti-Yong Relationship', icon: '⚡' },
+    { key: 'timeline', label: '時間推斷', en: 'Timing Prediction', icon: '⏰' },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Meihua Chart Info */}
@@ -144,30 +148,30 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="glass-card rounded-xl p-3 sm:p-4 border border-amber-400/30 bg-amber-400/5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-amber-400 text-xs sm:text-sm">梅花易數 · 時間起卦</span>
+            <span className="text-amber-400 text-xs sm:text-sm">{T(lang, '梅花易數 · 時間起卦', 'Meihua Yishu · Time-based Casting')}</span>
             <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
             <div>
-              <span className="text-white/40">農曆：</span>
-              <span className="text-white/80">{mc.lunarYear}年{mc.lunarMonth}月{mc.lunarDay}日</span>
+              <span className="text-white/40">{T(lang, '農曆：', 'Lunar: ')}</span>
+              <span className="text-white/80">{mc.lunarYear}{T(lang, '年', '/')}{mc.lunarMonth}{T(lang, '月', '/')}{mc.lunarDay}{T(lang, '日', '')}</span>
             </div>
             <div>
-              <span className="text-white/40">年支：</span>
-              <span className="text-white/80">{mc.yearBranch}（數{mc.yearNum}）</span>
+              <span className="text-white/40">{T(lang, '年支：', 'Year Branch: ')}</span>
+              <span className="text-white/80">{mc.yearBranch}{T(lang, '（數', ' (num ')}{mc.yearNum}{T(lang, '）', ')')}</span>
             </div>
             <div>
-              <span className="text-white/40">上卦數：</span>
+              <span className="text-white/40">{T(lang, '上卦數：', 'Upper #: ')}</span>
               <span className="text-white/80">{mc.yearNum}+{mc.monthNum}+{mc.dayNum}=%8→{mc.upperNum}</span>
             </div>
             <div>
-              <span className="text-white/40">下卦數：</span>
+              <span className="text-white/40">{T(lang, '下卦數：', 'Lower #: ')}</span>
               <span className="text-white/80">+{mc.hourNum}=%8→{mc.lowerNum}</span>
             </div>
           </div>
           <div className="mt-1.5 text-[11px] sm:text-xs">
-            <span className="text-white/40">動爻：</span>
-            <span className="text-red-400">第{mc.changingLine}爻</span>
+            <span className="text-white/40">{T(lang, '動爻：', 'Changing Line: ')}</span>
+            <span className="text-red-400">{T(lang, `第${mc.changingLine}爻`, `Line ${mc.changingLine}`)}</span>
           </div>
         </motion.div>
       )}
@@ -176,25 +180,25 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
       {hasMeihuaData && mc.benGua && mc.huGua && mc.bianGua ? (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
-          <h3 className="text-gold font-serif mb-4 text-center">卦象</h3>
+          <h3 className="text-gold font-serif mb-4 text-center">{T(lang, '卦象', 'Hexagrams')}</h3>
           <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            <HexagramDisplay hexagram={mc.benGua} changingLine={mc.changingLine} label="本卦" />
-            <HexagramDisplay hexagram={mc.huGua} label="互卦" />
-            <HexagramDisplay hexagram={mc.bianGua} label="變卦" />
+            <HexagramDisplay hexagram={mc.benGua} changingLine={mc.changingLine} label={T(lang, '本卦', 'Original')} lang={lang} />
+            <HexagramDisplay hexagram={mc.huGua} label={T(lang, '互卦', 'Mutual')} lang={lang} />
+            <HexagramDisplay hexagram={mc.bianGua} label={T(lang, '變卦', 'Changed')} lang={lang} />
           </div>
         </motion.div>
       ) : (
         /* Fallback: original trigram cards */
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-5 border border-gold/20">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gold font-serif">{d.subType === 'liuren' ? '六壬神課' : '梅花易數'}</h3>
+            <h3 className="text-gold font-serif">{d.subType === 'liuren' ? T(lang, '六壬神課', 'Liu Ren Oracle') : T(lang, '梅花易數', 'Meihua Yishu')}</h3>
             <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: '體卦(上)', data: d.trigrams?.upper },
-              { label: '用卦(下)', data: d.trigrams?.lower },
-              { label: '变卦', data: d.trigrams?.transformed },
+              { label: T(lang, '體卦(上)', 'Ti (Upper)'), data: d.trigrams?.upper },
+              { label: T(lang, '用卦(下)', 'Yong (Lower)'), data: d.trigrams?.lower },
+              { label: T(lang, '变卦', 'Changed'), data: d.trigrams?.transformed },
             ].map(({ label, data: t }) => (
               <div key={label} className="rounded-xl border border-gold/20 bg-gold/5 p-4 text-center">
                 <div className="text-white/40 text-xs mb-2">{label}</div>
@@ -211,10 +215,10 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
       {hasMeihuaData && mc.tiGua && mc.yongGua && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="glass-card rounded-xl p-4 border border-gold/20">
-          <h3 className="text-gold font-serif text-sm mb-3">體用關係</h3>
+          <h3 className="text-gold font-serif text-sm mb-3">{T(lang, '體用關係', 'Ti-Yong Relationship')}</h3>
           <div className="flex items-center justify-center gap-4 mb-3">
             <div className="text-center">
-              <div className="text-white/40 text-xs mb-1">體卦</div>
+              <div className="text-white/40 text-xs mb-1">{T(lang, '體卦', 'Ti Trigram')}</div>
               <div className={`text-lg font-serif ${elementColor[mc.tiGua.element] || 'text-gold'}`}>
                 {mc.tiGua.symbol} {mc.tiGua.name}
               </div>
@@ -224,7 +228,7 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
               {mc.tiYongRelation}
             </div>
             <div className="text-center">
-              <div className="text-white/40 text-xs mb-1">用卦</div>
+              <div className="text-white/40 text-xs mb-1">{T(lang, '用卦', 'Yong Trigram')}</div>
               <div className={`text-lg font-serif ${elementColor[mc.yongGua.element] || 'text-gold'}`}>
                 {mc.yongGua.symbol} {mc.yongGua.name}
               </div>
@@ -245,14 +249,14 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
               onClick={() => setOpenSection(openSection === s.key ? null : s.key)}
               className="w-full px-5 py-4 flex items-center justify-between text-left"
             >
-              <span className="text-gold font-serif">{s.icon === '☯' ? <><YinYangIcon size={16} /> </> : s.icon} {s.label}</span>
+              <span className="text-gold font-serif">{s.icon === '☯' ? <><YinYangIcon size={16} /> </> : s.icon} {lang === 'en' ? s.en : s.label}</span>
               <span className="text-white/40">{openSection === s.key ? '▲' : '▼'}</span>
             </button>
             <AnimatePresence>
               {openSection === s.key && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                   <div className="px-5 pb-4 text-white/70 text-sm leading-relaxed border-t border-gold/10 pt-3 whitespace-pre-wrap">
-                    {d.sections?.[s.key as keyof typeof d.sections] || '暫無內容'}
+                    {d.sections?.[s.key as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
                   </div>
                 </motion.div>
               )}
@@ -264,7 +268,7 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
       {/* Key Advice */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <h3 className="text-gold font-serif mb-3">核心建議</h3>
+          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
           <div className="grid gap-3">
             {d.keyAdvice.map((advice, i) => (
               <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">

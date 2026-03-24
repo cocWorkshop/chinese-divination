@@ -2,6 +2,9 @@
 import YinYangIcon from '@/components/YinYangIcon'
 import XuanjiChatCard from './XuanjiChatCard'
 import { motion } from 'framer-motion'
+import { useLang } from '../LanguageContext'
+
+const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 interface IChingData {
   hexagram: {
@@ -25,6 +28,7 @@ const outcomeColor: Record<string, string> = {
 }
 
 export default function IChingResult({ data, rawResult, isShared, readingId, chatMessages }: { data: Record<string, unknown>; rawResult?: string; isShared?: boolean; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
+  const { lang } = useLang()
   const d = data as unknown as IChingData
   const lines = d.hexagram?.lines || []
 
@@ -33,13 +37,72 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
 
   return (
     <div className="space-y-6">
+      {/* Outcome Badge */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+        <span className={`inline-block px-4 py-1.5 rounded-full border text-sm font-semibold ${ocClass}`}>
+          {d.hexagram?.name} · {oc}
+        </span>
+      </motion.div>
+
+      {/* Interpretation */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-card rounded-xl p-5 border border-gold/20">
+        <h4 className="text-gold font-serif mb-2">{T(lang, '卦象解读', 'Interpretation')}</h4>
+        <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.interpretation}</p>
+      </motion.div>
+
+      {/* Changing Lines */}
+      {d.changingLines && d.changingLines.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="glass-card rounded-xl p-5 border border-gold/30 bg-gold/5">
+          <h4 className="text-gold font-serif mb-3">{T(lang, '變爻', 'Changing Lines')}</h4>
+          {d.changingLines.map((cl, i) => (
+            <div key={i} className="flex gap-3 mb-2">
+              <span className="text-gold text-sm">{T(lang, `第${cl.position}爻`, `Line ${cl.position}`)}</span>
+              <p className="text-white/70 text-sm">{cl.text}</p>
+            </div>
+          ))}
+        </motion.div>
+      )}
+
+      {/* Key Points */}
+      {d.keyPoints && d.keyPoints.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card rounded-xl p-5 border border-gold/20">
+          <h4 className="text-gold font-serif mb-3">{T(lang, '要点', 'Key Points')}</h4>
+          <ul className="space-y-2">
+            {d.keyPoints.map((pt, i) => (
+              <li key={i} className="flex gap-2 text-white/70 text-sm">
+                <YinYangIcon size={16} />
+                <span>{pt}</span>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+      )}
+
+      {/* Advice */}
+      {d.advice && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="rounded-xl p-5 border border-gold/40 bg-gold/10">
+          <h4 className="text-gold font-serif mb-2">{T(lang, '指导建议', 'Guidance')}</h4>
+          <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.advice}</p>
+        </motion.div>
+      )}
+
+      {/* Judgment & Image */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="glass-card rounded-xl p-5 border border-gold/20">
+          <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '卦辞', 'Judgment')}</h4>
+          <p className="text-white/70 text-sm leading-relaxed">{d.judgment}</p>
+        </div>
+        <div className="glass-card rounded-xl p-5 border border-gold/20">
+          <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '象辞', 'Image')}</h4>
+          <p className="text-white/70 text-sm leading-relaxed">{d.image}</p>
+        </div>
+      </motion.div>
+
       {/* Hexagram Visual */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-6 border border-gold/20 text-center">
-        <div className="text-white/40 text-sm mb-2">第 {d.hexagram?.number} 卦</div>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card rounded-xl p-6 border border-gold/20 text-center">
+        <div className="text-white/40 text-sm mb-2">{T(lang, '第', 'Hexagram #')}{lang === 'en' ? '' : ' '}{d.hexagram?.number}{lang === 'en' ? '' : ' 卦'}</div>
         <h3 className="text-gold font-serif text-2xl mb-1">{d.hexagram?.name}</h3>
         <div className="text-white/60 text-sm mb-4">{d.hexagram?.chineseName}</div>
-
-        {/* Lines rendering — bottom to top in display but top to bottom in array */}
         <div className="flex flex-col items-center gap-1.5 my-4">
           {[...lines].reverse().map((line, i) => (
             <div key={i} className="flex gap-1.5 items-center">
@@ -55,83 +118,20 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
             </div>
           ))}
         </div>
-
-        {/* Trigrams */}
         <div className="flex justify-center gap-8 mt-4">
           {[d.hexagram?.upperTrigram, d.hexagram?.lowerTrigram].map((t, i) => t && (
             <div key={i} className="text-center">
               <div className="text-2xl mb-1">{t.symbol}</div>
               <div className="text-gold text-sm">{t.name}</div>
               <div className="text-white/40 text-xs">{t.element}</div>
-              <div className="text-white/30 text-xs">{i === 0 ? '上卦' : '下卦'}</div>
+              <div className="text-white/30 text-xs">{i === 0 ? T(lang, '上卦', 'Upper') : T(lang, '下卦', 'Lower')}</div>
             </div>
           ))}
         </div>
-
-        {/* Outcome Badge */}
-        <div className="mt-4">
-          <span className={`inline-block px-4 py-1.5 rounded-full border text-sm font-semibold ${ocClass}`}>
-            {oc}
-          </span>
-        </div>
       </motion.div>
-
-      {/* Judgment & Image */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="glass-card rounded-xl p-5 border border-gold/20">
-          <h4 className="text-gold font-serif text-sm mb-2">卦辞</h4>
-          <p className="text-white/70 text-sm leading-relaxed">{d.judgment}</p>
-        </div>
-        <div className="glass-card rounded-xl p-5 border border-gold/20">
-          <h4 className="text-gold font-serif text-sm mb-2">象辞</h4>
-          <p className="text-white/70 text-sm leading-relaxed">{d.image}</p>
-        </div>
-      </motion.div>
-
-      {/* Interpretation */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card rounded-xl p-5 border border-gold/20">
-        <h4 className="text-gold font-serif mb-2">卦象解读</h4>
-        <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.interpretation}</p>
-      </motion.div>
-
-      {/* Changing Lines */}
-      {d.changingLines && d.changingLines.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card rounded-xl p-5 border border-gold/30 bg-gold/5">
-          <h4 className="text-gold font-serif mb-3">變爻</h4>
-          {d.changingLines.map((cl, i) => (
-            <div key={i} className="flex gap-3 mb-2">
-              <span className="text-gold text-sm">第{cl.position}爻</span>
-              <p className="text-white/70 text-sm">{cl.text}</p>
-            </div>
-          ))}
-        </motion.div>
-      )}
-
-      {/* Key Points */}
-      {d.keyPoints && d.keyPoints.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="glass-card rounded-xl p-5 border border-gold/20">
-          <h4 className="text-gold font-serif mb-3">要点</h4>
-          <ul className="space-y-2">
-            {d.keyPoints.map((pt, i) => (
-              <li key={i} className="flex gap-2 text-white/70 text-sm">
-                <YinYangIcon size={16} />
-                <span>{pt}</span>
-              </li>
-            ))}
-          </ul>
-        </motion.div>
-      )}
-
-      {/* Advice */}
-      {d.advice && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="rounded-xl p-5 border border-gold/40 bg-gold/10">
-          <h4 className="text-gold font-serif mb-2">指导建议</h4>
-          <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.advice}</p>
-        </motion.div>
-      )}
 
       {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.35} />
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.25} />
     </div>
   )
 }
