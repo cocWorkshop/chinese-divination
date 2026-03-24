@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { email } = await req.json()
+    const { email: rawEmail } = await req.json()
+    const email = typeof rawEmail === 'string' ? rawEmail.toLowerCase().trim() : rawEmail
     if (!email) {
       return NextResponse.json({ error: 'Email required' }, { status: 400 })
     }
@@ -21,8 +22,8 @@ export async function POST(req: NextRequest) {
     // Always return success (don't reveal if email exists)
     const successMsg = { message: 'If an account with that email exists, a reset link has been sent.' }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
       select: { id: true, language: true },
     })
 

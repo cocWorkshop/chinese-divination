@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, email, password, referralCode, language } = await req.json()
+    const { name, email: rawEmail, password, referralCode, language } = await req.json()
+    const email = typeof rawEmail === 'string' ? rawEmail.toLowerCase().trim() : rawEmail
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 })
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Password must contain uppercase, lowercase, and a number' }, { status: 400 })
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } })
+    const existing = await prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } })
     if (existing) {
       await logAuth({ action: 'register', status: 'failure', email, reason: 'email_exists', ip, userAgent })
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 })

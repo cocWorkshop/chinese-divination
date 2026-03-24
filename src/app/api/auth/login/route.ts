@@ -16,13 +16,14 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { email, password } = await req.json()
+    const { email: rawEmail, password } = await req.json()
+    const email = typeof rawEmail === 'string' ? rawEmail.toLowerCase().trim() : rawEmail
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 })
     }
 
-    const user = await prisma.user.findUnique({ where: { email } })
+    const user = await prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } })
 
     if (!user) {
       await logAuth({ action: 'login', status: 'failure', email, reason: 'user_not_found', ip, userAgent })
