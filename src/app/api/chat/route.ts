@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     // Load minimal user info (no family members, no readings - context comes from frontend)
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { name: true, birthDate: true, birthTime: true, birthPlace: true, gender: true, chatSummary: true },
+      select: { name: true, birthDate: true, birthTime: true, birthPlace: true, gender: true },
     })
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -78,9 +78,6 @@ export async function POST(req: NextRequest) {
 
 当前${currentType}预测结果：
 ${readingData || '（无预测数据）'}
-
-以往对话要点：
-${user.chatSummary || '（暂无）'}
 
 【核心职责】
 你的唯一任务是围绕上述预测结果进行深入解读和分析。用户的每个问题都应该结合这份具体的预测结果来回答。
@@ -165,14 +162,6 @@ ${user.chatSummary || '（暂无）'}
     const updatedCredits = await checkChatCredits(session.user.id)
 
     // Generate condensed summary in background (fire-and-forget)
-    const conversationForSummary = [
-      ...messages,
-      { role: 'assistant' as const, content: reply },
-    ].map(m => `${m.role === 'user' ? '用户' : '助手'}：${m.content}`).join('\n')
-
-    // Update chat summary asynchronously
-    updateChatSummary(client, user.chatSummary, conversationForSummary, session.user.id, chatModel).catch(console.error)
-
     return NextResponse.json({
       reply,
       chatCredits: {
