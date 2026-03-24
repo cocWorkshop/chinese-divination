@@ -999,6 +999,33 @@ ${question ? `特别关注：${question}` : ''}`
       }
     }
 
+    // ═══ VALIDATE LLM OUTPUT STRUCTURE ═══
+    const validationRules: Record<string, (r: Record<string, unknown>) => boolean> = {
+      bazi: r => !!(r.sections && typeof r.sections === 'object' && Object.keys(r.sections as object).length >= 3),
+      ziwei: r => !!(r.sections && typeof r.sections === 'object' && Object.keys(r.sections as object).length >= 2),
+      iching: r => !!(r.interpretation || r.sections),
+      liuyao: r => !!(r.interpretation || r.sections),
+      qimen: r => !!(r.sections && typeof r.sections === 'object'),
+      fengshui: r => !!(r.sections && typeof r.sections === 'object'),
+      other: r => !!(r.sections && typeof r.sections === 'object'),
+    }
+    const validator = validationRules[type] || validationRules.other
+    if (!validator(structuredResult)) {
+      // Mark reading as failed, do NOT deduct credits
+      if (pendingReadingId) {
+        await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'Invalid LLM output format', llmRawOutput: resultText } }).catch(() => {})
+      }
+      await logLlmCall({
+        userId: session.user.id, endpoint: 'divination', model: modelName,
+        latencyMs: Date.now() - llmStart, status: 'error',
+        inputPreview: userMessage.substring(0, 200), outputPreview: 'Validation failed: ' + resultText.substring(0, 200),
+      })
+      const errMsg = language !== 'en'
+        ? '🔧 玄機解讀格式異常，您的額度未扣除。請重新嘗試，若持續異常請聯繫管理員。'
+        : '🔧 The oracle produced an unexpected format — your credits were not deducted. Please try again, or contact admin if the issue persists.'
+      return NextResponse.json({ error: errMsg }, { status: 502 })
+    }
+
     const resultToStore = JSON.stringify(structuredResult)
 
     const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
