@@ -684,7 +684,7 @@ ${question ? `特别关注：${question}` : ''}`
         await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'AI service not configured' } }).catch(() => {})
       }
       return NextResponse.json(
-        { error: language !== 'en' ? 'AI服務未配置，請聯繫管理員。' : 'AI service not configured.' },
+        { error: language !== 'en' ? '🔧 玄機尚未啟動，請聯繫管理員配置並重啟。' : '🔧 The oracle is not set up yet. Please contact admin to configure and restart.' },
         { status: 503 }
       )
     }
@@ -821,28 +821,20 @@ ${question ? `特别关注：${question}` : ''}`
           await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: err?.message || 'LLM error' } }).catch(() => {})
         }
 
-        if (err?.status === 401) {
-          return NextResponse.json(
-            { error: language !== 'en' ? 'AI服務API密鑰無效，請檢查配置。' : 'AI API key is invalid.' },
-            { status: 401 }
-          )
-        }
-        if (err?.status === 402) {
-          return NextResponse.json(
-            { error: language !== 'en' ? 'OpenRouter餘額不足，請前往 openrouter.ai 充值。' : 'OpenRouter credits exhausted. Please top up at openrouter.ai.' },
-            { status: 402 }
-          )
+        const friendlyError = language !== 'en'
+          ? '🔧 玄機暫時出了點小故障，您的額度未扣除。請稍後再試，若持續異常請聯繫管理員重啟玄機。'
+          : '🔧 The oracle encountered a hiccup — your credits were not deducted. Please try again later, or contact admin if the issue persists.'
+
+        if (err?.status === 401 || err?.status === 402) {
+          return NextResponse.json({ error: friendlyError }, { status: err.status })
         }
         if (err?.status === 429) {
           return NextResponse.json(
-            { error: language !== 'en' ? 'AI請求過於頻繁，請稍後再試。' : 'Too many requests. Please try again later.' },
+            { error: language !== 'en' ? '🔮 天機繁忙，請稍後再試。' : '🔮 The oracle is busy. Please try again shortly.' },
             { status: 429 }
           )
         }
-        return NextResponse.json(
-          { error: language !== 'en' ? `AI服務錯誤：${err?.message || '未知錯誤'}` : `AI service error: ${err?.message || 'Unknown'}` },
-          { status: 502 }
-        )
+        return NextResponse.json({ error: friendlyError }, { status: 502 })
       }
     }
 

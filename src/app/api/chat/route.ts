@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!process.env.OPENROUTER_API_KEY) {
-      return NextResponse.json({ error: 'AI service not configured.' }, { status: 503 })
+      return NextResponse.json({ error: '🔧 玄機尚未啟動，請聯繫管理員配置並重啟。\n🔧 The oracle is not set up yet. Please contact admin to configure and restart.' }, { status: 503 })
     }
 
     // Load minimal user info (no family members, no readings - context comes from frontend)
@@ -139,7 +139,7 @@ ${readingData || '（无预测数据）'}
         totalTokens: completion.usage?.total_tokens, latencyMs: Date.now() - chatStart,
         status: 'error', inputPreview: message, outputPreview: 'Empty reply from LLM',
       })
-      return NextResponse.json({ error: 'AI 未能生成回覆，額度未扣除。\nAI failed to generate a reply. Credits not deducted.' }, { status: 502 })
+      return NextResponse.json({ error: '🔧 玄機暫時出了點小故障，您的額度未扣除。請稍後再試，若持續異常請聯繫管理員重啟玄機。\n🔧 The oracle encountered a hiccup — your credits were not deducted. Please try again later, or contact admin if the issue persists.' }, { status: 502 })
     }
 
     await logLlmCall({
@@ -182,7 +182,7 @@ ${readingData || '（无预测数据）'}
         })
       }
     } catch { /* ignore logging errors */ }
-    return NextResponse.json({ error: 'An internal error occurred. Please try again later.' }, { status: 500 })
+    return NextResponse.json({ error: '🔧 玄機暫時無法運轉，請稍後再試。若持續異常，請聯繫管理員重啟玄機。\n🔧 The oracle is temporarily unavailable. Please try again later, or contact admin to restart.' }, { status: 500 })
   }
 }
 
