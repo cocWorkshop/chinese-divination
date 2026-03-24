@@ -38,6 +38,7 @@ interface ReadingData {
   subjectName: string | null
   birthInfo: { birthDate?: string; birthTime?: string; gender?: string; calendarType?: string } | null
   targetType: string
+  chatMessages?: { role: 'user' | 'assistant'; content: string }[]
 }
 
 export default function PublicReadingPage() {
@@ -141,7 +142,7 @@ export default function PublicReadingPage() {
 
         {/* Result */}
         <div className="glass-card rounded-2xl p-4 sm:p-8 mb-6">
-          <ResultRenderer type={data.type} result={resultString} isShared />
+          <ResultRenderer type={data.type} result={resultString} isShared chatMessages={data.chatMessages} />
         </div>
 
         {/* CTA */}

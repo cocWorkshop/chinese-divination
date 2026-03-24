@@ -119,7 +119,7 @@ const sectionTabs = [
   { key: 'wealth', label: '財運' },
 ]
 
-export default function ZiweiResult({ data, isShared, rawResult }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string }) {
+export default function ZiweiResult({ data, isShared, rawResult, readingId, chatMessages }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
   const d = data as unknown as ZiweiData
   const [activeSection, setActiveSection] = useState('overview')
   const [selectedPalace, setSelectedPalace] = useState<string | null>(null)
@@ -417,7 +417,7 @@ export default function ZiweiResult({ data, isShared, rawResult }: { data: Recor
       )}
 
       {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" isShared={isShared} delay={0.27} />
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.27} />
 
       {/* Lucky Info */}
       {d.luckyInfo && (

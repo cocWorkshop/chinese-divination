@@ -73,7 +73,7 @@ const sectionsList = [
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
-export default function BaziResult({ data, isShared, rawResult }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string }) {
+export default function BaziResult({ data, isShared, rawResult, readingId, chatMessages }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
   const d = data as unknown as BaziData
   const { lang } = useLang()
   const [activeSection, setActiveSection] = useState('overview')
@@ -422,7 +422,7 @@ export default function BaziResult({ data, isShared, rawResult }: { data: Record
       )}
 
       {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" isShared={isShared} delay={0.22} />
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.22} />
 
       {/* Lucky Info */}
       {d.luckyInfo && (

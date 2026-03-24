@@ -67,6 +67,7 @@ model Reading {
   calculationData String?     @db.Text  // Raw programmatic calculation output (JSON) — BaZi/Ziwei/Qimen/Meihua
   llmPrompt       String?     @db.Text  // Full LLM prompt (system + user message)
   llmRawOutput    String?     @db.Text  // Raw LLM response before merge
+  chatMessages    String?     @db.Text  // JSON array of {role, content, timestamp} chat messages
   rating         Int?          // 1-5 star rating (denormalized from ReadingFeedback)
   shareToken     String?       @unique
   deletedAt      DateTime?

@@ -114,7 +114,7 @@ function HexagramVisual({ hex, label, showDetails }: { hex: HexagramData; label?
   )
 }
 
-export default function LiuYaoResult({ data, rawResult, isShared }: { data: Record<string, unknown>; rawResult?: string; isShared?: boolean }) {
+export default function LiuYaoResult({ data, rawResult, isShared, readingId, chatMessages }: { data: Record<string, unknown>; rawResult?: string; isShared?: boolean; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
   const { lang } = useLang()
   const d = data as unknown as LiuYaoData
   const [activeTab, setActiveTab] = useState<string>('interpretation')
@@ -236,7 +236,7 @@ export default function LiuYaoResult({ data, rawResult, isShared }: { data: Reco
       )}
 
       {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="liuyao" isShared={isShared} delay={0.25} />
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="liuyao" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.25} />
     </div>
   )
 }

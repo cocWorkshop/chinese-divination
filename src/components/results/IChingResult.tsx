@@ -24,7 +24,7 @@ const outcomeColor: Record<string, string> = {
   '小凶': 'text-orange-300 border-orange-300/40 bg-orange-300/10',
 }
 
-export default function IChingResult({ data, rawResult, isShared }: { data: Record<string, unknown>; rawResult?: string; isShared?: boolean }) {
+export default function IChingResult({ data, rawResult, isShared, readingId, chatMessages }: { data: Record<string, unknown>; rawResult?: string; isShared?: boolean; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
   const d = data as unknown as IChingData
   const lines = d.hexagram?.lines || []
 
@@ -131,7 +131,7 @@ export default function IChingResult({ data, rawResult, isShared }: { data: Reco
       )}
 
       {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" isShared={isShared} delay={0.35} />
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.35} />
     </div>
   )
 }

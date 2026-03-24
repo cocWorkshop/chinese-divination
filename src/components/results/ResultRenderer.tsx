@@ -9,7 +9,11 @@ import FengshuiResult from './FengshuiResult'
 import OtherResult from './OtherResult'
 import LiuYaoResult from './LiuYaoResult'
 
-export default function ResultRenderer({ result, type, isShared }: { result: string; type: string; isShared?: boolean }) {
+interface ChatMsg { role: 'user' | 'assistant'; content: string }
+
+export default function ResultRenderer({ result, type, isShared, readingId, chatMessages }: {
+  result: string; type: string; isShared?: boolean; readingId?: string | null; chatMessages?: ChatMsg[]
+}) {
   let parsed: Record<string, unknown>
   try {
     const raw = result.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')
@@ -19,10 +23,10 @@ export default function ResultRenderer({ result, type, isShared }: { result: str
   }
 
   switch (type) {
-    case 'bazi': return <BaziResult data={parsed} isShared={isShared} rawResult={result} />
-    case 'iching': return <IChingResult data={parsed} isShared={isShared} rawResult={result} />
-    case 'liuyao': return <LiuYaoResult data={parsed} isShared={isShared} rawResult={result} />
-    case 'ziwei': return <ZiweiResult data={parsed} isShared={isShared} rawResult={result} />
+    case 'bazi': return <BaziResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
+    case 'iching': return <IChingResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
+    case 'liuyao': return <LiuYaoResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
+    case 'ziwei': return <ZiweiResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
     case 'qimen': return <QimenResult data={parsed} />
     case 'fengshui': return <FengshuiResult data={parsed} />
     default: return <OtherResult data={parsed} />

@@ -235,7 +235,7 @@ export default function DashboardPage() {
                       </div>
                     ) : (
                       <>
-                        <ResultRenderer result={r.result} type={r.type} />
+                        <ResultRenderer result={r.result} type={r.type} readingId={r.id} />
                         <div className="mt-4">
                           <ReadingFeedback
                             readingId={r.id}

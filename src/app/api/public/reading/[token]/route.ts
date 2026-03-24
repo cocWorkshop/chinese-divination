@@ -16,6 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
       question: true,
       inputData: true,
       targetType: true,
+      chatMessages: true,
       user: { select: { name: true } },
       familyMember: { select: { name: true, relation: true } },
     },
@@ -39,6 +40,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   if (inputData.gender) birthInfo.gender = inputData.gender
   if (inputData.lunarToggle) birthInfo.calendarType = inputData.lunarToggle
 
+  // Parse chat messages, filter out errors/credit prompts
+  let chatMessages: { role: string; content: string }[] = []
+  if (reading.chatMessages) {
+    try {
+      chatMessages = JSON.parse(reading.chatMessages)
+    } catch { /* ignore */ }
+  }
+
   return NextResponse.json({
     type: reading.type,
     result: reading.result,
@@ -49,5 +58,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     subjectName,
     birthInfo: Object.keys(birthInfo).length > 0 ? birthInfo : null,
     targetType: reading.targetType,
+    chatMessages: chatMessages.length > 0 ? chatMessages : undefined,
   })
 }

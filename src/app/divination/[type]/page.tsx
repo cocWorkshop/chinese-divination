@@ -1144,7 +1144,7 @@ export default function DivinationFormPage() {
               {T(lang, '重新占卜', 'New Reading')}
             </button>
           </div>
-          <ResultRenderer result={result} type={resultType || type} />
+          <ResultRenderer result={result} type={resultType || type} readingId={readingId} />
 
           {/* Feedback widget */}
           {readingId && (
