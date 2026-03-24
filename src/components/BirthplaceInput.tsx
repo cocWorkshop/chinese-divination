@@ -34,7 +34,7 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
     if (query.length < 2) { setResults([]); return }
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=zh`,
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=${lang === 'en' ? 'en' : 'zh'}`,
         { headers: { 'User-Agent': 'XuanjiDivination/1.0' } }
       )
       const data: NominatimResult[] = await res.json()
@@ -43,7 +43,7 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
     } catch {
       setResults([])
     }
-  }, [])
+  }, [lang])
 
   const handleInput = (val: string) => {
     onChange(val)
