@@ -37,13 +37,17 @@ export default function RootLayout({
   return (
     <html lang="zh" className="dark">
       <head>
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-E4G738MBCX" strategy="afterInteractive" />
-        <Script id="ga4-init" strategy="afterInteractive">{`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-E4G738MBCX');
-        `}</Script>
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`} strategy="afterInteractive" />
+            <Script id="ga4-init" strategy="afterInteractive">{`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
+            `}</Script>
+          </>
+        )}
       </head>
       <body className={`${inter.variable} ${notoSerifSC.variable} min-h-screen flex flex-col`}>
         <SessionProvider>
