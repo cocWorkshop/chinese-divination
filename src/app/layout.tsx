@@ -1,3 +1,4 @@
+import Script from 'next/script'
 import type { Metadata } from 'next'
 import { Inter, Noto_Serif_SC } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
@@ -35,6 +36,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh" className="dark">
+      <head>
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-E4G738MBCX" strategy="afterInteractive" />
+        <Script id="ga4-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-E4G738MBCX');
+        `}</Script>
+      </head>
       <body className={`${inter.variable} ${notoSerifSC.variable} min-h-screen flex flex-col`}>
         <SessionProvider>
           <LanguageProvider>
