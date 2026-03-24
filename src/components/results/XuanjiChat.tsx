@@ -190,7 +190,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
         <YinYangIcon size={48} />
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{T(lang, '請登入後使用玄機破', 'Please sign in to use Xuanji Po')}</p>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{T(lang, '請登入後使用玄機破', 'Please sign in to use Q&A')}</p>
         <a href="/login" className="px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-80 transition-colors"
           style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}>
           {T(lang, '登入帳號', 'Sign In')}
@@ -213,7 +213,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
             <div className="mb-4 sm:mb-6">
               <YinYangIcon size={40} className="mx-auto mb-3" />
               <h3 className="font-serif text-lg mb-1" style={{ color: 'var(--gold)' }}>
-                {T(lang, '玄機破', 'Xuanji Po')}
+                {T(lang, '玄機破', 'Q&A')}
               </h3>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {T(lang, '破解命盤隱患，化險為夷', 'Decode hidden risks, turn danger into fortune')}
