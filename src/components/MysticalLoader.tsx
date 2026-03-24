@@ -32,30 +32,36 @@ const divinationQuotes = {
   ],
 }
 
+// Hexagram-based divination types (use 卦象 instead of 命盤)
+const HEXAGRAM_TYPES = new Set(['iching', 'liuyao', 'qimen', 'fengshui', 'other'])
+
 // Progress stages with estimated time thresholds (seconds)
-const progressStages = {
-  'zh-TW': [
-    { at: 0, label: '正在排盤計算...', pct: 5 },
-    { at: 3, label: '命盤數據準備完成', pct: 15 },
+function getProgressStages(lang: string, divinationType?: string) {
+  const isHexagram = HEXAGRAM_TYPES.has(divinationType || '')
+  if (lang === 'en') {
+    return [
+      { at: 0, label: isHexagram ? 'Casting hexagram...' : 'Calculating chart...', pct: 5 },
+      { at: 3, label: isHexagram ? 'Hexagram data ready' : 'Chart data ready', pct: 15 },
+      { at: 8, label: 'Connecting to oracle...', pct: 20 },
+      { at: 15, label: isHexagram ? 'Master is interpreting the hexagram...' : 'Master is studying your chart...', pct: 30 },
+      { at: 40, label: isHexagram ? 'Analyzing hexagram patterns...' : 'Analyzing destiny patterns...', pct: 50 },
+      { at: 70, label: 'Writing detailed analysis...', pct: 65 },
+      { at: 100, label: isHexagram ? 'Interpreting changing lines...' : 'Analyzing life phases...', pct: 80 },
+      { at: 140, label: 'Final review...', pct: 90 },
+      { at: 180, label: 'Almost done, please wait...', pct: 95 },
+    ]
+  }
+  return [
+    { at: 0, label: isHexagram ? '正在起卦排盤...' : '正在排盤計算...', pct: 5 },
+    { at: 3, label: isHexagram ? '卦象數據準備完成' : '命盤數據準備完成', pct: 15 },
     { at: 8, label: '正在連接天機...', pct: 20 },
-    { at: 15, label: '大師正在研讀命盤...', pct: 30 },
-    { at: 40, label: '深入分析命理格局...', pct: 50 },
+    { at: 15, label: isHexagram ? '大師正在解讀卦象...' : '大師正在研讀命盤...', pct: 30 },
+    { at: 40, label: isHexagram ? '深入分析卦理變化...' : '深入分析命理格局...', pct: 50 },
     { at: 70, label: '撰寫詳批報告中...', pct: 65 },
-    { at: 100, label: '精批大運流年...', pct: 80 },
+    { at: 100, label: isHexagram ? '推算卦象應期...' : '精批大運流年...', pct: 80 },
     { at: 140, label: '最終審閱中...', pct: 90 },
     { at: 180, label: '即將完成，請稍候...', pct: 95 },
-  ],
-  en: [
-    { at: 0, label: 'Calculating chart...', pct: 5 },
-    { at: 3, label: 'Chart data ready', pct: 15 },
-    { at: 8, label: 'Connecting to oracle...', pct: 20 },
-    { at: 15, label: 'Master is studying your chart...', pct: 30 },
-    { at: 40, label: 'Analyzing destiny patterns...', pct: 50 },
-    { at: 70, label: 'Writing detailed analysis...', pct: 65 },
-    { at: 100, label: 'Analyzing life phases...', pct: 80 },
-    { at: 140, label: 'Final review...', pct: 90 },
-    { at: 180, label: 'Almost done, please wait...', pct: 95 },
-  ],
+  ]
 }
 
 interface MysticalLoaderProps {
@@ -251,7 +257,7 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
 
       {/* Progress bar */}
       {(() => {
-        const stages = lang === 'en' ? progressStages.en : progressStages['zh-TW']
+        const stages = getProgressStages(lang, divinationType)
         const current = [...stages].reverse().find(s => elapsed >= s.at) || stages[0]
         return (
           <motion.div
