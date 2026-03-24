@@ -49,17 +49,27 @@ const STEM_ELEMENT_MAP: Record<string, string> = {
   '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
   '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水',
 }
+const BRANCH_ELEMENT_MAP: Record<string, string> = {
+  '子': '水', '丑': '土', '寅': '木', '卯': '木', '辰': '土', '巳': '火',
+  '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水',
+}
+// Get element for any Chinese character (stem or branch)
+const charElement = (ch: string): string => STEM_ELEMENT_MAP[ch] || BRANCH_ELEMENT_MAP[ch] || ''
 
+// Refined five-element colors — inspired by traditional Chinese aesthetics
 const elClr: Record<string, string> = {
-  金: 'text-gray-300', 木: 'text-green-400', 水: 'text-blue-400', 火: 'text-red-400', 土: 'text-yellow-500',
-  metal: 'text-gray-300', wood: 'text-green-400', water: 'text-blue-400', fire: 'text-red-400', earth: 'text-yellow-500',
+  金: 'text-amber-200',     木: 'text-emerald-400',  水: 'text-sky-400',
+  火: 'text-rose-400',      土: 'text-yellow-600',
+  metal: 'text-amber-200',  wood: 'text-emerald-400', water: 'text-sky-400',
+  fire: 'text-rose-400',    earth: 'text-yellow-600',
 }
 const elBg: Record<string, string> = {
-  金: 'bg-gray-300/10 border-gray-300/30', 木: 'bg-green-400/10 border-green-400/30',
-  水: 'bg-blue-400/10 border-blue-400/30', 火: 'bg-red-400/10 border-red-400/30', 土: 'bg-yellow-500/10 border-yellow-500/30',
+  金: 'bg-amber-200/10 border-amber-200/30',   木: 'bg-emerald-400/10 border-emerald-400/30',
+  水: 'bg-sky-400/10 border-sky-400/30',        火: 'bg-rose-400/10 border-rose-400/30',
+  土: 'bg-yellow-600/10 border-yellow-600/30',
 }
 const elBar: Record<string, string> = {
-  木: 'bg-green-400', 火: 'bg-red-400', 土: 'bg-yellow-500', 金: 'bg-gray-300', 水: 'bg-blue-400',
+  木: 'bg-emerald-400', 火: 'bg-rose-400', 土: 'bg-yellow-600', 金: 'bg-amber-200', 水: 'bg-sky-400',
 }
 
 const sectionsList = [
@@ -158,24 +168,30 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
             {/* Row: 天干 */}
             <tr className="border-t border-white/10">
               <td className="text-white/30 text-[10px] py-1">{T(lang, '天干', 'Stem')}</td>
-              {pillars.map(({ label, data: p }) => (
-                <td key={label} className="py-1.5">
-                  <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[p?.element || ''] || 'text-white'}`}>
-                    {p?.stem || '?'}
-                  </span>
-                </td>
-              ))}
+              {pillars.map(({ label, data: p }) => {
+                const stemEl = charElement(p?.stem || '')
+                return (
+                  <td key={label} className="py-1.5">
+                    <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[stemEl] || 'text-white'}`}>
+                      {p?.stem || '?'}
+                    </span>
+                  </td>
+                )
+              })}
             </tr>
             {/* Row: 地支 */}
             <tr className="border-t border-white/10">
               <td className="text-white/30 text-[10px] py-1">{T(lang, '地支', 'Branch')}</td>
-              {pillars.map(({ label, data: p }) => (
-                <td key={label} className="py-1.5">
-                  <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[p?.element || ''] || 'text-white'}`}>
-                    {p?.branch || '?'}
-                  </span>
-                </td>
-              ))}
+              {pillars.map(({ label, data: p }) => {
+                const branchEl = charElement(p?.branch || '')
+                return (
+                  <td key={label} className="py-1.5">
+                    <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[branchEl] || 'text-white'}`}>
+                      {p?.branch || '?'}
+                    </span>
+                  </td>
+                )
+              })}
             </tr>
             {/* Row: 藏干 */}
             <tr className="border-t border-white/5">
@@ -348,7 +364,10 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                       return (
                         <div key={i} className={`rounded-lg border px-2 py-1.5 text-center min-w-[60px] ${elBg[el] || 'border-gold/20'}`}>
                           <div className="text-white/30 text-[9px]">{dy.startAge}-{dy.endAge}</div>
-                          <div className={`text-sm font-serif font-bold ${elClr[el] || 'text-white'}`}>{dy.stem}{dy.branch}</div>
+                          <div className="text-sm font-serif font-bold">
+                            <span className={elClr[charElement(dy.stem)] || 'text-white'}>{dy.stem}</span>
+                            <span className={elClr[charElement(dy.branch)] || 'text-white'}>{dy.branch}</span>
+                          </div>
                           <div className="text-white/20 text-[9px]">{dy.startYear}-{dy.endYear}</div>
                         </div>
                       )
@@ -366,7 +385,10 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                   {d.xiaoYun.map((xy, i) => (
                     <div key={i} className="px-1.5 py-1 rounded border border-white/10 bg-white/5 text-center">
                       <div className="text-white/20 text-[8px]">{xy.age}{T(lang, '歲', '')}</div>
-                      <div className="text-white/60 text-xs font-serif">{xy.stem}{xy.branch}</div>
+                      <div className="text-xs font-serif">
+                        <span className={elClr[charElement(xy.stem)] || 'text-white/60'}>{xy.stem}</span>
+                        <span className={elClr[charElement(xy.branch)] || 'text-white/60'}>{xy.branch}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
