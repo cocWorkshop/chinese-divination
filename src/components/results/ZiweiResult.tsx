@@ -89,6 +89,34 @@ const GRID_POSITIONS: { row: number; col: number; branch: string }[] = [
 ]
 
 // Fallback for matching palace names with different character variants
+// English annotations for palace names
+const PALACE_EN: Record<string, string> = {
+  '命宫': 'Life', '兄弟宫': 'Siblings', '夫妻宫': 'Spouse', '子女宫': 'Children',
+  '财帛宫': 'Wealth', '疾厄宫': 'Health', '迁移宫': 'Travel', '奴仆宫': 'Friends',
+  '官禄宫': 'Career', '田宅宫': 'Property', '福德宫': 'Fortune', '父母宫': 'Parents',
+}
+
+// Zodiac English
+const ZODIAC_EN: Record<string, string> = {
+  '鼠': 'Rat', '牛': 'Ox', '虎': 'Tiger', '兔': 'Rabbit', '龙': 'Dragon', '蛇': 'Snake',
+  '马': 'Horse', '羊': 'Goat', '猴': 'Monkey', '鸡': 'Rooster', '狗': 'Dog', '猪': 'Pig',
+  '龍': 'Dragon', '馬': 'Horse', '雞': 'Rooster', '豬': 'Pig',
+}
+
+// Helper: translate palace name
+const palaceLabel = (name: string, lang: string) => {
+  if (lang !== 'en') return name
+  const en = PALACE_EN[name]
+  return en ? `${name} (${en})` : name
+}
+
+// Helper: translate zodiac
+const zodiacLabel = (zodiac: string, lang: string) => {
+  if (lang !== 'en' || !zodiac) return zodiac
+  const en = ZODIAC_EN[zodiac]
+  return en ? `${zodiac} (${en})` : zodiac
+}
+
 const PALACE_NAME_VARIANTS: Record<string, string[]> = {
   '命宫': ['命宫', '命宮'],
   '兄弟宫': ['兄弟宫', '兄弟宮'],
@@ -218,7 +246,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
             </div>
             <div>
               <span className="text-white/40">{T(lang, '生肖：', 'Zodiac: ')}</span>
-              <span className="text-white/80">{chart.zodiac}</span>
+              <span className="text-white/80">{zodiacLabel(chart.zodiac || '', lang)}</span>
             </div>
             <div>
               <span className="text-white/40">{T(lang, '五行局：', 'Five Elements: ')}</span>
@@ -247,7 +275,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                 <span className={`font-serif text-sm ${mutagenColor[sh.type] || 'text-gold'}`}>
                   {sh.star}化{sh.type}
                 </span>
-                <span className="text-white/40 text-xs ml-1">({sh.palace})</span>
+                <span className="text-white/40 text-xs ml-1">({palaceLabel(sh.palace, lang)})</span>
               </div>
             ))}
           </div>
@@ -265,7 +293,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                   {star.name}
                   {star.mutagen && <span className={`ml-1 ${mutagenColor[star.mutagen] || ''}`}>({star.mutagen})</span>}
                 </div>
-                <div className="text-white/50 text-xs">{star.palace}</div>
+                <div className="text-white/50 text-xs">{palaceLabel(star.palace, lang)}</div>
               </div>
             ))}
           </div>
@@ -319,12 +347,12 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                 >
                   <div className="flex items-center justify-between mb-0.5">
                     <span className={`text-[10px] sm:text-xs ${isSoul ? 'text-gold font-semibold' : 'text-white/50'}`}>
-                      {palaceName || gridPos.branch}
+                      {palaceName ? palaceLabel(palaceName, lang) : gridPos.branch}
                     </span>
                     <span className="text-white/20 text-[9px]">{pData?.heavenlyStem}{gridPos.branch}</span>
                   </div>
                   {pData?.isBodyPalace && (
-                    <span className="text-purple-400 text-[9px]">身</span>
+                    <span className="text-purple-400 text-[9px]">{T(lang, '身', 'Body')}</span>
                   )}
                   <div className="flex flex-wrap gap-x-1 gap-y-0">
                     {(pData?.majorStars || []).map((star) => (
@@ -382,7 +410,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
             className="glass-card rounded-xl p-4 border border-purple-400/30 bg-purple-400/5 overflow-hidden"
           >
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-purple-300 font-serif">{selectedPalace}</h3>
+              <h3 className="text-purple-300 font-serif">{palaceLabel(selectedPalace, lang)}</h3>
               <button onClick={() => setSelectedPalace(null)} className="text-white/40 text-xs hover:text-white/60">{T(lang, '收起', 'Close')}</button>
             </div>
             {/* Stars detail */}
