@@ -190,7 +190,7 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
         {/* Inner yin-yang */}
         <motion.div
           className="absolute inset-6 flex items-center justify-center"
-          initial={{ opacity: 0, scale: 0, rotate: -180 }}
+          initial={{ opacity: 0, scale: 0 }}
           animate={{ opacity: 1, scale: 1, rotate: 360 }}
           transition={{
             opacity: { duration: 1.2, ease: 'easeOut' },
