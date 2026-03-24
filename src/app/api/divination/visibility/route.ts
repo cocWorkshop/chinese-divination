@@ -36,7 +36,7 @@ export async function GET() {
             items.push({ type: def.type, visible: def.visible, order: ++maxOrder })
           }
         }
-        return NextResponse.json(items.sort((a, b) => a.order - b.order), { headers: { 'Cache-Control': 'public, max-age=300' } })
+        return NextResponse.json(items.sort((a, b) => a.order - b.order), { headers: { 'Cache-Control': 'no-cache' } })
       }
       // Migrate from old Record<string, boolean> format
       const oldFormat = parsed as Record<string, boolean>
@@ -45,10 +45,10 @@ export async function GET() {
         visible: oldFormat[def.type] ?? def.visible,
         order: i + 1,
       }))
-      return NextResponse.json(migrated, { headers: { 'Cache-Control': 'public, max-age=300' } })
+      return NextResponse.json(migrated, { headers: { 'Cache-Control': 'no-cache' } })
     }
-    return NextResponse.json(DEFAULT_VISIBILITY, { headers: { 'Cache-Control': 'public, max-age=300' } })
+    return NextResponse.json(DEFAULT_VISIBILITY, { headers: { 'Cache-Control': 'no-cache' } })
   } catch {
-    return NextResponse.json(DEFAULT_VISIBILITY, { headers: { 'Cache-Control': 'public, max-age=300' } })
+    return NextResponse.json(DEFAULT_VISIBILITY, { headers: { 'Cache-Control': 'no-cache' } })
   }
 }
