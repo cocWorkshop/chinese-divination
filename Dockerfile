@@ -10,6 +10,7 @@ COPY . .
 RUN npx prisma generate
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_ENV_VALIDATION=1
+ENV NEXT_PUBLIC_GA_ID=G-E4G738MBCX
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV STRIPE_SECRET_KEY="sk_dummy_build"
 ENV STRIPE_WEBHOOK_SECRET="whsec_dummy_build"
