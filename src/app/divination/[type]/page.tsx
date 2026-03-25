@@ -52,6 +52,7 @@ interface FamilyMember {
   gender: string | null
   calendarType: string | null
   timeMode: string | null
+  exactTime: string | null
   birthEnvironment: string | null
 }
 
@@ -199,7 +200,7 @@ export default function DivinationFormPage() {
           gender: member.gender || '',
           lunarToggle: member.calendarType || 'solar',
           timeMode: member.timeMode || 'fuzzy',
-          exactTime: '',
+          exactTime: member.exactTime || '',
           birthEnvironment: member.birthEnvironment || '',
         }))
         // Reset geocoded coordinates — user needs to re-select birthplace for precise mode

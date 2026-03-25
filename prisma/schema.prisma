@@ -107,6 +107,7 @@ model FamilyMember {
   gender           String?
   calendarType     String?   // "solar" or "lunar"
   timeMode         String?   // "fuzzy" or "exact"
+  exactTime        String?   // "HH:MM" for precise mode
   birthEnvironment String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

@@ -263,6 +263,10 @@ export async function POST(req: NextRequest) {
             birthTime: inputData.birthTime || null,
             birthPlace: inputData.birthPlace || null,
             gender: inputData.gender || null,
+            calendarType: inputData.lunarToggle || null,
+            timeMode: inputData.timeMode || null,
+            exactTime: inputData.exactTime || null,
+            birthEnvironment: inputData.birthEnvironment || null,
           },
         })
         resolvedFamilyMemberId = created.id
@@ -1058,6 +1062,10 @@ ${question ? `特别关注：${question}` : ''}`
       if (inputData.birthTime) profileUpdate.birthTime = inputData.birthTime
       if (inputData.birthPlace) profileUpdate.birthPlace = inputData.birthPlace
       if (inputData.gender) profileUpdate.gender = inputData.gender
+      if (inputData.timeMode) profileUpdate.timeMode = inputData.timeMode
+      if (inputData.exactTime) profileUpdate.exactTime = inputData.exactTime
+      if (inputData.lunarToggle) profileUpdate.calendarType = inputData.lunarToggle
+      if (inputData.birthEnvironment) profileUpdate.birthEnvironment = inputData.birthEnvironment
       if (Object.keys(profileUpdate).length > 0) {
         if (targetType === 'family' && resolvedFamilyMemberId) {
           postOps.push(prisma.familyMember.update({ where: { id: resolvedFamilyMemberId }, data: profileUpdate }))
