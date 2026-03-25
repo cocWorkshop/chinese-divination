@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
           currency: 'usd',
           product_data: {
             name: `${pack.icon} ${pack.name.zh} / ${pack.name.en}`,
-            description: `${pack.divination} divination credits + ${pack.chat} chat credits`,
+            description: `${pack.credits} credit points`,
           },
           unit_amount: pack.price,
         },
@@ -57,8 +57,7 @@ export async function POST(req: NextRequest) {
     metadata: {
       userId: user.id,
       packId,
-      divinationCredits: String(pack.divination),
-      chatCredits: String(pack.chat),
+      credits: String(pack.credits),
     },
   })
 

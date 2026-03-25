@@ -86,6 +86,9 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
         </motion.div>
       )}
 
+      {/* ═══ XUANJI Q&A ═══ */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />
+
       {/* Judgment & Image */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="glass-card rounded-xl p-5 border border-gold/20">
@@ -130,8 +133,7 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
         </div>
       </motion.div>
 
-      {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.25} />
+
     </div>
   )
 }

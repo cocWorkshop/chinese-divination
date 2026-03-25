@@ -38,11 +38,18 @@ export default function AdminSettings() {
     model1Label: '標準模型 / Standard',
     shareBonus: '20',
     shareBonusChat: '5',
-    dailyBonusDivination: '1',
-    dailyBonusChat: '1',
+    dailyBonusCredits: '2',
     llmTimeoutSeconds: '240',
     llmMaxTokens: '8192',
     chatModelName: '',
+    cost_bazi: '5',
+    cost_ziwei: '5',
+    cost_qimen: '5',
+    cost_meihua: '3',
+    cost_iching: '3',
+    cost_liuyao: '3',
+    cost_fengshui: '3',
+    cost_chat: '2',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -128,10 +135,19 @@ export default function AdminSettings() {
           <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
             <span>🔗</span> 分享設置 / Share Settings
           </h2>
-          {numberField('shareBonus', '分享獎勵占卜額度 / Divination credits per share', '分享者和受邀者各獲得此數量的占卜額度')}
-          {numberField('shareBonusChat', '分享獎勵聊天額度 / Chat credits per share', '分享者和受邀者各獲得此數量的聊天額度')}
-          {numberField('dailyBonusDivination', '每日登入占卜額度 / Daily login divination credits', '每日首次登入贈送的占卜額度')}
-          {numberField('dailyBonusChat', '每日登入聊天額度 / Daily login chat credits', '每日首次登入贈送的聊天額度')}
+          {numberField('shareBonus', '分享獎勵額度 / Credits per share', '分享者和受邀者各獲得此數量的額度')}
+          {numberField('shareBonusChat', '分享獎勵額度(聊天) / Share bonus chat (legacy)', '舊版兼容')}
+          {numberField('dailyBonusCredits', '每日登入額度 / Daily login credits', '每日首次登入贈送的額度點數')}
+
+          <h3 className="text-lg font-bold text-gold mt-6 mb-2">💰 各功能消耗額度 / Credit Costs</h3>
+          {numberField('cost_bazi', '八字命理 / BaZi', '預設 5 點')}
+          {numberField('cost_ziwei', '紫微斗數 / Zi Wei', '預設 5 點')}
+          {numberField('cost_qimen', '奇門遁甲 / Qi Men', '預設 5 點')}
+          {numberField('cost_meihua', '梅花易數 / Mei Hua', '預設 3 點')}
+          {numberField('cost_iching', '易經占卜 / I Ching', '預設 3 點')}
+          {numberField('cost_liuyao', '六爻占卜 / Liu Yao', '預設 3 點')}
+          {numberField('cost_fengshui', '風水 / Feng Shui', '預設 3 點')}
+          {numberField('cost_chat', '問答聊天 / Chat', '預設 2 點')}
         </div>
 
         {/* Divination Visibility */}

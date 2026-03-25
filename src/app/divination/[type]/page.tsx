@@ -112,9 +112,10 @@ export default function DivinationFormPage() {
   // Bazi cache dialog
   const [showCacheDialog, setShowCacheDialog] = useState(false)
   const [cachedReading, setCachedReading] = useState<{ id: string; result: string; createdAt: string; count: number } | null>(null)
-  const [credits, setCredits] = useState<{ divination?: { remaining: number }; chat?: { remaining: number } } | null>(null)
+  const [credits, setCredits] = useState<{ divination?: { remaining: number }; chat?: { remaining: number }; credits?: number; costs?: Record<string, number> } | null>(null)
   const [llmTimeoutMs, setLlmTimeoutMs] = useState(240000)
   const [shareBonus, setShareBonus] = useState<{divination: number, chat: number} | null>(null)
+  const [paipanOnly, setPaipanOnly] = useState(false)
   const [targetType, setTargetType] = useState<'self' | 'family'>('self')
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
   const [selectedMemberId, setSelectedMemberId] = useState<string>('')
@@ -142,8 +143,8 @@ export default function DivinationFormPage() {
 
         // Daily bonus toast
         if (data.dailyBonusGranted && data.dailyBonus) {
-          const d = data.dailyBonus.divination, c = data.dailyBonus.chat
-          toast.success(T(lang, `🎁 每日登入獎勵：占卜 +${d}、問答 +${c}`, `🎁 Daily login bonus: Divination +${d}, Chat +${c}`), { duration: 4000 })
+          const c = data.dailyBonus.credits
+          toast.success(T(lang, `🎁 每日登入獎勵：+${c} 點額度`, `🎁 Daily login bonus: +${c} credits`), { duration: 4000 })
         }
 
         // Credits
@@ -333,6 +334,7 @@ export default function DivinationFormPage() {
           newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, name: newMemberName || undefined } : undefined,
           readingId: pendingReadingId,
           clientTime: new Date().toISOString(),
+          ...(paipanOnly ? { paipanOnly: true } : {}),
         }),
         signal: fetchController.signal,
       })
@@ -1053,14 +1055,19 @@ export default function DivinationFormPage() {
           )}
 
           {/* Credits display */}
-          {session && credits?.divination && (
+          {session && credits && (
             <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50">
               <div className="flex items-center justify-between">
                 <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">
-                  {T(lang, '🔮 占卜額度', '🔮 Divination Credits')}
+                  {T(lang, '🔮 額度', '🔮 Credits')}
                 </span>
                 <span className="text-gold font-mono font-bold">
-                  {credits.divination.remaining === 999 ? '∞' : credits.divination.remaining}
+                  {(credits.credits ?? credits.divination?.remaining) === 999 ? '∞' : (credits.credits ?? credits.divination?.remaining ?? 0)}
+                  {credits.costs && credits.costs[type] ? (
+                    <span className="text-white/40 text-xs ml-1">
+                      ({T(lang, `本次消耗 ${credits.costs[type]} 點`, `costs ${credits.costs[type]} pts`)})
+                    </span>
+                  ) : null}
                 </span>
               </div>
             </div>
@@ -1138,34 +1145,60 @@ export default function DivinationFormPage() {
             </div>
           )}
 
-          {session && credits && credits.divination && credits.divination.remaining !== 999 && credits.divination.remaining <= 0 ? (
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => router.push('/subscribe')}
-                className="w-full py-4 rounded-xl font-semibold text-lg transition-colors bg-gradient-to-r from-amber-600 to-gold text-navy-950 hover:opacity-90"
-              >
-                {T(lang, '額度不足 · 購買額度 →', 'No Credits · Purchase Credits →')}
-              </button>
-              <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                {T(lang,
-                  '💡 每日登入 +1 | 分享給朋友 +1 | 更多方式見額度商店',
-                  '💡 Daily login +1 | Share with friends +1 | More at Credits Store'
-                )}
-              </p>
-            </div>
-          ) : (
-            <button
-              type="submit"
-              disabled={(isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) || (type === 'liuyao' && (!form.liuyaoLines || (JSON.parse(form.liuyaoLines || '[]')).length < 6))}
-              className="w-full py-4 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {session && credits?.divination && credits.divination.remaining !== 999
-                ? `${T(lang, '解卦', 'Consult Oracle')} (${credits.divination.remaining}) →`
-                : T(lang, '解卦 →', 'Consult Oracle →')
-              }
-            </button>
+          {/* Admin: paipanOnly checkbox */}
+          {session && credits && (credits.credits === 999 || credits.divination?.remaining === 999) && ['bazi', 'ziwei', 'qimen', 'meihua'].includes(type) && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={paipanOnly}
+                onChange={e => setPaipanOnly(e.target.checked)}
+                className="w-4 h-4 rounded border-gold/30 accent-gold"
+              />
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                {T(lang, '只排盤（不調用AI解盤，不扣額度）', 'Paipan only (no AI interpretation, no credit cost)')}
+              </span>
+            </label>
           )}
+
+          {(() => {
+            const remaining = credits?.credits ?? credits?.divination?.remaining ?? 0
+            const cost = credits?.costs?.[type] ?? 5
+            const isAdmin = remaining === 999
+            const hasEnough = isAdmin || paipanOnly || remaining >= cost
+            if (session && credits && !isAdmin && !paipanOnly && !hasEnough) {
+              return (
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => router.push('/subscribe')}
+                    className="w-full py-4 rounded-xl font-semibold text-lg transition-colors bg-gradient-to-r from-amber-600 to-gold text-navy-950 hover:opacity-90"
+                  >
+                    {T(lang, `額度不足（需要 ${cost} 點）· 購買額度 →`, `Not enough credits (need ${cost}) · Purchase →`)}
+                  </button>
+                  <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+                    {T(lang,
+                      '💡 每日登入 +2 | 分享給朋友 +額度 | 更多方式見額度商店',
+                      '💡 Daily login +2 | Share with friends | More at Credits Store'
+                    )}
+                  </p>
+                </div>
+              )
+            }
+            return (
+              <button
+                type="submit"
+                disabled={(isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) || (type === 'liuyao' && (!form.liuyaoLines || (JSON.parse(form.liuyaoLines || '[]')).length < 6))}
+                className="w-full py-4 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {paipanOnly
+                  ? T(lang, '排盤 →', 'Calculate →')
+                  : (session && !isAdmin
+                    ? `${T(lang, '解卦', 'Consult Oracle')} (${remaining} ${T(lang, '點', 'pts')}) →`
+                    : T(lang, '解卦 →', 'Consult Oracle →'))
+                }
+              </button>
+            )
+          })()}
 
           {!session && (
             <p className="text-center text-white/50 text-sm">

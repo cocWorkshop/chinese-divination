@@ -15,12 +15,8 @@ export async function POST(req: NextRequest) {
   if (link.used) return NextResponse.json({ error: 'Already claimed' }, { status: 409 })
   if (link.userId === session.user.id) return NextResponse.json({ error: 'Cannot claim own link' }, { status: 400 })
 
-  const [bonusSetting, chatBonusSetting] = await Promise.all([
-    prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } }),
-    prisma.adminSetting.findUnique({ where: { key: 'shareBonusChat' } }),
-  ])
-  const bonus = parseInt(bonusSetting?.value ?? '1')
-  const chatBonus = parseInt(chatBonusSetting?.value ?? '2')
+  const bonusSetting = await prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } })
+  const bonus = parseInt(bonusSetting?.value ?? '5')
 
   const ops = [
     prisma.shareLink.update({
@@ -29,21 +25,15 @@ export async function POST(req: NextRequest) {
     }),
     prisma.user.update({
       where: { id: session.user.id },
-      data: {
-        divinationCredits: { increment: bonus },
-        chatCredits: { increment: chatBonus },
-      },
+      data: { credits: { increment: bonus } },
     }),
     prisma.user.update({
       where: { id: link.userId },
-      data: {
-        divinationCredits: { increment: bonus },
-        chatCredits: { increment: chatBonus },
-      },
+      data: { credits: { increment: bonus } },
     }),
   ]
 
   await prisma.$transaction(ops)
 
-  return NextResponse.json({ success: true, divinationCredits: bonus, chatCredits: chatBonus })
+  return NextResponse.json({ success: true, credits: bonus })
 }

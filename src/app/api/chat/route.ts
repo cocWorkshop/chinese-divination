@@ -6,7 +6,7 @@ import OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logLlmCall } from '@/lib/llmLogger'
-import { checkChatCredits, deductChatCredit } from '@/lib/rateLimit'
+import { checkCredits, deductCredits } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
     }
 
         // Check chat credits
-    const chatLimit = await checkChatCredits(session.user.id)
+    const chatLimit = await checkCredits(session.user.id, 'chat')
     if (!chatLimit.allowed) {
       return NextResponse.json({
-        error: '問答額度已用完，請購買更多額度。\nChat credits exhausted. Please purchase more.',
+        error: `額度不足（需要 ${chatLimit.cost} 點，剩餘 ${chatLimit.remaining} 點），請購買更多額度。\nNot enough credits (need ${chatLimit.cost}, have ${chatLimit.remaining}). Please purchase more.`,
         remaining: 0,
       }, { status: 429 })
     }
@@ -157,17 +157,16 @@ ${readingData || '（无预测数据）'}
     })
 
     // Deduct chat credit
-    await deductChatCredit(session.user.id)
+    await deductCredits(session.user.id, 'chat')
 
     // Fetch updated credits to return to frontend
-    const updatedCredits = await checkChatCredits(session.user.id)
+    const updatedCredits = await checkCredits(session.user.id, 'chat')
 
     // Generate condensed summary in background (fire-and-forget)
     return NextResponse.json({
       reply,
-      chatCredits: {
-        remaining: updatedCredits.remaining,
-      },
+      credits: updatedCredits.remaining,
+      chatCredits: { remaining: updatedCredits.remaining },
     })
   } catch (e: unknown) {
     const err = e as Error

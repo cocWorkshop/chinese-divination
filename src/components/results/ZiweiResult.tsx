@@ -224,6 +224,9 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
         </motion.div>
       )}
 
+      {/* ═══ XUANJI Q&A ═══ */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
+
       {/* Chart Info Bar */}
       {hasProgrammaticData && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -472,7 +475,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       )}
 
       {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.25} />
+
     </div>
   )
 }

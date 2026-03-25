@@ -166,6 +166,9 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
         </AnimatePresence>
       </motion.div>
 
+      {/* ═══ XUANJI Q&A ═══ */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="liuyao" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
+
       {/* Gua Ci & Yao Ci */}
       {(d.guaCi || d.yaoCi) && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
@@ -236,7 +239,7 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
       </motion.div>
 
       {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="liuyao" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.2} />
+
     </div>
   )
 }

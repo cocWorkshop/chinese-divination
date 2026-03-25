@@ -26,8 +26,9 @@ model User {
   isAdmin      Boolean     @default(false)
   isPaid       Boolean     @default(false)
   role         String      @default("user") // user | admin
-  divinationCredits  Int       @default(3)
-  chatCredits        Int       @default(3)
+  credits            Int       @default(3)  // unified credit points
+  divinationCredits  Int       @default(3)  // deprecated — kept for migration
+  chatCredits        Int       @default(3)  // deprecated — kept for migration
   lastDailyBonus     DateTime?
   emailVerified     Boolean   @default(false)
   verificationToken String?   @unique

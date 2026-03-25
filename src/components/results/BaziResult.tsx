@@ -148,6 +148,9 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
         </motion.div>
       )}
 
+      {/* ═══ XUANJI Q&A ═══ */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
+
       {/* ═══ CHART DATA (Collapsible) ═══ */}
       <button onClick={() => setShowChart(!showChart)}
         className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
@@ -458,8 +461,6 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
         </motion.div>
       )}
 
-      {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.25} />
     </div>
   )
 }

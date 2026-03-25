@@ -8,7 +8,7 @@ import path from 'path'
 import OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkDivinationCredits, deductDivinationCredit } from '@/lib/rateLimit'
+import { checkCredits, deductCredits } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
 import { calculateZiwei, ZiweiChart } from '@/lib/ziweiCalculator'
 import { calculateQimen, QimenChart } from '@/lib/qimenCalculator'
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { type, inputData, language, question, saveProfile, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember, readingId: preCreatedReadingId, clientTime } = await req.json()
+    const { type, inputData, language, question, saveProfile, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember, readingId: preCreatedReadingId, clientTime, paipanOnly } = await req.json()
     const targetType = rawTargetType === 'family' ? 'family' : 'self'
 
     if (!type || !inputData) {
@@ -241,7 +241,7 @@ export async function POST(req: NextRequest) {
 
     if (!preCreatedReadingId) {
       // Legacy path: no init call, do full validation
-      const rl = await checkDivinationCredits(session.user.id)
+      const rl = await checkCredits(session.user.id, type)
       if (settingsMap.maintenanceMode === 'true') {
         return NextResponse.json(
           { error: language !== 'en' ? '系統維護中，請稍後再試。' : 'System under maintenance. Please try again later.' },
@@ -256,7 +256,7 @@ export async function POST(req: NextRequest) {
       }
       if (!rl.allowed) {
         return NextResponse.json(
-          { error: language === 'en' ? 'No divination credits remaining. Purchase more or share to earn credits.' : '占卜額度已用完，請購買或分享獲取更多額度。' },
+          { error: language === 'en' ? `Not enough credits (need ${rl.cost}, have ${rl.remaining}). Purchase more or share to earn credits.` : `額度不足（需要 ${rl.cost} 點，剩餘 ${rl.remaining} 點），請購買或分享獲取更多額度。` },
           { status: 429 }
         )
       }
@@ -761,6 +761,39 @@ ${question ? `特别关注：${question}` : ''}`
       }).catch(() => {})
     }
 
+    // ═══ PAIPAN ONLY MODE (admin only) ═══
+    // Skip LLM call, return raw calculation data only, no credit deduction
+    if (paipanOnly) {
+      // Verify admin
+      const adminUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } })
+      if (!adminUser?.isAdmin) {
+        return NextResponse.json({ error: 'Unauthorized: paipanOnly is admin-only' }, { status: 403 })
+      }
+      const paipanResult: Record<string, unknown> = { paipanOnly: true, type }
+      if (baziChart) paipanResult.bazi = baziChart
+      if (ziweiChart) paipanResult.ziwei = ziweiChart
+      if (qimenChart) paipanResult.qimen = qimenChart
+      if (meihuaChart) paipanResult.meihua = meihuaChart
+      if (liuyaoChart) paipanResult.liuyao = liuyaoChart
+
+      // Save as reading if requested
+      if (shouldSaveHistory && pendingReadingId) {
+        await prisma.reading.update({
+          where: { id: pendingReadingId },
+          data: {
+            status: 'completed',
+            result: JSON.stringify(paipanResult),
+            calculationData: earlyCalculationDataStr || JSON.stringify(paipanResult),
+          },
+        }).catch(() => {})
+      }
+
+      return NextResponse.json({
+        reading: { id: pendingReadingId, result: JSON.stringify(paipanResult) },
+        paipanOnly: true,
+      })
+    }
+
     if (!process.env.OPENROUTER_API_KEY) {
       if (pendingReadingId) {
         await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'AI service not configured' } }).catch(() => {})
@@ -1116,7 +1149,7 @@ ${question ? `特别关注：${question}` : ''}`
     // CRITICAL: Save result + deduct credits immediately after LLM completes.
     // These must complete even if client disconnects (Cloudflare 524 / timeout).
     const postOps: Promise<unknown>[] = [
-      deductDivinationCredit(session.user.id),
+      deductCredits(session.user.id, type),
     ]
 
     let savedReading: Record<string, unknown> | null = null

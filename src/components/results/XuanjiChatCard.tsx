@@ -29,7 +29,7 @@ export default function XuanjiChatCard({ readingResult, readingType, readingId, 
           <h3 className="flex items-center gap-2 text-gold font-serif text-base sm:text-lg mb-3">
             <span className="text-xl">☯</span>
             <span className="bg-gradient-to-r from-amber-400 to-gold bg-clip-text text-transparent font-semibold">
-              {T(lang, '玄機破對話', 'Q&A Chat')}
+              {T(lang, '玄機問答', 'Q&A Chat')}
             </span>
           </h3>
           <div className="space-y-3">
@@ -60,7 +60,7 @@ export default function XuanjiChatCard({ readingResult, readingType, readingId, 
         <h3 className="flex items-center gap-2 text-gold font-serif text-base sm:text-lg mb-3">
           <span className="text-xl">☯</span>
           <span className="bg-gradient-to-r from-amber-400 to-gold bg-clip-text text-transparent font-semibold">
-            {T(lang, '玄機破', 'Q&A')}
+            {T(lang, '玄機問答', 'Q&A')}
           </span>
         </h3>
         <XuanjiChat readingResult={readingResult} readingType={readingType} readingId={readingId} />
