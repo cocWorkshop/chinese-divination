@@ -107,7 +107,7 @@ export default function DivinationFormPage() {
   const [saveProfile, setSaveProfile] = useState(true)
   const [saveHistory, setSaveHistory] = useState(true)
   const [profileLoaded, setProfileLoaded] = useState(false)
-  const selfProfileRef = useRef<{ birthDate: string; birthTime: string; birthPlace: string; gender: string; lunarToggle: string; timeMode: string; exactTime: string; birthEnvironment: string } | null>(null)
+  const selfProfileRef = useRef<{ birthDate: string; birthTime: string; birthPlace: string; gender: string; lunarToggle: string; timeMode: string; exactTime: string; birthEnvironment: string; birthLat: number | null; birthLng: number | null } | null>(null)
   // modelTier removed — single model now
   // Bazi cache dialog
   const [showCacheDialog, setShowCacheDialog] = useState(false)
@@ -172,6 +172,8 @@ export default function DivinationFormPage() {
             exactTime:  p.exactTime  || f.exactTime,
             birthEnvironment: p.birthEnvironment || f.birthEnvironment,
           }))
+          if (p.birthLat != null) setBirthLat(p.birthLat)
+          if (p.birthLng != null) setBirthLng(p.birthLng)
           selfProfileRef.current = {
             birthDate: p.birthDate || '',
             birthTime: p.birthTime || '',
@@ -181,6 +183,8 @@ export default function DivinationFormPage() {
             timeMode: p.timeMode || 'fuzzy',
             exactTime: p.exactTime || '',
             birthEnvironment: p.birthEnvironment || '',
+            birthLat: p.birthLat ?? null,
+            birthLng: p.birthLng ?? null,
           }
           setProfileLoaded(true)
           if (p.birthDate || p.birthTime) {
@@ -405,8 +409,12 @@ export default function DivinationFormPage() {
       toast.error(T(lang, '暫不支持南半球出生地', 'Southern hemisphere not yet supported'))
       return
     }
-    if (type === 'bazi' && form.timeMode === 'precise' && !form.birthPlace) {
+    if (['bazi', 'ziwei'].includes(type) && form.timeMode === 'precise' && !form.birthPlace) {
       toast.error(T(lang, '精確模式需要填寫出生地（用於真太陽時校正）', 'Precise mode requires birthplace for true solar time correction'))
+      return
+    }
+    if (['bazi', 'ziwei'].includes(type) && form.timeMode === 'precise' && birthLat == null) {
+      toast.error(T(lang, '請從搜索結果中選擇出生地，以確保時間校正準確', 'Please select birthplace from search results for accurate time correction'))
       return
     }
     // For bazi: check if existing readings exist before proceeding
@@ -514,7 +522,7 @@ export default function DivinationFormPage() {
           className="glass-card rounded-2xl p-4 sm:p-8 space-y-4 sm:space-y-5"
         >
           {/* Target Person Selection */}
-          {session && (
+          {['bazi', 'ziwei'].includes(type) && session && (
             <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-3">
               <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-2">
                 {T(lang, '👤 預測對象', '👤 Reading For')}
@@ -526,7 +534,10 @@ export default function DivinationFormPage() {
                     setTargetType('self')
                     setSelectedMemberId('')
                     if (selfProfileRef.current) {
-                      setForm(f => ({ ...f, ...selfProfileRef.current! }))
+                      const { birthLat: sLat, birthLng: sLng, ...rest } = selfProfileRef.current
+                      setForm(f => ({ ...f, ...rest }))
+                      setBirthLat(sLat)
+                      setBirthLng(sLng)
                     }
                   }}
                   className={`p-3 rounded-lg border text-center transition-all ${
@@ -958,6 +969,18 @@ export default function DivinationFormPage() {
                     placeholder={T(lang, '搜尋城市...', 'Search city...')}
                   />
                 </div>
+              </div>
+
+              {/* Birth environment */}
+              <div>
+                <label className={labelCls}>{T(lang, '出生地環境（可選）', 'Birth Environment (optional)')}</label>
+                <input
+                  type="text"
+                  className={inputCls}
+                  value={form.birthEnvironment}
+                  onChange={e => setField('birthEnvironment', e.target.value)}
+                  placeholder={T(lang, '例：農村、城市、山區...', 'e.g. rural, urban, mountainous...')}
+                />
               </div>
             </div>
           </>}

@@ -21,6 +21,8 @@ model User {
   exactTime    String?     // "HH:MM" for precise mode
   calendarType String?     // "solar" | "lunar"
   birthEnvironment String? // daylight saving, etc.
+  birthLat         Float?
+  birthLng         Float?
   isAdmin      Boolean     @default(false)
   isPaid       Boolean     @default(false)
   role         String      @default("user") // user | admin

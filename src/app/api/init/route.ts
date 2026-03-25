@@ -72,7 +72,7 @@ export async function GET() {
       select: {
         birthDate: true, birthTime: true, birthPlace: true,
         gender: true, calendarType: true, timeMode: true, exactTime: true,
-        birthEnvironment: true,
+        birthEnvironment: true, birthLat: true, birthLng: true,
       },
     }),
     prisma.familyMember.findMany({

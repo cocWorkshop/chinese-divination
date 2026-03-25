@@ -281,6 +281,8 @@ export async function POST(req: NextRequest) {
             timeMode: inputData.timeMode || null,
             exactTime: inputData.exactTime || null,
             birthEnvironment: inputData.birthEnvironment || null,
+            birthLat: inputData.birthLat ?? null,
+            birthLng: inputData.birthLng ?? null,
           },
         })
         resolvedFamilyMemberId = created.id
@@ -1132,7 +1134,7 @@ ${question ? `特别关注：${question}` : ''}`
     }
 
     if (shouldSaveProfile && (type === 'bazi' || type === 'ziwei')) {
-      const profileUpdate: Record<string, string | null> = {}
+      const profileUpdate: Record<string, string | number | null> = {}
       if (inputData.birthDate) profileUpdate.birthDate = inputData.birthDate
       if (inputData.birthTime) profileUpdate.birthTime = inputData.birthTime
       if (inputData.birthPlace) profileUpdate.birthPlace = inputData.birthPlace
@@ -1141,6 +1143,8 @@ ${question ? `特别关注：${question}` : ''}`
       if (inputData.exactTime) profileUpdate.exactTime = inputData.exactTime
       if (inputData.lunarToggle) profileUpdate.calendarType = inputData.lunarToggle
       if (inputData.birthEnvironment) profileUpdate.birthEnvironment = inputData.birthEnvironment
+      if (inputData.birthLat != null) profileUpdate.birthLat = inputData.birthLat
+      if (inputData.birthLng != null) profileUpdate.birthLng = inputData.birthLng
       if (Object.keys(profileUpdate).length > 0) {
         if (targetType === 'family' && resolvedFamilyMemberId) {
           postOps.push(prisma.familyMember.update({ where: { id: resolvedFamilyMemberId }, data: profileUpdate }))
