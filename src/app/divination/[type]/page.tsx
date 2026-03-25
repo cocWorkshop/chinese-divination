@@ -193,15 +193,34 @@ export default function DivinationFormPage() {
       if (member) {
         setForm(f => ({
           ...f,
-          birthDate: member.birthDate || f.birthDate,
-          birthTime: member.birthTime || f.birthTime,
-          birthPlace: member.birthPlace || f.birthPlace,
-          gender: member.gender || f.gender,
-          lunarToggle: member.calendarType || f.lunarToggle,
-          timeMode: member.timeMode || f.timeMode,
-          birthEnvironment: member.birthEnvironment || f.birthEnvironment,
+          birthDate: member.birthDate || '',
+          birthTime: member.birthTime || '',
+          birthPlace: member.birthPlace || '',
+          gender: member.gender || '',
+          lunarToggle: member.calendarType || 'solar',
+          timeMode: member.timeMode || 'fuzzy',
+          exactTime: '',
+          birthEnvironment: member.birthEnvironment || '',
         }))
+        // Reset geocoded coordinates — user needs to re-select birthplace for precise mode
+        setBirthLat(null)
+        setBirthLng(null)
       }
+    } else if (memberId === '__new__') {
+      // Clear form for new member
+      setForm(f => ({
+        ...f,
+        birthDate: '',
+        birthTime: '',
+        birthPlace: '',
+        gender: '',
+        lunarToggle: 'solar',
+        timeMode: 'fuzzy',
+        exactTime: '',
+        birthEnvironment: '',
+      }))
+      setBirthLat(null)
+      setBirthLng(null)
     }
   }
 

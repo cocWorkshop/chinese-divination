@@ -362,7 +362,8 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
           inputData.timeMode === 'precise' ? '' : (inputData.birthTime || ''),
           inputData.birthPlace || '',
           inputData.gender || 'male',
-          inputData.timeMode === 'precise' ? inputData.exactTime : undefined
+          inputData.timeMode === 'precise' ? inputData.exactTime : undefined,
+          inputData.birthLng ?? null
         )
         userMessage = `请为我进行八字命理精批。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}

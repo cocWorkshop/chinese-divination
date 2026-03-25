@@ -708,11 +708,12 @@ export function calculateBazi(
   birthTime: string,
   birthPlace: string,
   gender: 'male' | 'female',
-  exactTime?: string // HH:MM format for precise mode
+  exactTime?: string, // HH:MM format for precise mode
+  birthLng?: number | null // explicit longitude from geocoder
 ): BaziChart {
-  // Resolve longitude
+  // Resolve longitude: prefer explicit geocoded value, then city lookup, then default
   const cityInfo = cityLongitudes[birthPlace]
-  const longitude = cityInfo?.lng || 120.0 // default to 120°E if unknown
+  const longitude = birthLng ?? cityInfo?.lng ?? 120.0
 
   // Parse birth date
   const [year, month, day] = birthDate.split('-').map(Number)
