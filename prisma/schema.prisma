@@ -114,7 +114,7 @@ model FamilyMember {
   exactTime        String?   // "HH:MM" for precise mode
   birthLat         Float?
   birthLng         Float?
-  birthEnvironment String?
+  birthEnvironment String? // geographic birth environment (rural, urban, mountainous, etc.)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   readings         Reading[]

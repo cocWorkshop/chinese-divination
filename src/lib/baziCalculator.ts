@@ -1,6 +1,7 @@
 import { Solar, Lunar } from 'lunar-typescript'
 import { cityLongitudes } from './cityLongitudes'
 import { trueSolarTime, getTrueSolarTimeCorrection, getShichen, shichenNameToBranch } from './trueSolarTime'
+import { getTimezoneOffset, TimezoneResult } from './dstDetection'
 
 const STEMS = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'] as const
 const BRANCHES = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'] as const
@@ -442,6 +443,8 @@ export interface BaziChart {
     longitude: number
     shichen: string
     shichenChanged: boolean
+    isDST?: boolean
+    dstNote?: string
   }
   daYun: DaYunPillar[]
   xiaoYun: XiaoYunPillar[]
@@ -709,7 +712,8 @@ export function calculateBazi(
   birthPlace: string,
   gender: 'male' | 'female',
   exactTime?: string, // HH:MM format for precise mode
-  birthLng?: number | null // explicit longitude from geocoder
+  birthLng?: number | null, // explicit longitude from geocoder
+  birthLat?: number | null  // explicit latitude from geocoder (for DST detection)
 ): BaziChart {
   // Resolve longitude: prefer explicit geocoded value, then city lookup, then default
   const cityInfo = cityLongitudes[birthPlace]
@@ -717,6 +721,11 @@ export function calculateBazi(
 
   // Parse birth date
   const [year, month, day] = birthDate.split('-').map(Number)
+
+  // Detect timezone and DST
+  const parsedHour = exactTime ? parseInt(exactTime.split(':')[0]) : 12
+  const tzResult = getTimezoneOffset(year, month, day, parsedHour, longitude, birthLat)
+  const timezone = tzResult.offset
 
   // Map branch to hour for lunar-typescript
   const branchToHour: Record<string, number> = {
@@ -731,23 +740,44 @@ export function calculateBazi(
   if (exactTime) {
     // Precise mode: parse exact HH:MM, apply true solar time correction
     const [exactHour, exactMinute] = exactTime.split(':').map(Number)
-    const standardDate = new Date(year, month - 1, day, exactHour, exactMinute, 0)
-    const correctionMinutes = getTrueSolarTimeCorrection(standardDate, longitude)
-    const correctedDate = trueSolarTime(standardDate, longitude)
+
+    // If DST is active, subtract 1 hour to get standard time before solar correction
+    let adjustedHour = exactHour
+    let adjustedDay = day
+    let adjustedMonth = month
+    let adjustedYear = year
+    if (tzResult.isDST) {
+      adjustedHour -= 1
+      if (adjustedHour < 0) {
+        adjustedHour += 24
+        // Roll back one day
+        const prevDate = new Date(year, month - 1, day - 1)
+        adjustedYear = prevDate.getFullYear()
+        adjustedMonth = prevDate.getMonth() + 1
+        adjustedDay = prevDate.getDate()
+      }
+    }
+
+    const standardDate = new Date(adjustedYear, adjustedMonth - 1, adjustedDay, adjustedHour, exactMinute, 0)
+    const correctionMinutes = getTrueSolarTimeCorrection(standardDate, longitude, tzResult.isDST ? timezone - 1 : timezone)
+    const correctedDate = trueSolarTime(standardDate, longitude, tzResult.isDST ? timezone - 1 : timezone)
     const correctedShichen = getShichen(correctedDate)
-    const originalShichen = getShichen(standardDate)
+    const originalDate = new Date(year, month - 1, day, exactHour, exactMinute, 0)
+    const originalShichen = getShichen(originalDate)
     const shichenChanged = correctedShichen.branch !== originalShichen.branch
 
     actualBranch = correctedShichen.branch
     solarHour = branchToHour[actualBranch] ?? 12
 
     trueSolarTimeInfo = {
-      originalTime: formatTime(standardDate),
+      originalTime: formatTime(originalDate),
       correctedTime: formatTime(correctedDate),
       correctionMinutes: Math.round(correctionMinutes * 10) / 10,
       longitude,
       shichen: actualBranch + '时',
       shichenChanged,
+      isDST: tzResult.isDST,
+      dstNote: tzResult.dstNote,
     }
   } else {
     // Fuzzy mode: use shichen directly, no true solar time correction
