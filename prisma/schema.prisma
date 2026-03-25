@@ -17,10 +17,10 @@ model User {
   birthTime    String?
   birthPlace   String?
   gender       String?
-  timeMode     String?     // "fuzzy" | "exact"
+  timeMode     String?     // "fuzzy" | "precise"
   exactTime    String?     // "HH:MM" for precise mode
   calendarType String?     // "solar" | "lunar"
-  birthEnvironment String? // daylight saving, etc.
+  birthEnvironment String? // geographic birth environment (rural, urban, mountainous, etc.)
   birthLat         Float?
   birthLng         Float?
   isAdmin      Boolean     @default(false)

@@ -61,7 +61,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const [form, setForm] = useState({
     name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', language: 'zh-TW',
-    timeMode: 'fuzzy' as 'fuzzy' | 'exact', calendarType: 'solar' as 'solar' | 'lunar',
+    timeMode: 'fuzzy' as 'fuzzy' | 'precise', calendarType: 'solar' as 'solar' | 'lunar',
     newPassword: '', currentPassword: '',
   })
   const [saving, setSaving] = useState(false)
@@ -318,18 +318,18 @@ export default function ProfilePage() {
                 <div className="flex rounded-lg overflow-hidden border border-gold/20">
                   {[
                     { value: 'fuzzy', label: T(lang, '時辰', 'Shichen') },
-                    { value: 'exact', label: T(lang, '精確', 'Exact') },
+                    { value: 'precise', label: T(lang, '精確', 'Exact') },
                   ].map(opt => (
                     <button key={opt.value} type="button"
                       className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
-                      onClick={() => setForm(f => ({ ...f, timeMode: opt.value as 'fuzzy' | 'exact' }))}
+                      onClick={() => setForm(f => ({ ...f, timeMode: opt.value as 'fuzzy' | 'precise' }))}
                     >{opt.label}</button>
                   ))}
                 </div>
               </div>
               <div>
                 <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
-                {form.timeMode === 'exact' ? (
+                {form.timeMode === 'precise' ? (
                   <input type="time" className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))} />
                 ) : (
                   <select className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))}>
@@ -435,7 +435,7 @@ export default function ProfilePage() {
                       <div className="flex rounded-lg overflow-hidden border border-gold/20">
                         {[
                           { value: 'fuzzy', label: T(lang, '時辰', 'Shichen') },
-                          { value: 'exact', label: T(lang, '精確', 'Exact') },
+                          { value: 'precise', label: T(lang, '精確', 'Exact') },
                         ].map(opt => (
                           <button key={opt.value} type="button"
                             className={`flex-1 py-2.5 text-sm font-medium transition-colors ${editForm.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
@@ -445,8 +445,8 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div>
-                      <label className={labelCls}>{editForm.timeMode === 'exact' ? T(lang, '精確時間', 'Exact Time') : T(lang, '出生時辰', 'Birth Time')}</label>
-                      {editForm.timeMode === 'exact' ? (
+                      <label className={labelCls}>{editForm.timeMode === 'precise' ? T(lang, '精確時間', 'Exact Time') : T(lang, '出生時辰', 'Birth Time')}</label>
+                      {editForm.timeMode === 'precise' ? (
                         <input type="time" className={inputCls} value={editForm.exactTime || ''} onChange={e => setEditForm(f => ({ ...f, exactTime: e.target.value }))} />
                       ) : (
                         <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
@@ -553,7 +553,7 @@ export default function ProfilePage() {
                   <div className="flex rounded-lg overflow-hidden border border-gold/20">
                     {[
                       { value: 'fuzzy', label: T(lang, '時辰', 'Shichen') },
-                      { value: 'exact', label: T(lang, '精確', 'Exact') },
+                      { value: 'precise', label: T(lang, '精確', 'Exact') },
                     ].map(opt => (
                       <button key={opt.value} type="button"
                         className={`flex-1 py-2.5 text-sm font-medium transition-colors ${newMember.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
@@ -563,8 +563,8 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label className={labelCls}>{newMember.timeMode === 'exact' ? T(lang, '精確時間', 'Exact Time') : T(lang, '出生時辰', 'Birth Time')}</label>
-                  {newMember.timeMode === 'exact' ? (
+                  <label className={labelCls}>{newMember.timeMode === 'precise' ? T(lang, '精確時間', 'Exact Time') : T(lang, '出生時辰', 'Birth Time')}</label>
+                  {newMember.timeMode === 'precise' ? (
                     <input type="time" className={inputCls} value={newMember.exactTime || ''} onChange={e => setNewMember(f => ({ ...f, exactTime: e.target.value }))} />
                   ) : (
                     <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>

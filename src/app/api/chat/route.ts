@@ -187,44 +187,4 @@ ${readingData || '（无预测数据）'}
   }
 }
 
-async function updateChatSummary(
-  client: OpenAI,
-  existingSummary: string | null,
-  conversation: string,
-  userId: string,
-  chatModel: string
-) {
-  try {
-    const sumStart = Date.now()
-    const summaryCompletion = await client.chat.completions.create({
-      model: chatModel,
-      max_tokens: 200,
-      messages: [
-        {
-          role: 'user',
-          content: `将以下对话提炼为3-5个关键要点（每点不超过15字，用•分隔）：\n${conversation}`,
-        },
-      ],
-    })
-    const newPoints = summaryCompletion.choices[0]?.message?.content || ''
 
-    await logLlmCall({
-      userId,
-      endpoint: 'chat-summary',
-      model: chatModel,
-      promptTokens: summaryCompletion.usage?.prompt_tokens,
-      completionTokens: summaryCompletion.usage?.completion_tokens,
-      totalTokens: summaryCompletion.usage?.total_tokens,
-      latencyMs: Date.now() - sumStart,
-      status: 'success',
-      inputPreview: conversation.slice(0, 200),
-      outputPreview: newPoints,
-    })
-    const combined = [existingSummary || '', newPoints].filter(Boolean).join('\n')
-    // Keep last 500 chars
-    const trimmed = combined.length > 500 ? combined.slice(combined.length - 500) : combined
-    await prisma.user.update({ where: { id: userId }, data: { chatSummary: trimmed } })
-  } catch {
-    // Non-critical, ignore errors
-  }
-}
