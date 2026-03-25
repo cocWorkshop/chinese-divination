@@ -53,6 +53,8 @@ interface FamilyMember {
   calendarType: string | null
   timeMode: string | null
   exactTime: string | null
+  birthLat: number | null
+  birthLng: number | null
   birthEnvironment: string | null
 }
 
@@ -103,7 +105,7 @@ export default function DivinationFormPage() {
   const [saveProfile, setSaveProfile] = useState(true)
   const [saveHistory, setSaveHistory] = useState(true)
   const [profileLoaded, setProfileLoaded] = useState(false)
-  const selfProfileRef = useRef<{ birthDate: string; birthTime: string; birthPlace: string; gender: string; lunarToggle: string; timeMode: string; birthEnvironment: string } | null>(null)
+  const selfProfileRef = useRef<{ birthDate: string; birthTime: string; birthPlace: string; gender: string; lunarToggle: string; timeMode: string; exactTime: string; birthEnvironment: string } | null>(null)
   // modelTier removed — single model now
   // Bazi cache dialog
   const [showCacheDialog, setShowCacheDialog] = useState(false)
@@ -165,6 +167,7 @@ export default function DivinationFormPage() {
             gender:     p.gender     || f.gender,
             lunarToggle: p.calendarType || f.lunarToggle,
             timeMode:   p.timeMode   || f.timeMode,
+            exactTime:  p.exactTime  || f.exactTime,
             birthEnvironment: p.birthEnvironment || f.birthEnvironment,
           }))
           selfProfileRef.current = {
@@ -174,6 +177,7 @@ export default function DivinationFormPage() {
             gender: p.gender || '',
             lunarToggle: p.calendarType || 'solar',
             timeMode: p.timeMode || 'fuzzy',
+            exactTime: p.exactTime || '',
             birthEnvironment: p.birthEnvironment || '',
           }
           setProfileLoaded(true)
@@ -203,9 +207,9 @@ export default function DivinationFormPage() {
           exactTime: member.exactTime || '',
           birthEnvironment: member.birthEnvironment || '',
         }))
-        // Reset geocoded coordinates — user needs to re-select birthplace for precise mode
-        setBirthLat(null)
-        setBirthLng(null)
+        // Use stored geocoded coordinates from family member if available
+        setBirthLat(member.birthLat ?? null)
+        setBirthLng(member.birthLng ?? null)
       }
     } else if (memberId === '__new__') {
       // Clear form for new member

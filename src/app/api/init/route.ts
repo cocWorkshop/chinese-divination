@@ -71,7 +71,8 @@ export async function GET() {
       where: { id: userId },
       select: {
         birthDate: true, birthTime: true, birthPlace: true,
-        gender: true, calendarType: true, timeMode: true,
+        gender: true, calendarType: true, timeMode: true, exactTime: true,
+        birthEnvironment: true,
       },
     }),
     prisma.familyMember.findMany({

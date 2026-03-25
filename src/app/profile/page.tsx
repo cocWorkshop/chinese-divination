@@ -31,6 +31,9 @@ interface FamilyMember {
   gender: string | null
   calendarType: string | null
   timeMode: string | null
+  exactTime: string | null
+  birthLat: number | null
+  birthLng: number | null
   birthEnvironment: string | null
 }
 
@@ -71,7 +74,7 @@ export default function ProfilePage() {
   const [editingMember, setEditingMember] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<FamilyMember>>({})
   const [addingMember, setAddingMember] = useState(false)
-  const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', calendarType: 'solar', timeMode: 'fuzzy', birthEnvironment: '' })
+  const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', calendarType: 'solar', timeMode: 'fuzzy', exactTime: '', birthLat: null, birthLng: null, birthEnvironment: '' })
   const [credits, setCredits] = useState<{ divination: { remaining: number }; chat: { remaining: number } } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
@@ -442,9 +445,9 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div>
-                      <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
+                      <label className={labelCls}>{editForm.timeMode === 'exact' ? T(lang, '精確時間', 'Exact Time') : T(lang, '出生時辰', 'Birth Time')}</label>
                       {editForm.timeMode === 'exact' ? (
-                        <input type="time" className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))} />
+                        <input type="time" className={inputCls} value={editForm.exactTime || ''} onChange={e => setEditForm(f => ({ ...f, exactTime: e.target.value }))} />
                       ) : (
                         <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
                           <option value="">{T(lang, '請選擇', 'Select')}</option>
@@ -456,7 +459,12 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
-                      <input type="text" className={inputCls} value={editForm.birthPlace || ''} onChange={e => setEditForm(f => ({ ...f, birthPlace: e.target.value }))} />
+                      <BirthplaceInput
+                        value={editForm.birthPlace || ''}
+                        onChange={v => setEditForm(f => ({ ...f, birthPlace: v }))}
+                        onLatLngChange={(lat, lng) => setEditForm(f => ({ ...f, birthLat: lat, birthLng: lng }))}
+                        className={inputCls}
+                      />
                     </div>
                     <div>
                       <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
@@ -494,7 +502,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '', calendarType: member.calendarType || 'solar', timeMode: member.timeMode || 'fuzzy', birthEnvironment: member.birthEnvironment || '' }) }}
+                    <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '', calendarType: member.calendarType || 'solar', timeMode: member.timeMode || 'fuzzy', exactTime: member.exactTime || '', birthLat: member.birthLat ?? null, birthLng: member.birthLng ?? null, birthEnvironment: member.birthEnvironment || '' }) }}
                       className="text-white/30 hover:text-gold text-sm transition-colors">✏️</button>
                     <button type="button" onClick={() => deleteFamilyMember(member.id)}
                       className="text-white/30 hover:text-red-400 text-sm transition-colors">✕</button>
@@ -555,9 +563,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <label className={labelCls}>{T(lang, '出生時辰', 'Birth Time')}</label>
+                  <label className={labelCls}>{newMember.timeMode === 'exact' ? T(lang, '精確時間', 'Exact Time') : T(lang, '出生時辰', 'Birth Time')}</label>
                   {newMember.timeMode === 'exact' ? (
-                    <input type="time" className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))} />
+                    <input type="time" className={inputCls} value={newMember.exactTime || ''} onChange={e => setNewMember(f => ({ ...f, exactTime: e.target.value }))} />
                   ) : (
                     <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
                       <option value="">{T(lang, '請選擇', 'Select')}</option>
@@ -569,7 +577,12 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>{T(lang, '出生地', 'Birthplace')}</label>
-                  <input type="text" className={inputCls} value={newMember.birthPlace || ''} onChange={e => setNewMember(f => ({ ...f, birthPlace: e.target.value }))} />
+                  <BirthplaceInput
+                    value={newMember.birthPlace || ''}
+                    onChange={v => setNewMember(f => ({ ...f, birthPlace: v }))}
+                    onLatLngChange={(lat, lng) => setNewMember(f => ({ ...f, birthLat: lat, birthLng: lng }))}
+                    className={inputCls}
+                  />
                 </div>
                 <div>
                   <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>

@@ -18,7 +18,9 @@ model User {
   birthPlace   String?
   gender       String?
   timeMode     String?     // "fuzzy" | "exact"
+  exactTime    String?     // "HH:MM" for precise mode
   calendarType String?     // "solar" | "lunar"
+  birthEnvironment String? // daylight saving, etc.
   isAdmin      Boolean     @default(false)
   isPaid       Boolean     @default(false)
   role         String      @default("user") // user | admin
@@ -108,6 +110,8 @@ model FamilyMember {
   calendarType     String?   // "solar" or "lunar"
   timeMode         String?   // "fuzzy" or "exact"
   exactTime        String?   // "HH:MM" for precise mode
+  birthLat         Float?
+  birthLng         Float?
   birthEnvironment String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
