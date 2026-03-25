@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { message, history, readingContext, readingType } = await req.json()
+    const { message, history, readingContext, readingType, clientTime } = await req.json()
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
     }
@@ -65,7 +65,8 @@ export async function POST(req: NextRequest) {
     }
     const currentType = typeLabel[readingType] || '命理'
 
-    const todayStr = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
+    const clientDate = clientTime ? new Date(clientTime) : new Date()
+    const todayStr = clientDate.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
     const systemPrompt = `你是一位专业的${currentType}解盘师。你正在帮助用户深入分析他们刚刚获得的${currentType}预测结果。
 今天日期：${todayStr}。
 

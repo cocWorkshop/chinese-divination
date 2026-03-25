@@ -203,7 +203,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { type, inputData, language, question, saveProfile, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember, readingId: preCreatedReadingId } = await req.json()
+    const { type, inputData, language, question, saveProfile, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember, readingId: preCreatedReadingId, clientTime } = await req.json()
     const targetType = rawTargetType === 'family' ? 'family' : 'self'
 
     if (!type || !inputData) {
@@ -322,7 +322,8 @@ export async function POST(req: NextRequest) {
     const langText = language === 'en' ? 'English' : '繁體中文（Traditional Chinese）'
     const textLang = language === 'en' ? 'English' : '繁體中文'
 
-    const todayStr = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
+    const clientDate = clientTime ? new Date(clientTime) : new Date()
+    const todayStr = clientDate.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
     const systemPrompt = `You are a master of Chinese traditional divination with deep expertise in ${type}.
 Today's date: ${todayStr}.
 
@@ -469,7 +470,7 @@ ${question ? `特别关注：${question}` : ''}`
     } else if (type === 'qimen') {
       try {
         // Use current time for Qi Men chart (or parse from inputData if provided)
-        const qimenTime = inputData.dateTime ? new Date(inputData.dateTime) : new Date()
+        const qimenTime = inputData.dateTime ? new Date(inputData.dateTime) : clientDate
         qimenChart = calculateQimen(qimenTime)
         userMessage = `请为我进行奇门遁甲排盘分析。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}

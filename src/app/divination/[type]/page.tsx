@@ -290,6 +290,7 @@ export default function DivinationFormPage() {
           targetType,
           familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
           newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, name: newMemberName || undefined } : undefined,
+          clientTime: new Date().toISOString(),
         }),
       })
       const initData = await initRes.json()
@@ -326,6 +327,7 @@ export default function DivinationFormPage() {
           familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
           newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, name: newMemberName || undefined } : undefined,
           readingId: pendingReadingId,
+          clientTime: new Date().toISOString(),
         }),
         signal: fetchController.signal,
       })

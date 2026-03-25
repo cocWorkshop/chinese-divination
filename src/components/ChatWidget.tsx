@@ -41,7 +41,7 @@ export default function ChatWidget() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg, history: messages }),
+        body: JSON.stringify({ message: userMsg, history: messages, clientTime: new Date().toISOString() }),
         signal: controller.signal,
       })
       clearTimeout(timeoutId)
