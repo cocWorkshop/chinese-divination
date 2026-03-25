@@ -16,6 +16,7 @@ const DEFAULT_VISIBILITY: DivinationVisibilityItem[] = [
   { type: 'fengshui', visible: true, order: 5 },
   { type: 'meihua', visible: true, order: 6 },
   { type: 'iching', visible: false, order: 7 },
+  { type: 'other', visible: false, order: 8 },
 ]
 
 export async function GET() {

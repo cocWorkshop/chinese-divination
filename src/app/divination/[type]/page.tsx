@@ -66,6 +66,7 @@ const typeInfo: Record<string, { zhName: string; twName: string; enName: string;
   ziwei: { zhName: '紫微斗数', twName: '紫微斗數', enName: 'Zi Wei Dou Shu', symbol: '⭐' },
   qimen: { zhName: '奇门遁甲', twName: '奇門遁甲', enName: 'Qi Men Dun Jia', symbol: '⚡' },
   fengshui: { zhName: '风水布局', twName: '風水佈局', enName: 'Feng Shui Analysis', symbol: '🏯' },
+  meihua: { zhName: '梅花易数', twName: '梅花易數', enName: 'Plum Blossom Numerology', symbol: '🌸' },
   other: { zhName: '梅花六壬', twName: '梅花六壬', enName: 'Plum Blossom & Liu Ren', symbol: '🌸' },
 }
 
@@ -992,7 +993,20 @@ export default function DivinationFormPage() {
             </div>
           </>}
 
-          {/* Other */}
+          {/* Meihua */}
+          {type === 'meihua' && <>
+            <div>
+              <label className={labelCls}>{T(lang, '您的問題', 'Your Question')}</label>
+              <textarea className={inputCls + ' h-24 resize-none'} value={form.question} onChange={e => setField('question', e.target.value)} required placeholder={T(lang, '詳述想預測的事項...', 'Describe what you want to predict...')} />
+            </div>
+            <div>
+              <label className={labelCls}>{T(lang, '起卦時間', 'Reading Date/Time')}</label>
+              <input type="datetime-local" className={inputCls} value={form.readingDateTime} onChange={e => setField('readingDateTime', e.target.value)} />
+              <p className="text-white/40 text-xs mt-1">{T(lang, '默認為當前時間，梅花易數以時間起卦', 'Defaults to current time. Meihua uses time-based hexagram casting.')}</p>
+            </div>
+          </>}
+
+          {/* Other (hidden — kept for legacy/liuren) */}
           {type === 'other' && <>
             <div>
               <label className={labelCls}>{T(lang, '占卜類型', 'Sub-type')}</label>

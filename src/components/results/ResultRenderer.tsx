@@ -29,6 +29,7 @@ export default function ResultRenderer({ result, type, isShared, readingId, chat
     case 'ziwei': return <ZiweiResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
     case 'qimen': return <QimenResult data={parsed} />
     case 'fengshui': return <FengshuiResult data={parsed} />
+    case 'meihua': return <OtherResult data={parsed} />
     default: return <OtherResult data={parsed} />
   }
 }

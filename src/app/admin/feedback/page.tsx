@@ -20,7 +20,7 @@ interface SiteFB {
 }
 
 const typeLabels: Record<string, string> = {
-  bazi: '八字', iching: '易經', ziwei: '紫微', qimen: '奇門', fengshui: '風水', other: '梅花六壬',
+  bazi: '八字', iching: '易經', ziwei: '紫微', qimen: '奇門', fengshui: '風水', meihua: '梅花易數', other: '其他',
 }
 
 const stars = (n: number | null) => n ? '★'.repeat(n) + '☆'.repeat(5 - n) : '—'

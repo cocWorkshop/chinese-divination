@@ -17,7 +17,7 @@ interface Stats {
 
 const typeLabel: Record<string, string> = {
   bazi: '八字命理', iching: '易经占卜', ziwei: '紫微斗数',
-  qimen: '奇门遁甲', fengshui: '风水布局', other: '梅花六壬',
+  qimen: '奇门遁甲', fengshui: '风水布局', meihua: '梅花易数', other: '其他',
 }
 
 export default function AdminDashboard() {

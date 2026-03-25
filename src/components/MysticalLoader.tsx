@@ -33,7 +33,7 @@ const divinationQuotes = {
 }
 
 // Hexagram-based divination types (use 卦象 instead of 命盤)
-const HEXAGRAM_TYPES = new Set(['iching', 'liuyao', 'qimen', 'fengshui', 'other'])
+const HEXAGRAM_TYPES = new Set(['iching', 'liuyao', 'qimen', 'fengshui', 'meihua', 'other'])
 
 // Progress stages with estimated time thresholds (seconds)
 function getProgressStages(lang: string, divinationType?: string) {

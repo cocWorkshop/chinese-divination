@@ -24,6 +24,7 @@ const refFileMap: Record<string, string> = {
   ziwei: 'ziwei.md',
   qimen: 'qimen.md',
   fengshui: 'fengshui.md',
+  meihua: 'others.md',
   other: 'others.md',
 }
 
@@ -179,6 +180,19 @@ const schemas: Record<string, object> = {
     remedies: [{ issue: '问题', solution: '解决方案' }],
     keyAdvice: ['建议一', '建议二'],
     suggestedQuestions: ['当前格局中最影响财运的风水要素是什么？据此提问(15字内)', '家中哪个方位藏着最大的隐患？提一个化解问题(15字内)', '如何用最小的改动获得最大的风水提升？据此提问(15字内)'],
+  },
+  meihua: {
+    type: 'meihua',
+    subType: 'meihua',
+    trigrams: {
+      upper: { name: '卦名', symbol: '☰', element: '五行' },
+      lower: { name: '卦名', symbol: '☷', element: '五行' },
+      transformed: { name: '卦名', symbol: '☵', element: '五行' },
+    },
+    sections: { situation: '体卦分析(100+字)', inquiry: '用卦分析(100+字)', interaction: '体用关系(100+字)', timeline: '时间推断(100+字)' },
+    outcome: '吉/凶/中',
+    keyAdvice: ['建议一', '建议二', '建议三'],
+    suggestedQuestions: ['体用之间的生克揭示了什么关键走向？据此提问(15字内)', '此卦最容易被忽略的变数是什么？提一个深入问题(15字内)', '如何借势破局？提一个最实用的行动问题(15字内)'],
   },
   other: {
     type: 'other',
@@ -515,6 +529,65 @@ ${question ? `- 求测问题：${question}` : '- 求测问题：综合运势'}
       } catch (e) {
         console.error('Qimen calculation error:', e)
         userMessage = `请为我进行${type}分析。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+输入信息：${JSON.stringify(inputData, null, 2)}
+${question ? `特别关注：${question}` : ''}`
+      }
+    } else if (type === 'meihua' && inputData.readingDateTime) {
+      try {
+        const readingDt = new Date(inputData.readingDateTime)
+        const meihuaDate = `${readingDt.getFullYear()}-${String(readingDt.getMonth() + 1).padStart(2, '0')}-${String(readingDt.getDate()).padStart(2, '0')}`
+        const hour = readingDt.getHours()
+        // Convert hour to shichen branch
+        const shichenBranches = ['zi_early', 'chou', 'chou', 'yin', 'yin', 'mao', 'mao', 'chen', 'chen', 'si', 'si', 'wu', 'wu', 'wei', 'wei', 'shen', 'shen', 'you', 'you', 'xu', 'xu', 'hai', 'hai', 'zi_late']
+        const meihuaTime = shichenBranches[hour] || 'zi_early'
+        meihuaChart = calculateMeihua(meihuaDate, meihuaTime)
+        userMessage = `请为我进行梅花易数排卦分析。
+${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
+## 程序预计算的梅花易数卦象（已验证准确，请直接使用）
+${JSON.stringify({
+  timeNumbers: {
+    lunarYear: meihuaChart.lunarYear,
+    lunarMonth: meihuaChart.lunarMonth,
+    lunarDay: meihuaChart.lunarDay,
+    yearBranch: meihuaChart.yearBranch,
+    yearNum: meihuaChart.yearNum,
+    monthNum: meihuaChart.monthNum,
+    dayNum: meihuaChart.dayNum,
+    hourNum: meihuaChart.hourNum,
+  },
+  calculation: {
+    upperSum: `${meihuaChart.yearNum}+${meihuaChart.monthNum}+${meihuaChart.dayNum}=${meihuaChart.yearNum + meihuaChart.monthNum + meihuaChart.dayNum}, %8=${meihuaChart.upperNum}`,
+    lowerSum: `${meihuaChart.yearNum}+${meihuaChart.monthNum}+${meihuaChart.dayNum}+${meihuaChart.hourNum}=${meihuaChart.yearNum + meihuaChart.monthNum + meihuaChart.dayNum + meihuaChart.hourNum}, %8=${meihuaChart.lowerNum}`,
+    changingLine: meihuaChart.changingLine,
+  },
+  benGua: { name: meihuaChart.benGua.name, upper: meihuaChart.benGua.upper.name, lower: meihuaChart.benGua.lower.name, lines: meihuaChart.benGua.lines },
+  huGua: { name: meihuaChart.huGua.name, upper: meihuaChart.huGua.upper.name, lower: meihuaChart.huGua.lower.name },
+  bianGua: { name: meihuaChart.bianGua.name, upper: meihuaChart.bianGua.upper.name, lower: meihuaChart.bianGua.lower.name },
+  tiYong: {
+    tiGua: `${meihuaChart.tiGua.name}(${meihuaChart.tiGua.element})`,
+    yongGua: `${meihuaChart.yongGua.name}(${meihuaChart.yongGua.element})`,
+    relation: meihuaChart.tiYongRelation,
+    analysis: meihuaChart.tiYongAnalysis,
+  },
+}, null, 2)}
+
+## 用户输入
+- 起卦时间：${inputData.readingDateTime}
+${question ? `- 求测问题：${question}` : '- 求测问题：综合运势'}
+
+## 解卦要求
+你是资深梅花易数术数师，请基于以上程序排出的卦象进行分析。重点：
+1. **situation**：本卦（${meihuaChart.benGua.name}）的卦象含义和当前处境分析（100字以上）
+2. **inquiry**：用卦分析，以动爻变化论述所问之事（100字以上）
+3. **interaction**：体用生克关系详析（${meihuaChart.tiYongRelation}），结合互卦（${meihuaChart.huGua.name}）论中期发展（100字以上）
+4. **timeline**：结合变卦（${meihuaChart.bianGua.name}）推断事物最终走向和应期（100字以上）
+
+同时设置subType为"meihua"。卦象数据以程序计算结果为准，你只负责解卦分析。
+关于trigrams字段：upper对应体卦，lower对应用卦，transformed对应变卦。`
+      } catch (e) {
+        console.error('Meihua calculation error:', e)
+        userMessage = `请为我进行梅花易数分析。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 输入信息：${JSON.stringify(inputData, null, 2)}
 ${question ? `特别关注：${question}` : ''}`
@@ -972,7 +1045,7 @@ ${question ? `特别关注：${question}` : ''}`
     }
 
     // Merge programmatic Meihua data with LLM interpretation
-    if (type === 'other' && meihuaChart) {
+    if ((type === 'meihua' || type === 'other') && meihuaChart) {
       structuredResult.meihuaChart = {
         lunarYear: meihuaChart.lunarYear,
         lunarMonth: meihuaChart.lunarMonth,
@@ -1013,6 +1086,7 @@ ${question ? `特别关注：${question}` : ''}`
       liuyao: r => !!(r.interpretation || r.sections),
       qimen: r => !!(r.sections && typeof r.sections === 'object'),
       fengshui: r => !!(r.sections && typeof r.sections === 'object'),
+      meihua: r => !!(r.sections && typeof r.sections === 'object'),
       other: r => !!(r.sections && typeof r.sections === 'object'),
     }
     const validator = validationRules[type] || validationRules.other

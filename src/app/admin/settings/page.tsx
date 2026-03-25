@@ -16,7 +16,7 @@ const TYPE_INFO: Record<string, { icon: string; zh: string; en: string }> = {
   ziwei: { icon: '⭐', zh: '紫微斗數', en: 'Zi Wei' },
   qimen: { icon: '⚡', zh: '奇門遁甲', en: 'Qi Men' },
   fengshui: { icon: '🏯', zh: '風水佈局', en: 'Feng Shui' },
-  meihua: { icon: '🌸', zh: '梅花六壬', en: 'Mei Hua' },
+  meihua: { icon: '🌸', zh: '梅花易數', en: 'Mei Hua' },
 }
 
 const DEFAULT_VISIBILITY: VisibilityItem[] = [

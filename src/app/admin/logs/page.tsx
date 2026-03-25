@@ -637,7 +637,8 @@ export default function AdminSystemLogs() {
                   { key: 'qimen', label: '奇門' },
                   { key: 'iching', label: '易經' },
                   { key: 'fengshui', label: '風水' },
-                  { key: 'other', label: '梅花' },
+                  { key: 'meihua', label: '梅花' },
+                  { key: 'other', label: '其他' },
                 ].map(f => (
                   <button key={f.key}
                     onClick={() => { setReadingsTypeFilter(f.key); fetchReadings(1, f.key) }}

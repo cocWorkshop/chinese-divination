@@ -128,6 +128,7 @@ const iconMap: Record<string, React.ComponentType<IconProps>> = {
   ziwei: ZiWeiIcon,
   qimen: QiMenIcon,
   fengshui: FengShuiIcon,
+  meihua: MeiHuaIcon,
   other: MeiHuaIcon,
 }
 

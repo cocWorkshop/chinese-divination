@@ -22,11 +22,11 @@ const serviceMap: Record<string, { symbol: string; twName: string; enName: strin
   ziwei: { symbol: '⭐', twName: '紫微斗數', enName: 'Zi Wei', twDesc: '星盤命宮，紫微護命', enDesc: 'Purple Star Astrology' },
   qimen: { symbol: '⚡', twName: '奇門遁甲', enName: 'Qi Men', twDesc: '奇門佈局，謀事在天', enDesc: 'Qi Men Dun Jia' },
   fengshui: { symbol: '🏯', twName: '風水佈局', enName: 'Feng Shui', twDesc: '藏風聚氣，宅運興旺', enDesc: 'Wind & Water Harmony' },
-  meihua: { symbol: '🌸', twName: '梅花六壬', enName: 'Mei Hua', twDesc: '梅花易數·六壬神課', enDesc: 'Plum Blossom & Liu Ren' },
+  meihua: { symbol: '🌸', twName: '梅花易數', enName: 'Plum Blossom', twDesc: '以數起卦，體用生克，精準預測具體事項', enDesc: 'Plum Blossom numerology for precise event prediction' },
 }
 
-// Map visibility type keys to route ids (meihua routes to /divination/other)
-const routeIdMap: Record<string, string> = { meihua: 'other' }
+// Map visibility type keys to route ids
+const routeIdMap: Record<string, string> = {}
 const getRouteId = (type: string) => routeIdMap[type] || type
 
 export default function HomePage() {
