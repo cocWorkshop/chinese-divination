@@ -79,7 +79,7 @@ export function getShichen(trueSolarDate: Date): ShichenInfo {
 
 export function shichenNameToBranch(name: string): string {
   const map: Record<string, string> = {
-    'zi': '子', 'chou': '丑', 'yin': '寅', 'mao': '卯',
+    'zi': '子', 'zi_early': '子', 'zi_late': '子', 'chou': '丑', 'yin': '寅', 'mao': '卯',
     'chen': '辰', 'si': '巳', 'wu': '午', 'wei': '未',
     'shen': '申', 'you': '酉', 'xu': '戌', 'hai': '亥',
     '子': '子', '丑': '丑', '寅': '寅', '卯': '卯',

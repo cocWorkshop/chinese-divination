@@ -751,9 +751,19 @@ export function calculateBazi(
     }
   } else {
     // Fuzzy mode: use shichen directly, no true solar time correction
-    const branch = shichenNameToBranch(birthTime)
-    actualBranch = branch
-    solarHour = branchToHour[actualBranch] ?? 12
+    if (birthTime === 'zi_early') {
+      // 早子时 00:00-01:00: 子时，日柱用当天（hour=0）
+      actualBranch = '子'
+      solarHour = 0
+    } else if (birthTime === 'zi_late') {
+      // 晚子时 23:00-00:00: 子时，但日柱用当天（需要用23点来排，lunar-typescript会自动处理日柱）
+      actualBranch = '子'
+      solarHour = 23
+    } else {
+      const branch = shichenNameToBranch(birthTime)
+      actualBranch = branch
+      solarHour = branchToHour[actualBranch] ?? 12
+    }
   }
 
   // Use lunar-typescript for accurate Gan-Zhi calculation

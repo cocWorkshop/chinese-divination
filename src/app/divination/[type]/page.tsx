@@ -14,7 +14,8 @@ import YinYangIcon from '@/components/YinYangIcon'
 import { reportError, catchAndReport } from '@/lib/errorReporter'
 
 const shichen = [
-  { value: 'zi', zh: '子時 (23:00-01:00)', en: 'Zi (23:00-01:00)' },
+  { value: 'zi_early', zh: '早子時 (00:00-01:00)', en: 'Early Zi (00:00-01:00)' },
+  { value: 'zi_late', zh: '晚子時 (23:00-00:00)', en: 'Late Zi (23:00-00:00)' },
   { value: 'chou', zh: '丑時 (01:00-03:00)', en: 'Chou (01:00-03:00)' },
   { value: 'yin', zh: '寅時 (03:00-05:00)', en: 'Yin (03:00-05:00)' },
   { value: 'mao', zh: '卯時 (05:00-07:00)', en: 'Mao (05:00-07:00)' },
