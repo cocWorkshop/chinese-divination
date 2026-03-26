@@ -54,8 +54,9 @@ export default function ResultRenderer({ result, type, isShared, readingId, chat
       }
       return <ZiweiResult data={adapted} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
     }
-    if (pType === 'qimen' && parsed.qimen) {
-      return <QimenResult data={parsed.qimen as Record<string, unknown>} />
+    if (pType === 'qimen' && (parsed.qimenChart || parsed.qimen)) {
+      const qData = (parsed.qimenChart || parsed.qimen) as Record<string, unknown>
+      return <QimenResult data={{ qimenChart: qData, paipanOnly: true, sections: { situation: '（只排盤模式，無AI解盤）' } }} />
     }
     if (pType === 'meihua' && parsed.meihua) {
       return <OtherResult data={parsed.meihua as Record<string, unknown>} />
