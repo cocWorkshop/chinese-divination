@@ -154,7 +154,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
   const d = data as unknown as ZiweiData
   const [activeSection, setActiveSection] = useState('overview')
   const [selectedPalace, setSelectedPalace] = useState<string | null>(null)
-  const [showChart, setShowChart] = useState(false)
+  const [showChart, setShowChart] = useState(!!d.paipanOnly)
 
   const palaces = d.palaces || {}
   const chart = d.ziweiChart

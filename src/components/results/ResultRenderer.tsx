@@ -22,6 +22,48 @@ export default function ResultRenderer({ result, type, isShared, readingId, chat
     return <ReadingResult content={result} />
   }
 
+  // Handle paipanOnly results — adapt calculator output to display format
+  if (parsed.paipanOnly) {
+    const pType = (parsed.type as string) || type
+    if (pType === 'bazi' && parsed.bazi) {
+      const b = parsed.bazi as Record<string, unknown>
+      const adapted = {
+        pillars: b.fourPillars || { year: b.yearPillar, month: b.monthPillar, day: b.dayPillar, hour: b.hourPillar },
+        dayMaster: b.dayMaster,
+        fiveElements: b.fiveElements,
+        strength: b.strength,
+        strengthLabel: b.strengthLabel,
+        luckyElements: b.luckyElements,
+        avoidElements: b.avoidElements,
+        trueSolarTime: b.trueSolarTime,
+        daYun: b.daYun,
+        xiaoYun: b.xiaoYun,
+        qiYun: b.qiYun,
+        sections: { overview: '（只排盤模式，無AI解盤）', career: '', marriage: '', wealth: '', health: '', periods: '' },
+        paipanOnly: true,
+      }
+      return <BaziResult data={adapted} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
+    }
+    if (pType === 'ziwei' && parsed.ziwei) {
+      const z = parsed.ziwei as Record<string, unknown>
+      const adapted = {
+        ziweiChart: z,
+        palaces: (z as Record<string, unknown>).palaces || {},
+        sections: { overview: '（只排盤模式，無AI解盤）', career: '', marriage: '', wealth: '' },
+        paipanOnly: true,
+      }
+      return <ZiweiResult data={adapted} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
+    }
+    if (pType === 'qimen' && parsed.qimen) {
+      return <QimenResult data={parsed.qimen as Record<string, unknown>} />
+    }
+    if (pType === 'meihua' && parsed.meihua) {
+      return <OtherResult data={parsed.meihua as Record<string, unknown>} />
+    }
+    // Fallback: show raw JSON
+    return <ReadingResult content={JSON.stringify(parsed, null, 2)} />
+  }
+
   switch (type) {
     case 'bazi': return <BaziResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
     case 'iching': return <IChingResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />

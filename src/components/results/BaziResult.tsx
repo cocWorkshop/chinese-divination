@@ -87,7 +87,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
   const d = data as unknown as BaziData
   const { lang } = useLang()
   const [activeSection, setActiveSection] = useState('overview')
-  const [showChart, setShowChart] = useState(false)
+  const [showChart, setShowChart] = useState(!!d.paipanOnly)
   const [showExtra, setShowExtra] = useState(false)
 
   const pillars = [
