@@ -451,9 +451,6 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       )}
       </AnimatePresence>
 
-      {/* ═══ XUANJI Q&A ═══ */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
-
       {/* ═══ SECTIONS TABS (Analysis) ═══ */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
         <div className="flex flex-wrap gap-1 mb-4">
@@ -495,6 +492,9 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
           </div>
         </motion.div>
       )}
+
+      {/* ═══ XUANJI Q&A ═══ */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
 
     </div>
   )

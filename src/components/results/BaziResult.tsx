@@ -401,9 +401,6 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
       )}
       </AnimatePresence>
 
-      {/* ═══ XUANJI Q&A ═══ */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
-
       {/* ═══ SECTIONS TABS (Analysis) ═══ */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
         <div className="flex flex-wrap gap-1 mb-3">
@@ -442,6 +439,9 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           </div>
         </motion.div>
       )}
+
+      {/* ═══ XUANJI Q&A ═══ */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
 
       {/* Lucky Info */}
       {d.luckyInfo && (
