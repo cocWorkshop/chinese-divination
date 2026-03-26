@@ -767,14 +767,9 @@ ${question ? `特别关注：${question}` : ''}`
       }).catch(() => {})
     }
 
-    // ═══ PAIPAN ONLY MODE (admin only) ═══
+    // ═══ PAIPAN ONLY MODE (all logged-in users) ═══
     // Skip LLM call, return raw calculation data only, no credit deduction
     if (paipanOnly) {
-      // Verify admin
-      const adminUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } })
-      if (!adminUser?.isAdmin) {
-        return NextResponse.json({ error: 'Unauthorized: paipanOnly is admin-only' }, { status: 403 })
-      }
       const paipanResult: Record<string, unknown> = { paipanOnly: true, type }
       if (baziChart) paipanResult.bazi = baziChart
       if (ziweiChart) paipanResult.ziwei = ziweiChart

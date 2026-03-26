@@ -1154,8 +1154,8 @@ export default function DivinationFormPage() {
             </div>
           )}
 
-          {/* Admin: paipanOnly checkbox */}
-          {session && credits && (credits.credits === 999 || credits.divination?.remaining === 999) && ['bazi', 'ziwei', 'qimen', 'meihua'].includes(type) && (
+          {/* paipanOnly checkbox (all logged-in users) */}
+          {session && credits && ['bazi', 'ziwei', 'qimen', 'meihua'].includes(type) && (
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
