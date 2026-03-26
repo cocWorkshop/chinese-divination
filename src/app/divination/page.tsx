@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { DivinationIcon } from '@/components/DivinationIcons'
 import { useSession } from 'next-auth/react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
+import MasterEntry from '@/components/MasterEntry'
+import MasterChat from '@/components/MasterChat'
 
 const T = (lang: string, zhTW: string, en: string) =>
   lang === 'en' ? en : zhTW
@@ -35,7 +37,26 @@ export default function DivinationPage() {
   const { lang } = useLang()
   const { data: session } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
+  const [masterMode, setMasterMode] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const langShort = lang === 'en' ? 'en' : 'zh'
+
+  useEffect(() => {
+    if (session?.user) {
+      fetch('/api/profile')
+        .then(r => r.json())
+        .then(data => { if (data.isAdmin) setIsAdmin(true) })
+        .catch(() => {})
+    }
+  }, [session])
+
+  useEffect(() => {
+    if (searchParams.get('master') === 'true' && isAdmin) {
+      setMasterMode(true)
+    }
+  }, [searchParams, isAdmin])
 
   useEffect(() => {
     fetch('/api/divination/visibility')
@@ -61,46 +82,72 @@ export default function DivinationPage() {
 
   return (
     <div className="py-8 sm:py-12 px-3 sm:px-4 max-w-6xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
-      >
-        <h1 className="text-4xl font-serif mb-3" style={{ color: 'var(--gold)' }}>
-          {lang === 'zh-TW' ? '選擇占卜方式' : 'Choose Your Oracle'}
-        </h1>
-        <p style={{ color: 'var(--text-muted)' }}>
-          {lang === 'zh-TW' ? '六大傳統命理體系，AI深度解讀' : 'Six classical systems, powered by AI'}
-        </p>
-      </motion.div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {visibleServices.map((svc, i) => (
+      <AnimatePresence mode="wait">
+        {masterMode ? (
           <motion.div
-            key={svc.id}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+            key="master-chat"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <div
-              onClick={(e) => handleClick(svc.id, e)}
-              className="glass-card rounded-2xl p-5 sm:p-8 h-full hover:shadow-xl transition-all group cursor-pointer relative"
-              style={{ borderColor: 'var(--card-border)' }}
-            >
-              <div className="text-5xl mb-4">{svc.symbol}</div>
-              <h2 className="text-xl font-serif mb-2 transition-colors" style={{ color: 'var(--gold)' }}>
-                {lang === 'en' ? svc.enName : svc.twName}
-              </h2>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                {lang === 'en' ? svc.enDesc : svc.twDesc}
-              </p>
-              <div className="mt-4 text-sm flex items-center gap-1 transition-colors" style={{ color: 'var(--text-muted)' }}>
-                {lang === 'zh-TW' ? '開始占卜' : 'Start'} →
-              </div>
-            </div>
+            <MasterChat onClose={() => setMasterMode(false)} lang={langShort} />
           </motion.div>
-        ))}
-      </div>
+        ) : (
+          <motion.div
+            key="services-grid"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-12"
+            >
+              <h1 className="text-4xl font-serif mb-3" style={{ color: 'var(--gold)' }}>
+                {lang === 'zh-TW' ? '選擇占卜方式' : 'Choose Your Oracle'}
+              </h1>
+              <p style={{ color: 'var(--text-muted)' }}>
+                {lang === 'zh-TW' ? '六大傳統命理體系，AI深度解讀' : 'Six classical systems, powered by AI'}
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visibleServices.map((svc, i) => (
+                <motion.div
+                  key={svc.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <div
+                    onClick={(e) => handleClick(svc.id, e)}
+                    className="glass-card rounded-2xl p-5 sm:p-8 h-full hover:shadow-xl transition-all group cursor-pointer relative"
+                    style={{ borderColor: 'var(--card-border)' }}
+                  >
+                    <div className="text-5xl mb-4">{svc.symbol}</div>
+                    <h2 className="text-xl font-serif mb-2 transition-colors" style={{ color: 'var(--gold)' }}>
+                      {lang === 'en' ? svc.enName : svc.twName}
+                    </h2>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                      {lang === 'en' ? svc.enDesc : svc.twDesc}
+                    </p>
+                    <div className="mt-4 text-sm flex items-center gap-1 transition-colors" style={{ color: 'var(--text-muted)' }}>
+                      {lang === 'zh-TW' ? '開始占卜' : 'Start'} →
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <MasterEntry
+              isAdmin={isAdmin}
+              onEnter={() => setMasterMode(true)}
+              lang={langShort}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
