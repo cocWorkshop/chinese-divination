@@ -778,7 +778,22 @@ ${question ? `特别关注：${question}` : ''}`
       const paipanResult: Record<string, unknown> = { paipanOnly: true, type }
       if (baziChart) paipanResult.bazi = baziChart
       if (ziweiChart) paipanResult.ziwei = ziweiChart
-      if (qimenChart) paipanResult.qimen = qimenChart
+      if (qimenChart) {
+        paipanResult.qimenChart = {
+          year: qimenChart.year,
+          month: qimenChart.month,
+          day: qimenChart.day,
+          hour: qimenChart.hour,
+          solarTerm: qimenChart.solarTerm,
+          round: qimenChart.round,
+          roundLabel: qimenChart.roundLabel,
+          zhiFu: qimenChart.zhiFu,
+          zhiShi: qimenChart.zhiShi,
+          palaces: qimenChart.palaces,
+          grid: qimenChart.grid,
+          patterns: qimenChart.patterns,
+        }
+      }
       if (meihuaChart) paipanResult.meihua = meihuaChart
       if (liuyaoChart) paipanResult.liuyao = liuyaoChart
 
@@ -1083,6 +1098,7 @@ ${question ? `特别关注：${question}` : ''}`
         zhiShi: qimenChart.zhiShi,
         palaces: qimenChart.palaces,
         grid: qimenChart.grid,
+        patterns: qimenChart.patterns,
       }
     }
 
