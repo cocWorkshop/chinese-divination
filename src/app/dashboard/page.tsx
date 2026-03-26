@@ -205,6 +205,9 @@ export default function DashboardPage() {
                     : (() => {
                     try {
                       const parsed = JSON.parse(r.result)
+                      if (parsed.paipanOnly) {
+                        return lang === 'en' ? 'Paipan only (no AI interpretation)' : '只排盤（無AI解盤）'
+                      }
                       const summary = parsed.sections?.overview
                         || parsed.sections?.situation
                         || parsed.interpretation
