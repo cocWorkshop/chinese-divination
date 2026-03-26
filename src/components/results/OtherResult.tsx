@@ -143,8 +143,7 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
     { key: 'timeline', label: '時間推斷', en: 'Timing Prediction', icon: '⏰' },
   ]
 
-  return (
-    const meihuaBlock = (
+  const meihuaBlock = (
       <>
       {/* Meihua Chart Info */}
       {hasMeihuaData && (
@@ -246,6 +245,7 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
       </>
     )
 
+  return (
     <div className="space-y-6">
       {/* In paipan mode, show meihua chart first */}
       {d.paipanOnly && meihuaBlock}
