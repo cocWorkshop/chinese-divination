@@ -71,8 +71,8 @@ export default function ResultRenderer({ result, type, isShared, readingId, chat
     case 'liuyao': return <LiuYaoResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
     case 'ziwei': return <ZiweiResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
     case 'qimen': return <QimenResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
-    case 'fengshui': return <FengshuiResult data={parsed} />
-    case 'meihua': return <OtherResult data={parsed} />
-    default: return <OtherResult data={parsed} />
+    case 'fengshui': return <FengshuiResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
+    case 'meihua': return <OtherResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} readingType="meihua" chatMessages={chatMessages} />
+    default: return <OtherResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} readingType={type} chatMessages={chatMessages} />
   }
 }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import YinYangIcon from '@/components/YinYangIcon'
 import { useLang } from '../LanguageContext'
+import XuanjiChatCard from './XuanjiChatCard'
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
@@ -124,7 +125,7 @@ function HexagramDisplay({ hexagram, changingLine, label, lang }: { hexagram: Me
   )
 }
 
-export default function OtherResult({ data }: { data: Record<string, unknown> }) {
+export default function OtherResult({ data, isShared, rawResult, readingId, readingType, chatMessages }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string; readingId?: string; readingType?: string; chatMessages?: Array<{ role: string; content: string }> }) {
   const { lang } = useLang()
   const d = data as unknown as OtherData
   const [openSection, setOpenSection] = useState<string | null>('situation')
@@ -279,6 +280,9 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
           )}
         </motion.div>
       )}
+
+      {/* 玄機問答 */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType={readingType || 'meihua'} readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
 
     </div>
   )
