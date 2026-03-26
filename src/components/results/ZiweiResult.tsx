@@ -106,9 +106,20 @@ const sectionTabs = [
   { key: 'wealth', label: '財運', en: 'Wealth' },
 ]
 
+function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
+  if (!data.paipanOnly || !data.ziwei) return data
+  const z = data.ziwei as Record<string, unknown>
+  return {
+    ziweiChart: z,
+    palaces: z.palaces || {},
+    sections: { overview: '（只排盤模式，無AI解盤）', career: '', marriage: '', wealth: '' },
+    paipanOnly: true,
+  }
+}
+
 export default function ZiweiResult({ data, isShared, rawResult, readingId, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
-  const d = data as unknown as ZiweiData
+  const d = adaptPaipanData(data) as unknown as ZiweiData
   const [activeSection, setActiveSection] = useState('overview')
   const [selectedPalace, setSelectedPalace] = useState<string | null>(null)
   const [showChart, setShowChart] = useState(!!d.paipanOnly)

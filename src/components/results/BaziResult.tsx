@@ -44,8 +44,28 @@ const sectionsList = [
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
+function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
+  if (!data.paipanOnly || !data.bazi) return data
+  const b = data.bazi as Record<string, unknown>
+  return {
+    pillars: b.fourPillars || { year: b.yearPillar, month: b.monthPillar, day: b.dayPillar, hour: b.hourPillar },
+    dayMaster: b.dayMaster,
+    fiveElements: b.fiveElements,
+    strength: b.strength,
+    strengthLabel: b.strengthLabel,
+    luckyElements: b.luckyElements,
+    avoidElements: b.avoidElements,
+    trueSolarTime: b.trueSolarTime,
+    daYun: b.daYun,
+    xiaoYun: b.xiaoYun,
+    qiYun: b.qiYun,
+    sections: { overview: '（只排盤模式，無AI解盤）', career: '', marriage: '', wealth: '', health: '', periods: '' },
+    paipanOnly: true,
+  }
+}
+
 export default function BaziResult({ data, isShared, rawResult, readingId, chatMessages }: DivinationResultProps) {
-  const d = data as unknown as BaziData
+  const d = adaptPaipanData(data) as unknown as BaziData
   const { lang } = useLang()
   const [activeSection, setActiveSection] = useState('overview')
   const [showChart, setShowChart] = useState(!!d.paipanOnly)

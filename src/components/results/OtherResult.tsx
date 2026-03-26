@@ -77,9 +77,20 @@ function HexagramDisplay({ hexagram, changingLine, label, lang }: { hexagram: Me
   )
 }
 
+function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
+  if (!data.paipanOnly || !data.meihua) return data
+  const meihuaData = data.meihua as Record<string, unknown>
+  return {
+    meihuaChart: meihuaData,
+    subType: 'meihua',
+    paipanOnly: true,
+    sections: { situation: '（只排盤模式，無AI解盤）' },
+  }
+}
+
 export default function OtherResult({ data, isShared, rawResult, readingId, readingType, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
-  const d = data as unknown as OtherData
+  const d = adaptPaipanData(data) as unknown as OtherData
   const [openSection, setOpenSection] = useState<string | null>('situation')
 
   const oc = d.outcome || '中'

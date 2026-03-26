@@ -38,9 +38,15 @@ const divinityColor: Record<string, string> = {
   '玄武': 'text-gray-300',
 }
 
+function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
+  if (!data.paipanOnly || !(data.qimenChart || data.qimen)) return data
+  const qData = (data.qimenChart || data.qimen) as Record<string, unknown>
+  return { qimenChart: qData, paipanOnly: true, sections: { situation: '（只排盤模式，無AI解盤）' } }
+}
+
 export default function QimenResult({ data, isShared, rawResult, readingId, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
-  const d = data as unknown as QimenData
+  const d = adaptPaipanData(data) as unknown as QimenData
   const [openSection, setOpenSection] = useState<string | null>('situation')
   const [selectedPalace, setSelectedPalace] = useState<QimenPalace | null>(null)
   const [showChart, setShowChart] = useState(!!d.paipanOnly)
