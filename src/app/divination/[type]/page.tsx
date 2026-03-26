@@ -90,7 +90,7 @@ export default function DivinationFormPage() {
     direction: '',
     yearBuilt: '',
     ownerInfo: '',
-    readingDateTime: new Date().toISOString().slice(0, 16),
+    readingDateTime: (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) })(),
     liuyaoLines: '', // JSON string of 6 lines, each {coins: [0|1, 0|1, 0|1], value: 6|7|8|9}
     subType: 'meihua',
     lunarToggle: 'solar',

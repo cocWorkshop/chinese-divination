@@ -487,7 +487,7 @@ ${question ? `特别关注：${question}` : ''}`
     } else if (type === 'qimen') {
       try {
         // Use current time for Qi Men chart (or parse from inputData if provided)
-        const qimenTime = inputData.dateTime ? new Date(inputData.dateTime) : clientDate
+        const qimenTime = inputData.readingDateTime ? new Date(inputData.readingDateTime) : (inputData.dateTime ? new Date(inputData.dateTime) : clientDate)
         qimenChart = calculateQimen(qimenTime)
         userMessage = `请为我进行奇门遁甲排盘分析。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
