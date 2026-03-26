@@ -29,7 +29,16 @@ const shichen = [
   { value: 'hai', zh: '亥時 (21:00-23:00)', en: 'Hai (21:00-23:00)' },
 ]
 
-const directions8 = ['坎/North', '艮/NE', '震/East', '巽/SE', '离/South', '坤/SW', '兑/West', '乾/NW']
+const directions8 = [
+  { value: '坎/North', zh: '坎（北）', en: 'Kan (North)' },
+  { value: '艮/NE', zh: '艮（东北）', en: 'Gen (NE)' },
+  { value: '震/East', zh: '震（东）', en: 'Zhen (East)' },
+  { value: '巽/SE', zh: '巽（东南）', en: 'Xun (SE)' },
+  { value: '离/South', zh: '离（南）', en: 'Li (South)' },
+  { value: '坤/SW', zh: '坤（西南）', en: 'Kun (SW)' },
+  { value: '兑/West', zh: '兑（西）', en: 'Dui (West)' },
+  { value: '乾/NW', zh: '乾（西北）', en: 'Qian (NW)' },
+]
 
 const relationPresets = [
   { value: 'spouse', zh: '配偶', en: 'Spouse' },
@@ -1005,7 +1014,7 @@ export default function DivinationFormPage() {
               <label className={labelCls}>{T(lang, '房屋朝向', 'House Facing Direction')}</label>
               <select className={inputCls} value={form.direction} onChange={e => setField('direction', e.target.value)} required>
                 <option value="">{T(lang, '請選擇', 'Select')}</option>
-                {directions8.map(d => <option key={d} value={d}>{d}</option>)}
+                {directions8.map(d => <option key={d.value} value={d.value}>{T(lang, d.zh, d.en)}</option>)}
               </select>
             </div>
             <div>

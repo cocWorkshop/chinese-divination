@@ -61,7 +61,14 @@ export default function ResultRenderer({ result, type, isShared, readingId, chat
         return <QimenResult data={{ qimenChart: qData, paipanOnly: true, sections: { situation: '（只排盤模式，無AI解盤）' } }} />
       }
       if (pType === 'meihua' && parsed.meihua) {
-        return <OtherResult data={parsed.meihua as Record<string, unknown>} />
+        const meihuaData = parsed.meihua as Record<string, unknown>
+        const adapted = {
+          meihuaChart: meihuaData,
+          subType: 'meihua',
+          paipanOnly: true,
+          sections: { situation: '（只排盤模式，無AI解盤）' },
+        }
+        return <OtherResult data={adapted} />
       }
       // Fallback: show raw JSON
       return <ReadingResult content={JSON.stringify(parsed, null, 2)} />
