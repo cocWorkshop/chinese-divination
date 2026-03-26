@@ -17,6 +17,13 @@ interface QimenPalace {
   earthStem: string
 }
 
+interface QimenPattern {
+  name: string
+  type: 'auspicious' | 'inauspicious' | 'neutral'
+  palace?: string
+  description: string
+}
+
 interface QimenChartInfo {
   year?: string
   month?: string
@@ -29,6 +36,7 @@ interface QimenChartInfo {
   zhiShi?: string
   palaces?: QimenPalace[]
   grid?: (QimenPalace | null)[][]
+  patterns?: QimenPattern[]
 }
 
 interface QimenData {
@@ -161,6 +169,34 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
               <span className="text-white/40"> / </span>
               <span className="text-blue-300">{chart.zhiShi}</span>
             </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Patterns / 格局 */}
+      {chart?.patterns && chart.patterns.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
+          <h3 className="text-gold font-serif text-sm mb-2">{T(lang, '⚡ 奇門格局', '⚡ Patterns')}</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {chart.patterns.map((p, i) => (
+              <span
+                key={i}
+                className={`group relative px-2 py-1 rounded-lg border text-xs font-medium cursor-default ${
+                  p.type === 'auspicious'
+                    ? 'border-green-400/30 bg-green-400/10 text-green-300'
+                    : p.type === 'inauspicious'
+                    ? 'border-red-400/30 bg-red-400/10 text-red-300'
+                    : 'border-yellow-400/30 bg-yellow-400/10 text-yellow-300'
+                }`}
+              >
+                {p.name}
+                {p.palace && <span className="text-white/30 ml-1">@{p.palace}</span>}
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-navy-800 border border-gold/30 rounded text-white/70 text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 max-w-[200px] text-wrap">
+                  {p.description}
+                </span>
+              </span>
+            ))}
           </div>
         </motion.div>
       )}

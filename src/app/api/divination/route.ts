@@ -512,6 +512,12 @@ ${JSON.stringify({
     heavenStem: p.heavenStem,
     earthStem: p.earthStem,
   })),
+  patterns: qimenChart.patterns.map(p => ({
+    name: p.name,
+    type: p.type,
+    palace: p.palace,
+    description: p.description,
+  })),
 }, null, 2)}
 
 ## 用户输入
@@ -522,7 +528,7 @@ ${question ? `- 求测问题：${question}` : '- 求测问题：综合运势'}
 
 ## 解盘要求
 你是资深奇门遁甲术数师，请基于以上程序排出的奇门盘进行分析。重点：
-1. **situation**：分析当前格局，值符${qimenChart.zhiFu}和值使${qimenChart.zhiShi}的含义（100字以上）
+1. **situation**：分析当前格局，值符${qimenChart.zhiFu}和值使${qimenChart.zhiShi}的含义${qimenChart.patterns.length > 0 ? `，重点分析已检测到的格局：${qimenChart.patterns.map(p => p.name).join('、')}` : ''}（100字以上）
 2. **trend**：从九宫格局分析事态走向，特别关注天盘与地盘天干的关系（100字以上）
 3. **timing**：根据八门旺衰判断最佳时机（100字以上）
 4. **strategy**：综合星、门、神给出行动策略（100字以上）
