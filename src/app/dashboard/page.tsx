@@ -41,10 +41,12 @@ interface Reading {
 const typeLabels: Record<string, { 'zh-TW': string; en: string }> = {
   bazi: { 'zh-TW': '八字命理', en: 'BaZi' },
   iching: { 'zh-TW': '易經占卜', en: 'I Ching' },
+  liuyao: { 'zh-TW': '六爻占卜', en: 'Liu Yao' },
   ziwei: { 'zh-TW': '紫微斗數', en: 'Zi Wei' },
   qimen: { 'zh-TW': '奇門遁甲', en: 'Qi Men' },
+  meihua: { 'zh-TW': '梅花易數', en: 'Mei Hua' },
   fengshui: { 'zh-TW': '風水佈局', en: 'Feng Shui' },
-  other: { 'zh-TW': '梅花六壬', en: 'Others' },
+  other: { 'zh-TW': '其他', en: 'Others' },
 }
 
 export default function DashboardPage() {
