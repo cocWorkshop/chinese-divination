@@ -154,6 +154,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
   const d = data as unknown as ZiweiData
   const [activeSection, setActiveSection] = useState('overview')
   const [selectedPalace, setSelectedPalace] = useState<string | null>(null)
+  const [showChart, setShowChart] = useState(false)
 
   const palaces = d.palaces || {}
   const chart = d.ziweiChart
@@ -181,51 +182,23 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
 
   return (
     <div className="space-y-6">
-      {/* Sections (Analysis Tabs) */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <div className="flex flex-wrap gap-1 mb-4">
-          {sectionTabs.map(s => (
-            <button
-              key={s.key}
-              onClick={() => setActiveSection(s.key)}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}
-            >
-              {lang === 'en' ? s.en : s.label}
-            </button>
-          ))}
+      {/* ═══ CHART DATA (Collapsible, default collapsed) ═══ */}
+      <button onClick={() => setShowChart(!showChart)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
+        style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--gold)' }}>
+        <span className="font-serif flex items-center gap-2">⭐ {T(lang, '紫微命盤', 'Zi Wei Chart')}</span>
+        <motion.span animate={{ rotate: showChart ? 180 : 0 }} transition={{ duration: 0.2 }}>▼</motion.span>
+      </button>
 
-        </div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeSection}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-          >
-            <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
-              {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Key Advice */}
-      {d.keyAdvice && d.keyAdvice.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
-          <div className="grid gap-3">
-            {d.keyAdvice.map((advice, idx) => (
-              <div key={`advice-${idx}`} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
-                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{idx + 1}</span>
-                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* ═══ XUANJI Q&A ═══ */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
+      <AnimatePresence initial={false}>
+      {showChart && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-4 overflow-hidden"
+        >
 
       {/* Chart Info Bar */}
       {hasProgrammaticData && (
@@ -450,7 +423,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
         )}
       </AnimatePresence>
 
-      {/* Lucky Info */}
+      {/* Lucky Info (inside chart collapsible) */}
       {d.luckyInfo && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="grid grid-cols-3 gap-2 sm:gap-3">
           {d.luckyInfo.numbers?.length > 0 && (
@@ -474,7 +447,54 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
         </motion.div>
       )}
 
-      {/* Xuanji Chat */}
+        </motion.div>
+      )}
+      </AnimatePresence>
+
+      {/* ═══ XUANJI Q&A ═══ */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
+
+      {/* ═══ SECTIONS TABS (Analysis) ═══ */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <div className="flex flex-wrap gap-1 mb-4">
+          {sectionTabs.map(s => (
+            <button
+              key={s.key}
+              onClick={() => setActiveSection(s.key)}
+              className={`px-4 py-2 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}
+            >
+              {lang === 'en' ? s.en : s.label}
+            </button>
+          ))}
+        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+          >
+            <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+              {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Key Advice */}
+      {d.keyAdvice && d.keyAdvice.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
+          <div className="grid gap-3">
+            {d.keyAdvice.map((advice, idx) => (
+              <div key={`advice-${idx}`} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
+                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{idx + 1}</span>
+                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
     </div>
   )

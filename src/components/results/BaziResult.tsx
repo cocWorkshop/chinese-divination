@@ -87,7 +87,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
   const d = data as unknown as BaziData
   const { lang } = useLang()
   const [activeSection, setActiveSection] = useState('overview')
-  const [showChart, setShowChart] = useState(lang !== 'en')
+  const [showChart, setShowChart] = useState(false)
   const [showExtra, setShowExtra] = useState(false)
 
   const pillars = [
@@ -109,49 +109,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      {/* ═══ SECTIONS TABS (Analysis) ═══ */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <div className="flex flex-wrap gap-1 mb-3">
-          {sectionsList.map(s => (
-            <button key={s.key} onClick={() => setActiveSection(s.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}>
-              {s.icon} {lang === 'en' ? s.en : s.label}
-            </button>
-          ))}
-        </div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeSection}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-          >
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
-              {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Key Advice */}
-      {d.keyAdvice && d.keyAdvice.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <h3 className="text-gold font-serif text-sm mb-2">{T(lang, '核心建議', 'Key Advice')}</h3>
-          <div className="grid gap-2">
-            {d.keyAdvice.map((advice, i) => (
-              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">
-                <span className="w-5 h-5 rounded-full bg-gold/20 text-gold text-[10px] flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
-                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* ═══ XUANJI Q&A ═══ */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
-
-      {/* ═══ CHART DATA (Collapsible) ═══ */}
+      {/* ═══ CHART DATA (Collapsible, default collapsed) ═══ */}
       <button onClick={() => setShowChart(!showChart)}
         className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
         style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--gold)' }}>
@@ -442,6 +400,48 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
         </motion.div>
       )}
       </AnimatePresence>
+
+      {/* ═══ XUANJI Q&A ═══ */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
+
+      {/* ═══ SECTIONS TABS (Analysis) ═══ */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <div className="flex flex-wrap gap-1 mb-3">
+          {sectionsList.map(s => (
+            <button key={s.key} onClick={() => setActiveSection(s.key)}
+              className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}>
+              {s.icon} {lang === 'en' ? s.en : s.label}
+            </button>
+          ))}
+        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+          >
+            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+              {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Key Advice */}
+      {d.keyAdvice && d.keyAdvice.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+          <h3 className="text-gold font-serif text-sm mb-2">{T(lang, '核心建議', 'Key Advice')}</h3>
+          <div className="grid gap-2">
+            {d.keyAdvice.map((advice, i) => (
+              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">
+                <span className="w-5 h-5 rounded-full bg-gold/20 text-gold text-[10px] flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
+                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Lucky Info */}
       {d.luckyInfo && (
