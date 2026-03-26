@@ -125,6 +125,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
           history: messages,
           readingContext: readingResult,
           readingType,
+          readingId: readingId || undefined,
           clientTime: new Date().toISOString(),
         }),
         signal: controller.signal,
