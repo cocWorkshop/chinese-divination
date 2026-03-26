@@ -5,58 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import YinYangIcon from '@/components/YinYangIcon'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
+import type { DivinationResultProps, OtherData, MeihuaHexagram } from '@/types/divination'
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
-
-interface MeihuaTrigram {
-  name: string
-  symbol: string
-  element: string
-  lines: number[]
-}
-
-interface MeihuaHexagram {
-  name: string
-  upper: MeihuaTrigram
-  lower: MeihuaTrigram
-  lines: number[]
-}
-
-interface MeihuaChartInfo {
-  lunarYear?: number
-  lunarMonth?: number
-  lunarDay?: number
-  shichen?: number
-  yearBranch?: string
-  yearNum?: number
-  monthNum?: number
-  dayNum?: number
-  hourNum?: number
-  upperNum?: number
-  lowerNum?: number
-  changingLine?: number
-  benGua?: MeihuaHexagram
-  huGua?: MeihuaHexagram
-  bianGua?: MeihuaHexagram
-  tiGua?: MeihuaTrigram
-  yongGua?: MeihuaTrigram
-  tiYongRelation?: string
-  tiYongAnalysis?: string
-}
-
-interface OtherData {
-  subType: string
-  trigrams: {
-    upper: { name: string; symbol: string; element: string }
-    lower: { name: string; symbol: string; element: string }
-    transformed: { name: string; symbol: string; element: string }
-  }
-  sections: { situation: string; inquiry: string; interaction: string; timeline: string }
-  outcome: string
-  keyAdvice: string[]
-  meihuaChart?: MeihuaChartInfo
-  paipanOnly?: boolean
-}
 
 const outcomeColor: Record<string, string> = {
   '大吉': 'text-green-300 border-green-300/40 bg-green-300/10',
@@ -126,7 +77,7 @@ function HexagramDisplay({ hexagram, changingLine, label, lang }: { hexagram: Me
   )
 }
 
-export default function OtherResult({ data, isShared, rawResult, readingId, readingType, chatMessages }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string; readingId?: string; readingType?: string; chatMessages?: Array<{ role: string; content: string }> }) {
+export default function OtherResult({ data, isShared, rawResult, readingId, readingType, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
   const d = data as unknown as OtherData
   const [openSection, setOpenSection] = useState<string | null>('situation')

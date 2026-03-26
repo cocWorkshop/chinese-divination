@@ -3,31 +3,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
-
-interface LiuYaoLine {
-  position: number; yaoName: string; value: number
-  isYang: boolean; isChanging: boolean
-  branch: string; element: string; sixRelative: string
-  isShiYao: boolean; isYingYao: boolean
-}
-
-interface HexagramData {
-  name: string; fullName: string; number: number
-  palace?: string; palaceElement?: string
-  upperTrigram?: { name: string; symbol: string; element: string; nature: string }
-  lowerTrigram?: { name: string; symbol: string; element: string; nature: string }
-  lines: LiuYaoLine[]
-}
-
-interface LiuYaoData {
-  originalHexagram?: HexagramData
-  changedHexagram?: HexagramData | null
-  changingLines?: number[]
-  guaCi?: string; yaoCi?: string; interpretation?: string
-  sixRelativeAnalysis?: string; shiYingAnalysis?: string
-  changingAnalysis?: string; timing?: string; advice?: string
-  outcome?: string; keyPoints?: string[]
-}
+import type { DivinationResultProps, LiuYaoData, HexagramData } from '@/types/divination'
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
@@ -114,7 +90,7 @@ function HexagramVisual({ hex, label, showDetails, lang }: { hex: HexagramData; 
   )
 }
 
-export default function LiuYaoResult({ data, rawResult, isShared, readingId, chatMessages }: { data: Record<string, unknown>; rawResult?: string; isShared?: boolean; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
+export default function LiuYaoResult({ data, rawResult, isShared, readingId, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
   const d = data as unknown as LiuYaoData
   const [activeTab, setActiveTab] = useState<string>('interpretation')

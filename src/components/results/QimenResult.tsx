@@ -4,51 +4,9 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
+import type { DivinationResultProps, QimenData, QimenPalace, QimenPattern } from '@/types/divination'
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
-
-interface QimenPalace {
-  name: string
-  number: number
-  direction: string
-  star: string
-  door: string
-  divinity: string
-  heavenStem: string
-  earthStem: string
-}
-
-interface QimenPattern {
-  name: string
-  type: 'auspicious' | 'inauspicious' | 'neutral'
-  palace?: string
-  description: string
-}
-
-interface QimenChartInfo {
-  year?: string
-  month?: string
-  day?: string
-  hour?: string
-  solarTerm?: string
-  round?: number
-  roundLabel?: string
-  zhiFu?: string
-  zhiShi?: string
-  palaces?: QimenPalace[]
-  grid?: (QimenPalace | null)[][]
-  patterns?: QimenPattern[]
-}
-
-interface QimenData {
-  palace: { inquiry: string; outcome: string; god: string; star: string; door: string }
-  sections: { situation: string; trend: string; timing: string; strategy: string }
-  outcome: string
-  keyAdvice: string[]
-  luckyInfo: { timing: string; direction: string }
-  qimenChart?: QimenChartInfo
-  paipanOnly?: boolean
-}
 
 const outcomeColor: Record<string, string> = {
   '大吉': 'text-green-300 border-green-300/40 bg-green-300/10',
@@ -80,7 +38,7 @@ const divinityColor: Record<string, string> = {
   '玄武': 'text-gray-300',
 }
 
-export default function QimenResult({ data, isShared, rawResult, readingId, chatMessages }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string; readingId?: string; chatMessages?: Array<{ role: string; content: string }> }) {
+export default function QimenResult({ data, isShared, rawResult, readingId, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
   const d = data as unknown as QimenData
   const [openSection, setOpenSection] = useState<string | null>('situation')

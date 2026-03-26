@@ -4,46 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
-
-interface TenGodEntry { stem: string; god: string }
-interface Pillar {
-  stem: string; branch: string; element: string; nayin: string
-  hiddenStems?: string[]
-  tenGods?: TenGodEntry[]
-  changSheng?: string
-  kongWang?: string[]
-  shenSha?: ShenShaEntry[]
-}
-interface TrueSolarTimeInfo {
-  originalTime: string; correctedTime: string; correctionMinutes: number
-  longitude: number; shichen: string; shichenChanged: boolean
-}
-interface ShenShaEntry { name: string; description: string }
-interface DaYunEntry {
-  stem: string; branch: string; nayin: string
-  startAge: number; startYear: number; endAge: number; endYear: number
-}
-interface XiaoYunEntry { stem: string; branch: string; age: number; year: number }
-interface QiYunInfo {
-  direction: string; startAge: number; startAgeLabel: string
-  startYear: number; startMonth: number
-  nearestJieQi: string; nearestJieQiDate: string; daysDiff: number
-}
-interface BaziData {
-  pillars: { year: Pillar; month: Pillar; day: Pillar; hour: Pillar }
-  dayMaster: { stem: string; element: string; yinYang?: string; strength: string; strengthLabel: string }
-  fiveElements: { metal: number; wood: number; water: number; fire: number; earth: number }
-  luckyElements: string[]
-  avoidElements: string[]
-  sections: { overview: string; career: string; marriage: string; wealth: string; health: string; periods: string }
-  keyAdvice: string[]
-  luckyInfo: { numbers: number[]; colors: string[]; directions: string[] }
-  shenSha?: ShenShaEntry[]
-  trueSolarTime?: TrueSolarTimeInfo
-  daYun?: DaYunEntry[]
-  xiaoYun?: XiaoYunEntry[]
-  qiYun?: QiYunInfo
-}
+import type { DivinationResultProps, BaziData, ShenShaEntry, DaYunEntry, QiYunInfo } from '@/types/divination'
 
 const STEM_ELEMENT_MAP: Record<string, string> = {
   '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
@@ -83,7 +44,7 @@ const sectionsList = [
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
-export default function BaziResult({ data, isShared, rawResult, readingId, chatMessages }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
+export default function BaziResult({ data, isShared, rawResult, readingId, chatMessages }: DivinationResultProps) {
   const d = data as unknown as BaziData
   const { lang } = useLang()
   const [activeSection, setActiveSection] = useState('overview')

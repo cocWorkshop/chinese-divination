@@ -13,7 +13,7 @@ interface XuanjiChatCardProps {
   readingType: string
   readingId?: string | null
   isShared?: boolean
-  chatMessages?: { role: 'user' | 'assistant'; content: string }[]
+  chatMessages?: { role: 'user' | 'assistant' | string; content: string }[]
   delay?: number
 }
 

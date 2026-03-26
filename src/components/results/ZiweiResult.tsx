@@ -4,50 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
-
-interface ZiweiStar {
-  name: string
-  type?: string
-  brightness?: string
-  mutagen?: string
-}
-
-interface ZiweiPalaceData {
-  stars: string[]
-  majorStars?: ZiweiStar[]
-  minorStars?: ZiweiStar[]
-  adjectiveStars?: ZiweiStar[]
-  heavenlyStem?: string
-  earthlyBranch?: string
-  isBodyPalace?: boolean
-  changsheng12?: string
-  decadal?: { range: number[]; heavenlyStem: string; earthlyBranch: string }
-  ages?: number[]
-  analysis: string
-}
-
-interface ZiweiChartInfo {
-  solarDate?: string
-  lunarDate?: string
-  chineseDate?: string
-  time?: string
-  timeRange?: string
-  zodiac?: string
-  gender?: string
-  fiveElementsClass?: string
-  soul?: string
-  body?: string
-  siHua?: { star: string; type: string; palace: string }[]
-}
-
-interface ZiweiData {
-  mainStars: { name: string; palace: string; element?: string; brightness?: string; mutagen?: string }[]
-  palaces: Record<string, ZiweiPalaceData>
-  sections: { overview: string; career: string; marriage: string; wealth: string }
-  keyAdvice: string[]
-  luckyInfo: { numbers: number[]; colors: string[]; directions: string[] }
-  ziweiChart?: ZiweiChartInfo
-}
+import type { DivinationResultProps, ZiweiData, ZiweiPalaceData, ZiweiStar } from '@/types/divination'
 
 const mutagenColor: Record<string, string> = {
   '禄': 'text-green-400',
@@ -149,7 +106,7 @@ const sectionTabs = [
   { key: 'wealth', label: '財運', en: 'Wealth' },
 ]
 
-export default function ZiweiResult({ data, isShared, rawResult, readingId, chatMessages }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
+export default function ZiweiResult({ data, isShared, rawResult, readingId, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
   const d = data as unknown as ZiweiData
   const [activeSection, setActiveSection] = useState('overview')

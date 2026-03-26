@@ -9,8 +9,7 @@ import FengshuiResult from './FengshuiResult'
 import OtherResult from './OtherResult'
 import LiuYaoResult from './LiuYaoResult'
 import ResultErrorBoundary from '@/components/ResultErrorBoundary'
-
-interface ChatMsg { role: 'user' | 'assistant'; content: string }
+import type { ChatMsg } from '@/types/divination'
 
 export default function ResultRenderer({ result, type, isShared, readingId, chatMessages }: {
   result: string; type: string; isShared?: boolean; readingId?: string | null; chatMessages?: ChatMsg[]
