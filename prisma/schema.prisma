@@ -53,6 +53,7 @@ model User {
   rateLimits    RateLimit[]
   shareLinks    ShareLink[]
   familyMembers FamilyMember[]
+  masterSession MasterSession?
 }
 
 model Reading {
@@ -238,5 +239,18 @@ model FrontendError {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@index([userId])
+}
+
+model MasterSession {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages         String   @db.Text // JSON array of {role, content, timestamp, toolCalls?}
+  portrait         String?  @db.Text // JSON: user portrait
+  totalCreditsUsed Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
   @@index([userId])
 }

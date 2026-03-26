@@ -10,6 +10,7 @@ const DEFAULT_COSTS: Record<string, number> = {
   liuyao: 3,
   fengshui: 3,
   chat: 2,
+  master: 1,
 }
 
 /**
