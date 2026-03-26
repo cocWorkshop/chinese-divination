@@ -247,8 +247,8 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
 
   return (
     <div className="space-y-6">
-      {/* In paipan mode, show meihua chart first */}
-      {d.paipanOnly && meihuaBlock}
+      {/* Meihua cards always shown first (时间起卦, 卦象, 体用关系) */}
+      {meihuaBlock}
 
       {/* Accordion (Analysis) */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="space-y-2">
@@ -288,9 +288,6 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
           </div>
         </motion.div>
       )}
-
-      {/* In normal mode, show meihua chart after accordion */}
-      {!d.paipanOnly && meihuaBlock}
 
       {/* 玄機問答 */}
       <XuanjiChatCard readingResult={rawResult || ''} readingType={readingType || 'meihua'} readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
