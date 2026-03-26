@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '../LanguageContext'
+import XuanjiChatCard from './XuanjiChatCard'
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
@@ -79,7 +80,7 @@ const divinityColor: Record<string, string> = {
   '玄武': 'text-gray-300',
 }
 
-export default function QimenResult({ data }: { data: Record<string, unknown> }) {
+export default function QimenResult({ data, isShared, rawResult, readingId, chatMessages }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string; readingId?: string; chatMessages?: Array<{ role: string; content: string }> }) {
   const { lang } = useLang()
   const d = data as unknown as QimenData
   const [openSection, setOpenSection] = useState<string | null>('situation')
@@ -385,6 +386,9 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
           )}
         </motion.div>
       )}
+
+      {/* 玄機問答 */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="qimen" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
 
     </div>
   )
