@@ -46,6 +46,7 @@ interface QimenData {
   keyAdvice: string[]
   luckyInfo: { timing: string; direction: string }
   qimenChart?: QimenChartInfo
+  paipanOnly?: boolean
 }
 
 const outcomeColor: Record<string, string> = {
@@ -83,6 +84,7 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
   const d = data as unknown as QimenData
   const [openSection, setOpenSection] = useState<string | null>('situation')
   const [selectedPalace, setSelectedPalace] = useState<QimenPalace | null>(null)
+  const [showChart, setShowChart] = useState(!!d.paipanOnly)
 
   const oc = d.outcome || '中'
   const ocClass = outcomeColor[oc] || outcomeColor['中']
@@ -98,49 +100,23 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
 
   return (
     <div className="space-y-6">
-      {/* Accordion Sections (Analysis) */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="space-y-2">
-        {accordionSections.map(s => (
-          <div key={s.key} className="glass-card rounded-xl border border-gold/20 overflow-hidden">
-            <button
-              onClick={() => setOpenSection(openSection === s.key ? null : s.key)}
-              className="w-full px-5 py-4 flex items-center justify-between text-left"
-            >
-              <span className="text-gold font-serif">{s.icon} {lang === 'en' ? s.en : s.label}</span>
-              <span className="text-white/40">{openSection === s.key ? '▲' : '▼'}</span>
-            </button>
-            <AnimatePresence>
-              {openSection === s.key && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="px-5 pb-4 text-white/70 text-sm leading-relaxed border-t border-gold/10 pt-3 whitespace-pre-wrap">
-                    {d.sections?.[s.key as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ))}
-      </motion.div>
+      {/* ═══ CHART DATA (Collapsible) ═══ */}
+      <button onClick={() => setShowChart(!showChart)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
+        style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--gold)' }}>
+        <span className="font-serif flex items-center gap-2">⚡ {T(lang, '奇門排盤', 'Qi Men Chart')}</span>
+        <motion.span animate={{ rotate: showChart ? 180 : 0 }} transition={{ duration: 0.2 }}>▼</motion.span>
+      </button>
 
-      {/* Key Advice */}
-      {d.keyAdvice && d.keyAdvice.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
-          <div className="grid gap-3">
-            {d.keyAdvice.map((advice, i) => (
-              <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
-                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{i + 1}</span>
-                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
+      <AnimatePresence initial={false}>
+      {showChart && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-4 overflow-hidden"
+        >
 
       {/* Chart Info Bar */}
       {hasProgrammaticData && (
@@ -338,6 +314,54 @@ export default function QimenResult({ data }: { data: Record<string, unknown> })
               <div key={label} className="rounded-lg border border-gold/20 bg-gold/5 p-2 text-center">
                 <div className="text-white/40 text-[10px] mb-0.5">{label}</div>
                 <div className="text-gold font-serif text-xs sm:text-sm">{value || '—'}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+        </motion.div>
+      )}
+      </AnimatePresence>
+
+      {/* Accordion Sections (Analysis) */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="space-y-2">
+        {accordionSections.map(s => (
+          <div key={s.key} className="glass-card rounded-xl border border-gold/20 overflow-hidden">
+            <button
+              onClick={() => setOpenSection(openSection === s.key ? null : s.key)}
+              className="w-full px-5 py-4 flex items-center justify-between text-left"
+            >
+              <span className="text-gold font-serif">{s.icon} {lang === 'en' ? s.en : s.label}</span>
+              <span className="text-white/40">{openSection === s.key ? '▲' : '▼'}</span>
+            </button>
+            <AnimatePresence>
+              {openSection === s.key && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-5 pb-4 text-white/70 text-sm leading-relaxed border-t border-gold/10 pt-3 whitespace-pre-wrap">
+                    {d.sections?.[s.key as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* Key Advice */}
+      {d.keyAdvice && d.keyAdvice.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
+          <div className="grid gap-3">
+            {d.keyAdvice.map((advice, i) => (
+              <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
+                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
               </div>
             ))}
           </div>
