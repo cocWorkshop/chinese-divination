@@ -162,12 +162,6 @@ function RegisterInner() {
           </h1>
         </div>
 
-        {referralCode && (
-          <div className="mb-4 py-2 px-4 rounded-lg text-center text-sm" style={{ backgroundColor: 'rgba(45, 212, 137, 0.1)', border: '1px solid rgba(45, 212, 137, 0.3)', color: '#2dd489' }}>
-            🎁 {lang === 'zh-TW' ? '透過分享連結註冊，您將獲得永久額度！' : 'Register via referral to earn permanent credits!'}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
           {field('name', lang === 'zh-TW' ? '姓名（可選）' : 'Name (optional)')}
           {field('email', lang === 'zh-TW' ? '郵箱' : 'Email', 'email')}

@@ -14,6 +14,8 @@ interface UserRow {
   chatCredits: number
   createdAt: string
   language: string
+  usageDivination: number
+  usageChat: number
   _count: { readings: number }
 }
 
@@ -84,7 +86,7 @@ export default function AdminUsers() {
             <tr className="border-b border-gold/20 text-white/50 text-xs uppercase tracking-wider">
               <th className="px-4 py-3 text-left">用户</th>
               <th className="px-4 py-3 text-center">角色</th>
-              <th className="px-4 py-3 text-center">占卜次数</th>
+              <th className="px-4 py-3 text-center">使用統計</th>
               <th className="px-4 py-3 text-center">額度</th>
               <th className="px-4 py-3 text-center">操作</th>
             </tr>
@@ -113,7 +115,11 @@ export default function AdminUsers() {
                     {u.isAdmin ? 'Admin' : 'User'}
                   </button>
                 </td>
-                <td className="px-4 py-3 text-center text-white/70">{u._count.readings}</td>
+                <td className="px-4 py-3 text-center text-white/70">
+                  <span title="占卜次數">🔮{u.usageDivination}</span>
+                  <span className="text-white/30 mx-1">·</span>
+                  <span title="問答次數">💬{u.usageChat}</span>
+                </td>
                 <td className="px-4 py-3 text-center">
                   {grantingId === u.id ? (
                     <div className="flex items-center gap-1 justify-center flex-wrap">

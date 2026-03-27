@@ -16,7 +16,6 @@ export default function SubscribePage() {
   const [loadingPack, setLoadingPack] = useState<PackId | null>(null)
   const [credits, setCredits] = useState<{ divination: number; chat: number } | null>(null)
 
-
   const success = searchParams.get('success')
   const canceled = searchParams.get('canceled')
 
@@ -61,38 +60,29 @@ export default function SubscribePage() {
     <div className="flex-1 pt-24 pb-16 px-3 sm:px-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-serif mb-3" style={{ color: 'var(--gold)' }}>
+        <div className="text-center mb-5">
+          <h1 className="text-3xl sm:text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
             {T(lang, '額度商店', 'Credits Store')}
           </h1>
-          <p style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             {T(lang, '購買額度，探索更深層的命理奧秘', 'Purchase credits to unlock deeper divination insights')}
           </p>
         </div>
 
-        {/* Current credits display */}
+        {/* Compact credits display */}
         {session && credits && (
-          <div className="glass-card rounded-xl p-4 mb-8 max-w-md mx-auto text-center" style={{ border: '1px solid var(--border-gold)' }}>
-            <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
-              {T(lang, '當前額度', 'Current Credits')}
-            </p>
-            <div className="flex justify-center gap-8">
-              <div>
-                <span className="text-2xl font-bold" style={{ color: 'var(--gold)' }}>{credits.divination}</span>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                  {T(lang, '占卜額度', 'Divination')}
-                </p>
-              </div>
-              <div>
-                <span className="text-2xl font-bold" style={{ color: 'var(--gold)' }}>{credits.chat}</span>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                  {T(lang, '問答額度', 'Chat')}
-                </p>
-              </div>
+          <div className="glass-card rounded-xl px-4 py-3 mb-5 max-w-md mx-auto" style={{ border: '1px solid var(--border-gold)' }}>
+            <div className="flex items-center justify-center gap-6">
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{T(lang, '當前額度', 'Credits')}</span>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                🔮 {T(lang, '占卜', 'Divination')} <b className="text-base" style={{ color: 'var(--gold)' }}>{credits.divination}</b>
+              </span>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                💬 {T(lang, '問答', 'Chat')} <b className="text-base" style={{ color: 'var(--gold)' }}>{credits.chat}</b>
+              </span>
             </div>
           </div>
         )}
-
 
         {/* Status messages */}
         {success && (
