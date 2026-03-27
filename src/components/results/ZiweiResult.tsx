@@ -109,9 +109,20 @@ const sectionTabs = [
 function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
   if (!data.paipanOnly || !data.ziwei) return data
   const z = data.ziwei as Record<string, unknown>
+
+  // Convert palaces array to Record<name, data> if needed
+  let palacesRecord: Record<string, unknown> = {}
+  if (Array.isArray(z.palaces)) {
+    for (const p of z.palaces as Array<{ name: string; [key: string]: unknown }>) {
+      palacesRecord[p.name] = p
+    }
+  } else {
+    palacesRecord = (z.palaces as Record<string, unknown>) || {}
+  }
+
   return {
     ziweiChart: z,
-    palaces: z.palaces || {},
+    palaces: palacesRecord,
     sections: { overview: '（只排盤模式，無AI解盤）', career: '', marriage: '', wealth: '' },
     paipanOnly: true,
   }
@@ -278,7 +289,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
               // Fallback: find palace by position in original palace order if no branch mapping
               const palaceName = palaceInfo?.palaceName
               const pData = palaceInfo?.data
-              const hasStars = pData && pData.stars && pData.stars.length > 0
+              const hasStars = pData && ((pData.majorStars && pData.majorStars.length > 0) || (pData.minorStars && pData.minorStars.length > 0))
               const isSoul = palaceName === '命宫'
 
               return (

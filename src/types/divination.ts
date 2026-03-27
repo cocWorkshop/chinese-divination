@@ -76,7 +76,7 @@ export interface ZiweiStar {
 }
 
 export interface ZiweiPalaceData {
-  stars: string[]
+  stars?: string[]
   majorStars?: ZiweiStar[]
   minorStars?: ZiweiStar[]
   adjectiveStars?: ZiweiStar[]
@@ -95,11 +95,14 @@ export interface ZiweiChartInfo {
   chineseDate?: string
   time?: string
   timeRange?: string
+  sign?: string
   zodiac?: string
   gender?: string
   fiveElementsClass?: string
   soul?: string
   body?: string
+  earthlyBranchOfSoulPalace?: string
+  earthlyBranchOfBodyPalace?: string
   siHua?: { star: string; type: string; palace: string }[]
 }
 
