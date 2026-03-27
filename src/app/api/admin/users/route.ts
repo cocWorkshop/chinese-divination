@@ -27,13 +27,32 @@ export async function GET(req: NextRequest) {
         divinationCredits: true, chatCredits: true, credits: true,
         createdAt: true, language: true,
         _count: { select: { readings: true } },
+        masterSession: { select: { totalCreditsUsed: true } },
       },
     }),
     prisma.user.count({ where }),
   ])
 
+  // Count chat rounds per user (readings with non-empty chatMessages)
+  const userIds = users.map(u => u.id)
+  const chatCounts = userIds.length > 0
+    ? await prisma.reading.groupBy({
+        by: ['userId'],
+        where: { userId: { in: userIds }, chatMessages: { not: null } },
+        _count: true,
+      })
+    : []
+  const chatCountMap = Object.fromEntries(chatCounts.map(c => [c.userId, c._count]))
+
+  const enrichedUsers = users.map(u => ({
+    ...u,
+    chatRounds: chatCountMap[u.id] || 0,
+    masterRounds: u.masterSession?.totalCreditsUsed || 0,
+    masterSession: undefined,
+  }))
+
   return NextResponse.json({
-    users,
+    users: enrichedUsers,
     total,
     pages: Math.ceil(total / limit),
     page,
