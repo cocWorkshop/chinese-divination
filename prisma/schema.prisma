@@ -57,6 +57,7 @@ model User {
   shareLinks    ShareLink[]
   familyMembers FamilyMember[]
   masterSession MasterSession?
+  notificationReads NotificationRead[]
 }
 
 model Reading {

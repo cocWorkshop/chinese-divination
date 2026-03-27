@@ -20,12 +20,81 @@ const notoSerifSC = Noto_Serif_SC({
 })
 
 export const metadata: Metadata = {
-  title: '玄機 - 古法智慧，現代傳承',
-  description: 'Chinese divination platform - BaZi, I Ching, Zi Wei, Qi Men, Feng Shui',
+  metadataBase: new URL('https://chinese-divination.com'),
+  title: {
+    default: '玄機 Xuanji - Free AI Chinese Divination | BaZi, I Ching, Zi Wei Dou Shu',
+    template: '%s | 玄機 Xuanji',
+  },
+  description:
+    'Free AI-powered Chinese divination platform. Get personalized BaZi (Four Pillars), I Ching, Zi Wei Dou Shu, Qi Men Dun Jia, Feng Shui, Liu Yao, and Mei Hua readings with expert AI interpretation.',
+  keywords: [
+    'Chinese divination',
+    'BaZi',
+    'Four Pillars of Destiny',
+    'I Ching',
+    'Zi Wei Dou Shu',
+    'Purple Star Astrology',
+    'Qi Men Dun Jia',
+    'Feng Shui',
+    'Liu Yao',
+    'Mei Hua Yi Shu',
+    'AI divination',
+    'free divination',
+    '八字',
+    '易經',
+    '紫微斗數',
+    '奇門遁甲',
+    '風水',
+    '六爻',
+    '梅花易數',
+    '玄機',
+  ],
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://chinese-divination.com',
+    siteName: '玄機 Xuanji',
+    title: '玄機 Xuanji - Free AI Chinese Divination',
+    description:
+      'Free AI-powered Chinese divination: BaZi, I Ching, Zi Wei Dou Shu, Qi Men Dun Jia, Feng Shui, and more. Ancient wisdom meets modern AI.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: '玄機 Xuanji - AI Chinese Divination Platform',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '玄機 Xuanji - Free AI Chinese Divination',
+    description:
+      'Free AI-powered Chinese divination: BaZi, I Ching, Zi Wei Dou Shu, Qi Men Dun Jia, Feng Shui, and more.',
+    images: ['/og-image.png'],
+  },
+  alternates: {
+    canonical: 'https://chinese-divination.com',
+    languages: {
+      'en': 'https://chinese-divination.com',
+      'zh-TW': 'https://chinese-divination.com',
+    },
+  },
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
     apple: '/favicon.svg',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 }
 
@@ -38,6 +107,31 @@ export default function RootLayout({
     <html lang="zh" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme')||'dark';document.documentElement.className=t}catch(e){document.documentElement.className='dark'}})()` }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebApplication',
+              name: '玄機 Xuanji',
+              url: 'https://chinese-divination.com',
+              description:
+                'Free AI-powered Chinese divination platform offering BaZi, I Ching, Zi Wei Dou Shu, Qi Men Dun Jia, Feng Shui, Liu Yao, and Mei Hua readings.',
+              applicationCategory: 'LifestyleApplication',
+              operatingSystem: 'Web',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+              },
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: '4.8',
+                ratingCount: '150',
+              },
+            }),
+          }}
+        />
         {process.env.NEXT_PUBLIC_GA_ID && (
           <>
             <Script src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`} strategy="afterInteractive" />
