@@ -66,6 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     data: {
       divinationCredits: { increment: comp.bonusModel1 },
       chatCredits: { increment: comp.bonusChat },
+      credits: { increment: comp.bonusModel1 + comp.bonusChat },
     },
   })
 

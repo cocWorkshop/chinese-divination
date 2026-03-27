@@ -7,7 +7,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const { error, user: admin } = await requireAdmin()
   if (error) return error
 
-  const { isAdmin, isPaid, role, divinationCredits, chatCredits } = await req.json()
+  const { isAdmin, isPaid, role, divinationCredits, chatCredits, credits } = await req.json()
   const targetId = params.id
 
   if (admin!.id === targetId && isAdmin === false) {
@@ -20,6 +20,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (role !== undefined && ['user', 'admin'].includes(role)) updateData.role = role
   if (divinationCredits !== undefined) updateData.divinationCredits = Math.max(0, parseInt(divinationCredits))
   if (chatCredits !== undefined) updateData.chatCredits = Math.max(0, parseInt(chatCredits))
+  if (credits !== undefined) updateData.credits = Math.max(0, parseInt(credits))
 
   await prisma.user.update({ where: { id: targetId }, data: updateData })
 

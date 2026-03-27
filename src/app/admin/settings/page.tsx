@@ -50,6 +50,7 @@ export default function AdminSettings() {
     cost_liuyao: '3',
     cost_fengshui: '3',
     cost_chat: '2',
+    cost_master: '1',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -148,6 +149,7 @@ export default function AdminSettings() {
           {numberField('cost_liuyao', '六爻占卜 / Liu Yao', '預設 3 點')}
           {numberField('cost_fengshui', '風水 / Feng Shui', '預設 3 點')}
           {numberField('cost_chat', '問答聊天 / Chat', '預設 2 點')}
+          {numberField('cost_master', '問問大師 / Ask Master', '預設 1 點')}
         </div>
 
         {/* Divination Visibility */}
