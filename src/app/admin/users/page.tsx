@@ -87,7 +87,7 @@ export default function AdminUsers() {
               <th className="px-4 py-3 text-left">用户</th>
               <th className="px-4 py-3 text-center">角色</th>
               <th className="px-4 py-3 text-center">使用統計</th>
-              <th className="px-4 py-3 text-center">額度</th>
+              <th className="px-4 py-3 text-center">機緣</th>
               <th className="px-4 py-3 text-center">操作</th>
             </tr>
           </thead>

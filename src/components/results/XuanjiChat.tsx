@@ -170,13 +170,13 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
           }).catch(() => { /* non-critical */ })
         }
       } else {
-        const isCreditsExhausted = res.status === 429 || (data.error && /額度|credit/i.test(data.error))
+        const isCreditsExhausted = res.status === 429 || (data.error && /機緣|額度|karma|credit/i.test(data.error))
         if (isCreditsExhausted) {
           setChatRemaining(0)
           setMessages(prev => [...prev, {
             role: 'assistant',
-            content: T(lang, '問答額度已用完', 'Chat credits exhausted'),
-            link: { text: T(lang, '購買更多額度 →', 'Purchase more credits →'), href: '/subscribe' },
+            content: T(lang, '機緣不足，無法繼續提問', 'Not enough Karma to continue'),
+            link: { text: T(lang, '前往機緣商店 →', 'Visit Karma Shop →'), href: '/subscribe' },
           }])
         } else {
           setMessages(prev => [...prev, {

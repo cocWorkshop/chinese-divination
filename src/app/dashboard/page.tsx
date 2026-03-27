@@ -274,7 +274,7 @@ export default function DashboardPage() {
                         <p className="text-2xl mb-2">⚠️</p>
                         <p>{lang === 'en' ? 'This reading failed to generate.' : '解讀生成失敗'}</p>
                         <p className="text-sm text-white/40 mt-1">
-                          {lang === 'en' ? 'Your credit was not deducted. Please try again.' : '額度未被扣除，請重新嘗試。'}
+                          {lang === 'en' ? 'Your Karma was not deducted. Please try again.' : '機緣未被扣除，請重新嘗試。'}
                         </p>
                         <button
                           onClick={(e) => { e.stopPropagation(); retryReading(r) }}

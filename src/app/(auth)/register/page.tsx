@@ -55,7 +55,7 @@ function RegisterInner() {
       const data = await res.json()
       if (data.needsVerification) {
         setVerificationSent(true)
-        toast.success(lang === 'zh-TW' ? '🎁 註冊成功！已獲得 6 點額度' : '🎁 Registered! You got 6 credits', { duration: 5000 })
+        toast.success(lang === 'zh-TW' ? '🎁 註冊成功！已獲得 6 點機緣' : '🎁 Registered! You got 6 Karma', { duration: 5000 })
         return
       }
       router.push('/login')
@@ -116,11 +116,11 @@ function RegisterInner() {
           </p>
           <div className="my-5 py-3 px-4 rounded-lg text-left text-xs" style={{ backgroundColor: 'rgba(212, 168, 83, 0.08)', border: '1px solid rgba(212, 168, 83, 0.2)' }}>
             <p className="font-medium mb-1.5" style={{ color: 'var(--gold)' }}>
-              🎁 {lang === 'zh-TW' ? '您的免費額度' : 'Your free credits'}
+              🎁 {lang === 'zh-TW' ? '您的免費機緣' : 'Your free Karma'}
             </p>
             <div className="space-y-1" style={{ color: 'var(--text-secondary)' }}>
-              <p>✦ {lang === 'zh-TW' ? '6 點額度已到帳' : '6 credits granted'}</p>
-              <p>✦ {lang === 'zh-TW' ? '每日登入再送額度' : 'Daily login bonus credits'}</p>
+              <p>✦ {lang === 'zh-TW' ? '6 點機緣已到帳' : '6 Karma granted'}</p>
+              <p>✦ {lang === 'zh-TW' ? '每日登入再送機緣' : 'Daily login Karma bonus'}</p>
             </div>
           </div>
           <div className="my-6 h-px bg-gold/20" />

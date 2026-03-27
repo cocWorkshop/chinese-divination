@@ -103,12 +103,12 @@ export default function ClaimPage() {
             <div className="p-8">
               <div className="text-center mb-6">
                 <div className="text-4xl mb-2">🎁</div>
-                <h2 className="text-[rgba(255,255,255,0.9)] text-lg font-serif mb-1">補償額度</h2>
-                <p className="text-[rgba(255,255,255,0.4)] text-sm">以下額度已為您準備：</p>
+                <h2 className="text-[rgba(255,255,255,0.9)] text-lg font-serif mb-1">補償機緣</h2>
+                <p className="text-[rgba(255,255,255,0.4)] text-sm">以下機緣已為您準備：</p>
               </div>
 
               <div className="space-y-2.5 mb-6">
-                <CreditItem label="額度" value={data.credits} icon="💰" />
+                <CreditItem label="機緣" value={data.credits} icon="✨" />
               </div>
 
               {data.reason && (
@@ -126,7 +126,7 @@ export default function ClaimPage() {
               </button>
 
               <p className="text-[rgba(255,255,255,0.25)] text-[11px] text-center mt-4">
-                額度將立即發放至您的帳戶（{data.email}）
+                機緣將立即發放至您的帳戶（{data.email}）
               </p>
             </div>
           )}
@@ -144,10 +144,10 @@ export default function ClaimPage() {
             <div className="p-8 text-center">
               <div className="text-5xl mb-3">✅</div>
               <h2 className="text-[#2d8a6e] text-lg font-serif mb-2">領取成功！</h2>
-              <p className="text-[rgba(255,255,255,0.5)] text-sm mb-4">補償額度已發放至您的帳戶</p>
+              <p className="text-[rgba(255,255,255,0.5)] text-sm mb-4">補償機緣已發放至您的帳戶</p>
               {claimed && (
                 <div className="space-y-2 mb-6">
-                  <CreditItem label="額度" value={claimed.credits} icon="💰" />
+                  <CreditItem label="機緣" value={claimed.credits} icon="✨" />
                 </div>
               )}
               <a

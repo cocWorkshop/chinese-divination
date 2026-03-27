@@ -155,8 +155,8 @@ export default function PublicReadingPage() {
           {shareBonus && (
             <p className="text-xs mb-4" style={{ color: 'var(--gold)' }}>
               🎁 {lang === 'en'
-                ? `Register now — both you and the person who shared this get ${(shareBonus.divination || 0) + (shareBonus.chat || 0)} credits!`
-                : `註冊後雙方各獲得 ${(shareBonus.divination || 0) + (shareBonus.chat || 0)} 點額度！`}
+                ? `Register now — both you and the person who shared this get ${(shareBonus.divination || 0) + (shareBonus.chat || 0)} Karma!`
+                : `註冊後雙方各獲得 ${(shareBonus.divination || 0) + (shareBonus.chat || 0)} 點機緣！`}
             </p>
           )}
           <div className="flex justify-center gap-3">

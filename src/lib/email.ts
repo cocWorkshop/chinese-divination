@@ -143,7 +143,7 @@ export async function sendCompensationEmail(
   const items: string[] = []
   if (compensation.bonusModel1 > 0) items.push(`${isZh ? '標準模型' : 'Standard Model'}: +${compensation.bonusModel1}`)
   if (compensation.bonusModel2 > 0) items.push(`${isZh ? '高級模型' : 'Premium Model'}: +${compensation.bonusModel2}`)
-  if (compensation.bonusChat > 0) items.push(`${isZh ? '聊天額度' : 'Chat Credits'}: +${compensation.bonusChat}`)
+  if (compensation.bonusChat > 0) items.push(`${isZh ? '聊天機緣' : 'Chat Karma'}: +${compensation.bonusChat}`)
   const itemsHtml = items.map(i => `<div style="padding:8px 16px;background:rgba(212,168,83,0.08);border-left:3px solid #d4a853;border-radius:0 8px 8px 0;color:rgba(255,255,255,0.85);font-size:14px;margin-bottom:6px;">${i}</div>`).join('')
 
   const subject = isZh ? '玄機 - 您有一份補償待領取' : 'Xuanji - You Have a Compensation to Claim'
@@ -164,7 +164,7 @@ export async function sendCompensationEmail(
         ${isZh ? '🎁 補償通知' : '🎁 Compensation Notice'}
       </h2>
       <p style="color:rgba(255,255,255,0.5);font-size:14px;line-height:1.6;margin:0 0 20px;">
-        ${isZh ? '由於近期使用中遇到的問題，我們為您準備了額度補償：' : 'Due to issues you experienced, we have prepared compensation credits for you:'}
+        ${isZh ? '由於近期使用中遇到的問題，我們為您準備了機緣補償：' : 'Due to issues you experienced, we have prepared compensation Karma for you:'}
       </p>
       
       <div style="text-align:left;margin:0 0 20px;">

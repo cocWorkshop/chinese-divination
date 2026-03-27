@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const chatLimit = await checkCredits(session.user.id, 'chat')
     if (!chatLimit.allowed) {
       return NextResponse.json({
-        error: `額度不足（需要 ${chatLimit.cost} 點，剩餘 ${chatLimit.remaining} 點），請購買更多額度。\nNot enough credits (need ${chatLimit.cost}, have ${chatLimit.remaining}). Please purchase more.`,
+        error: `✨ 機緣不足（需要 ${chatLimit.cost}，剩餘 ${chatLimit.remaining}）。前往機緣商店補充，即可繼續提問。\n✨ Not enough Karma (need ${chatLimit.cost}, have ${chatLimit.remaining}). Visit the Karma Shop to continue.`,
         remaining: 0,
       }, { status: 429 })
     }
@@ -174,7 +174,7 @@ ${readingData || '（无预测数据）'}
         totalTokens: completion.usage?.total_tokens, latencyMs: Date.now() - chatStart,
         status: 'error', inputPreview: message, outputPreview: 'Empty reply from LLM',
       })
-      return NextResponse.json({ error: '🔧 玄機暫時出了點小故障，您的額度未扣除。請稍後再試，若持續異常請聯繫管理員重啟玄機。\n🔧 The oracle encountered a hiccup — your credits were not deducted. Please try again later, or contact admin if the issue persists.' }, { status: 502 })
+      return NextResponse.json({ error: '🔧 玄機暫時出了點小故障，您的機緣未扣除。請稍後再試，若持續異常請聯繫管理員重啟玄機。\n🔧 The oracle encountered a hiccup — your Karma was not deducted. Please try again later, or contact admin if the issue persists.' }, { status: 502 })
     }
 
     await logLlmCall({

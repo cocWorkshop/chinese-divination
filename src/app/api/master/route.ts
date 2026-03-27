@@ -322,7 +322,7 @@ export async function POST(req: NextRequest) {
     const creditCheck = await checkCredits(userId, 'master')
     if (!creditCheck.allowed) {
       return new Response(JSON.stringify({
-        error: `額度不足（需要 ${creditCheck.cost} 點，剩餘 ${creditCheck.remaining} 點），請購買更多額度。`,
+        error: `✨ 機緣不足（需要 ${creditCheck.cost}，剩餘 ${creditCheck.remaining}）。前往機緣商店補充，即可繼續提問。`,
         remaining: creditCheck.remaining,
       }), { status: 429, headers: { 'Content-Type': 'application/json' } })
     }

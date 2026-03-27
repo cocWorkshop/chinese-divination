@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
     if (!rl.allowed) {
       return NextResponse.json(
-        { error: language === 'en' ? 'No divination credits remaining. Purchase more or share to earn credits.' : '占卜額度已用完，請購買或分享獲取更多額度。' },
+        { error: language === 'en' ? 'Not enough Karma. Visit the Karma Shop to get more.' : '✨ 機緣不足，前往機緣商店補充機緣。' },
         { status: 429 }
       )
     }

@@ -67,10 +67,10 @@ export default function SubscribePage() {
         {/* Header */}
         <div className="text-center mb-5">
           <h1 className="text-3xl sm:text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
-            {T(lang, '額度商店', 'Credits Store')}
+            {T(lang, '機緣商店', 'Karma Shop')}
           </h1>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            {T(lang, '購買額度，探索更深層的命理奧秘', 'Purchase credits to unlock deeper divination insights')}
+            {T(lang, '補充機緣，探索更深層的命理奧秘', 'Get Karma to unlock deeper divination insights')}
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export default function SubscribePage() {
             <div className="flex flex-col sm:flex-row items-center gap-4">
               {credits !== null && (
                 <div className="text-center sm:border-r sm:pr-6 flex-shrink-0" style={{ borderColor: 'var(--border-gold)' }}>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{T(lang, '當前額度', 'Credits')}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{T(lang, '當前機緣', 'Karma')}</p>
                   <span className="text-3xl font-bold" style={{ color: 'var(--gold)' }}>{credits}</span>
                   <span className="text-xs ml-1" style={{ color: 'var(--text-secondary)' }}>{T(lang, '點', 'pts')}</span>
                 </div>
@@ -119,7 +119,7 @@ export default function SubscribePage() {
         {/* Status messages */}
         {success && (
           <div className="mb-8 p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#22c55e' }}>
-            {T(lang, '✨ 購買成功！額度已添加到你的帳戶。', '✨ Purchase successful! Credits have been added to your account.')}
+            {T(lang, '✨ 購買成功！機緣已添加到你的帳戶。', '✨ Purchase successful! Karma has been added to your account.')}
           </div>
         )}
         {canceled && (
@@ -175,7 +175,7 @@ export default function SubscribePage() {
               <ul className="space-y-3 mb-8 flex-1">
                 <li className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <span style={{ color: 'var(--gold)' }}>✦</span>
-                  {pack.credits} {T(lang, '點額度', ' credit points')}
+                  {pack.credits} {T(lang, '機緣', ' Karma')}
                 </li>
                 <li className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <span style={{ color: 'var(--gold)' }}>✦</span>
@@ -202,7 +202,7 @@ export default function SubscribePage() {
 
         {/* Bottom note */}
         <p className="text-center mt-8 text-sm" style={{ color: 'var(--text-muted)' }}>
-          {T(lang, '💫 額度永久有效，不會過期', '💫 Credits never expire')}
+          {T(lang, '💫 機緣永久有效，不會過期', '💫 Karma never expires')}
         </p>
 
         {/* Back link */}

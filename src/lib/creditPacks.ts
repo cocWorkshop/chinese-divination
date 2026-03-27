@@ -12,14 +12,14 @@ export interface CreditPack {
 
 export const CREDIT_PACKS: Record<PackId, CreditPack> = {
   pack10: {
-    name: { zh: '10 點', en: '10 Credits' },
+    name: { zh: '10 機緣', en: '10 Karma' },
     icon: '🌙',
     price: 99, // $0.99
     originalPrice: 990, // $9.90
     credits: 10,
   },
   pack100: {
-    name: { zh: '100 點', en: '100 Credits' },
+    name: { zh: '100 機緣', en: '100 Karma' },
     icon: '⭐',
     price: 891, // $8.91 (10% off of $9.90)
     originalPrice: 9900, // $99.00
@@ -28,7 +28,7 @@ export const CREDIT_PACKS: Record<PackId, CreditPack> = {
     discount: '9折',
   },
   pack200: {
-    name: { zh: '200 點', en: '200 Credits' },
+    name: { zh: '200 機緣', en: '200 Karma' },
     icon: '🌟',
     price: 1782, // $17.82 (10% off of $19.80)
     originalPrice: 19800, // $198.00

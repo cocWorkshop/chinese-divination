@@ -136,11 +136,11 @@ export default function AdminSettings() {
           <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
             <span>🔗</span> 分享設置 / Share Settings
           </h2>
-          {numberField('shareBonus', '分享獎勵額度 / Credits per share', '分享者和受邀者各獲得此數量的額度')}
-          {numberField('shareBonusChat', '分享獎勵額度(聊天) / Share bonus chat (legacy)', '舊版兼容')}
-          {numberField('dailyBonusCredits', '每日登入額度 / Daily login credits', '每日首次登入贈送的額度點數')}
+          {numberField('shareBonus', '分享獎勵機緣 / Karma per share', '分享者和受邀者各獲得此數量的機緣')}
+          {numberField('shareBonusChat', '分享獎勵機緣(聊天) / Share bonus chat (legacy)', '舊版兼容')}
+          {numberField('dailyBonusCredits', '每日登入機緣 / Daily login Karma', '每日首次登入贈送的機緣點數')}
 
-          <h3 className="text-lg font-bold text-gold mt-6 mb-2">💰 各功能消耗額度 / Credit Costs</h3>
+          <h3 className="text-lg font-bold text-gold mt-6 mb-2">✨ 各功能消耗機緣 / Karma Costs</h3>
           {numberField('cost_bazi', '八字命理 / BaZi', '預設 5 點')}
           {numberField('cost_ziwei', '紫微斗數 / Zi Wei', '預設 5 點')}
           {numberField('cost_qimen', '奇門遁甲 / Qi Men', '預設 5 點')}
