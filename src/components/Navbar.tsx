@@ -44,7 +44,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="text-2xl font-serif text-gold hover:text-gold-light transition-colors">
+          <Link href="/" className="text-2xl font-brand text-gold hover:text-gold-light transition-colors">
             玄機
           </Link>
 
