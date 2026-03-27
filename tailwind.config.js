@@ -23,8 +23,8 @@ module.exports = {
         vermillion: '#c0392b',
       },
       fontFamily: {
-        serif: ['var(--font-heading)', 'serif'],
-        sans: ['var(--font-body-zh)', 'var(--font-body-en)', 'sans-serif'],
+        serif: ['var(--font-noto-serif)', 'serif'],
+        sans: ['var(--font-inter)', 'sans-serif'],
       },
       backgroundImage: {
         'radial-navy': 'radial-gradient(ellipse at center, #162444 0%, #0a0f1e 70%)',

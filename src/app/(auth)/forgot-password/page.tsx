@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
     <div className="flex-1 flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
       <div className="glass-card rounded-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="text-4xl font-brand mb-2" style={{ color: 'var(--gold)' }}>玄機</div>
+          <div className="text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>玄機</div>
           <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>
             {lang === 'zh-TW' ? '忘記密碼' : 'Forgot Password'}
           </h1>
