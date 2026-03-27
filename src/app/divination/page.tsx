@@ -86,9 +86,10 @@ export default function DivinationPage() {
         {masterMode ? (
           <motion.div
             key="master-chat"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
           >
             <MasterChat onClose={() => setMasterMode(false)} lang={langShort} />
           </motion.div>
@@ -97,7 +98,8 @@ export default function DivinationPage() {
             key="services-grid"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
           >
             <motion.div
               initial={{ opacity: 0, y: -20 }}

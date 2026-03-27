@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState, KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, useCallback, KeyboardEvent } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useMasterChat } from '@/hooks/useMasterChat'
 
 interface MasterChatProps {
@@ -8,9 +9,14 @@ interface MasterChatProps {
   lang: string
 }
 
-const welcomeMessage: Record<string, string> = {
+const welcomeText: Record<string, string> = {
   zh: '施主有禮了。\n我是玄機，修習命理數十年，略通八字、紫微、奇門之術。\n你有什麼想了解的，儘管問吧。',
   en: 'Greetings.\nI am Xuanji, a master of Chinese metaphysics for decades.\nWhat would you like to know?',
+}
+
+const suggestions: Record<string, string[]> = {
+  zh: ['幫我看看今年運勢', '我的八字如何？', '最近事業有什麼變化？'],
+  en: ['How is my luck this year?', 'Analyze my BaZi', 'Any career changes ahead?'],
 }
 
 function formatTime(ts: string) {
@@ -27,22 +33,35 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const userScrolledRef = useRef(false)
 
   useEffect(() => {
     loadHistory()
   }, [loadHistory])
 
-  // Auto-scroll
+  // Track user scroll position
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    userScrolledRef.current = distanceFromBottom > 80
+  }, [])
+
+  // Auto-scroll respecting user scroll position
   useEffect(() => {
     const el = scrollRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (el && !userScrolledRef.current) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    }
   }, [messages, toolStatus])
 
-  const handleSend = () => {
-    const text = input.trim()
-    if (!text || loading) return
+  const handleSend = (text?: string) => {
+    const msg = (text ?? input).trim()
+    if (!msg || loading) return
     setInput('')
-    sendMessage(text, isEn ? 'en' : 'zh')
+    userScrolledRef.current = false
+    sendMessage(msg, isEn ? 'en' : 'zh')
+    inputRef.current?.focus()
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -55,75 +74,158 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
   const showWelcome = historyLoaded && messages.length === 0
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-      <div className="w-full h-full sm:h-[80vh] sm:max-w-2xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden bg-[var(--card-bg,#1a1a2e)] border border-white/10">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🧙‍♂️</span>
-            <span className="font-serif text-lg" style={{ color: 'var(--gold)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
+      {/* Dark atmospheric bg */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.06) 0%, rgba(10,10,20,0.98) 70%)',
+        }}
+      />
+
+      {/* Main container */}
+      <div className="relative w-full h-full sm:h-[85vh] sm:max-w-2xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden border border-white/[0.06] shadow-2xl">
+        <div className="absolute inset-0 bg-[#0c0c18] opacity-95" />
+
+        {/* Header — minimal */}
+        <div className="relative flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2.5">
+            <span className="font-serif text-lg tracking-wide" style={{ color: 'var(--gold)' }}>
               {isEn ? 'Master Xuanji' : '玄機大師'}
             </span>
-            <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+            {loading && <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse" />}
           </div>
           <button
             onClick={onClose}
-            className="text-xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
-            style={{ color: 'var(--text-muted)' }}
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/[0.06] transition-colors text-white/40 hover:text-white/70 text-lg"
+            aria-label="Close"
           >
             ✕
           </button>
         </div>
 
-        {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          {showWelcome && (
-            <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-white/5 backdrop-blur-sm border border-white/10">
-                <p className="font-serif text-sm whitespace-pre-line" style={{ color: 'var(--text-primary, #e0e0e0)' }}>
-                  {isEn ? welcomeMessage.en : welcomeMessage.zh}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                  msg.role === 'user'
-                    ? 'bg-[rgba(212,175,55,0.2)]'
-                    : 'bg-white/5 backdrop-blur-sm border border-white/10'
-                }`}
+        {/* Messages area */}
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="relative flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4 scrollbar-thin"
+        >
+          {/* Welcome */}
+          <AnimatePresence>
+            {showWelcome && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex flex-col items-center text-center pt-8 pb-4"
               >
-                <p className={`text-sm whitespace-pre-line ${msg.role === 'assistant' ? 'font-serif' : ''}`} style={{ color: 'var(--text-primary, #e0e0e0)' }}>
-                  {msg.content}
-                  {msg.role === 'assistant' && i === messages.length - 1 && loading && !msg.content && (
-                    <span className="inline-block animate-pulse">…</span>
-                  )}
+                {/* Golden divider line */}
+                <div className="w-16 h-px mb-6" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
+                <p className="font-serif text-sm sm:text-base leading-relaxed whitespace-pre-line max-w-md" style={{ color: 'var(--text-primary, #e0e0e0)' }}>
+                  {isEn ? welcomeText.en : welcomeText.zh}
                 </p>
-                <p className="text-[10px] mt-1 opacity-40">{formatTime(msg.timestamp)}</p>
-              </div>
-            </div>
-          ))}
+                <div className="w-16 h-px mt-6" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
 
-          {/* Tool status */}
-          {toolStatus && (
-            <div className="flex justify-start">
-              <div className="rounded-2xl px-4 py-3 bg-white/5 backdrop-blur-sm border border-white/10 animate-pulse" style={{ borderColor: 'rgba(212,175,55,0.4)' }}>
-                <div className="flex items-center gap-2">
-                  <span className="inline-block animate-spin text-lg" style={{ animationDuration: '2s' }}>☯️</span>
-                  <span className="text-sm font-serif" style={{ color: 'var(--gold)' }}>{toolStatus.label}</span>
+                {/* Suggestion chips */}
+                <div className="flex flex-wrap justify-center gap-2 mt-6">
+                  {(isEn ? suggestions.en : suggestions.zh).map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSend(s)}
+                      className="text-xs px-3.5 py-2 rounded-full border border-[var(--gold)]/20 hover:border-[var(--gold)]/50 hover:bg-[var(--gold)]/5 transition-all"
+                      style={{ color: 'var(--gold)' }}
+                    >
+                      {s}
+                    </button>
+                  ))}
                 </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Messages */}
+          {messages.map((msg, i) => {
+            const isUser = msg.role === 'user'
+            const isLastAssistant = !isUser && i === messages.length - 1
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 ${
+                    isUser
+                      ? 'bg-[rgba(212,175,55,0.1)] border border-[rgba(212,175,55,0.15)]'
+                      : 'bg-white/[0.04] backdrop-blur-sm border border-white/[0.06]'
+                  }`}
+                >
+                  <p
+                    className={`text-sm leading-relaxed whitespace-pre-line ${!isUser ? 'font-serif' : ''}`}
+                    style={{ color: 'var(--text-primary, #e0e0e0)' }}
+                  >
+                    {msg.content}
+                    {isLastAssistant && loading && !msg.content && (
+                      <span className="inline-flex gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_infinite]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_0.2s_infinite]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_0.4s_infinite]" />
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-[10px] mt-1.5 opacity-30">{formatTime(msg.timestamp)}</p>
+                </div>
+              </motion.div>
+            )
+          })}
+
+          {/* Tool status animation */}
+          <AnimatePresence>
+            {toolStatus && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.3 }}
+                className="flex justify-start"
+              >
+                <div className="rounded-2xl px-4 py-3 border border-[rgba(212,175,55,0.2)] bg-[rgba(212,175,55,0.04)]">
+                  <div className="flex items-center gap-3">
+                    {/* Golden pulse line */}
+                    <div className="relative w-5 h-5 flex items-center justify-center">
+                      <div
+                        className="absolute inset-0 rounded-full"
+                        style={{
+                          background: 'var(--gold)',
+                          opacity: 0.15,
+                          animation: 'toolPulse 1.5s ease infinite',
+                        }}
+                      />
+                      <div className="w-2 h-2 rounded-full" style={{ background: 'var(--gold)' }} />
+                    </div>
+                    <span className="text-sm font-serif" style={{ color: 'var(--gold)' }}>
+                      {toolStatus.label}
+                    </span>
+                    {/* Drifting dots */}
+                    <span className="flex gap-1">
+                      <span className="w-1 h-1 rounded-full bg-[var(--gold)]/60 animate-[drift_1.8s_ease_infinite]" />
+                      <span className="w-1 h-1 rounded-full bg-[var(--gold)]/40 animate-[drift_1.8s_ease_0.3s_infinite]" />
+                      <span className="w-1 h-1 rounded-full bg-[var(--gold)]/20 animate-[drift_1.8s_ease_0.6s_infinite]" />
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Input area */}
-        <div className="border-t border-white/10 px-4 py-3">
+        <div className="relative border-t border-white/[0.06] px-4 sm:px-5 py-3">
           {credits !== null && (
-            <p className="text-[10px] mb-1 opacity-40 text-right">
+            <p className="text-[10px] mb-1.5 opacity-30 text-right">
               {isEn ? 'Credits' : '餘額'}: {credits}
             </p>
           )}
@@ -135,14 +237,14 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
               onKeyDown={handleKeyDown}
               placeholder={isEn ? 'Ask the Master...' : '請問大師...'}
               rows={1}
-              className="flex-1 resize-none rounded-xl px-4 py-2.5 text-sm bg-white/5 border border-white/10 focus:border-[var(--gold)] focus:outline-none transition-colors"
+              className="flex-1 resize-none rounded-xl px-4 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] focus:border-[var(--gold)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/20 transition-all placeholder:text-white/20"
               style={{ color: 'var(--text-primary, #e0e0e0)', maxHeight: '120px' }}
               disabled={loading}
             />
             <button
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className="rounded-xl px-4 py-2.5 text-sm font-medium transition-all disabled:opacity-30"
+              className="rounded-xl px-4 py-2.5 text-sm font-medium transition-all disabled:opacity-20 hover:shadow-[0_0_15px_rgba(212,175,55,0.3)]"
               style={{ backgroundColor: 'var(--gold)', color: '#000' }}
             >
               {isEn ? 'Send' : '發送'}
@@ -150,6 +252,26 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
           </div>
         </div>
       </div>
+
+      {/* CSS animations */}
+      <style jsx global>{`
+        @keyframes dotPulse {
+          0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+          40% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes toolPulse {
+          0%, 100% { transform: scale(1); opacity: 0.15; }
+          50% { transform: scale(1.8); opacity: 0; }
+        }
+        @keyframes drift {
+          0% { opacity: 0; transform: translateX(0); }
+          50% { opacity: 0.6; }
+          100% { opacity: 0; transform: translateX(8px); }
+        }
+        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+      `}</style>
     </div>
   )
 }
