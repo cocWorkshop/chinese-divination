@@ -75,20 +75,20 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
-      {/* Dark atmospheric bg */}
+      {/* Atmospheric bg — adapts to theme */}
       <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.06) 0%, rgba(10,10,20,0.98) 70%)',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.06) 0%, var(--bg-primary) 70%)',
         }}
       />
 
       {/* Main container */}
-      <div className="relative w-full h-full sm:h-[85vh] sm:max-w-2xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden border border-white/[0.06] shadow-2xl">
-        <div className="absolute inset-0 bg-[#0c0c18] opacity-95" />
+      <div className="relative w-full h-full sm:h-[85vh] sm:max-w-2xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid var(--card-border)' }}>
+        <div className="absolute inset-0" style={{ backgroundColor: 'var(--bg-primary)', opacity: 0.98 }} />
 
         {/* Header — minimal */}
-        <div className="relative flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]">
+        <div className="relative flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid var(--card-border)' }}>
           <div className="flex items-center gap-2.5">
             <span className="font-serif text-lg tracking-wide" style={{ color: 'var(--gold)' }}>
               {isEn ? 'Master Xuanji' : '玄機大師'}
@@ -97,7 +97,8 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/[0.06] transition-colors text-white/40 hover:text-white/70 text-lg"
+            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-lg"
+            style={{ color: 'var(--text-muted)' }}
             aria-label="Close"
           >
             ✕
@@ -157,11 +158,11 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
                 className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 ${
-                    isUser
-                      ? 'bg-[rgba(212,175,55,0.1)] border border-[rgba(212,175,55,0.15)]'
-                      : 'bg-white/[0.04] backdrop-blur-sm border border-white/[0.06]'
-                  }`}
+                  className="max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3"
+                  style={{
+                    background: isUser ? 'var(--accent-bg)' : 'var(--card-bg)',
+                    border: `1px solid ${isUser ? 'var(--border-gold)' : 'var(--card-border)'}`,
+                  }}
                 >
                   <p
                     className={`text-sm leading-relaxed whitespace-pre-line ${!isUser ? 'font-serif' : ''}`}
@@ -176,7 +177,7 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
                       </span>
                     )}
                   </p>
-                  <p className="text-[10px] mt-1.5 opacity-30">{formatTime(msg.timestamp)}</p>
+                  <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-muted)' }}>{formatTime(msg.timestamp)}</p>
                 </div>
               </motion.div>
             )
@@ -192,7 +193,7 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
                 transition={{ duration: 0.3 }}
                 className="flex justify-start"
               >
-                <div className="rounded-2xl px-4 py-3 border border-[rgba(212,175,55,0.2)] bg-[rgba(212,175,55,0.04)]">
+                <div className="rounded-2xl px-4 py-3" style={{ border: '1px solid var(--border-gold)', background: 'var(--accent-bg)' }}>
                   <div className="flex items-center gap-3">
                     {/* Golden pulse line */}
                     <div className="relative w-5 h-5 flex items-center justify-center">
@@ -223,9 +224,9 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
         </div>
 
         {/* Input area */}
-        <div className="relative border-t border-white/[0.06] px-4 sm:px-5 py-3">
+        <div className="relative px-4 sm:px-5 py-3" style={{ borderTop: '1px solid var(--card-border)' }}>
           {credits !== null && (
-            <p className="text-[10px] mb-1.5 opacity-30 text-right">
+            <p className="text-[10px] mb-1.5 text-right" style={{ color: 'var(--text-muted)' }}>
               {isEn ? 'Credits' : '餘額'}: {credits}
             </p>
           )}
@@ -237,8 +238,8 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
               onKeyDown={handleKeyDown}
               placeholder={isEn ? 'Ask the Master...' : '請問大師...'}
               rows={1}
-              className="flex-1 resize-none rounded-xl px-4 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] focus:border-[var(--gold)]/50 focus:outline-none focus:ring-1 focus:ring-[var(--gold)]/20 transition-all placeholder:text-white/20"
-              style={{ color: 'var(--text-primary, #e0e0e0)', maxHeight: '120px' }}
+              className="flex-1 resize-none rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-all"
+              style={{ color: 'var(--text-primary)', backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', maxHeight: '120px' }}
               disabled={loading}
             />
             <button
@@ -270,7 +271,7 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
         }
         .scrollbar-thin::-webkit-scrollbar { width: 4px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
       `}</style>
     </div>
   )
