@@ -226,7 +226,7 @@ async function executeTool(
         select: {
           name: true, birthDate: true, birthTime: true, birthPlace: true,
           gender: true, calendarType: true,
-          familyMembers: { select: { name: true, relationship: true, birthDate: true, birthTime: true, gender: true } },
+          familyMembers: { select: { name: true, relation: true, birthDate: true, birthTime: true, gender: true } },
         },
       })
       return user
