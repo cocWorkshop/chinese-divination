@@ -14,7 +14,7 @@ export default function SharePage() {
   const { data: session, status } = useSession()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copied, setCopied] = useState(false)
-  const [bonusCredits, setBonusCredits] = useState(25)
+  const [bonusCredits, setBonusCredits] = useState(3)
   const [visibleTypes, setVisibleTypes] = useState<string[]>([])
 
   const shareUrl = typeof window !== 'undefined' 
@@ -25,7 +25,7 @@ export default function SharePage() {
     fetch('/api/share/bonus')
       .then(r => r.json())
       .then(data => {
-        setBonusCredits((data.divination || 0) + (data.chat || 0))
+        setBonusCredits(data.shareBonus || (data.divination || 0) + (data.chat || 0))
       })
       .catch(catchAndReport('/api/share'))
     fetch('/api/divination/visibility')
