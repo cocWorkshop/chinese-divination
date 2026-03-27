@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { useLang } from '@/components/LanguageContext'
+import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { CREDIT_PACKS, type PackId } from '@/lib/creditPacks'
 
@@ -16,6 +17,8 @@ export default function SubscribePage() {
   const [loadingPack, setLoadingPack] = useState<PackId | null>(null)
   const [credits, setCredits] = useState<number | null>(null)
   const [costs, setCosts] = useState<Record<string, number> | null>(null)
+  const [visibility, setVisibility] = useState<Record<string, boolean> | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
   const success = searchParams.get('success')
   const canceled = searchParams.get('canceled')
@@ -27,8 +30,10 @@ export default function SubscribePage() {
         .then(data => {
           if (data.credits !== undefined) setCredits(data.credits)
           if (data.costs) setCosts(data.costs)
+          if (data.visibility) setVisibility(data.visibility)
+          setLoaded(true)
         })
-        .catch(() => {})
+        .catch(() => { setLoaded(true) })
     }
   }, [session])
 
@@ -69,29 +74,46 @@ export default function SubscribePage() {
           </p>
         </div>
 
-        {/* Combined: Current credits + cost table */}
-        {session && (credits !== null || costs) && (
-          <div className="glass-card rounded-xl p-4 mb-6 max-w-2xl mx-auto flex flex-col sm:flex-row items-center gap-4" style={{ border: '1px solid var(--border-gold)' }}>
-            {credits !== null && (
-              <div className="text-center sm:border-r sm:pr-6" style={{ borderColor: 'var(--border-gold)' }}>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{T(lang, '當前額度', 'Credits')}</p>
-                <span className="text-3xl font-bold" style={{ color: 'var(--gold)' }}>{credits}</span>
-                <span className="text-xs ml-1" style={{ color: 'var(--text-secondary)' }}>{T(lang, '點', 'pts')}</span>
-              </div>
-            )}
-            {costs && (
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs justify-center" style={{ color: 'var(--text-secondary)' }}>
-                <span>🏛️ {T(lang, '八字', 'BaZi')} <b style={{ color: 'var(--gold)' }}>{costs.bazi}</b></span>
-                <span>⭐ {T(lang, '紫微', 'ZiWei')} <b style={{ color: 'var(--gold)' }}>{costs.ziwei}</b></span>
-                <span>🧭 {T(lang, '奇門', 'QiMen')} <b style={{ color: 'var(--gold)' }}>{costs.qimen}</b></span>
-                <span>🌸 {T(lang, '梅花', 'MeiHua')} <b style={{ color: 'var(--gold)' }}>{costs.meihua}</b></span>
-                <span>🪙 {T(lang, '六爻', 'LiuYao')} <b style={{ color: 'var(--gold)' }}>{costs.liuyao}</b></span>
-                <span>📖 {T(lang, '易經', 'IChing')} <b style={{ color: 'var(--gold)' }}>{costs.iching}</b></span>
-                <span>🏯 {T(lang, '風水', 'FengShui')} <b style={{ color: 'var(--gold)' }}>{costs.fengshui}</b></span>
-                <span>💬 {T(lang, '問答', 'Chat')} <b style={{ color: 'var(--gold)' }}>{costs.chat}</b></span>
-              </div>
-            )}
-          </div>
+        {/* Combined: Current credits + cost table with animation */}
+        {session && loaded && (credits !== null || costs) && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="glass-card rounded-xl p-4 mb-6 max-w-2xl mx-auto"
+            style={{ border: '1px solid var(--border-gold)' }}
+          >
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              {credits !== null && (
+                <div className="text-center sm:border-r sm:pr-6 flex-shrink-0" style={{ borderColor: 'var(--border-gold)' }}>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{T(lang, '當前額度', 'Credits')}</p>
+                  <span className="text-3xl font-bold" style={{ color: 'var(--gold)' }}>{credits}</span>
+                  <span className="text-xs ml-1" style={{ color: 'var(--text-secondary)' }}>{T(lang, '點', 'pts')}</span>
+                </div>
+              )}
+              {costs && (
+                <div className="flex-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  {/* Divination */}
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
+                    {(visibility?.bazi !== false) && <span>🏛️ {T(lang, '八字', 'BaZi')} <b style={{ color: 'var(--gold)' }}>{costs.bazi}</b>{T(lang, '點/次', 'pts')}</span>}
+                    {(visibility?.ziwei !== false) && <span>⭐ {T(lang, '紫微', 'ZiWei')} <b style={{ color: 'var(--gold)' }}>{costs.ziwei}</b>{T(lang, '點/次', 'pts')}</span>}
+                    {(visibility?.qimen !== false) && <span>🧭 {T(lang, '奇門', 'QiMen')} <b style={{ color: 'var(--gold)' }}>{costs.qimen}</b>{T(lang, '點/次', 'pts')}</span>}
+                    {(visibility?.meihua !== false) && <span>🌸 {T(lang, '梅花', 'MeiHua')} <b style={{ color: 'var(--gold)' }}>{costs.meihua}</b>{T(lang, '點/次', 'pts')}</span>}
+                    {(visibility?.liuyao !== false) && <span>🪙 {T(lang, '六爻', 'LiuYao')} <b style={{ color: 'var(--gold)' }}>{costs.liuyao}</b>{T(lang, '點/次', 'pts')}</span>}
+                    {(visibility?.iching !== false) && <span>📖 {T(lang, '易經', 'IChing')} <b style={{ color: 'var(--gold)' }}>{costs.iching}</b>{T(lang, '點/次', 'pts')}</span>}
+                    {(visibility?.fengshui !== false) && <span>🏯 {T(lang, '風水', 'FengShui')} <b style={{ color: 'var(--gold)' }}>{costs.fengshui}</b>{T(lang, '點/次', 'pts')}</span>}
+                  </div>
+                  {/* Separator */}
+                  <div className="my-1.5 h-px mx-auto max-w-[200px]" style={{ background: 'var(--border-gold)', opacity: 0.3 }} />
+                  {/* Chat & Master */}
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
+                    <span>💬 {T(lang, '玄機問答', 'Chat Q&A')} <b style={{ color: 'var(--gold)' }}>{costs.chat}</b>{T(lang, '點/次', 'pts')}</span>
+                    <span>🧙 {T(lang, '玄機大師', 'Ask Master')} <b style={{ color: 'var(--gold)' }}>{costs.master}</b>{T(lang, '點/輪', 'pts/turn')}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
         )}
 
         {/* Status messages */}
