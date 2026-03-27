@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
@@ -28,6 +28,16 @@ function RegisterInner() {
   const [loading, setLoading] = useState(false)
   const [verificationSent, setVerificationSent] = useState(false)
   const [resending, setResending] = useState(false)
+  const [registerBonus, setRegisterBonus] = useState(6)
+
+  useEffect(() => {
+    fetch('/api/share/bonus')
+      .then(r => r.json())
+      .then(data => {
+        if (data.registerBonus !== undefined) setRegisterBonus(data.registerBonus)
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,7 +65,8 @@ function RegisterInner() {
       const data = await res.json()
       if (data.needsVerification) {
         setVerificationSent(true)
-        toast.success(lang === 'zh-TW' ? '🎁 註冊成功！已獲得 6 點機緣' : '🎁 Registered! You got 6 Karma', { duration: 5000 })
+        const totalBonus = (data.registerBonus || 0) + (data.shareBonus || 0)
+        toast.success(lang === 'zh-TW' ? `🎁 註冊成功！已獲得 ${totalBonus} 點機緣` : `🎁 Registered! You got ${totalBonus} Karma`, { duration: 5000 })
         return
       }
       router.push('/login')
@@ -119,7 +130,7 @@ function RegisterInner() {
               🎁 {lang === 'zh-TW' ? '您的免費機緣' : 'Your free Karma'}
             </p>
             <div className="space-y-1" style={{ color: 'var(--text-secondary)' }}>
-              <p>✦ {lang === 'zh-TW' ? '6 點機緣已到帳' : '6 Karma granted'}</p>
+              <p>✦ {lang === 'zh-TW' ? `${registerBonus} 點機緣已到帳` : `${registerBonus} Karma granted`}</p>
               <p>✦ {lang === 'zh-TW' ? '每日登入再送機緣' : 'Daily login Karma bonus'}</p>
             </div>
           </div>

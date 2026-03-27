@@ -36,6 +36,7 @@ export default function AdminSettings() {
     maintenanceMode: 'false',
     model1Name: 'anthropic/claude-3-5-haiku',
     model1Label: '標準模型 / Standard',
+    registerBonus: '6',
     shareBonus: '20',
     shareBonusChat: '5',
     dailyBonusCredits: '2',
@@ -136,6 +137,7 @@ export default function AdminSettings() {
           <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
             <span>🔗</span> 分享設置 / Share Settings
           </h2>
+          {numberField('registerBonus', '註冊贈送機緣 / Register bonus Karma', '新用戶註冊時贈送的機緣點數')}
           {numberField('shareBonus', '分享獎勵機緣 / Karma per share', '分享者和受邀者各獲得此數量的機緣')}
           {numberField('shareBonusChat', '分享獎勵機緣(聊天) / Share bonus chat (legacy)', '舊版兼容')}
           {numberField('dailyBonusCredits', '每日登入機緣 / Daily login Karma', '每日首次登入贈送的機緣點數')}

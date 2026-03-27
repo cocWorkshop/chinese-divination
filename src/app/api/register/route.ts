@@ -39,28 +39,27 @@ export async function POST(req: NextRequest) {
 
     const hashed = await hash(password, 12)
 
-    // Check referral code and get bonus amounts
-    let bonus1 = 0, bonusChat = 0
+    // Read register bonus from admin settings
+    const registerBonusSetting = await prisma.adminSetting.findUnique({ where: { key: 'registerBonus' } })
+    const registerBonus = parseInt(registerBonusSetting?.value ?? '6', 10) || 6
+
+    // Check referral code and get share bonus amounts
+    let shareBonus = 0
     let shareLink: { id: string; userId: string; code: string; used: boolean } | null = null
     if (referralCode) {
       shareLink = await prisma.shareLink.findUnique({ where: { code: referralCode } })
       if (shareLink && !shareLink.used && shareLink.userId) {
-        const [s1, s2] = await Promise.all([
-          prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } }),
-          prisma.adminSetting.findUnique({ where: { key: 'shareBonusChat' } }),
-        ])
-        bonus1 = parseInt(s1?.value ?? '1')
-        bonusChat = parseInt(s2?.value ?? '2')
+        const shareBonusSetting = await prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } })
+        shareBonus = parseInt(shareBonusSetting?.value ?? '3', 10) || 3
       }
     }
 
+    const totalInitialCredits = registerBonus + shareBonus
     const vToken = generateToken()
     const user = await prisma.user.create({
       data: {
         email, password: hashed, name: name || null, language: language || 'zh-TW',
-        divinationCredits: 3 + bonus1,
-        chatCredits: 3 + bonusChat,
-        credits: 3 + bonus1 + bonusChat,
+        credits: totalInitialCredits,
         emailVerified: false,
         verificationToken: vToken,
         tokenExpiry: tokenExpiry(24),
@@ -87,9 +86,7 @@ export async function POST(req: NextRequest) {
         prisma.user.update({
           where: { id: shareLink.userId },
           data: {
-            divinationCredits: { increment: bonus1 },
-            ...(bonusChat > 0 && { chatCredits: { increment: bonusChat } }),
-            credits: { increment: bonus1 + bonusChat },
+            credits: { increment: shareBonus },
           },
         }),
       ])
@@ -100,8 +97,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       id: user.id, email: user.email,
       needsVerification: true,
-      ...(bonus1 > 0 && { bonusModel1: bonus1 }),
-      ...(bonusChat > 0 && { bonusChat: bonusChat }),
+      registerBonus,
+      ...(shareBonus > 0 && { shareBonus }),
     }, { status: 201 })
   } catch (e) {
     console.error(e)
