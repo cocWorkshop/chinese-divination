@@ -153,7 +153,7 @@ export default function DivinationFormPage() {
         // Daily bonus toast
         if (data.dailyBonusGranted && data.dailyBonus) {
           const c = data.dailyBonus.credits
-          toast.success(T(lang, `🎁 每日登入獎勵：+${c} 點額度`, `🎁 Daily login bonus: +${c} credits`), { duration: 4000 })
+          toast.success(T(lang, `🎁 每日登入獎勵：+${c} 點機緣`, `🎁 Daily login bonus: +${c} Karma`), { duration: 4000 })
         }
 
         // Credits
@@ -1068,7 +1068,7 @@ export default function DivinationFormPage() {
             <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50">
               <div className="flex items-center justify-between">
                 <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">
-                  {T(lang, '💰 額度', '💰 Credits')}
+                  {T(lang, '✨ 機緣', '✨ Karma')}
                 </span>
                 <span className="text-gold font-mono font-bold">
                   {credits.credits === 999 ? '∞' : (credits.credits ?? 0)}
@@ -1164,7 +1164,7 @@ export default function DivinationFormPage() {
                 className="w-4 h-4 rounded border-gold/30 accent-gold"
               />
               <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                {T(lang, '只排盤（不調用AI解盤，不扣額度）', 'Paipan only (no AI interpretation, no credit cost)')}
+                {T(lang, '只排盤（不調用AI解盤，不扣機緣）', 'Paipan only (no AI interpretation, no Karma cost)')}
               </span>
             </label>
           )}
@@ -1182,11 +1182,11 @@ export default function DivinationFormPage() {
                     onClick={() => router.push('/subscribe')}
                     className="w-full py-4 rounded-xl font-semibold text-lg transition-colors bg-gradient-to-r from-amber-600 to-gold text-navy-950 hover:opacity-90"
                   >
-                    {T(lang, `額度不足（需要 ${cost} 點）· 購買額度 →`, `Not enough credits (need ${cost}) · Purchase →`)}
+                    {T(lang, `機緣不足（需要 ${cost}）· 前往機緣商店 →`, `Not enough Karma (need ${cost}) · Karma Shop →`)}
                   </button>
                   <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
                     {T(lang,
-                      '💡 每日登入 +2 | 分享給朋友 +額度 | 更多方式見額度商店',
+                      '💡 每日登入 +2 | 分享給朋友 +機緣 | 更多方式見機緣商店',
                       '💡 Daily login +2 | Share with friends | More at Credits Store'
                     )}
                   </p>
