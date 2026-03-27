@@ -69,11 +69,11 @@ interface FamilyMember {
 }
 
 const typeInfo: Record<string, { zhName: string; twName: string; enName: string; symbol: string }> = {
-  bazi: { zhName: '八字命理', twName: '八字命理', enName: 'BaZi Analysis', symbol: '☰' },
-  iching: { zhName: '易经占卜', twName: '易經占卜', enName: 'I Ching Oracle', symbol: '☯' },
-  liuyao: { zhName: '六爻占卜', twName: '六爻占卜', enName: 'Liu Yao Divination', symbol: '☯' },
+  bazi: { zhName: '八字命理', twName: '八字命理', enName: 'BaZi Analysis', symbol: '🏛️' },
+  iching: { zhName: '易经占卜', twName: '易經占卜', enName: 'I Ching Oracle', symbol: '📖' },
+  liuyao: { zhName: '六爻占卜', twName: '六爻占卜', enName: 'Liu Yao Divination', symbol: '🪙' },
   ziwei: { zhName: '紫微斗数', twName: '紫微斗數', enName: 'Zi Wei Dou Shu', symbol: '⭐' },
-  qimen: { zhName: '奇门遁甲', twName: '奇門遁甲', enName: 'Qi Men Dun Jia', symbol: '⚡' },
+  qimen: { zhName: '奇门遁甲', twName: '奇門遁甲', enName: 'Qi Men Dun Jia', symbol: '🧭' },
   fengshui: { zhName: '风水布局', twName: '風水佈局', enName: 'Feng Shui Analysis', symbol: '🏯' },
   meihua: { zhName: '梅花易数', twName: '梅花易數', enName: 'Plum Blossom Numerology', symbol: '🌸' },
   other: { zhName: '梅花六壬', twName: '梅花六壬', enName: 'Plum Blossom & Liu Ren', symbol: '🌸' },
@@ -135,7 +135,7 @@ export default function DivinationFormPage() {
   const [isSouthernHemisphere, setIsSouthernHemisphere] = useState(false)
   const [tierChecked, setTierChecked] = useState(false)
 
-  const info = typeInfo[type] || { zhName: '占卜', enName: 'Divination', symbol: '☯' }
+  const info = typeInfo[type] || { zhName: '占卜', enName: 'Divination', symbol: '📖' }
 
   // Tier check — no longer role-gated, just mark as checked
   useEffect(() => {
