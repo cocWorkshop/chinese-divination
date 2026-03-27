@@ -17,12 +17,14 @@ export async function POST(req: NextRequest) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const userId = session.metadata?.userId
-    const divinationCredits = parseInt(session.metadata?.divinationCredits || '0', 10)
-    const chatCredits = parseInt(session.metadata?.chatCredits || '0', 10)
+    const credits = parseInt(session.metadata?.credits || '0', 10)
+    // Legacy fallback: if old packs used divinationCredits/chatCredits
+    const legacyDiv = parseInt(session.metadata?.divinationCredits || '0', 10)
+    const legacyChat = parseInt(session.metadata?.chatCredits || '0', 10)
+    const totalCredits = credits > 0 ? credits : (legacyDiv + legacyChat)
 
-    if (userId && (divinationCredits > 0 || chatCredits > 0)) {
+    if (userId && totalCredits > 0) {
       // Idempotency: use Stripe session ID as key to prevent duplicate credit grants.
-      // upsert on AdminSetting — if key already exists, this is a duplicate webhook.
       const eventKey = `stripe_processed:${session.id}`
       try {
         await prisma.adminSetting.create({
@@ -37,11 +39,10 @@ export async function POST(req: NextRequest) {
       await prisma.user.update({
         where: { id: userId },
         data: {
-          divinationCredits: { increment: divinationCredits },
-          chatCredits: { increment: chatCredits },
+          credits: { increment: totalCredits },
         },
       })
-      console.log(`[stripe] Credits granted: user=${userId} div=${divinationCredits} chat=${chatCredits} session=${session.id}`)
+      console.log(`[stripe] Credits granted: user=${userId} credits=${totalCredits} session=${session.id}`)
     }
   }
 

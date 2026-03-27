@@ -16,11 +16,11 @@ interface VisibilityItem {
 }
 
 const serviceMap: Record<string, { symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }> = {
-  bazi: { symbol: '☰', twName: '八字命理', enName: 'BaZi', twDesc: '四柱八字，推演命運', enDesc: 'Four Pillars of Destiny' },
-  iching: { symbol: '☯', twName: '易經占卜', enName: 'I Ching', twDesc: '六十四卦，洞察先機', enDesc: 'Book of Changes Oracle' },
-  liuyao: { symbol: '☯', twName: '六爻占卜', enName: 'Liu Yao', twDesc: '銅錢搖卦，精準斷事', enDesc: 'Six Lines Divination' },
+  bazi: { symbol: '🏛️', twName: '八字命理', enName: 'BaZi', twDesc: '四柱八字，推演命運', enDesc: 'Four Pillars of Destiny' },
+  iching: { symbol: '📖', twName: '易經占卜', enName: 'I Ching', twDesc: '六十四卦，洞察先機', enDesc: 'Book of Changes Oracle' },
+  liuyao: { symbol: '🪙', twName: '六爻占卜', enName: 'Liu Yao', twDesc: '銅錢搖卦，精準斷事', enDesc: 'Six Lines Divination' },
   ziwei: { symbol: '⭐', twName: '紫微斗數', enName: 'Zi Wei', twDesc: '星盤命宮，紫微護命', enDesc: 'Purple Star Astrology' },
-  qimen: { symbol: '⚡', twName: '奇門遁甲', enName: 'Qi Men', twDesc: '奇門佈局，謀事在天', enDesc: 'Qi Men Dun Jia' },
+  qimen: { symbol: '🧭', twName: '奇門遁甲', enName: 'Qi Men', twDesc: '奇門佈局，謀事在天', enDesc: 'Qi Men Dun Jia' },
   fengshui: { symbol: '🏯', twName: '風水佈局', enName: 'Feng Shui', twDesc: '藏風聚氣，宅運興旺', enDesc: 'Wind & Water Harmony' },
   meihua: { symbol: '🌸', twName: '梅花易數', enName: 'Plum Blossom', twDesc: '以數起卦，體用生克，精準預測具體事項', enDesc: 'Plum Blossom numerology for precise event prediction' },
 }

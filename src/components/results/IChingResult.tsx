@@ -4,19 +4,9 @@ import XuanjiChatCard from './XuanjiChatCard'
 import { motion } from 'framer-motion'
 import { useLang } from '../LanguageContext'
 
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import type { DivinationResultProps, IChingData } from '@/types/divination'
 
-interface IChingData {
-  hexagram: {
-    number: number; name: string; chineseName: string
-    upperTrigram: { name: string; symbol: string; element: string }
-    lowerTrigram: { name: string; symbol: string; element: string }
-    lines: number[]
-  }
-  judgment: string; image: string; interpretation: string
-  changingLines: { position: number; text: string }[]
-  advice: string; outcome: string; keyPoints: string[]
-}
+const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 const outcomeColor: Record<string, string> = {
   '大吉': 'text-jade border-jade/40 bg-jade/10',
@@ -27,7 +17,7 @@ const outcomeColor: Record<string, string> = {
   '小凶': 'text-orange-300 border-orange-300/40 bg-orange-300/10',
 }
 
-export default function IChingResult({ data, rawResult, isShared, readingId, chatMessages }: { data: Record<string, unknown>; rawResult?: string; isShared?: boolean; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
+export default function IChingResult({ data, rawResult, isShared, readingId, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
   const d = data as unknown as IChingData
   const lines = d.hexagram?.lines || []
@@ -86,6 +76,9 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
         </motion.div>
       )}
 
+      {/* ═══ XUANJI Q&A ═══ */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />
+
       {/* Judgment & Image */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="glass-card rounded-xl p-5 border border-gold/20">
@@ -130,8 +123,7 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
         </div>
       </motion.div>
 
-      {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.25} />
+
     </div>
   )
 }

@@ -8,8 +8,8 @@ import QimenResult from './QimenResult'
 import FengshuiResult from './FengshuiResult'
 import OtherResult from './OtherResult'
 import LiuYaoResult from './LiuYaoResult'
-
-interface ChatMsg { role: 'user' | 'assistant'; content: string }
+import ResultErrorBoundary from '@/components/ResultErrorBoundary'
+import type { ChatMsg } from '@/types/divination'
 
 export default function ResultRenderer({ result, type, isShared, readingId, chatMessages }: {
   result: string; type: string; isShared?: boolean; readingId?: string | null; chatMessages?: ChatMsg[]
@@ -22,14 +22,27 @@ export default function ResultRenderer({ result, type, isShared, readingId, chat
     return <ReadingResult content={result} />
   }
 
-  switch (type) {
-    case 'bazi': return <BaziResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
-    case 'iching': return <IChingResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
-    case 'liuyao': return <LiuYaoResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
-    case 'ziwei': return <ZiweiResult data={parsed} isShared={isShared} rawResult={result} readingId={readingId} chatMessages={chatMessages} />
-    case 'qimen': return <QimenResult data={parsed} />
-    case 'fengshui': return <FengshuiResult data={parsed} />
-    case 'meihua': return <OtherResult data={parsed} />
-    default: return <OtherResult data={parsed} />
+  // Determine effective type (paipanOnly results may carry their own type)
+  const effectiveType = (parsed.paipanOnly ? (parsed.type as string) : null) || type
+
+  const props = { data: parsed, isShared, rawResult: result, readingId, chatMessages }
+
+  const renderResult = () => {
+    switch (effectiveType) {
+      case 'bazi': return <BaziResult {...props} />
+      case 'iching': return <IChingResult {...props} />
+      case 'liuyao': return <LiuYaoResult {...props} />
+      case 'ziwei': return <ZiweiResult {...props} />
+      case 'qimen': return <QimenResult {...props} />
+      case 'fengshui': return <FengshuiResult {...props} />
+      case 'meihua': return <OtherResult {...props} readingType="meihua" />
+      default: return <OtherResult {...props} readingType={effectiveType} />
+    }
   }
+
+  return (
+    <ResultErrorBoundary context={`ResultRenderer|type=${effectiveType}|readingId=${readingId || 'none'}`}>
+      {renderResult()}
+    </ResultErrorBoundary>
+  )
 }

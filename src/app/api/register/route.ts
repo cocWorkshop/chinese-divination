@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
         email, password: hashed, name: name || null, language: language || 'zh-TW',
         divinationCredits: 3 + bonus1,
         chatCredits: 3 + bonusChat,
+        credits: 3 + bonus1 + bonusChat,
         emailVerified: false,
         verificationToken: vToken,
         tokenExpiry: tokenExpiry(24),
@@ -88,6 +89,7 @@ export async function POST(req: NextRequest) {
           data: {
             divinationCredits: { increment: bonus1 },
             ...(bonusChat > 0 && { chatCredits: { increment: bonusChat } }),
+            credits: { increment: bonus1 + bonusChat },
           },
         }),
       ])

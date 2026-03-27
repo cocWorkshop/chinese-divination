@@ -75,7 +75,7 @@ export default function ProfilePage() {
   const [editForm, setEditForm] = useState<Partial<FamilyMember>>({})
   const [addingMember, setAddingMember] = useState(false)
   const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', calendarType: 'solar', timeMode: 'fuzzy', exactTime: '', birthLat: null, birthLng: null, birthEnvironment: '' })
-  const [credits, setCredits] = useState<{ divination: { remaining: number }; chat: { remaining: number } } | null>(null)
+  const [credits, setCredits] = useState<{ credits: number } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -220,20 +220,13 @@ export default function ProfilePage() {
             <h2 className="text-lg font-serif text-gold">{T(lang, '額度信息', 'Credits')}</h2>
           </div>
           <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { key: 'divination', label: T(lang, '🔮 占卜', '🔮 Divination'), remaining: credits.divination?.remaining ?? 0 },
-                { key: 'chat', label: T(lang, '💬 問答', '💬 Chat'), remaining: credits.chat?.remaining ?? 0 },
-              ].map(m => (
-                <div key={m.key} className="rounded-xl p-4 border border-gold/10 bg-navy-900/50">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-white/80">{m.label}</span>
-                    <span className="text-lg text-gold font-mono font-bold">
-                      {m.remaining === 999 ? '∞' : m.remaining}
-                    </span>
-                  </div>
-                </div>
-              ))}
+            <div className="rounded-xl p-4 border border-gold/10 bg-navy-900/50">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-white/80">{T(lang, '💰 額度 / Credits', '💰 Credits')}</span>
+                <span className="text-lg text-gold font-mono font-bold">
+                  {credits.credits === 999 ? '∞' : credits.credits}
+                </span>
+              </div>
             </div>
           </div>
         </div>

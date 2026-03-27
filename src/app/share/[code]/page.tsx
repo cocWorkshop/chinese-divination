@@ -14,8 +14,7 @@ export default function SharePage() {
   const { data: session, status } = useSession()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copied, setCopied] = useState(false)
-  const [bonus1, setBonus1] = useState(20)
-  const [bonusChat, setBonusChat] = useState(5)
+  const [bonusCredits, setBonusCredits] = useState(25)
   const [visibleTypes, setVisibleTypes] = useState<string[]>([])
 
   const shareUrl = typeof window !== 'undefined' 
@@ -26,8 +25,7 @@ export default function SharePage() {
     fetch('/api/share/bonus')
       .then(r => r.json())
       .then(data => {
-        if (data.divination) setBonus1(data.divination)
-        if (data.chat) setBonusChat(data.chat)
+        setBonusCredits((data.divination || 0) + (data.chat || 0))
       })
       .catch(catchAndReport('/api/share'))
     fetch('/api/divination/visibility')
@@ -114,16 +112,11 @@ export default function SharePage() {
             <h2 className="text-lg font-serif text-gold mb-3">註冊即獲永久額度</h2>
             <p className="text-white/50 text-xs mb-4">Register now and receive permanent credits</p>
             
-            <div className="flex justify-center gap-4 mb-4">
-              <div className="px-4 py-3 rounded-xl bg-gold/10 border border-gold/20">
-                <div className="text-2xl font-bold text-gold">{bonus1}</div>
-                <div className="text-white/50 text-xs mt-1">🔮 占卜額度</div>
-                <div className="text-white/30 text-[10px]">Divination Credits</div>
-              </div>
-              <div className="px-4 py-3 rounded-xl bg-gold/10 border border-gold/20">
-                <div className="text-2xl font-bold text-gold">{bonusChat}</div>
-                <div className="text-white/50 text-xs mt-1">💬 聊天額度</div>
-                <div className="text-white/30 text-[10px]">Chat Credits</div>
+            <div className="flex justify-center mb-4">
+              <div className="px-6 py-3 rounded-xl bg-gold/10 border border-gold/20">
+                <div className="text-2xl font-bold text-gold">{bonusCredits}</div>
+                <div className="text-white/50 text-xs mt-1">💰 額度點數</div>
+                <div className="text-white/30 text-[10px]">Credit Points</div>
               </div>
             </div>
 
@@ -238,9 +231,8 @@ export default function SharePage() {
 
           <div className="mt-4 py-3 px-4 rounded-lg bg-gold/5 border border-gold/10">
             <p className="text-gold/80 text-xs font-medium mb-1.5">🎁 分享永久額度</p>
-            <div className="flex justify-center gap-4 text-xs">
-              <span className="text-white/60">🔮 占卜 ×{bonus1}</span>
-              <span className="text-white/60">💬 聊天 ×{bonusChat}</span>
+            <div className="flex justify-center text-xs">
+              <span className="text-white/60">💰 額度 ×{bonusCredits}</span>
             </div>
           </div>
         </div>

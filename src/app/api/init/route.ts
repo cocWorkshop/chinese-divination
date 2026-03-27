@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkDivinationCredits, checkChatCredits, grantDailyBonus } from '@/lib/rateLimit'
+import { checkCredits, getCost, grantDailyBonus } from '@/lib/rateLimit'
 
 const DEFAULT_VISIBILITY = [
   { type: 'bazi', visible: true, order: 1 },
@@ -61,9 +61,8 @@ export async function GET() {
   // Grant daily bonus first (before checking credits so counts reflect bonus)
   const dailyBonusResult = await grantDailyBonus(userId)
 
-  const [divination, chat, timeoutSetting, bonusDiv, bonusChat, user, familyMembers, visibility] = await Promise.all([
-    checkDivinationCredits(userId),
-    checkChatCredits(userId),
+  const [creditCheck, timeoutSetting, bonusDiv, bonusChat, user, familyMembers, visibility, costs] = await Promise.all([
+    checkCredits(userId, 'bazi'),
     prisma.adminSetting.findUnique({ where: { key: 'llmTimeoutSeconds' } }),
     prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } }),
     prisma.adminSetting.findUnique({ where: { key: 'shareBonusChat' } }),
@@ -80,15 +79,28 @@ export async function GET() {
       orderBy: { createdAt: 'asc' },
     }),
     visibilityPromise,
+    Promise.all([
+      getCost('bazi'), getCost('ziwei'), getCost('qimen'),
+      getCost('meihua'), getCost('iching'), getCost('liuyao'),
+      getCost('fengshui'), getCost('chat'),
+    ]),
   ])
 
+  const [costBazi, costZiwei, costQimen, costMeihua, costIching, costLiuyao, costFengshui, costChat] = costs
   const llmTimeoutSeconds = parseInt(timeoutSetting?.value || '240', 10) || 240
 
   return NextResponse.json({
     credits: {
-      divination: { remaining: divination.remaining },
-      chat: { remaining: chat.remaining },
+      credits: creditCheck.remaining,
+      // Legacy fields
+      divination: { remaining: creditCheck.remaining },
+      chat: { remaining: creditCheck.remaining },
       llmTimeoutSeconds,
+      costs: {
+        bazi: costBazi, ziwei: costZiwei, qimen: costQimen,
+        meihua: costMeihua, iching: costIching, liuyao: costLiuyao,
+        fengshui: costFengshui, chat: costChat,
+      },
     },
     profile: user || null,
     shareBonus: {
@@ -98,6 +110,6 @@ export async function GET() {
     familyMembers,
     visibility,
     dailyBonusGranted: dailyBonusResult.granted,
-    dailyBonus: dailyBonusResult.granted ? { divination: dailyBonusResult.divination, chat: dailyBonusResult.chat } : undefined,
+    dailyBonus: dailyBonusResult.granted ? { credits: dailyBonusResult.credits } : undefined,
   })
 }

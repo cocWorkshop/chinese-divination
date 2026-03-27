@@ -1,4 +1,5 @@
 import { astro } from 'iztro'
+import { Solar } from 'lunar-typescript'
 
 // Map pinyin shichen names to iztro timeIndex (0-12)
 const SHICHEN_TO_TIME_INDEX: Record<string, number> = {
@@ -123,7 +124,15 @@ export function calculateZiwei(
   return {
     solarDate: chart.solarDate,
     lunarDate: chart.lunarDate,
-    chineseDate: chart.chineseDate,
+    // Compute four pillars (四柱) using lunar-typescript for correct solar-term-based month pillar
+    // (iztro's chart.chineseDate uses lunar month which is incorrect for 月柱)
+    chineseDate: (() => {
+      const solarHour = timeIndex === 0 ? 23 : timeIndex * 2 - 1
+      const solar = Solar.fromYmdHms(y, m, d, solarHour, 0, 0)
+      const lunar = solar.getLunar()
+      const ec = lunar.getEightChar()
+      return `${ec.getYear()} ${ec.getMonth()} ${ec.getDay()} ${ec.getTime()}`
+    })(),
     time: chart.time,
     timeRange: chart.timeRange,
     zodiac: chart.zodiac,

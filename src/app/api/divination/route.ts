@@ -8,7 +8,7 @@ import path from 'path'
 import OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkDivinationCredits, deductDivinationCredit, grantDailyBonus } from '@/lib/rateLimit'
+import { checkCredits, deductCredits } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
 import { calculateZiwei, ZiweiChart } from '@/lib/ziweiCalculator'
 import { calculateQimen, QimenChart } from '@/lib/qimenCalculator'
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { type, inputData, language, question, saveProfile, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember, retryReadingId } = await req.json()
+    const { type, inputData, language, question, saveProfile, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember, readingId: preCreatedReadingId, clientTime, paipanOnly } = await req.json()
     const targetType = rawTargetType === 'family' ? 'family' : 'self'
 
     if (!type || !inputData) {
@@ -189,14 +189,24 @@ export async function POST(req: NextRequest) {
       // Grant daily bonus on first activity
       await grantDailyBonus(session.user.id)
 
-      const rl = await checkDivinationCredits(session.user.id)
+    if (!preCreatedReadingId) {
+      // Legacy path: no init call, do full validation
+      const rl = await checkCredits(session.user.id, type)
+      if (settingsMap.maintenanceMode === 'true') {
+        return NextResponse.json(
+          { error: language !== 'en' ? '系統維護中，請稍後再試。' : 'System under maintenance. Please try again later.' },
+          { status: 503 }
+        )
+      }
+      if (settingsMap.divinationEnabled === 'false') {
+        return NextResponse.json(
+          { error: language !== 'en' ? '占卜功能暫時關閉，請稍後再試。' : 'Divination service is temporarily disabled.' },
+          { status: 503 }
+        )
+      }
       if (!rl.allowed) {
         return NextResponse.json(
-          {
-            error: language === 'en'
-              ? 'No divination credits remaining. Purchase more or share to earn credits.'
-              : '占卜額度已用完，請購買或分享獲取更多額度。',
-          },
+          { error: language === 'en' ? `Not enough credits (need ${rl.cost}, have ${rl.remaining}). Purchase more or share to earn credits.` : `額度不足（需要 ${rl.cost} 點，剩餘 ${rl.remaining} 點），請購買或分享獲取更多額度。` },
           { status: 429 }
         )
       }
@@ -402,7 +412,7 @@ ${question ? `特别关注：${question}` : ''}`
     } else if (type === 'qimen') {
       try {
         // Use current time for Qi Men chart (or parse from inputData if provided)
-        const qimenTime = inputData.dateTime ? new Date(inputData.dateTime) : new Date()
+        const qimenTime = inputData.readingDateTime ? new Date(inputData.readingDateTime) : (inputData.dateTime ? new Date(inputData.dateTime) : clientDate)
         qimenChart = calculateQimen(qimenTime)
         userMessage = `请为我进行奇门遁甲排盘分析。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
@@ -427,6 +437,12 @@ ${JSON.stringify({
     heavenStem: p.heavenStem,
     earthStem: p.earthStem,
   })),
+  patterns: qimenChart.patterns.map(p => ({
+    name: p.name,
+    type: p.type,
+    palace: p.palace,
+    description: p.description,
+  })),
 }, null, 2)}
 
 ## 用户输入
@@ -437,7 +453,7 @@ ${question ? `- 求测问题：${question}` : '- 求测问题：综合运势'}
 
 ## 解盘要求
 你是资深奇门遁甲术数师，请基于以上程序排出的奇门盘进行分析。重点：
-1. **situation**：分析当前格局，值符${qimenChart.zhiFu}和值使${qimenChart.zhiShi}的含义（100字以上）
+1. **situation**：分析当前格局，值符${qimenChart.zhiFu}和值使${qimenChart.zhiShi}的含义${qimenChart.patterns.length > 0 ? `，重点分析已检测到的格局：${qimenChart.patterns.map(p => p.name).join('、')}` : ''}（100字以上）
 2. **trend**：从九宫格局分析事态走向，特别关注天盘与地盘天干的关系（100字以上）
 3. **timing**：根据八门旺衰判断最佳时机（100字以上）
 4. **strategy**：综合星、门、神给出行动策略（100字以上）
@@ -614,6 +630,49 @@ ${question ? `特别关注：${question}` : ''}`
         },
       })
       pendingReadingId = pendingReading.id
+    }
+
+    // ═══ PAIPAN ONLY MODE (all logged-in users) ═══
+    // Skip LLM call, return raw calculation data only, no credit deduction
+    if (paipanOnly) {
+      const paipanResult: Record<string, unknown> = { paipanOnly: true, type }
+      if (baziChart) paipanResult.bazi = baziChart
+      if (ziweiChart) paipanResult.ziwei = ziweiChart
+      if (qimenChart) {
+        paipanResult.qimenChart = {
+          year: qimenChart.year,
+          month: qimenChart.month,
+          day: qimenChart.day,
+          hour: qimenChart.hour,
+          solarTerm: qimenChart.solarTerm,
+          round: qimenChart.round,
+          roundLabel: qimenChart.roundLabel,
+          zhiFu: qimenChart.zhiFu,
+          zhiShi: qimenChart.zhiShi,
+          palaces: qimenChart.palaces,
+          grid: qimenChart.grid,
+          patterns: qimenChart.patterns,
+        }
+      }
+      if (meihuaChart) paipanResult.meihua = meihuaChart
+      if (liuyaoChart) paipanResult.liuyao = liuyaoChart
+
+      // Save as reading if requested
+      if (shouldSaveHistory && pendingReadingId) {
+        await prisma.reading.update({
+          where: { id: pendingReadingId },
+          data: {
+            status: 'completed',
+            result: JSON.stringify(paipanResult),
+            calculationData: earlyCalculationDataStr || JSON.stringify(paipanResult),
+          },
+        }).catch(() => {})
+      }
+
+      return NextResponse.json({
+        reading: { id: pendingReadingId, result: JSON.stringify(paipanResult) },
+        paipanOnly: true,
+      })
     }
 
     if (!process.env.OPENROUTER_API_KEY) {
@@ -914,6 +973,7 @@ ${question ? `特别关注：${question}` : ''}`
         zhiShi: qimenChart.zhiShi,
         palaces: qimenChart.palaces,
         grid: qimenChart.grid,
+        patterns: qimenChart.patterns,
       }
     }
 
@@ -955,9 +1015,25 @@ ${question ? `特别关注：${question}` : ''}`
 
     const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
 
-    // Deduct divination credit after successful generation (skip on retry)
-    if (!isRetry) {
-      await deductDivinationCredit(session.user.id)
+    // CRITICAL: Save result + deduct credits immediately after LLM completes.
+    // These must complete even if client disconnects (Cloudflare 524 / timeout).
+    const postOps: Promise<unknown>[] = [
+      deductCredits(session.user.id, type),
+    ]
+
+    let savedReading: Record<string, unknown> | null = null
+    if (shouldSaveHistory && pendingReadingId) {
+      postOps.push(
+        prisma.reading.update({
+          where: { id: pendingReadingId },
+          data: {
+            status: 'completed',
+            result: resultToStore,
+            llmPrompt: llmPromptStr,
+            llmRawOutput: resultText,
+          },
+        }).then(r => { savedReading = r })
+      )
     }
 
     if (shouldSaveProfile && (type === 'bazi' || type === 'ziwei')) {

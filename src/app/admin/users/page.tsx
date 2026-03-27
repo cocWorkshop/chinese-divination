@@ -12,10 +12,12 @@ interface UserRow {
   role: string
   divinationCredits: number
   chatCredits: number
+  credits: number
   createdAt: string
   language: string
   usageDivination: number
   usageChat: number
+  usageMaster: number
   _count: { readings: number }
 }
 
@@ -27,8 +29,7 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [grantingId, setGrantingId] = useState<string | null>(null)
-  const [grantDiv, setGrantDiv] = useState(0)
-  const [grantChat, setGrantChat] = useState(0)
+  const [grantCredits, setGrantCredits] = useState(0)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -50,11 +51,10 @@ export default function AdminUsers() {
     else { const d = await res.json(); toast.error(d.error || 'Failed') }
   }
 
-  const grantCredits = async (id: string) => {
-    await update(id, { divinationCredits: grantDiv, chatCredits: grantChat })
+  const grantCreditsSubmit = async (id: string) => {
+    await update(id, { credits: grantCredits })
     setGrantingId(null)
-    setGrantDiv(0)
-    setGrantChat(0)
+    setGrantCredits(0)
   }
 
   const deleteUser = async (id: string, email: string) => {
@@ -119,31 +119,24 @@ export default function AdminUsers() {
                   <span title="占卜次數">🔮{u.usageDivination}</span>
                   <span className="text-white/30 mx-1">·</span>
                   <span title="問答次數">💬{u.usageChat}</span>
+                  <span className="text-white/30 mx-1">·</span>
+                  <span title="大師次數">🧙{u.usageMaster}</span>
                 </td>
                 <td className="px-4 py-3 text-center">
                   {grantingId === u.id ? (
-                    <div className="flex items-center gap-1 justify-center flex-wrap">
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-white/40">🔮</span>
-                        <input type="number" value={grantDiv} onChange={e => setGrantDiv(parseInt(e.target.value) || 0)}
-                          className="w-12 px-1 py-0.5 bg-navy-800 border border-gold/30 rounded text-white text-xs text-center" />
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-white/40">💬</span>
-                        <input type="number" value={grantChat} onChange={e => setGrantChat(parseInt(e.target.value) || 0)}
-                          className="w-12 px-1 py-0.5 bg-navy-800 border border-gold/30 rounded text-white text-xs text-center" />
-                      </div>
-                      <button onClick={() => grantCredits(u.id)} className="text-jade text-xs hover:text-jade-light">✓</button>
+                    <div className="flex items-center gap-1 justify-center">
+                      <span className="text-xs text-white/40">💰</span>
+                      <input type="number" value={grantCredits} onChange={e => setGrantCredits(parseInt(e.target.value) || 0)}
+                        className="w-16 px-1 py-0.5 bg-navy-800 border border-gold/30 rounded text-white text-xs text-center" />
+                      <button onClick={() => grantCreditsSubmit(u.id)} className="text-jade text-xs hover:text-jade-light">✓</button>
                       <button onClick={() => setGrantingId(null)} className="text-white/30 text-xs">✕</button>
                     </div>
                   ) : (
                     <button
-                      onClick={() => { setGrantingId(u.id); setGrantDiv(u.divinationCredits); setGrantChat(u.chatCredits) }}
+                      onClick={() => { setGrantingId(u.id); setGrantCredits(u.credits) }}
                       className="text-white/50 hover:text-gold text-xs transition-colors"
                     >
-                      <span className="text-white/50">🔮</span><span className="text-white/70">{u.divinationCredits}</span>
-                      <span className="text-white/20 mx-0.5">|</span>
-                      <span className="text-white/50">💬</span><span className="text-white/70">{u.chatCredits}</span>
+                      <span className="text-white/50">💰</span><span className="text-white/70 ml-0.5">{u.credits}</span>
                       <span className="text-white/30 ml-1">✎</span>
                     </button>
                   )}

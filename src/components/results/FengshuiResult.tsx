@@ -3,16 +3,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '../LanguageContext'
+import XuanjiChatCard from './XuanjiChatCard'
+import type { DivinationResultProps, FengshuiData } from '@/types/divination'
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
-
-interface FengshuiData {
-  flyingStar: { facing: string; period: string; mountainStar: string; waterStar: string }
-  rooms: { room: string; energy: string; suggestion: string }[]
-  sections: { overall: string; wealth: string; health: string; relationships: string }
-  remedies: { issue: string; solution: string }[]
-  keyAdvice: string[]
-}
 
 const energyColor: Record<string, string> = {
   '旺': 'bg-green-400',
@@ -24,7 +18,7 @@ const energyColor: Record<string, string> = {
 const DIRECTIONS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 const ZH_DIR: Record<string, string> = { N:'北', NE:'东北', E:'东', SE:'东南', S:'南', SW:'西南', W:'西', NW:'西北' }
 
-export default function FengshuiResult({ data }: { data: Record<string, unknown> }) {
+export default function FengshuiResult({ data, isShared, rawResult, readingId, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
   const d = data as unknown as FengshuiData
   const [openSection, setOpenSection] = useState<string | null>('overall')
@@ -162,6 +156,9 @@ export default function FengshuiResult({ data }: { data: Record<string, unknown>
           </div>
         </motion.div>
       )}
+
+      {/* 玄機問答 */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="fengshui" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
 
     </div>
   )

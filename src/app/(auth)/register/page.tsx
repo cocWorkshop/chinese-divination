@@ -55,7 +55,7 @@ function RegisterInner() {
       const data = await res.json()
       if (data.needsVerification) {
         setVerificationSent(true)
-        toast.success(lang === 'zh-TW' ? '🎁 註冊成功！已獲得 3 次占卜 + 3 次問答額度' : '🎁 Registered! You got 3 divination + 3 chat credits', { duration: 5000 })
+        toast.success(lang === 'zh-TW' ? '🎁 註冊成功！已獲得 6 點額度' : '🎁 Registered! You got 6 credits', { duration: 5000 })
         return
       }
       router.push('/login')
@@ -119,8 +119,8 @@ function RegisterInner() {
               🎁 {lang === 'zh-TW' ? '您的免費額度' : 'Your free credits'}
             </p>
             <div className="space-y-1" style={{ color: 'var(--text-secondary)' }}>
-              <p>✦ {lang === 'zh-TW' ? '占卜 3 次 + 問答 3 次（已到帳）' : '3 divination + 3 chat (credited)'}</p>
-              <p>✦ {lang === 'zh-TW' ? '每日登入再送 占卜 +1 / 問答 +1' : 'Daily login bonus: +1 / +1'}</p>
+              <p>✦ {lang === 'zh-TW' ? '6 點額度已到帳' : '6 credits granted'}</p>
+              <p>✦ {lang === 'zh-TW' ? '每日登入再送額度' : 'Daily login bonus credits'}</p>
             </div>
           </div>
           <div className="my-6 h-px bg-gold/20" />

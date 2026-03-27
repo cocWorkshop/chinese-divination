@@ -4,57 +4,10 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import YinYangIcon from '@/components/YinYangIcon'
 import { useLang } from '../LanguageContext'
+import XuanjiChatCard from './XuanjiChatCard'
+import type { DivinationResultProps, OtherData, MeihuaHexagram } from '@/types/divination'
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
-
-interface MeihuaTrigram {
-  name: string
-  symbol: string
-  element: string
-  lines: number[]
-}
-
-interface MeihuaHexagram {
-  name: string
-  upper: MeihuaTrigram
-  lower: MeihuaTrigram
-  lines: number[]
-}
-
-interface MeihuaChartInfo {
-  lunarYear?: number
-  lunarMonth?: number
-  lunarDay?: number
-  shichen?: number
-  yearBranch?: string
-  yearNum?: number
-  monthNum?: number
-  dayNum?: number
-  hourNum?: number
-  upperNum?: number
-  lowerNum?: number
-  changingLine?: number
-  benGua?: MeihuaHexagram
-  huGua?: MeihuaHexagram
-  bianGua?: MeihuaHexagram
-  tiGua?: MeihuaTrigram
-  yongGua?: MeihuaTrigram
-  tiYongRelation?: string
-  tiYongAnalysis?: string
-}
-
-interface OtherData {
-  subType: string
-  trigrams: {
-    upper: { name: string; symbol: string; element: string }
-    lower: { name: string; symbol: string; element: string }
-    transformed: { name: string; symbol: string; element: string }
-  }
-  sections: { situation: string; inquiry: string; interaction: string; timeline: string }
-  outcome: string
-  keyAdvice: string[]
-  meihuaChart?: MeihuaChartInfo
-}
 
 const outcomeColor: Record<string, string> = {
   '大吉': 'text-green-300 border-green-300/40 bg-green-300/10',
@@ -124,9 +77,20 @@ function HexagramDisplay({ hexagram, changingLine, label, lang }: { hexagram: Me
   )
 }
 
-export default function OtherResult({ data }: { data: Record<string, unknown> }) {
+function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
+  if (!data.paipanOnly || !data.meihua) return data
+  const meihuaData = data.meihua as Record<string, unknown>
+  return {
+    meihuaChart: meihuaData,
+    subType: 'meihua',
+    paipanOnly: true,
+    sections: { situation: '（只排盤模式，無AI解盤）' },
+  }
+}
+
+export default function OtherResult({ data, isShared, rawResult, readingId, readingType, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
-  const d = data as unknown as OtherData
+  const d = adaptPaipanData(data) as unknown as OtherData
   const [openSection, setOpenSection] = useState<string | null>('situation')
 
   const oc = d.outcome || '中'
@@ -141,47 +105,8 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
     { key: 'timeline', label: '時間推斷', en: 'Timing Prediction', icon: '⏰' },
   ]
 
-  return (
-    <div className="space-y-6">
-      {/* Accordion (Analysis) */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="space-y-2">
-        {accordionSections.map(s => (
-          <div key={s.key} className="glass-card rounded-xl border border-gold/20 overflow-hidden">
-            <button
-              onClick={() => setOpenSection(openSection === s.key ? null : s.key)}
-              className="w-full px-5 py-4 flex items-center justify-between text-left"
-            >
-              <span className="text-gold font-serif">{s.icon === '☯' ? <><YinYangIcon size={16} /> </> : s.icon} {lang === 'en' ? s.en : s.label}</span>
-              <span className="text-white/40">{openSection === s.key ? '▲' : '▼'}</span>
-            </button>
-            <AnimatePresence>
-              {openSection === s.key && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                  <div className="px-5 pb-4 text-white/70 text-sm leading-relaxed border-t border-gold/10 pt-3 whitespace-pre-wrap">
-                    {d.sections?.[s.key as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ))}
-      </motion.div>
-
-      {/* Key Advice */}
-      {d.keyAdvice && d.keyAdvice.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
-          <div className="grid gap-3">
-            {d.keyAdvice.map((advice, i) => (
-              <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
-                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{i + 1}</span>
-                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
+  const meihuaBlock = (
+      <>
       {/* Meihua Chart Info */}
       {hasMeihuaData && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -279,6 +204,55 @@ export default function OtherResult({ data }: { data: Record<string, unknown> })
           )}
         </motion.div>
       )}
+      </>
+    )
+
+  return (
+    <div className="space-y-6">
+      {/* Meihua cards always shown first (时间起卦, 卦象, 体用关系) */}
+      {meihuaBlock}
+
+      {/* Accordion (Analysis) */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="space-y-2">
+        {accordionSections.map(s => (
+          <div key={s.key} className="glass-card rounded-xl border border-gold/20 overflow-hidden">
+            <button
+              onClick={() => setOpenSection(openSection === s.key ? null : s.key)}
+              className="w-full px-5 py-4 flex items-center justify-between text-left"
+            >
+              <span className="text-gold font-serif">{s.icon === '☯' ? <><YinYangIcon size={16} /> </> : s.icon} {lang === 'en' ? s.en : s.label}</span>
+              <span className="text-white/40">{openSection === s.key ? '▲' : '▼'}</span>
+            </button>
+            <AnimatePresence>
+              {openSection === s.key && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                  <div className="px-5 pb-4 text-white/70 text-sm leading-relaxed border-t border-gold/10 pt-3 whitespace-pre-wrap">
+                    {d.sections?.[s.key as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* Key Advice */}
+      {d.keyAdvice && d.keyAdvice.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
+          <div className="grid gap-3">
+            {d.keyAdvice.map((advice, i) => (
+              <div key={i} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
+                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* 玄機問答 */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType={readingType || 'meihua'} readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
 
     </div>
   )

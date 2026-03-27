@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
       take: limit,
       select: {
         id: true, email: true, name: true, isAdmin: true, isPaid: true, role: true,
-        divinationCredits: true, chatCredits: true,
+        divinationCredits: true, chatCredits: true, credits: true,
+        usageDivination: true, usageChat: true, usageMaster: true,
         createdAt: true, language: true,
         _count: { select: { readings: true } },
       },

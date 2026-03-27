@@ -26,8 +26,12 @@ model User {
   isAdmin      Boolean     @default(false)
   isPaid       Boolean     @default(false)
   role         String      @default("user") // user | admin
-  divinationCredits  Int       @default(3)
-  chatCredits        Int       @default(3)
+  credits            Int       @default(3)  // unified credit points
+  divinationCredits  Int       @default(3)  // deprecated — kept for migration
+  chatCredits        Int       @default(3)  // deprecated — kept for migration
+  usageDivination    Int       @default(0)  // audit: total divination count
+  usageChat          Int       @default(0)  // audit: total chat Q&A rounds
+  usageMaster        Int       @default(0)  // audit: total master conversation turns
   lastDailyBonus     DateTime?
   emailVerified     Boolean   @default(false)
   verificationToken String?   @unique
@@ -52,6 +56,7 @@ model User {
   rateLimits    RateLimit[]
   shareLinks    ShareLink[]
   familyMembers FamilyMember[]
+  masterSession MasterSession?
 }
 
 model Reading {
@@ -237,5 +242,18 @@ model FrontendError {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@index([userId])
+}
+
+model MasterSession {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages         String   @db.Text // JSON array of {role, content, timestamp, toolCalls?}
+  portrait         String?  @db.Text // JSON: user portrait
+  totalCreditsUsed Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
   @@index([userId])
 }

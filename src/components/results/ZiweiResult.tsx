@@ -4,50 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
-
-interface ZiweiStar {
-  name: string
-  type?: string
-  brightness?: string
-  mutagen?: string
-}
-
-interface ZiweiPalaceData {
-  stars: string[]
-  majorStars?: ZiweiStar[]
-  minorStars?: ZiweiStar[]
-  adjectiveStars?: ZiweiStar[]
-  heavenlyStem?: string
-  earthlyBranch?: string
-  isBodyPalace?: boolean
-  changsheng12?: string
-  decadal?: { range: number[]; heavenlyStem: string; earthlyBranch: string }
-  ages?: number[]
-  analysis: string
-}
-
-interface ZiweiChartInfo {
-  solarDate?: string
-  lunarDate?: string
-  chineseDate?: string
-  time?: string
-  timeRange?: string
-  zodiac?: string
-  gender?: string
-  fiveElementsClass?: string
-  soul?: string
-  body?: string
-  siHua?: { star: string; type: string; palace: string }[]
-}
-
-interface ZiweiData {
-  mainStars: { name: string; palace: string; element?: string; brightness?: string; mutagen?: string }[]
-  palaces: Record<string, ZiweiPalaceData>
-  sections: { overview: string; career: string; marriage: string; wealth: string }
-  keyAdvice: string[]
-  luckyInfo: { numbers: number[]; colors: string[]; directions: string[] }
-  ziweiChart?: ZiweiChartInfo
-}
+import type { DivinationResultProps, ZiweiData, ZiweiPalaceData, ZiweiStar } from '@/types/divination'
 
 const mutagenColor: Record<string, string> = {
   '禄': 'text-green-400',
@@ -149,11 +106,34 @@ const sectionTabs = [
   { key: 'wealth', label: '財運', en: 'Wealth' },
 ]
 
-export default function ZiweiResult({ data, isShared, rawResult, readingId, chatMessages }: { data: Record<string, unknown>; isShared?: boolean; rawResult?: string; readingId?: string | null; chatMessages?: { role: 'user' | 'assistant'; content: string }[] }) {
+function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
+  if (!data.paipanOnly || !data.ziwei) return data
+  const z = data.ziwei as Record<string, unknown>
+
+  // Convert palaces array to Record<name, data> if needed
+  let palacesRecord: Record<string, unknown> = {}
+  if (Array.isArray(z.palaces)) {
+    for (const p of z.palaces as Array<{ name: string; [key: string]: unknown }>) {
+      palacesRecord[p.name] = p
+    }
+  } else {
+    palacesRecord = (z.palaces as Record<string, unknown>) || {}
+  }
+
+  return {
+    ziweiChart: z,
+    palaces: palacesRecord,
+    sections: { overview: '（只排盤模式，無AI解盤）', career: '', marriage: '', wealth: '' },
+    paipanOnly: true,
+  }
+}
+
+export default function ZiweiResult({ data, isShared, rawResult, readingId, chatMessages }: DivinationResultProps) {
   const { lang } = useLang()
-  const d = data as unknown as ZiweiData
+  const d = adaptPaipanData(data) as unknown as ZiweiData
   const [activeSection, setActiveSection] = useState('overview')
   const [selectedPalace, setSelectedPalace] = useState<string | null>(null)
+  const [showChart, setShowChart] = useState(!!d.paipanOnly)
 
   const palaces = d.palaces || {}
   const chart = d.ziweiChart
@@ -181,48 +161,23 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
 
   return (
     <div className="space-y-6">
-      {/* Sections (Analysis Tabs) */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <div className="flex flex-wrap gap-1 mb-4">
-          {sectionTabs.map(s => (
-            <button
-              key={s.key}
-              onClick={() => setActiveSection(s.key)}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}
-            >
-              {lang === 'en' ? s.en : s.label}
-            </button>
-          ))}
+      {/* ═══ CHART DATA (Collapsible, default collapsed) ═══ */}
+      <button onClick={() => setShowChart(!showChart)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
+        style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--gold)' }}>
+        <span className="font-serif flex items-center gap-2">⭐ {T(lang, '紫微命盤', 'Zi Wei Chart')}</span>
+        <motion.span animate={{ rotate: showChart ? 180 : 0 }} transition={{ duration: 0.2 }}>▼</motion.span>
+      </button>
 
-        </div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeSection}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-          >
-            <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
-              {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Key Advice */}
-      {d.keyAdvice && d.keyAdvice.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
-          <div className="grid gap-3">
-            {d.keyAdvice.map((advice, idx) => (
-              <div key={`advice-${idx}`} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
-                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{idx + 1}</span>
-                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
+      <AnimatePresence initial={false}>
+      {showChart && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-4 overflow-hidden"
+        >
 
       {/* Chart Info Bar */}
       {hasProgrammaticData && (
@@ -334,7 +289,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
               // Fallback: find palace by position in original palace order if no branch mapping
               const palaceName = palaceInfo?.palaceName
               const pData = palaceInfo?.data
-              const hasStars = pData && pData.stars && pData.stars.length > 0
+              const hasStars = pData && ((pData.majorStars && pData.majorStars.length > 0) || (pData.minorStars && pData.minorStars.length > 0))
               const isSoul = palaceName === '命宫'
 
               return (
@@ -447,7 +402,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
         )}
       </AnimatePresence>
 
-      {/* Lucky Info */}
+      {/* Lucky Info (inside chart collapsible) */}
       {d.luckyInfo && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="grid grid-cols-3 gap-2 sm:gap-3">
           {d.luckyInfo.numbers?.length > 0 && (
@@ -471,8 +426,55 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
         </motion.div>
       )}
 
-      {/* Xuanji Chat */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.25} />
+        </motion.div>
+      )}
+      </AnimatePresence>
+
+      {/* ═══ SECTIONS TABS (Analysis) ═══ */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <div className="flex flex-wrap gap-1 mb-4">
+          {sectionTabs.map(s => (
+            <button
+              key={s.key}
+              onClick={() => setActiveSection(s.key)}
+              className={`px-4 py-2 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}
+            >
+              {lang === 'en' ? s.en : s.label}
+            </button>
+          ))}
+        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+          >
+            <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+              {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* Key Advice */}
+      {d.keyAdvice && d.keyAdvice.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+          <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
+          <div className="grid gap-3">
+            {d.keyAdvice.map((advice, idx) => (
+              <div key={`advice-${idx}`} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
+                <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{idx + 1}</span>
+                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* ═══ XUANJI Q&A ═══ */}
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
+
     </div>
   )
 }

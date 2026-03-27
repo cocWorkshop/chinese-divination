@@ -6,7 +6,7 @@ import OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logLlmCall } from '@/lib/llmLogger'
-import { checkChatCredits, deductChatCredit } from '@/lib/rateLimit'
+import { checkCredits, deductCredits } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { message, history, readingContext, readingType, clientTime } = await req.json()
+    const { message, history, readingContext, readingType, readingId: chatReadingId, clientTime } = await req.json()
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
     }
@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
     }
 
         // Check chat credits
-    const chatLimit = await checkChatCredits(session.user.id)
+    const chatLimit = await checkCredits(session.user.id, 'chat')
     if (!chatLimit.allowed) {
       return NextResponse.json({
-        error: '問答額度已用完，請購買更多額度。\nChat credits exhausted. Please purchase more.',
+        error: `額度不足（需要 ${chatLimit.cost} 點，剩餘 ${chatLimit.remaining} 點），請購買更多額度。\nNot enough credits (need ${chatLimit.cost}, have ${chatLimit.remaining}). Please purchase more.`,
         remaining: 0,
       }, { status: 429 })
     }
@@ -39,13 +39,47 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '🔧 玄機尚未啟動，請聯繫管理員配置並重啟。\n🔧 The oracle is not set up yet. Please contact admin to configure and restart.' }, { status: 503 })
     }
 
-    // Load minimal user info (no family members, no readings - context comes from frontend)
+    // Load user info as fallback
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { name: true, birthDate: true, birthTime: true, birthPlace: true, gender: true },
     })
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Try to get the actual subject info from the reading's inputData
+    let subjectInfo = {
+      name: user.name || '未知',
+      birthDate: user.birthDate || '未填写',
+      birthTime: user.birthTime || '未填写',
+      birthPlace: user.birthPlace || '未填写',
+      gender: user.gender || '未填写',
+    }
+    let targetLabel = ''
+
+    if (chatReadingId) {
+      try {
+        const reading = await prisma.reading.findUnique({
+          where: { id: chatReadingId },
+          select: { inputData: true, targetType: true, familyMemberId: true, familyMember: { select: { name: true, relation: true } } },
+        })
+        if (reading?.inputData) {
+          const input = reading.inputData as Record<string, unknown>
+          // Use the inputData which contains the actual subject's info
+          if (input.birthDate) subjectInfo.birthDate = String(input.birthDate)
+          if (input.birthTime || input.exactTime) subjectInfo.birthTime = String(input.exactTime || input.birthTime)
+          if (input.birthPlace) subjectInfo.birthPlace = String(input.birthPlace)
+          if (input.gender) subjectInfo.gender = String(input.gender)
+          // For family member readings, use their name
+          if (reading.targetType === 'family' && reading.familyMember) {
+            subjectInfo.name = reading.familyMember.name || reading.familyMember.relation
+            targetLabel = `（${reading.familyMember.relation}${reading.familyMember.name ? ' · ' + reading.familyMember.name : ''}）`
+          }
+        }
+      } catch {
+        // Fall back to user info
+      }
     }
 
     // Parse reading context from frontend (the current divination result)
@@ -70,12 +104,12 @@ export async function POST(req: NextRequest) {
     const systemPrompt = `你是一位专业的${currentType}解盘师。你正在帮助用户深入分析他们刚刚获得的${currentType}预测结果。
 今天日期：${todayStr}。
 
-事主信息：
-- 姓名：${user.name || '未知'}
-- 出生日期：${user.birthDate || '未填写'}
-- 出生时辰：${user.birthTime || '未填写'}
-- 出生地：${user.birthPlace || '未填写'}
-- 性别：${user.gender || '未填写'}
+事主信息${targetLabel}：
+- 姓名：${subjectInfo.name}
+- 出生日期：${subjectInfo.birthDate}
+- 出生时辰：${subjectInfo.birthTime}
+- 出生地：${subjectInfo.birthPlace}
+- 性别：${subjectInfo.gender}
 
 当前${currentType}预测结果：
 ${readingData || '（无预测数据）'}
@@ -157,17 +191,16 @@ ${readingData || '（无预测数据）'}
     })
 
     // Deduct chat credit
-    await deductChatCredit(session.user.id)
+    await deductCredits(session.user.id, 'chat')
 
     // Fetch updated credits to return to frontend
-    const updatedCredits = await checkChatCredits(session.user.id)
+    const updatedCredits = await checkCredits(session.user.id, 'chat')
 
     // Generate condensed summary in background (fire-and-forget)
     return NextResponse.json({
       reply,
-      chatCredits: {
-        remaining: updatedCredits.remaining,
-      },
+      credits: updatedCredits.remaining,
+      chatCredits: { remaining: updatedCredits.remaining },
     })
   } catch (e: unknown) {
     const err = e as Error

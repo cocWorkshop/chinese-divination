@@ -34,6 +34,26 @@ const suggestedQuestions: Record<string, { zh: string; en: string }[]> = {
     { zh: '事情最大的阻礙在哪？如何破解？', en: 'Where is the biggest obstacle? How to resolve it?' },
     { zh: '應期之前有什麼需要注意的？', en: 'What should I watch for before the timing arrives?' },
   ],
+  iching: [
+    { zh: '此卦的變爻暗示了什麼轉機？', en: 'What turning point do the changing lines suggest?' },
+    { zh: '卦象中有哪些隱藏的風險？', en: 'What hidden risks does the hexagram reveal?' },
+    { zh: '如何順應卦意做出最佳決策？', en: 'How to make the best decision following the hexagram?' },
+  ],
+  qimen: [
+    { zh: '此局中最關鍵的時機窗口在哪？', en: 'Where is the critical timing window in this formation?' },
+    { zh: '奇門格局暗示的最大陷阱是什麼？', en: 'What is the biggest trap indicated by this formation?' },
+    { zh: '如何借此局之勢實現最大突破？', en: 'How to leverage this formation for maximum breakthrough?' },
+  ],
+  meihua: [
+    { zh: '體用之間的生剋關係說明了什麼？', en: 'What does the relationship between Ti and Yong reveal?' },
+    { zh: '卦中互卦暗示了什麼隱藏因素？', en: 'What hidden factors does the mutual hexagram suggest?' },
+    { zh: '事態發展的最終結果會如何？', en: 'What will be the final outcome of this matter?' },
+  ],
+  fengshui: [
+    { zh: '目前格局中最需要化解的煞氣是什麼？', en: 'What negative energy needs resolving most urgently?' },
+    { zh: '如何利用方位來增強運勢？', en: 'How to use directions to enhance fortune?' },
+    { zh: '居家佈局有哪些需要調整的地方？', en: 'What adjustments are needed in the home layout?' },
+  ],
 }
 
 export default function XuanjiChat({ readingResult, readingType, readingId }: {
@@ -125,6 +145,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
           history: messages,
           readingContext: readingResult,
           readingType,
+          readingId: readingId || undefined,
           clientTime: new Date().toISOString(),
         }),
         signal: controller.signal,
@@ -133,7 +154,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
       const data = await res.json()
       if (res.ok) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
-        if (data.chatCredits) setChatRemaining(data.chatCredits.remaining)
+        if (data.credits != null) setChatRemaining(data.credits)
         // Save the new user+assistant pair to DB (fire and forget)
         if (readingId) {
           const now = new Date().toISOString()
@@ -207,7 +228,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
         <YinYangIcon size={48} />
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{T(lang, '請登入後使用玄機破', 'Please sign in to use Q&A')}</p>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{T(lang, '請登入後使用玄機問答', 'Please sign in to use Q&A')}</p>
         <a href="/login" className="px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-80 transition-colors"
           style={{ backgroundColor: 'var(--gold)', color: 'var(--bg-primary)' }}>
           {T(lang, '登入帳號', 'Sign In')}
@@ -228,12 +249,8 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
           /* Welcome + suggested questions */
           <div className="text-center py-4 sm:py-8">
             <div className="mb-4 sm:mb-6">
-              <YinYangIcon size={40} className="mx-auto mb-3" />
-              <h3 className="font-serif text-lg mb-1" style={{ color: 'var(--gold)' }}>
-                {T(lang, '玄機破', 'Q&A')}
-              </h3>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {T(lang, '破解命盤隱患，化險為夷', 'Decode hidden risks, turn danger into fortune')}
+                {T(lang, '針對此次結果，提出您的疑問', 'Ask questions about this reading')}
               </p>
             </div>
             <div className="space-y-2 max-w-sm mx-auto">
