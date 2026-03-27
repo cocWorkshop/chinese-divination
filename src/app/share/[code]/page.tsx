@@ -109,19 +109,19 @@ export default function SharePage() {
           {/* Bonus reward card */}
           <div className="glass-card rounded-2xl p-6 text-center border border-gold/20">
             <div className="text-2xl mb-3">🎁</div>
-            <h2 className="text-lg font-serif text-gold mb-3">註冊即獲永久額度</h2>
-            <p className="text-white/50 text-xs mb-4">Register now and receive permanent credits</p>
+            <h2 className="text-lg font-serif text-gold mb-3">註冊即獲永久機緣</h2>
+            <p className="text-white/50 text-xs mb-4">Register now and receive permanent Karma</p>
             
             <div className="flex justify-center mb-4">
               <div className="px-6 py-3 rounded-xl bg-gold/10 border border-gold/20">
                 <div className="text-2xl font-bold text-gold">{bonusCredits}</div>
-                <div className="text-white/50 text-xs mt-1">💰 額度點數</div>
+                <div className="text-white/50 text-xs mt-1">✨ 機緣點數</div>
                 <div className="text-white/30 text-[10px]">Credit Points</div>
               </div>
             </div>
 
             <p className="text-white/30 text-xs">
-              註冊後永久額度自動到帳 · Permanent credits auto-granted upon registration
+              註冊後永久機緣自動到帳 · Permanent Karma auto-granted upon registration
             </p>
           </div>
 
@@ -193,7 +193,7 @@ export default function SharePage() {
 
           <div className="mb-6">
             <h1 className="text-3xl font-serif text-gold mb-1">玄機 · 分享</h1>
-            <p className="text-white/50 text-sm">Share & Earn Credits</p>
+            <p className="text-white/50 text-sm">Share & Earn Karma</p>
           </div>
 
           <div className="inline-block p-4 rounded-xl border border-gold/20 bg-[#0a0f1e] mb-6">
@@ -224,15 +224,15 @@ export default function SharePage() {
           </div>
 
           <div className="py-3 px-6 bg-gold/5 border border-gold/20 rounded-xl text-white/60 text-sm">
-            分享此連結給朋友，對方註冊後雙方自動獲得永久額度
+            分享此連結給朋友，對方註冊後雙方自動獲得永久機緣
             <br />
-            <span className="text-white/40 text-xs">Share this link — both of you earn permanent credits when they register</span>
+            <span className="text-white/40 text-xs">Share this link — both of you earn permanent Karma when they register</span>
           </div>
 
           <div className="mt-4 py-3 px-4 rounded-lg bg-gold/5 border border-gold/10">
-            <p className="text-gold/80 text-xs font-medium mb-1.5">🎁 分享永久額度</p>
+            <p className="text-gold/80 text-xs font-medium mb-1.5">🎁 分享永久機緣</p>
             <div className="flex justify-center text-xs">
-              <span className="text-white/60">💰 額度 ×{bonusCredits}</span>
+              <span className="text-white/60">✨ 機緣 ×{bonusCredits}</span>
             </div>
           </div>
         </div>
