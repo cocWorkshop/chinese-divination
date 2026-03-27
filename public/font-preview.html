@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>玄機字體預覽 / Font Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=ZCOOL+QingKe+HuangYou&family=Quicksand:wght@400;600;700&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;700&family=Noto+Serif+SC:wght@400;700&family=Inter:wght@400;600&family=Long+Cang&family=Liu+Jian+Mao+Cao&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0f1e; color: #e8e0d0; padding: 20px; font-family: sans-serif; }
+h1 { text-align: center; color: #d4a853; font-size: 28px; margin-bottom: 30px; font-family: 'Noto Serif SC'; }
+.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; max-width: 1400px; margin: 0 auto; }
+.card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(212,168,83,0.2);
+  border-radius: 16px;
+  padding: 28px;
+  transition: border-color 0.3s;
+}
+.card:hover { border-color: rgba(212,168,83,0.5); }
+.card-title {
+  color: #d4a853;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(212,168,83,0.15);
+}
+.preview-section { margin-bottom: 20px; }
+.label { color: rgba(255,255,255,0.35); font-size: 11px; margin-bottom: 6px; }
+.brand { font-size: 56px; color: #d4a853; line-height: 1.2; margin-bottom: 4px; }
+.subtitle { font-size: 20px; color: rgba(255,255,255,0.7); margin-bottom: 16px; }
+.body-zh { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.8; margin-bottom: 12px; }
+.body-en { font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.7; margin-bottom: 16px; }
+.tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.tag {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(212,168,83,0.1);
+  color: #d4a853;
+  border: 1px solid rgba(212,168,83,0.2);
+}
+.btn {
+  display: inline-block;
+  padding: 10px 24px;
+  background: #d4a853;
+  color: #0a0f1e;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 8px;
+}
+.divider { height: 1px; background: rgba(212,168,83,0.1); margin: 16px 0; }
+.cost-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: rgba(255,255,255,0.5); }
+.cost-val { color: #d4a853; }
+.nav-demo {
+  display: flex; gap: 20px; padding: 10px 16px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 10px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.nav-brand { color: #d4a853; font-size: 22px; }
+.nav-link { color: rgba(255,255,255,0.6); font-size: 13px; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<h1>玄機字體風格預覽</h1>
+
+<!-- Style 1: Cute Modern -->
+<div class="grid">
+<div class="card">
+  <div class="card-title">方案一 · 可愛現代 Cute Modern</div>
+  
+  <div class="label">品牌 Brand — ZCOOL XiaoWei</div>
+  <div class="brand" style="font-family:'ZCOOL XiaoWei',serif">玄機</div>
+  <div class="subtitle" style="font-family:'ZCOOL XiaoWei',serif">古法智慧，現代傳承</div>
+  
+  <div class="nav-demo">
+    <span class="nav-brand" style="font-family:'ZCOOL XiaoWei',serif">玄機</span>
+    <span class="nav-link" style="font-family:'ZCOOL QingKe HuangYou',sans-serif">占卜</span>
+    <span class="nav-link" style="font-family:'ZCOOL QingKe HuangYou',sans-serif">機緣商店</span>
+    <span class="nav-link" style="font-family:'Quicksand',sans-serif;font-weight:600">Karma</span>
+  </div>
+
+  <div class="divider"></div>
+  <div class="label">正文中文 — ZCOOL QingKe HuangYou</div>
+  <div class="body-zh" style="font-family:'ZCOOL QingKe HuangYou',sans-serif">
+    玄機融合中國傳統命理學與現代AI技術，提供專業、深入的命理分析。我們傳承數千年的預測智慧，以現代語言為您解讀生命的玄機。
+  </div>
+  
+  <div class="label">正文英文 — Quicksand</div>
+  <div class="body-en" style="font-family:'Quicksand',sans-serif">
+    Xuanji combines ancient Chinese divination wisdom with modern AI technology, offering professional and insightful readings for your life journey.
+  </div>
+
+  <div class="cost-item">
+    <span style="font-family:'ZCOOL QingKe HuangYou'">🔮 八字排盤</span>
+    <span class="cost-val" style="font-family:'Quicksand';font-weight:700">5 Karma</span>
+  </div>
+  <div class="cost-item">
+    <span style="font-family:'ZCOOL QingKe HuangYou'">💬 玄機問答</span>
+    <span class="cost-val" style="font-family:'Quicksand';font-weight:700">2 Karma</span>
+  </div>
+
+  <div style="margin-top:16px">
+    <span class="btn" style="font-family:'Quicksand';font-weight:700">開始占卜 ✨</span>
+  </div>
+  
+  <div class="tags">
+    <span class="tag" style="font-family:'Quicksand'">Round</span>
+    <span class="tag" style="font-family:'ZCOOL QingKe HuangYou'">可愛</span>
+    <span class="tag" style="font-family:'Quicksand'">Modern</span>
+    <span class="tag" style="font-family:'ZCOOL QingKe HuangYou'">年輕化</span>
+  </div>
+</div>
+
+<!-- Style 2: Calligraphy Mystical -->
+<div class="card">
+  <div class="card-title">方案二 · 書法神秘 Calligraphy Mystical</div>
+  
+  <div class="label">品牌 Brand — Ma Shan Zheng</div>
+  <div class="brand" style="font-family:'Ma Shan Zheng',cursive">玄機</div>
+  <div class="subtitle" style="font-family:'Ma Shan Zheng',cursive">古法智慧，現代傳承</div>
+
+  <div class="nav-demo">
+    <span class="nav-brand" style="font-family:'Ma Shan Zheng',cursive">玄機</span>
+    <span class="nav-link" style="font-family:'Noto Serif SC',serif">占卜</span>
+    <span class="nav-link" style="font-family:'Noto Serif SC',serif">機緣商店</span>
+    <span class="nav-link" style="font-family:'Inter',sans-serif">Karma</span>
+  </div>
+
+  <div class="divider"></div>
+  <div class="label">正文中文 — Noto Serif SC</div>
+  <div class="body-zh" style="font-family:'Noto Serif SC',serif">
+    玄機融合中國傳統命理學與現代AI技術，提供專業、深入的命理分析。我們傳承數千年的預測智慧，以現代語言為您解讀生命的玄機。
+  </div>
+
+  <div class="label">正文英文 — Inter</div>
+  <div class="body-en" style="font-family:'Inter',sans-serif">
+    Xuanji combines ancient Chinese divination wisdom with modern AI technology, offering professional and insightful readings for your life journey.
+  </div>
+
+  <div class="cost-item">
+    <span style="font-family:'Noto Serif SC'">🔮 八字排盤</span>
+    <span class="cost-val" style="font-family:'Inter';font-weight:600">5 Karma</span>
+  </div>
+  <div class="cost-item">
+    <span style="font-family:'Noto Serif SC'">💬 玄機問答</span>
+    <span class="cost-val" style="font-family:'Inter';font-weight:600">2 Karma</span>
+  </div>
+
+  <div style="margin-top:16px">
+    <span class="btn" style="font-family:'Inter';font-weight:600">開始占卜 ✨</span>
+  </div>
+
+  <div class="tags">
+    <span class="tag" style="font-family:'Inter'">Classical</span>
+    <span class="tag" style="font-family:'Noto Serif SC'">古風</span>
+    <span class="tag" style="font-family:'Inter'">Elegant</span>
+    <span class="tag" style="font-family:'Noto Serif SC'">莊重</span>
+  </div>
+</div>
+
+<!-- Style 3: Mixed -->
+<div class="card">
+  <div class="card-title">方案三 · 混搭 Mixed (推薦)</div>
+  
+  <div class="label">品牌 Brand — Zhi Mang Xing (草書)</div>
+  <div class="brand" style="font-family:'Zhi Mang Xing',cursive">玄機</div>
+  <div class="subtitle" style="font-family:'ZCOOL XiaoWei',serif">古法智慧，現代傳承</div>
+
+  <div class="nav-demo">
+    <span class="nav-brand" style="font-family:'Zhi Mang Xing',cursive;font-size:26px">玄機</span>
+    <span class="nav-link" style="font-family:'Noto Sans SC',sans-serif">占卜</span>
+    <span class="nav-link" style="font-family:'Noto Sans SC',sans-serif">機緣商店</span>
+    <span class="nav-link" style="font-family:'Quicksand',sans-serif;font-weight:600">Karma</span>
+  </div>
+
+  <div class="divider"></div>
+  <div class="label">標題中文 — ZCOOL XiaoWei / 正文 — Noto Sans SC</div>
+  <div class="body-zh" style="font-family:'Noto Sans SC',sans-serif">
+    玄機融合中國傳統命理學與現代AI技術，提供專業、深入的命理分析。我們傳承數千年的預測智慧，以現代語言為您解讀生命的玄機。
+  </div>
+
+  <div class="label">正文英文 — Quicksand</div>
+  <div class="body-en" style="font-family:'Quicksand',sans-serif">
+    Xuanji combines ancient Chinese divination wisdom with modern AI technology, offering professional and insightful readings for your life journey.
+  </div>
+
+  <div class="cost-item">
+    <span style="font-family:'Noto Sans SC'">🔮 八字排盤</span>
+    <span class="cost-val" style="font-family:'Quicksand';font-weight:700">5 Karma</span>
+  </div>
+  <div class="cost-item">
+    <span style="font-family:'Noto Sans SC'">💬 玄機問答</span>
+    <span class="cost-val" style="font-family:'Quicksand';font-weight:700">2 Karma</span>
+  </div>
+
+  <div style="margin-top:16px">
+    <span class="btn" style="font-family:'Quicksand';font-weight:700">開始占卜 ✨</span>
+  </div>
+
+  <div class="tags">
+    <span class="tag" style="font-family:'Quicksand'">Best of both</span>
+    <span class="tag" style="font-family:'Noto Sans SC'">古今結合</span>
+    <span class="tag" style="font-family:'Quicksand'">Balanced</span>
+    <span class="tag" style="font-family:'Noto Sans SC'">推薦</span>
+  </div>
+</div>
+</div>
+
+<div style="text-align:center;margin-top:40px;color:rgba(255,255,255,0.3);font-size:12px">
+  所有字體均為 Google Fonts 免費字體，支持 Next.js font optimization
+</div>
+
+</body>
+</html>
