@@ -10,6 +10,7 @@ import ThemeProvider from '@/components/ThemeProvider'
 import ConsentPopup from '@/components/ConsentPopup'
 import CookieBanner from '@/components/CookieBanner'
 import Footer from '@/components/Footer'
+import NotificationPopup from '@/components/NotificationPopup'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -59,6 +60,7 @@ export default function RootLayout({
               {children}
             </main>
 
+            <NotificationPopup />
             <ConsentPopup />
             <CookieBanner />
             <Footer />

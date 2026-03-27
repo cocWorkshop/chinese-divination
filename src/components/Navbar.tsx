@@ -7,6 +7,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useLang } from './LanguageContext'
 import { useTheme } from './ThemeProvider'
 import toast from 'react-hot-toast'
+import NotificationBell from './NotificationBell'
 
 export default function Navbar() {
   const { data: session } = useSession()
@@ -69,6 +70,8 @@ export default function Navbar() {
                 {lang === 'en' ? '🔗 Share' : '🔗 分享'}
               </button>
             )}
+
+            <NotificationBell />
 
             {/* Theme toggle */}
             <button
