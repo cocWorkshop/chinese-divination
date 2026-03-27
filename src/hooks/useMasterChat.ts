@@ -92,11 +92,11 @@ export function useMasterChat() {
           if (data === '[DONE]') continue
           try {
             const event = JSON.parse(data)
-            if (event.type === 'token') {
+            if (event.type === 'token' || event.type === 'content') {
               setMessages(prev => {
                 const updated = [...prev]
                 const last = updated[updated.length - 1]
-                updated[updated.length - 1] = { ...last, content: last.content + event.content }
+                updated[updated.length - 1] = { ...last, content: last.content + (event.content || event.text || '') }
                 return updated
               })
             } else if (event.type === 'tool_start') {
