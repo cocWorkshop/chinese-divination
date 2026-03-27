@@ -256,7 +256,7 @@ export async function POST(req: NextRequest) {
       }
       if (!rl.allowed) {
         return NextResponse.json(
-          { error: language === 'en' ? `Not enough credits (need ${rl.cost}, have ${rl.remaining}). Purchase more or share to earn credits.` : `額度不足（需要 ${rl.cost} 點，剩餘 ${rl.remaining} 點），請購買或分享獲取更多額度。` },
+          { error: language === 'en' ? `Not enough Karma (need ${rl.cost}, have ${rl.remaining}). Visit the Karma Shop to get more.` : `✨ 機緣不足（需要 ${rl.cost}，剩餘 ${rl.remaining}）。前往機緣商店補充機緣。` },
           { status: 429 }
         )
       }
@@ -953,8 +953,8 @@ ${question ? `特别关注：${question}` : ''}`
         }
 
         const friendlyError = language !== 'en'
-          ? '🔧 玄機暫時出了點小故障，您的額度未扣除。請稍後再試，若持續異常請聯繫管理員重啟玄機。'
-          : '🔧 The oracle encountered a hiccup — your credits were not deducted. Please try again later, or contact admin if the issue persists.'
+          ? '🔧 玄機暫時出了點小故障，您的機緣未扣除。請稍後再試，若持續異常請聯繫管理員重啟玄機。'
+          : '🔧 The oracle encountered a hiccup — your Karma was not deducted. Please try again later, or contact admin if the issue persists.'
 
         if (err?.status === 401 || err?.status === 402) {
           return NextResponse.json({ error: friendlyError }, { status: err.status })
@@ -1154,8 +1154,8 @@ ${question ? `特别关注：${question}` : ''}`
         inputPreview: userMessage.substring(0, 200), outputPreview: 'Validation failed: ' + resultText.substring(0, 200),
       })
       const errMsg = language !== 'en'
-        ? '🔧 玄機解讀格式異常，您的額度未扣除。請重新嘗試，若持續異常請聯繫管理員。'
-        : '🔧 The oracle produced an unexpected format — your credits were not deducted. Please try again, or contact admin if the issue persists.'
+        ? '🔧 玄機解讀格式異常，您的機緣未扣除。請重新嘗試，若持續異常請聯繫管理員。'
+        : '🔧 The oracle produced an unexpected format — your Karma was not deducted. Please try again, or contact admin if the issue persists.'
       return NextResponse.json({ error: errMsg }, { status: 502 })
     }
 

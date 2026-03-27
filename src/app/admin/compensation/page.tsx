@@ -218,10 +218,10 @@ export default function AdminCompensation() {
         <>
           {/* Default amounts */}
           <div className="glass-card rounded-xl p-4 border border-gold/15 mb-5">
-            <div className="text-white/60 text-xs mb-3 uppercase tracking-wider">預設補償額度</div>
+            <div className="text-white/60 text-xs mb-3 uppercase tracking-wider">預設補償機緣</div>
             <div className="flex gap-4 items-center">
               <label className="flex items-center gap-2 text-sm text-white/70">
-                <span>💰 額度</span>
+                <span>✨ 機緣</span>
                 <input type="number" min={0} value={defaultCredits} onChange={e => setDefaultCredits(parseInt(e.target.value) || 0)}
                   className="w-16 px-2 py-1 rounded-lg bg-navy-900 border border-gold/20 text-white text-center text-sm" />
               </label>

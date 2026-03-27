@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
           currency: 'usd',
           product_data: {
             name: `${pack.icon} ${pack.name.zh} / ${pack.name.en}`,
-            description: `${pack.credits} credit points`,
+            description: `${pack.credits} Karma`,
           },
           unit_amount: pack.price,
         },

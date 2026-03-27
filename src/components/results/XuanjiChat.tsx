@@ -175,8 +175,8 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
           setChatRemaining(0)
           setMessages(prev => [...prev, {
             role: 'assistant',
-            content: T(lang, '問答額度已用完', 'Chat credits exhausted'),
-            link: { text: T(lang, '購買更多額度 →', 'Purchase more credits →'), href: '/subscribe' },
+            content: T(lang, '機緣不足，無法繼續提問', 'Not enough Karma to continue'),
+            link: { text: T(lang, '前往機緣商店 →', 'Visit Karma Shop →'), href: '/subscribe' },
           }])
         } else {
           setMessages(prev => [...prev, {

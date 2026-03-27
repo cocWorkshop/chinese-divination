@@ -217,12 +217,12 @@ export default function ProfilePage() {
         <div className="glass-card rounded-2xl mb-6">
           <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
             <span className="text-lg">✦</span>
-            <h2 className="text-lg font-serif text-gold">{T(lang, '額度信息', 'Credits')}</h2>
+            <h2 className="text-lg font-serif text-gold">{T(lang, '機緣信息', 'Karma')}</h2>
           </div>
           <div className="p-4 sm:p-6">
             <div className="rounded-xl p-4 border border-gold/10 bg-navy-900/50">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-white/80">{T(lang, '💰 額度 / Credits', '💰 Credits')}</span>
+                <span className="text-sm font-medium text-white/80">{T(lang, '✨ 機緣 / Karma', '✨ Karma')}</span>
                 <span className="text-lg text-gold font-mono font-bold">
                   {credits.credits === 999 ? '∞' : credits.credits}
                 </span>

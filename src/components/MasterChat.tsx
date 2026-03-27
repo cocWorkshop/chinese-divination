@@ -227,7 +227,7 @@ export default function MasterChat({ onClose, lang }: MasterChatProps) {
         <div className="relative px-4 sm:px-5 py-3" style={{ borderTop: '1px solid var(--card-border)' }}>
           {credits !== null && (
             <p className="text-[10px] mb-1.5 text-right" style={{ color: 'var(--text-muted)' }}>
-              {isEn ? 'Credits' : '餘額'}: {credits}
+              {isEn ? 'Karma' : '機緣'}: {credits}
             </p>
           )}
           <div className="flex gap-2 items-end">
