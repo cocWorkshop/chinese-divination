@@ -69,31 +69,28 @@ export default function SubscribePage() {
           </p>
         </div>
 
-        {/* Current credits display */}
-        {session && credits !== null && (
-          <div className="glass-card rounded-xl p-4 mb-8 max-w-md mx-auto text-center" style={{ border: '1px solid var(--border-gold)' }}>
-            <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
-              {T(lang, '當前額度', 'Current Credits')}
-            </p>
-            <span className="text-3xl font-bold" style={{ color: 'var(--gold)' }}>{credits}</span>
-            <span className="text-sm ml-1" style={{ color: 'var(--text-secondary)' }}>{T(lang, '點', 'pts')}</span>
-          </div>
-        )}
-
-        {/* Pricing info */}
-        {costs && (
-          <div className="glass-card rounded-xl p-4 mb-8 max-w-lg mx-auto" style={{ border: '1px solid var(--border-gold)' }}>
-            <p className="text-sm font-medium mb-3 text-center" style={{ color: 'var(--gold)' }}>
-              {T(lang, '各功能消耗額度', 'Credit Costs per Feature')}
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              <div>☰ {T(lang, '八字命理', 'BaZi')}: <span style={{ color: 'var(--gold)' }}>{costs.bazi}</span> {T(lang, '點', 'pts')}</div>
-              <div>⭐ {T(lang, '紫微斗數', 'Zi Wei')}: <span style={{ color: 'var(--gold)' }}>{costs.ziwei}</span> {T(lang, '點', 'pts')}</div>
-              <div>⚡ {T(lang, '奇門遁甲', 'Qi Men')}: <span style={{ color: 'var(--gold)' }}>{costs.qimen}</span> {T(lang, '點', 'pts')}</div>
-              <div>🌸 {T(lang, '梅花易數', 'Mei Hua')}: <span style={{ color: 'var(--gold)' }}>{costs.meihua}</span> {T(lang, '點', 'pts')}</div>
-              <div>☯ {T(lang, '六爻占卜', 'Liu Yao')}: <span style={{ color: 'var(--gold)' }}>{costs.liuyao}</span> {T(lang, '點', 'pts')}</div>
-              <div>💬 {T(lang, '問答聊天', 'Chat')}: <span style={{ color: 'var(--gold)' }}>{costs.chat}</span> {T(lang, '點', 'pts')}</div>
-            </div>
+        {/* Combined: Current credits + cost table */}
+        {session && (credits !== null || costs) && (
+          <div className="glass-card rounded-xl p-4 mb-6 max-w-2xl mx-auto flex flex-col sm:flex-row items-center gap-4" style={{ border: '1px solid var(--border-gold)' }}>
+            {credits !== null && (
+              <div className="text-center sm:border-r sm:pr-6" style={{ borderColor: 'var(--border-gold)' }}>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{T(lang, '當前額度', 'Credits')}</p>
+                <span className="text-3xl font-bold" style={{ color: 'var(--gold)' }}>{credits}</span>
+                <span className="text-xs ml-1" style={{ color: 'var(--text-secondary)' }}>{T(lang, '點', 'pts')}</span>
+              </div>
+            )}
+            {costs && (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs justify-center" style={{ color: 'var(--text-secondary)' }}>
+                <span>🏛️ {T(lang, '八字', 'BaZi')} <b style={{ color: 'var(--gold)' }}>{costs.bazi}</b></span>
+                <span>⭐ {T(lang, '紫微', 'ZiWei')} <b style={{ color: 'var(--gold)' }}>{costs.ziwei}</b></span>
+                <span>🧭 {T(lang, '奇門', 'QiMen')} <b style={{ color: 'var(--gold)' }}>{costs.qimen}</b></span>
+                <span>🌸 {T(lang, '梅花', 'MeiHua')} <b style={{ color: 'var(--gold)' }}>{costs.meihua}</b></span>
+                <span>🪙 {T(lang, '六爻', 'LiuYao')} <b style={{ color: 'var(--gold)' }}>{costs.liuyao}</b></span>
+                <span>📖 {T(lang, '易經', 'IChing')} <b style={{ color: 'var(--gold)' }}>{costs.iching}</b></span>
+                <span>🏯 {T(lang, '風水', 'FengShui')} <b style={{ color: 'var(--gold)' }}>{costs.fengshui}</b></span>
+                <span>💬 {T(lang, '問答', 'Chat')} <b style={{ color: 'var(--gold)' }}>{costs.chat}</b></span>
+              </div>
+            )}
           </div>
         )}
 
