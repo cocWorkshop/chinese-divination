@@ -33,8 +33,33 @@ export async function GET(req: NextRequest) {
     prisma.user.count({ where }),
   ])
 
+  // Get usage stats from LlmLog grouped by userId + endpoint
+  const userIds = users.map(u => u.id)
+  const usageStats = userIds.length > 0
+    ? await prisma.llmLog.groupBy({
+        by: ['userId', 'endpoint'],
+        where: { userId: { in: userIds }, status: 'success' },
+        _count: true,
+      })
+    : []
+
+  // Build lookup: userId -> { divination, chat }
+  const usageMap: Record<string, { divination: number; chat: number }> = {}
+  for (const stat of usageStats) {
+    if (!stat.userId) continue
+    if (!usageMap[stat.userId]) usageMap[stat.userId] = { divination: 0, chat: 0 }
+    if (stat.endpoint === 'divination') usageMap[stat.userId].divination += stat._count
+    else if (stat.endpoint === 'chat' || stat.endpoint === 'chat-summary') usageMap[stat.userId].chat += stat._count
+  }
+
+  const usersWithStats = users.map(u => ({
+    ...u,
+    usageDivination: usageMap[u.id]?.divination ?? u._count.readings,
+    usageChat: usageMap[u.id]?.chat ?? 0,
+  }))
+
   return NextResponse.json({
-    users,
+    users: usersWithStats,
     total,
     pages: Math.ceil(total / limit),
     page,

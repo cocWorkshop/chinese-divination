@@ -65,11 +65,11 @@ export default function SubscribePage() {
     <div className="flex-1 pt-24 pb-16 px-3 sm:px-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-serif mb-3" style={{ color: 'var(--gold)' }}>
+        <div className="text-center mb-5">
+          <h1 className="text-3xl sm:text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
             {T(lang, '額度商店', 'Credits Store')}
           </h1>
-          <p style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             {T(lang, '購買額度，探索更深層的命理奧秘', 'Purchase credits to unlock deeper divination insights')}
           </p>
         </div>

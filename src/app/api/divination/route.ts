@@ -24,68 +24,7 @@ const refFileMap: Record<string, string> = {
   ziwei: 'ziwei.md',
   qimen: 'qimen.md',
   fengshui: 'fengshui.md',
-  meihua: 'others.md',
   other: 'others.md',
-}
-
-function getSuggestedQuestionsPrompt(type: string, language: string, userContext?: { age?: number; gender?: string }): string[] {
-  const isEn = language === 'en'
-  const maxLen = isEn ? '(max 15 words)' : '(15字内)'
-  const ageGenderHint = userContext?.age
-    ? (isEn
-      ? `The subject is ${userContext.gender === 'female' ? 'female' : 'male'}, age ${userContext.age}. Tailor questions to their life stage (career, marriage, children, retirement etc. as appropriate).`
-      : `此人为${userContext.gender === 'female' ? '女' : '男'}性，${userContext.age}岁。请结合其年龄阶段（事业、婚姻、子女、健康等）设计最可能引起好奇的问题。`)
-    : ''
-
-  const promptMap: Record<string, { zh: string[]; en: string[] }> = {
-    bazi: {
-      zh: [
-        `${ageGenderHint}根据此人命局和当前人生阶段，提一个最让人好奇「命中注定」的问题${maxLen}`,
-        `${ageGenderHint}此人当前阶段最大的转机或挑战是什么？据此提一个让人想深挖的问题${maxLen}`,
-        `${ageGenderHint}此人命中有什么容易忽视的隐患？提一个让人警醒的问题${maxLen}`,
-      ],
-      en: [
-        `${ageGenderHint}Based on this person's chart and life stage, ask a compelling question about their destiny ${maxLen}`,
-        `${ageGenderHint}What is the biggest turning point or challenge at their current stage? Ask a thought-provoking question ${maxLen}`,
-        `${ageGenderHint}What hidden risk in their chart might they overlook? Ask an alerting question ${maxLen}`,
-      ],
-    },
-    ziwei: {
-      zh: [
-        `${ageGenderHint}命盘中最强的一颗星暗示了此人当前阶段什么命运走向？据此提问${maxLen}`,
-        `${ageGenderHint}哪个宫位藏着此人当前最大的人生变局？据此提问${maxLen}`,
-        `${ageGenderHint}命盘中有什么被忽视的贵人或机遇？据此提问${maxLen}`,
-      ],
-      en: [
-        `${ageGenderHint}What does the strongest star in the chart reveal about their current life direction? Ask a question ${maxLen}`,
-        `${ageGenderHint}Which palace holds the biggest life change for them now? Ask a question ${maxLen}`,
-        `${ageGenderHint}What overlooked opportunity or benefactor exists in their chart? Ask a question ${maxLen}`,
-      ],
-    },
-    iching: {
-      zh: [`此卦暗示的最大变数是什么？提一个让人想追问的问题${maxLen}`, `如何借卦象之势扭转局面？提一个实用的破局问题${maxLen}`, `此卦最容易忽略的警示是什么？提一个让人警觉的问题${maxLen}`],
-      en: [`What is the biggest variable this hexagram hints at? Ask a compelling question ${maxLen}`, `How to leverage this hexagram to turn things around? Ask a practical question ${maxLen}`, `What warning in this hexagram is easily overlooked? Ask an alerting question ${maxLen}`],
-    },
-    liuyao: {
-      zh: [`卦中用神透露了什么关键信息？提一个让人迫切想知道的问题${maxLen}`, `此卦的应期暗示了什么？提一个关于时机把握的问题${maxLen}`, `世应之间藏着什么玄机？提一个让人意外的破解问题${maxLen}`],
-      en: [`What key info does the primary element reveal? Ask an urgent question ${maxLen}`, `What does the timing of this hexagram suggest? Ask a timing question ${maxLen}`, `What hidden dynamics exist between the self and response lines? Ask a revealing question ${maxLen}`],
-    },
-    qimen: {
-      zh: [`此局中最关键的时机窗口在哪？提一个让人想立刻行动的问题${maxLen}`, `奇门格局暗示的最大陷阱是什么？提一个避险问题${maxLen}`, `如何借此局之势实现最大突破？提一个策略性问题${maxLen}`],
-      en: [`Where is the critical timing window in this formation? Ask an action-oriented question ${maxLen}`, `What is the biggest trap this Qi Men formation reveals? Ask a risk-avoidance question ${maxLen}`, `How to leverage this formation for maximum breakthrough? Ask a strategic question ${maxLen}`],
-    },
-    fengshui: {
-      zh: [`当前格局中最影响财运的风水要素是什么？据此提问${maxLen}`, `家中哪个方位藏着最大的隐患？提一个化解问题${maxLen}`, `如何用最小的改动获得最大的风水提升？据此提问${maxLen}`],
-      en: [`What feng shui element most affects wealth in this layout? Ask a question ${maxLen}`, `Which direction in the home has the biggest hidden risk? Ask a remediation question ${maxLen}`, `How to get the biggest feng shui improvement with minimal changes? Ask a question ${maxLen}`],
-    },
-    other: {
-      zh: [`体用之间的生克揭示了什么关键走向？据此提问${maxLen}`, `此卦最容易被忽略的变数是什么？提一个深入问题${maxLen}`, `如何借势破局？提一个最实用的行动问题${maxLen}`],
-      en: [`What key trend does the interaction between body and function trigrams reveal? Ask a question ${maxLen}`, `What easily overlooked variable exists in this hexagram? Ask a deep question ${maxLen}`, `How to seize the momentum to break through? Ask a practical action question ${maxLen}`],
-    },
-  }
-
-  const prompts = promptMap[type] || promptMap.other
-  return isEn ? prompts.en : prompts.zh
 }
 
 const schemas: Record<string, object> = {
@@ -181,19 +120,6 @@ const schemas: Record<string, object> = {
     keyAdvice: ['建议一', '建议二'],
     suggestedQuestions: ['当前格局中最影响财运的风水要素是什么？据此提问(15字内)', '家中哪个方位藏着最大的隐患？提一个化解问题(15字内)', '如何用最小的改动获得最大的风水提升？据此提问(15字内)'],
   },
-  meihua: {
-    type: 'meihua',
-    subType: 'meihua',
-    trigrams: {
-      upper: { name: '卦名', symbol: '☰', element: '五行' },
-      lower: { name: '卦名', symbol: '☷', element: '五行' },
-      transformed: { name: '卦名', symbol: '☵', element: '五行' },
-    },
-    sections: { situation: '体卦分析(100+字)', inquiry: '用卦分析(100+字)', interaction: '体用关系(100+字)', timeline: '时间推断(100+字)' },
-    outcome: '吉/凶/中',
-    keyAdvice: ['建议一', '建议二', '建议三'],
-    suggestedQuestions: ['体用之间的生克揭示了什么关键走向？据此提问(15字内)', '此卦最容易被忽略的变数是什么？提一个深入问题(15字内)', '如何借势破局？提一个最实用的行动问题(15字内)'],
-  },
   other: {
     type: 'other',
     subType: 'meihua或liuren',
@@ -210,7 +136,6 @@ const schemas: Record<string, object> = {
 }
 
 export async function POST(req: NextRequest) {
-  const apiStart = Date.now()
   try {
     const session = await auth()
     if (!session?.user?.id) {
@@ -230,14 +155,39 @@ export async function POST(req: NextRequest) {
     const shouldSaveHistory = saveHistory !== false
     const shouldSaveProfile = saveProfile === true
 
-    // When readingId is provided (from /init), skip credit/maintenance checks (already done)
-    // Only fetch admin settings for model config
-    const adminSettings = await prisma.adminSetting.findMany({
-      where: { key: { in: preCreatedReadingId
-        ? ['model1Name', 'llmTimeoutSeconds', 'llmMaxTokens']
-        : ['maintenanceMode', 'divinationEnabled', 'model1Name', 'llmTimeoutSeconds', 'llmMaxTokens'] } },
-    })
-    const settingsMap = Object.fromEntries(adminSettings.map(s => [s.key, s.value]))
+    const maintenance = await prisma.adminSetting.findUnique({ where: { key: 'maintenanceMode' } })
+    if (maintenance?.value === 'true') {
+      return NextResponse.json(
+        { error: language !== 'en' ? '系統維護中，請稍後再試。' : 'System under maintenance. Please try again later.' },
+        { status: 503 }
+      )
+    }
+
+    const divinationEnabled = await prisma.adminSetting.findUnique({ where: { key: 'divinationEnabled' } })
+    if (divinationEnabled?.value === 'false') {
+      return NextResponse.json(
+        { error: language !== 'en' ? '占卜功能暫時關閉，請稍後再試。' : 'Divination service is temporarily disabled.' },
+        { status: 503 }
+      )
+    }
+
+    // Retry mode: verify the failed reading belongs to user, skip credit check
+    let isRetry = false
+    if (retryReadingId) {
+      const failedReading = await prisma.reading.findFirst({
+        where: { id: retryReadingId, userId: session.user.id, status: 'failed', deletedAt: null },
+      })
+      if (!failedReading) {
+        return NextResponse.json({ error: 'Reading not found or not in failed state' }, { status: 404 })
+      }
+      isRetry = true
+      // Reset to pending
+      await prisma.reading.update({ where: { id: retryReadingId }, data: { status: 'pending', result: '' } })
+    }
+
+    if (!isRetry) {
+      // Grant daily bonus on first activity
+      await grantDailyBonus(session.user.id)
 
     if (!preCreatedReadingId) {
       // Legacy path: no init call, do full validation
@@ -277,12 +227,6 @@ export async function POST(req: NextRequest) {
             birthTime: inputData.birthTime || null,
             birthPlace: inputData.birthPlace || null,
             gender: inputData.gender || null,
-            calendarType: inputData.lunarToggle || null,
-            timeMode: inputData.timeMode || null,
-            exactTime: inputData.exactTime || null,
-            birthEnvironment: inputData.birthEnvironment || null,
-            birthLat: inputData.birthLat ?? null,
-            birthLng: inputData.birthLng ?? null,
           },
         })
         resolvedFamilyMemberId = created.id
@@ -320,28 +264,11 @@ export async function POST(req: NextRequest) {
       }).catch(() => {})
     }
 
-    // Calculate user age for personalized suggested questions
-    let userAge: number | undefined
-    const birthDateStr = inputData.birthDate as string | undefined
-    if (birthDateStr) {
-      const birth = new Date(birthDateStr)
-      if (!isNaN(birth.getTime())) {
-        userAge = Math.floor((Date.now() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-      }
-    }
-    const userGender = (inputData.gender as string) || undefined
-
-    const schema = { ...(schemas[type] || schemas.other) } as Record<string, unknown>
-    // Override suggestedQuestions with language-aware + user-context-aware prompts
-    schema.suggestedQuestions = getSuggestedQuestionsPrompt(type, language, { age: userAge, gender: userGender })
-
+    const schema = schemas[type] || schemas.other
     const langText = language === 'en' ? 'English' : '繁體中文（Traditional Chinese）'
     const textLang = language === 'en' ? 'English' : '繁體中文'
 
-    const clientDate = clientTime ? new Date(clientTime) : new Date()
-    const todayStr = clientDate.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
     const systemPrompt = `You are a master of Chinese traditional divination with deep expertise in ${type}.
-Today's date: ${todayStr}.
 
 Reference knowledge:
 ${refContent}
@@ -383,9 +310,7 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
           inputData.timeMode === 'precise' ? '' : (inputData.birthTime || ''),
           inputData.birthPlace || '',
           inputData.gender || 'male',
-          inputData.timeMode === 'precise' ? inputData.exactTime : undefined,
-          inputData.birthLng ?? null,
-          inputData.birthLat ?? null
+          inputData.timeMode === 'precise' ? inputData.exactTime : undefined
         )
         userMessage = `请为我进行八字命理精批。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
@@ -542,65 +467,6 @@ ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 输入信息：${JSON.stringify(inputData, null, 2)}
 ${question ? `特别关注：${question}` : ''}`
       }
-    } else if (type === 'meihua' && inputData.readingDateTime) {
-      try {
-        const readingDt = new Date(inputData.readingDateTime)
-        const meihuaDate = `${readingDt.getFullYear()}-${String(readingDt.getMonth() + 1).padStart(2, '0')}-${String(readingDt.getDate()).padStart(2, '0')}`
-        const hour = readingDt.getHours()
-        // Convert hour to shichen branch
-        const shichenBranches = ['zi_early', 'chou', 'chou', 'yin', 'yin', 'mao', 'mao', 'chen', 'chen', 'si', 'si', 'wu', 'wu', 'wei', 'wei', 'shen', 'shen', 'you', 'you', 'xu', 'xu', 'hai', 'hai', 'zi_late']
-        const meihuaTime = shichenBranches[hour] || 'zi_early'
-        meihuaChart = calculateMeihua(meihuaDate, meihuaTime)
-        userMessage = `请为我进行梅花易数排卦分析。
-${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
-## 程序预计算的梅花易数卦象（已验证准确，请直接使用）
-${JSON.stringify({
-  timeNumbers: {
-    lunarYear: meihuaChart.lunarYear,
-    lunarMonth: meihuaChart.lunarMonth,
-    lunarDay: meihuaChart.lunarDay,
-    yearBranch: meihuaChart.yearBranch,
-    yearNum: meihuaChart.yearNum,
-    monthNum: meihuaChart.monthNum,
-    dayNum: meihuaChart.dayNum,
-    hourNum: meihuaChart.hourNum,
-  },
-  calculation: {
-    upperSum: `${meihuaChart.yearNum}+${meihuaChart.monthNum}+${meihuaChart.dayNum}=${meihuaChart.yearNum + meihuaChart.monthNum + meihuaChart.dayNum}, %8=${meihuaChart.upperNum}`,
-    lowerSum: `${meihuaChart.yearNum}+${meihuaChart.monthNum}+${meihuaChart.dayNum}+${meihuaChart.hourNum}=${meihuaChart.yearNum + meihuaChart.monthNum + meihuaChart.dayNum + meihuaChart.hourNum}, %8=${meihuaChart.lowerNum}`,
-    changingLine: meihuaChart.changingLine,
-  },
-  benGua: { name: meihuaChart.benGua.name, upper: meihuaChart.benGua.upper.name, lower: meihuaChart.benGua.lower.name, lines: meihuaChart.benGua.lines },
-  huGua: { name: meihuaChart.huGua.name, upper: meihuaChart.huGua.upper.name, lower: meihuaChart.huGua.lower.name },
-  bianGua: { name: meihuaChart.bianGua.name, upper: meihuaChart.bianGua.upper.name, lower: meihuaChart.bianGua.lower.name },
-  tiYong: {
-    tiGua: `${meihuaChart.tiGua.name}(${meihuaChart.tiGua.element})`,
-    yongGua: `${meihuaChart.yongGua.name}(${meihuaChart.yongGua.element})`,
-    relation: meihuaChart.tiYongRelation,
-    analysis: meihuaChart.tiYongAnalysis,
-  },
-}, null, 2)}
-
-## 用户输入
-- 起卦时间：${inputData.readingDateTime}
-${question ? `- 求测问题：${question}` : '- 求测问题：综合运势'}
-
-## 解卦要求
-你是资深梅花易数术数师，请基于以上程序排出的卦象进行分析。重点：
-1. **situation**：本卦（${meihuaChart.benGua.name}）的卦象含义和当前处境分析（100字以上）
-2. **inquiry**：用卦分析，以动爻变化论述所问之事（100字以上）
-3. **interaction**：体用生克关系详析（${meihuaChart.tiYongRelation}），结合互卦（${meihuaChart.huGua.name}）论中期发展（100字以上）
-4. **timeline**：结合变卦（${meihuaChart.bianGua.name}）推断事物最终走向和应期（100字以上）
-
-同时设置subType为"meihua"。卦象数据以程序计算结果为准，你只负责解卦分析。
-关于trigrams字段：upper对应体卦，lower对应用卦，transformed对应变卦。`
-      } catch (e) {
-        console.error('Meihua calculation error:', e)
-        userMessage = `请为我进行梅花易数分析。
-${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
-输入信息：${JSON.stringify(inputData, null, 2)}
-${question ? `特别关注：${question}` : ''}`
-      }
     } else if (type === 'other' && solarBirthDate && inputData.birthTime) {
       try {
         meihuaChart = calculateMeihua(solarBirthDate, inputData.birthTime)
@@ -739,9 +605,15 @@ ${question ? `特别关注：${question}` : ''}`
     if (liuyaoChart) earlyCalculationData.liuyao = liuyaoChart
     const earlyCalculationDataStr = Object.keys(earlyCalculationData).length > 0 ? JSON.stringify(earlyCalculationData) : null
 
-    // Use pre-created reading from /api/divination/init, or create one now as fallback
-    let pendingReadingId: string | null = preCreatedReadingId || null
-    if (shouldSaveHistory && !pendingReadingId) {
+    // Create pending reading immediately so it's not lost if user navigates away
+    let pendingReadingId: string | null = null
+    if (isRetry && retryReadingId) {
+      // Reuse existing failed reading record
+      pendingReadingId = retryReadingId
+      if (earlyCalculationDataStr) {
+        await prisma.reading.update({ where: { id: retryReadingId }, data: { calculationData: earlyCalculationDataStr } })
+      }
+    } else if (shouldSaveHistory) {
       const pendingReading = await prisma.reading.create({
         data: {
           userId: session.user.id,
@@ -750,7 +622,7 @@ ${question ? `特别关注：${question}` : ''}`
           status: 'pending',
           question: question || null,
           inputData,
-          result: '',
+          result: '',  // Will be filled after LLM completes
           calculationData: earlyCalculationDataStr,
           language: language || 'zh-TW',
           targetType,
@@ -758,13 +630,6 @@ ${question ? `特别关注：${question}` : ''}`
         },
       })
       pendingReadingId = pendingReading.id
-    }
-    // Update pre-created reading with calculation data if available
-    if (pendingReadingId && earlyCalculationDataStr && preCreatedReadingId) {
-      prisma.reading.update({
-        where: { id: pendingReadingId },
-        data: { calculationData: earlyCalculationDataStr },
-      }).catch(() => {})
     }
 
     // ═══ PAIPAN ONLY MODE (all logged-in users) ═══
@@ -815,20 +680,27 @@ ${question ? `特别关注：${question}` : ''}`
         await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'AI service not configured' } }).catch(() => {})
       }
       return NextResponse.json(
-        { error: language !== 'en' ? '🔧 玄機尚未啟動，請聯繫管理員配置並重啟。' : '🔧 The oracle is not set up yet. Please contact admin to configure and restart.' },
+        { error: language !== 'en' ? 'AI服務未配置，請聯繫管理員。' : 'AI service not configured.' },
         { status: 503 }
       )
     }
 
-    // Use pre-fetched admin settings
-    const modelName = settingsMap.model1Name || 'anthropic/claude-3-5-haiku'
+    // Get model name from admin settings (single model)
+    const modelSetting = await prisma.adminSetting.findUnique({ where: { key: 'model1Name' } })
+    const modelName = modelSetting?.value || 'anthropic/claude-3-5-haiku'
+
     const isLocalProxy = modelName === 'local/claude-proxy'
     const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'http://127.0.0.1:8095'
-    const llmTimeoutMs = (parseInt(settingsMap.llmTimeoutSeconds || '240', 10) || 240) * 1000
-    const llmMaxTokens = parseInt(settingsMap.llmMaxTokens || '8192', 10) || 8192
+
+    // Read configurable timeout and max tokens
+    const [timeoutSetting, maxTokensSetting] = await Promise.all([
+      prisma.adminSetting.findUnique({ where: { key: 'llmTimeoutSeconds' } }),
+      prisma.adminSetting.findUnique({ where: { key: 'llmMaxTokens' } }),
+    ])
+    const llmTimeoutMs = (parseInt(timeoutSetting?.value || '240', 10) || 240) * 1000
+    const llmMaxTokens = parseInt(maxTokensSetting?.value || '8192', 10) || 8192
 
     let resultText: string
-    const preLlmMs = Date.now() - apiStart
     const llmStart = Date.now()
 
     if (isLocalProxy) {
@@ -952,20 +824,28 @@ ${question ? `特别关注：${question}` : ''}`
           await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: err?.message || 'LLM error' } }).catch(() => {})
         }
 
-        const friendlyError = language !== 'en'
-          ? '🔧 玄機暫時出了點小故障，您的額度未扣除。請稍後再試，若持續異常請聯繫管理員重啟玄機。'
-          : '🔧 The oracle encountered a hiccup — your credits were not deducted. Please try again later, or contact admin if the issue persists.'
-
-        if (err?.status === 401 || err?.status === 402) {
-          return NextResponse.json({ error: friendlyError }, { status: err.status })
+        if (err?.status === 401) {
+          return NextResponse.json(
+            { error: language !== 'en' ? 'AI服務API密鑰無效，請檢查配置。' : 'AI API key is invalid.' },
+            { status: 401 }
+          )
+        }
+        if (err?.status === 402) {
+          return NextResponse.json(
+            { error: language !== 'en' ? 'OpenRouter餘額不足，請前往 openrouter.ai 充值。' : 'OpenRouter credits exhausted. Please top up at openrouter.ai.' },
+            { status: 402 }
+          )
         }
         if (err?.status === 429) {
           return NextResponse.json(
-            { error: language !== 'en' ? '🔮 天機繁忙，請稍後再試。' : '🔮 The oracle is busy. Please try again shortly.' },
+            { error: language !== 'en' ? 'AI請求過於頻繁，請稍後再試。' : 'Too many requests. Please try again later.' },
             { status: 429 }
           )
         }
-        return NextResponse.json({ error: friendlyError }, { status: 502 })
+        return NextResponse.json(
+          { error: language !== 'en' ? `AI服務錯誤：${err?.message || '未知錯誤'}` : `AI service error: ${err?.message || 'Unknown'}` },
+          { status: 502 }
+        )
       }
     }
 
@@ -1098,7 +978,7 @@ ${question ? `特别关注：${question}` : ''}`
     }
 
     // Merge programmatic Meihua data with LLM interpretation
-    if ((type === 'meihua' || type === 'other') && meihuaChart) {
+    if (type === 'other' && meihuaChart) {
       structuredResult.meihuaChart = {
         lunarYear: meihuaChart.lunarYear,
         lunarMonth: meihuaChart.lunarMonth,
@@ -1131,34 +1011,6 @@ ${question ? `特别关注：${question}` : ''}`
       }
     }
 
-    // ═══ VALIDATE LLM OUTPUT STRUCTURE ═══
-    const validationRules: Record<string, (r: Record<string, unknown>) => boolean> = {
-      bazi: r => !!(r.sections && typeof r.sections === 'object' && Object.keys(r.sections as object).length >= 3),
-      ziwei: r => !!(r.sections && typeof r.sections === 'object' && Object.keys(r.sections as object).length >= 2),
-      iching: r => !!(r.interpretation || r.sections),
-      liuyao: r => !!(r.interpretation || r.sections),
-      qimen: r => !!(r.sections && typeof r.sections === 'object'),
-      fengshui: r => !!(r.sections && typeof r.sections === 'object'),
-      meihua: r => !!(r.sections && typeof r.sections === 'object'),
-      other: r => !!(r.sections && typeof r.sections === 'object'),
-    }
-    const validator = validationRules[type] || validationRules.other
-    if (!validator(structuredResult)) {
-      // Mark reading as failed, do NOT deduct credits
-      if (pendingReadingId) {
-        await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'Invalid LLM output format', llmRawOutput: resultText } }).catch(() => {})
-      }
-      await logLlmCall({
-        userId: session.user.id, endpoint: 'divination', model: modelName,
-        latencyMs: Date.now() - llmStart, status: 'error',
-        inputPreview: userMessage.substring(0, 200), outputPreview: 'Validation failed: ' + resultText.substring(0, 200),
-      })
-      const errMsg = language !== 'en'
-        ? '🔧 玄機解讀格式異常，您的額度未扣除。請重新嘗試，若持續異常請聯繫管理員。'
-        : '🔧 The oracle produced an unexpected format — your credits were not deducted. Please try again, or contact admin if the issue persists.'
-      return NextResponse.json({ error: errMsg }, { status: 502 })
-    }
-
     const resultToStore = JSON.stringify(structuredResult)
 
     const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
@@ -1185,35 +1037,32 @@ ${question ? `特别关注：${question}` : ''}`
     }
 
     if (shouldSaveProfile && (type === 'bazi' || type === 'ziwei')) {
-      const profileUpdate: Record<string, string | number | null> = {}
+      const profileUpdate: Record<string, string | null> = {}
       if (inputData.birthDate) profileUpdate.birthDate = inputData.birthDate
       if (inputData.birthTime) profileUpdate.birthTime = inputData.birthTime
       if (inputData.birthPlace) profileUpdate.birthPlace = inputData.birthPlace
       if (inputData.gender) profileUpdate.gender = inputData.gender
-      if (inputData.timeMode) profileUpdate.timeMode = inputData.timeMode
-      if (inputData.exactTime) profileUpdate.exactTime = inputData.exactTime
-      if (inputData.lunarToggle) profileUpdate.calendarType = inputData.lunarToggle
-      if (inputData.birthEnvironment) profileUpdate.birthEnvironment = inputData.birthEnvironment
-      if (inputData.birthLat != null) profileUpdate.birthLat = inputData.birthLat
-      if (inputData.birthLng != null) profileUpdate.birthLng = inputData.birthLng
       if (Object.keys(profileUpdate).length > 0) {
         if (targetType === 'family' && resolvedFamilyMemberId) {
-          postOps.push(prisma.familyMember.update({ where: { id: resolvedFamilyMemberId }, data: profileUpdate }))
+          await prisma.familyMember.update({ where: { id: resolvedFamilyMemberId }, data: profileUpdate })
         } else {
-          postOps.push(prisma.user.update({ where: { id: session.user.id }, data: profileUpdate }))
+          await prisma.user.update({ where: { id: session.user.id }, data: profileUpdate })
         }
       }
     }
 
-    // Run all post-LLM DB operations in parallel
-    const postStart = Date.now()
-    await Promise.all(postOps)
-    const postLlmMs = Date.now() - postStart
-    const totalMs = Date.now() - apiStart
-    console.log(`[divination] type=${type} total=${totalMs}ms pre=${preLlmMs}ms llm=${postStart - llmStart}ms post=${postLlmMs}ms user=${session.user.id}`)
-
-    if (savedReading) {
-      return NextResponse.json({ reading: Object.assign({}, savedReading, { result: resultToStore }), saved: true })
+    if ((shouldSaveHistory || isRetry) && pendingReadingId) {
+      // Update the pending reading with completed result
+      const reading = await prisma.reading.update({
+        where: { id: pendingReadingId },
+        data: {
+          status: 'completed',
+          result: resultToStore,
+          llmPrompt: llmPromptStr,
+          llmRawOutput: resultText,
+        },
+      })
+      return NextResponse.json({ reading: { ...reading, result: resultToStore }, saved: true })
     }
 
     return NextResponse.json({
@@ -1221,8 +1070,7 @@ ${question ? `特别关注：${question}` : ''}`
       saved: false,
     })
   } catch (e) {
-    const totalMs = Date.now() - apiStart
-    console.error(`[divination] ERROR total=${totalMs}ms`, e)
+    console.error('Divination route error:', e)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

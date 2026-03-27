@@ -56,6 +56,7 @@ export default function DashboardPage() {
   const [readings, setReadings] = useState<Reading[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [retrying, setRetrying] = useState<string | null>(null)
 
 
   useEffect(() => {
@@ -110,6 +111,44 @@ export default function DashboardPage() {
 
     return () => clearInterval(interval)
   }, [readings])
+
+  const retryReading = async (r: Reading) => {
+    setRetrying(r.id)
+    // Update UI immediately to show pending
+    setReadings(prev => prev.map(x => x.id === r.id ? { ...x, status: 'pending' } : x))
+    try {
+      const inputData = (() => {
+        // inputData is stored in the reading, fetch it from API
+        return null
+      })()
+      const res = await fetch(`/api/readings/${r.id}`)
+      const full = await res.json()
+      const reading = full.reading
+
+      const retryRes = await fetch('/api/divination', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          retryReadingId: r.id,
+          type: reading.type,
+          inputData: reading.inputData,
+          language: reading.language || 'zh-TW',
+          question: reading.question || '',
+          targetType: reading.targetType || 'self',
+          familyMemberId: reading.familyMemberId,
+        }),
+      })
+      const data = await retryRes.json()
+      if (retryRes.ok && data.reading) {
+        setReadings(prev => prev.map(x => x.id === r.id ? { ...x, ...data.reading, status: 'completed' } : x))
+      } else {
+        setReadings(prev => prev.map(x => x.id === r.id ? { ...x, status: 'failed' } : x))
+      }
+    } catch {
+      setReadings(prev => prev.map(x => x.id === r.id ? { ...x, status: 'failed' } : x))
+    }
+    setRetrying(null)
+  }
 
   const deleteReading = async (id: string) => {
     await fetch(`/api/readings/${id}`, { method: 'DELETE' })
@@ -237,6 +276,17 @@ export default function DashboardPage() {
                         <p className="text-sm text-white/40 mt-1">
                           {lang === 'en' ? 'Your credit was not deducted. Please try again.' : '額度未被扣除，請重新嘗試。'}
                         </p>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); retryReading(r) }}
+                          disabled={retrying === r.id}
+                          className="mt-4 px-6 py-2 rounded-lg font-medium text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                          style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}
+                        >
+                          {retrying === r.id
+                            ? (lang === 'en' ? 'Retrying...' : '重試中...')
+                            : (lang === 'en' ? '🔄 Retry' : '🔄 重新解讀')
+                          }
+                        </button>
                       </div>
                     ) : (
                       <>
