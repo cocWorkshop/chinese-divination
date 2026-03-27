@@ -2,7 +2,7 @@
 import { useState, useCallback, useRef } from 'react'
 
 interface MasterMessage {
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'system'
   content: string
   timestamp: string
 }
