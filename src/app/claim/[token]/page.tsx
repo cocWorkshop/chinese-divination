@@ -7,8 +7,7 @@ import { useParams } from 'next/navigation'
 type Status = 'loading' | 'ready' | 'claiming' | 'claimed' | 'expired' | 'invalid' | 'not_sent' | 'no_account' | 'error'
 
 interface CompData {
-  divinationCredits: number
-  chatCredits: number
+  credits: number
   reason: string
   email: string
 }
@@ -24,7 +23,7 @@ export default function ClaimPage() {
       .then(r => r.json())
       .then(d => {
         if (d.status === 'ready') {
-          setData(d)
+          setData({ ...d, credits: (d.divinationCredits || 0) + (d.chatCredits || 0) })
           setStatus('ready')
         } else if (d.status === 'claimed') {
           setStatus('claimed')
@@ -45,7 +44,7 @@ export default function ClaimPage() {
       const res = await fetch(`/api/claim/${token}`, { method: 'POST' })
       const d = await res.json()
       if (d.success) {
-        setClaimed({ divinationCredits: d.divinationCredits, chatCredits: d.chatCredits, reason: '', email: '' })
+        setClaimed({ credits: (d.divinationCredits || 0) + (d.chatCredits || 0), reason: '', email: '' })
         setStatus('claimed')
       } else if (d.error === 'no_account') {
         setStatus('no_account')
@@ -109,8 +108,7 @@ export default function ClaimPage() {
               </div>
 
               <div className="space-y-2.5 mb-6">
-                <CreditItem label="占卜額度" value={data.divinationCredits} icon="🔮" />
-                <CreditItem label="聊天額度" value={data.chatCredits} icon="💬" />
+                <CreditItem label="額度" value={data.credits} icon="💰" />
               </div>
 
               {data.reason && (
@@ -149,8 +147,7 @@ export default function ClaimPage() {
               <p className="text-[rgba(255,255,255,0.5)] text-sm mb-4">補償額度已發放至您的帳戶</p>
               {claimed && (
                 <div className="space-y-2 mb-6">
-                  <CreditItem label="占卜額度" value={claimed.divinationCredits} icon="🔮" />
-                  <CreditItem label="聊天額度" value={claimed.chatCredits} icon="💬" />
+                  <CreditItem label="額度" value={claimed.credits} icon="💰" />
                 </div>
               )}
               <a

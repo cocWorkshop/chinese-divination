@@ -17,7 +17,7 @@ interface Compensation {
 
 interface DraftItem {
   email: string; userId?: string; reason: string; sourceType: string; sourceIds?: string
-  divinationCredits: number; chatCredits: number
+  credits: number
   selected: boolean
 }
 
@@ -35,8 +35,7 @@ export default function AdminCompensation() {
   const [drafts, setDrafts] = useState<DraftItem[]>([])
   const [manualEmail, setManualEmail] = useState('')
   const [manualReason, setManualReason] = useState('')
-  const [defaultDiv, setDefaultDiv] = useState(2)
-  const [defaultChat, setDefaultChat] = useState(1)
+  const [defaultCredits, setDefaultCredits] = useState(3)
 
   // History
   const [compensations, setCompensations] = useState<Compensation[]>([])
@@ -90,8 +89,7 @@ export default function AdminCompensation() {
       reason: `系統錯誤補償（${errorCount} 次錯誤）`,
       sourceType: 'error_log',
       sourceIds: allIds.join(','),
-      divinationCredits: defaultDiv,
-      chatCredits: defaultChat,
+      credits: defaultCredits,
       selected: true,
     }])
   }
@@ -103,8 +101,7 @@ export default function AdminCompensation() {
       email: manualEmail.trim(),
       reason: manualReason || '管理員補償',
       sourceType: 'manual',
-      divinationCredits: defaultDiv,
-      chatCredits: defaultChat,
+      credits: defaultCredits,
       selected: true,
     }])
     setManualEmail('')
@@ -128,10 +125,11 @@ export default function AdminCompensation() {
 
     try {
       // Create
+      const apiItems = selected.map(d => ({ ...d, divinationCredits: d.credits, chatCredits: 0 }))
       const createRes = await fetch('/api/admin/compensation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: selected }),
+        body: JSON.stringify({ items: apiItems }),
       })
       const createData = await createRes.json()
       if (!createRes.ok) throw new Error(createData.error || 'Failed to create')
@@ -223,13 +221,8 @@ export default function AdminCompensation() {
             <div className="text-white/60 text-xs mb-3 uppercase tracking-wider">預設補償額度</div>
             <div className="flex gap-4 items-center">
               <label className="flex items-center gap-2 text-sm text-white/70">
-                <span>🔮 占卜</span>
-                <input type="number" min={0} value={defaultDiv} onChange={e => setDefaultDiv(parseInt(e.target.value) || 0)}
-                  className="w-16 px-2 py-1 rounded-lg bg-navy-900 border border-gold/20 text-white text-center text-sm" />
-              </label>
-              <label className="flex items-center gap-2 text-sm text-white/70">
-                <span>💬 聊天</span>
-                <input type="number" min={0} value={defaultChat} onChange={e => setDefaultChat(parseInt(e.target.value) || 0)}
+                <span>💰 額度</span>
+                <input type="number" min={0} value={defaultCredits} onChange={e => setDefaultCredits(parseInt(e.target.value) || 0)}
                   className="w-16 px-2 py-1 rounded-lg bg-navy-900 border border-gold/20 text-white text-center text-sm" />
               </label>
             </div>
@@ -343,13 +336,8 @@ export default function AdminCompensation() {
                         className="flex-1 px-2 py-1 rounded bg-navy-900/50 border border-white/10 text-white/60 text-xs" />
                       <div className="flex gap-2 items-center text-xs">
                         <label className="flex items-center gap-1 text-white/50">
-                          🔮<input type="number" min={0} value={d.divinationCredits}
-                            onChange={e => updateDraft(d.email, 'divinationCredits', parseInt(e.target.value) || 0)}
-                            className="w-12 px-1 py-0.5 rounded bg-navy-900 border border-gold/15 text-white text-center" />
-                        </label>
-                        <label className="flex items-center gap-1 text-white/50">
-                          💬<input type="number" min={0} value={d.chatCredits}
-                            onChange={e => updateDraft(d.email, 'chatCredits', parseInt(e.target.value) || 0)}
+                          💰<input type="number" min={0} value={d.credits}
+                            onChange={e => updateDraft(d.email, 'credits', parseInt(e.target.value) || 0)}
                             className="w-12 px-1 py-0.5 rounded bg-navy-900 border border-gold/15 text-white text-center" />
                         </label>
                       </div>
@@ -407,9 +395,8 @@ export default function AdminCompensation() {
                   </div>
                   <div className="flex items-center gap-4 text-xs text-white/50">
                     <span className="text-white/30">{c.reason}</span>
-                    <span className="ml-auto flex gap-3">
-                      {(c.divinationCredits > 0 || c.bonusModel1 > 0) && <span>🔮 +{c.divinationCredits || c.bonusModel1}</span>}
-                      {(c.chatCredits > 0 || c.bonusChat > 0) && <span>💬 +{c.chatCredits || c.bonusChat}</span>}
+                    <span className="ml-auto">
+                      💰 +{(c.divinationCredits || 0) + (c.chatCredits || 0) + (c.bonusModel1 || 0) + (c.bonusChat || 0)}
                     </span>
                   </div>
                   {c.claimedAt && (

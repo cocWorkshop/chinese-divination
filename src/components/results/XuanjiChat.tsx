@@ -154,7 +154,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
       const data = await res.json()
       if (res.ok) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
-        if (data.chatCredits) setChatRemaining(data.chatCredits.remaining)
+        if (data.credits != null) setChatRemaining(data.credits)
         // Save the new user+assistant pair to DB (fire and forget)
         if (readingId) {
           const now = new Date().toISOString()

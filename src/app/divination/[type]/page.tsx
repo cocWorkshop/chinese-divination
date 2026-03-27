@@ -1068,10 +1068,10 @@ export default function DivinationFormPage() {
             <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50">
               <div className="flex items-center justify-between">
                 <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">
-                  {T(lang, '🔮 額度', '🔮 Credits')}
+                  {T(lang, '💰 額度', '💰 Credits')}
                 </span>
                 <span className="text-gold font-mono font-bold">
-                  {(credits.credits ?? credits.divination?.remaining) === 999 ? '∞' : (credits.credits ?? credits.divination?.remaining ?? 0)}
+                  {credits.credits === 999 ? '∞' : (credits.credits ?? 0)}
                   {credits.costs && credits.costs[type] ? (
                     <span className="text-white/40 text-xs ml-1">
                       ({T(lang, `本次消耗 ${credits.costs[type]} 點`, `costs ${credits.costs[type]} pts`)})
