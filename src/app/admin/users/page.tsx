@@ -15,9 +15,10 @@ interface UserRow {
   credits: number
   createdAt: string
   language: string
+  usageDivination: number
+  usageChat: number
+  usageMaster: number
   _count: { readings: number }
-  chatRounds: number
-  masterRounds: number
 }
 
 export default function AdminUsers() {
@@ -115,11 +116,11 @@ export default function AdminUsers() {
                   </button>
                 </td>
                 <td className="px-4 py-3 text-center text-white/70">
-                  <span title="占卜">🔮{u._count.readings}</span>
+                  <span title="占卜次數">🔮{u.usageDivination}</span>
                   <span className="text-white/30 mx-1">·</span>
-                  <span title="問答">💬{u.chatRounds}</span>
+                  <span title="問答次數">💬{u.usageChat}</span>
                   <span className="text-white/30 mx-1">·</span>
-                  <span title="大師">🧙{u.masterRounds}</span>
+                  <span title="大師次數">🧙{u.usageMaster}</span>
                 </td>
                 <td className="px-4 py-3 text-center">
                   {grantingId === u.id ? (

@@ -29,6 +29,9 @@ model User {
   credits            Int       @default(3)  // unified credit points
   divinationCredits  Int       @default(3)  // deprecated — kept for migration
   chatCredits        Int       @default(3)  // deprecated — kept for migration
+  usageDivination    Int       @default(0)  // audit: total divination count
+  usageChat          Int       @default(0)  // audit: total chat Q&A rounds
+  usageMaster        Int       @default(0)  // audit: total master conversation turns
   lastDailyBonus     DateTime?
   emailVerified     Boolean   @default(false)
   verificationToken String?   @unique

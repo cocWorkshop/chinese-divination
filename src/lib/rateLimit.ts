@@ -55,13 +55,27 @@ export async function deductCredits(userId: string, type: string): Promise<boole
     }),
     getCost(type),
   ])
-  if (user?.isAdmin) return true
+  // Determine which usage counter to increment
+  const usageField = ['bazi','ziwei','qimen','meihua','iching','liuyao','fengshui'].includes(type)
+    ? 'usageDivination'
+    : type === 'chat' ? 'usageChat'
+    : type === 'master' ? 'usageMaster'
+    : 'usageDivination'
+
+  if (user?.isAdmin) {
+    // Admin: no credit deduction but still track usage
+    await prisma.$executeRawUnsafe(
+      `UPDATE "User" SET "${usageField}" = "${usageField}" + 1 WHERE id = $1`,
+      userId
+    )
+    return true
+  }
   if (cost <= 0) return true
-  // Atomic: only decrement if credits >= cost
-  const result = await prisma.$executeRaw`
-    UPDATE "User" SET "credits" = "credits" - ${cost}
-    WHERE id = ${userId} AND "credits" >= ${cost}
-  `
+  // Atomic: decrement credits + increment usage counter
+  const result = await prisma.$executeRawUnsafe(
+    `UPDATE "User" SET "credits" = "credits" - $1, "${usageField}" = "${usageField}" + 1 WHERE id = $2 AND "credits" >= $1`,
+    cost, userId
+  )
   return result > 0
 }
 
