@@ -1,6 +1,6 @@
 import Script from 'next/script'
 import type { Metadata } from 'next'
-import { Inter, Noto_Serif_SC } from 'next/font/google'
+import { Quicksand, Noto_Sans_SC, ZCOOL_XiaoWei, Zhi_Mang_Xing } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
 import { LanguageProvider } from '@/components/LanguageContext'
@@ -12,12 +12,10 @@ import CookieBanner from '@/components/CookieBanner'
 import Footer from '@/components/Footer'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const notoSerifSC = Noto_Serif_SC({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-noto-serif',
-})
+const quicksand = Quicksand({ subsets: ['latin'], variable: '--font-quicksand', weight: ['400', '600', '700'] })
+const notoSansSC = Noto_Sans_SC({ subsets: ['latin'], variable: '--font-noto-sans', weight: ['400', '700'] })
+const zcoolXiaoWei = ZCOOL_XiaoWei({ subsets: ['latin'], variable: '--font-heading', weight: '400' })
+const zhiMangXing = Zhi_Mang_Xing({ subsets: ['latin'], variable: '--font-brand', weight: '400' })
 
 export const metadata: Metadata = {
   title: '玄機 - 古法智慧，現代傳承',
@@ -50,7 +48,7 @@ export default function RootLayout({
           </>
         )}
       </head>
-      <body className={`${inter.variable} ${notoSerifSC.variable} min-h-screen flex flex-col`}>
+      <body className={`${quicksand.variable} ${notoSansSC.variable} ${zcoolXiaoWei.variable} ${zhiMangXing.variable} min-h-screen flex flex-col`}>
         <SessionProvider>
           <LanguageProvider>
             <ThemeProvider>

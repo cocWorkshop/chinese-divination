@@ -3,8 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --font-noto-serif: 'Noto Serif SC', serif;
-  --font-inter: 'Inter', sans-serif;
+  --font-brand: 'Zhi Mang Xing', cursive;
+  --font-heading: 'ZCOOL XiaoWei', serif;
+  --font-body-zh: 'Noto Sans SC', sans-serif;
+  --font-body-en: 'Quicksand', sans-serif;
 
   /* Light theme (default root, but we default to dark via class) */
   --bg-primary: #faf8f0;
@@ -49,7 +51,7 @@
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: var(--font-inter), sans-serif;
+  font-family: var(--font-body-zh), var(--font-body-en), sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -209,6 +211,13 @@ body {
 }
 
 @layer utilities {
+  .font-brand {
+    font-family: var(--font-brand);
+  }
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
   .glass-card {
     background: var(--card-bg);
     backdrop-filter: blur(12px);
