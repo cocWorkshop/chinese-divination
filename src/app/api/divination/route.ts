@@ -241,7 +241,6 @@ export async function POST(req: NextRequest) {
 
     if (!preCreatedReadingId) {
       // Legacy path: no init call, do full validation
-      const rl = await checkCredits(session.user.id, type)
       if (settingsMap.maintenanceMode === 'true') {
         return NextResponse.json(
           { error: language !== 'en' ? '系統維護中，請稍後再試。' : 'System under maintenance. Please try again later.' },
@@ -254,11 +253,15 @@ export async function POST(req: NextRequest) {
           { status: 503 }
         )
       }
-      if (!rl.allowed) {
-        return NextResponse.json(
-          { error: language === 'en' ? `Not enough Karma (need ${rl.cost}, have ${rl.remaining}). Visit the Karma Shop to get more.` : `✨ 機緣不足（需要 ${rl.cost}，剩餘 ${rl.remaining}）。前往機緣商店補充機緣。` },
-          { status: 429 }
-        )
+      // Skip credit check for paipanOnly mode
+      if (!paipanOnly) {
+        const rl = await checkCredits(session.user.id, type)
+        if (!rl.allowed) {
+          return NextResponse.json(
+            { error: language === 'en' ? `Not enough Karma (need ${rl.cost}, have ${rl.remaining}). Visit the Karma Shop to get more.` : `✨ 機緣不足（需要 ${rl.cost}，剩餘 ${rl.remaining}）。前往機緣商店補充機緣。` },
+            { status: 429 }
+          )
+        }
       }
     }
 
