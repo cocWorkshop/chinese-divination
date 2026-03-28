@@ -3,7 +3,7 @@ import { Solar } from 'lunar-typescript'
 
 // Map pinyin shichen names to iztro timeIndex (0-12)
 const SHICHEN_TO_TIME_INDEX: Record<string, number> = {
-  'zi': 0, 'chou': 1, 'yin': 2, 'mao': 3,
+  'zi': 0, 'zi_early': 0, 'zi_late': 0, 'chou': 1, 'yin': 2, 'mao': 3,
   'chen': 4, 'si': 5, 'wu': 6, 'wei': 7,
   'shen': 8, 'you': 9, 'xu': 10, 'hai': 11,
   '子': 0, '丑': 1, '寅': 2, '卯': 3,
