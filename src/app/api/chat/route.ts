@@ -101,11 +101,14 @@ export async function POST(req: NextRequest) {
 
     const clientDate = clientTime ? new Date(clientTime) : new Date()
     const todayStr = clientDate.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
+    // Determine if the reading subject is different from the logged-in user
+    const isSubjectUser = !targetLabel && subjectInfo.name === (user.name || '未知')
+    const subjectLabel = isSubjectUser ? '用户本人' : '命主'
+
     const systemPrompt = `你是一位专业的${currentType}解盘师。你正在帮助用户深入分析他们刚刚获得的${currentType}预测结果。
 今天日期：${todayStr}。
 
-事主信息${targetLabel}：
-- 姓名：${subjectInfo.name}
+${subjectLabel}信息${targetLabel}：
 - 出生日期：${subjectInfo.birthDate}
 - 出生时辰：${subjectInfo.birthTime}
 - 出生地：${subjectInfo.birthPlace}
