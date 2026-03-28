@@ -736,6 +736,7 @@ export function calculateBazi(
   let actualBranch: string
   let solarHour: number
   let trueSolarTimeInfo: BaziChart['trueSolarTime'] | undefined
+  let addOneDay = false
 
   if (exactTime) {
     // Precise mode: parse exact HH:MM, apply true solar time correction
@@ -766,6 +767,14 @@ export function calculateBazi(
     const originalShichen = getShichen(originalDate)
     const shichenChanged = correctedShichen.branch !== originalShichen.branch
 
+    // Check if corrected time falls in early zi (00:00-01:00), which means original was late zi
+    // In this case, add 1 day to the date for day pillar calculation
+    const correctedHour = correctedDate.getHours()
+    if (correctedHour >= 23) {
+      // Late zi hour (23:00-00:00) after correction → day pillar uses next day
+      addOneDay = true
+    }
+
     actualBranch = correctedShichen.branch
     solarHour = branchToHour[actualBranch] ?? 12
 
@@ -786,9 +795,10 @@ export function calculateBazi(
       actualBranch = '子'
       solarHour = 0
     } else if (birthTime === 'zi_late') {
-      // 晚子时 23:00-00:00: 子时，但日柱用当天（需要用23点来排，lunar-typescript会自动处理日柱）
+      // 晚子时 23:00-00:00: 日柱算第二天，子时
+      addOneDay = true
       actualBranch = '子'
-      solarHour = 23
+      solarHour = 0
     } else {
       const branch = shichenNameToBranch(birthTime)
       actualBranch = branch
@@ -796,8 +806,13 @@ export function calculateBazi(
     }
   }
 
+  // Apply day adjustment if needed (late zi hour)
+  const finalYear = addOneDay ? (() => { const d = new Date(year, month - 1, day + 1); return d.getFullYear() })() : year
+  const finalMonth = addOneDay ? (() => { const d = new Date(year, month - 1, day + 1); return d.getMonth() + 1 })() : month
+  const finalDay = addOneDay ? (() => { const d = new Date(year, month - 1, day + 1); return d.getDate() })() : day
+
   // Use lunar-typescript for accurate Gan-Zhi calculation
-  const solar = Solar.fromYmdHms(year, month, day, solarHour, 0, 0)
+  const solar = Solar.fromYmdHms(finalYear, finalMonth, finalDay, solarHour, 0, 0)
   const lunar = solar.getLunar()
   const eightChar = lunar.getEightChar()
 
