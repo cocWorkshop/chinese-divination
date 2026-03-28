@@ -770,10 +770,8 @@ export function calculateBazi(
     // Check if corrected time falls in early zi (00:00-01:00), which means original was late zi
     // In this case, add 1 day to the date for day pillar calculation
     const correctedHour = correctedDate.getHours()
-    const correctedMinute = correctedDate.getMinutes()
-    const totalMinutes = correctedHour * 60 + correctedMinute
-    if (totalMinutes >= 0 && totalMinutes < 60) {
-      // Early zi hour after correction = original was late zi → add 1 day
+    if (correctedHour >= 23) {
+      // Late zi hour (23:00-00:00) after correction → day pillar uses next day
       addOneDay = true
     }
 
