@@ -429,16 +429,9 @@ ${question ? `特别关注：${question}` : ''}`
       }
     } else if (type === 'ziwei' && solarBirthDate && inputData.birthTime) {
       try {
-        // Handle zi_late: add 1 day to date for day pillar calculation
-        let adjustedDate = solarBirthDate
-        if (inputData.birthTime === 'zi_late') {
-          const [y, m, d] = solarBirthDate.split('-').map(Number)
-          const nextDay = new Date(y, m - 1, d + 1)
-          adjustedDate = `${nextDay.getFullYear()}-${nextDay.getMonth() + 1}-${nextDay.getDate()}`
-        }
         ziweiChart = calculateZiwei(
-          adjustedDate,
-          inputData.birthTime === 'zi_late' ? 'zi' : inputData.birthTime, // Convert zi_late to zi for iztro
+          solarBirthDate,
+          inputData.birthTime,
           inputData.gender || 'male'
         )
         const palaceSummary = ziweiChart.palaces.map(p => ({
