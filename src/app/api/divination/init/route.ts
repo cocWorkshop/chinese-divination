@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { type, inputData, language, question, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember } = await req.json()
+    const { type, inputData, language, question, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember, paipanOnly } = await req.json()
     const targetType = rawTargetType === 'family' ? 'family' : 'self'
 
     if (!type || !inputData) {
@@ -31,13 +31,10 @@ export async function POST(req: NextRequest) {
 
     const shouldSaveHistory = saveHistory !== false
 
-    // Check credits + maintenance
-    const [adminSettings, rl] = await Promise.all([
-      prisma.adminSetting.findMany({
-        where: { key: { in: ['maintenanceMode', 'divinationEnabled'] } },
-      }),
-      checkDivinationCredits(session.user.id),
-    ])
+    // Check credits + maintenance (skip credit check for paipanOnly mode)
+    const adminSettings = await prisma.adminSetting.findMany({
+      where: { key: { in: ['maintenanceMode', 'divinationEnabled'] } },
+    })
     const settingsMap = Object.fromEntries(adminSettings.map(s => [s.key, s.value]))
 
     if (settingsMap.maintenanceMode === 'true') {
@@ -52,11 +49,14 @@ export async function POST(req: NextRequest) {
         { status: 503 }
       )
     }
-    if (!rl.allowed) {
-      return NextResponse.json(
-        { error: language === 'en' ? 'Not enough Karma. Visit the Karma Shop to get more.' : '✨ 機緣不足，前往機緣商店補充機緣。' },
-        { status: 429 }
-      )
+    if (!paipanOnly) {
+      const rl = await checkDivinationCredits(session.user.id)
+      if (!rl.allowed) {
+        return NextResponse.json(
+          { error: language === 'en' ? 'Not enough Karma. Visit the Karma Shop to get more.' : '✨ 機緣不足，前往機緣商店補充機緣。' },
+          { status: 429 }
+        )
+      }
     }
 
     // Handle family member creation if needed

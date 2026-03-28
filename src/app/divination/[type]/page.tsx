@@ -305,6 +305,7 @@ export default function DivinationFormPage() {
           familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
           newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, name: newMemberName || undefined } : undefined,
           clientTime: new Date().toISOString(),
+          ...(paipanOnly ? { paipanOnly: true } : {}),
         }),
       })
       const initData = await initRes.json()
