@@ -24,11 +24,6 @@ const elClr: Record<string, string> = {
   metal: 'text-amber-200',  wood: 'text-emerald-400', water: 'text-sky-400',
   fire: 'text-rose-400',    earth: 'text-yellow-600',
 }
-const elBg: Record<string, string> = {
-  金: 'bg-amber-200/10 border-amber-200/30',   木: 'bg-emerald-400/10 border-emerald-400/30',
-  水: 'bg-sky-400/10 border-sky-400/30',        火: 'bg-rose-400/10 border-rose-400/30',
-  土: 'bg-yellow-600/10 border-yellow-600/30',
-}
 const elBar: Record<string, string> = {
   木: 'bg-emerald-400', 火: 'bg-rose-400', 土: 'bg-yellow-600', 金: 'bg-amber-200', 水: 'bg-sky-400',
 }
@@ -116,7 +111,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
         {tst && (
           <div className="flex items-center gap-1.5 mb-2 px-1">
             <span className="text-blue-400 text-[10px]">🕐</span>
-            <span className="text-white/40 text-[10px]">
+            <span className="text-[var(--text-muted)] text-[10px]">
               {tst.originalTime} → {tst.correctedTime} ({tst.correctionMinutes >= 0 ? '+' : ''}{tst.correctionMinutes.toFixed(0)}min)
             </span>
             {tst.shichenChanged && <span className="text-amber-400 text-[10px]">{T(lang, '⚠️時辰已變', '⚠️ Hour shifted')}</span>}
@@ -127,9 +122,9 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
         <table className="w-full text-center border-collapse">
           <thead>
             <tr>
-              <td className="text-white/30 text-[10px] sm:text-xs py-1 w-12 sm:w-16"></td>
+              <td className="text-[var(--text-muted)] text-[10px] sm:text-xs py-1 w-12 sm:w-16"></td>
               {pillars.map(p => (
-                <td key={p.label} className="text-white/50 text-[10px] sm:text-xs py-1 font-medium">
+                <td key={p.label} className="text-[var(--text-secondary)] text-[10px] sm:text-xs py-1 font-medium">
                   {T(lang, p.label, p.en)}
                 </td>
               ))}
@@ -138,15 +133,15 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           <tbody>
             {/* Row: 主星 (Ten God of stem) */}
             <tr className="border-t border-white/5">
-              <td className="text-white/30 text-[10px] py-1">{T(lang, '主星', 'God')}</td>
+              <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '主星', 'God')}</td>
               {pillars.map(({ label, data: p }) => {
                 const god = label === '日柱' ? T(lang, '日主', 'Self') : p?.tenGods?.[0]?.god || ''
-                return <td key={label} className="text-white/60 text-[10px] sm:text-xs py-1">{god}</td>
+                return <td key={label} className="text-[var(--text-secondary)] text-[10px] sm:text-xs py-1">{god}</td>
               })}
             </tr>
             {/* Row: 天干 */}
-            <tr className="border-t border-white/10">
-              <td className="text-white/30 text-[10px] py-1">{T(lang, '天干', 'Stem')}</td>
+            <tr className="border-t border-[var(--text-muted)]/10">
+              <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '天干', 'Stem')}</td>
               {pillars.map(({ label, data: p }) => {
                 const stemEl = charElement(p?.stem || '')
                 return (
@@ -159,8 +154,8 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
               })}
             </tr>
             {/* Row: 地支 */}
-            <tr className="border-t border-white/10">
-              <td className="text-white/30 text-[10px] py-1">{T(lang, '地支', 'Branch')}</td>
+            <tr className="border-t border-[var(--text-muted)]/10">
+              <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '地支', 'Branch')}</td>
               {pillars.map(({ label, data: p }) => {
                 const branchEl = charElement(p?.branch || '')
                 return (
@@ -174,21 +169,21 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
             </tr>
             {/* Row: 藏干 */}
             <tr className="border-t border-white/5">
-              <td className="text-white/30 text-[10px] py-1">{T(lang, '藏干', 'Hidden')}</td>
+              <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '藏干', 'Hidden')}</td>
               {pillars.map(({ label, data: p }) => (
-                <td key={label} className="text-white/40 text-[10px] py-1 leading-tight">
+                <td key={label} className="text-[var(--text-muted)] text-[10px] py-1 leading-tight">
                   {(p?.hiddenStems || []).map((hs, i) => {
                     const hEl = STEM_ELEMENT_MAP[hs] || ''
-                    return <span key={i} className={`${elClr[hEl] || 'text-white/40'}`}>{hs}{hEl} </span>
+                    return <span key={i} className={`${elClr[hEl] || 'text-[var(--text-muted)]'}`}>{hs}{hEl} </span>
                   })}
                 </td>
               ))}
             </tr>
             {/* Row: 副星 (hidden stem gods) */}
             <tr className="border-t border-white/5">
-              <td className="text-white/30 text-[10px] py-1">{T(lang, '副星', 'Sub')}</td>
+              <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '副星', 'Sub')}</td>
               {pillars.map(({ label, data: p }) => (
-                <td key={label} className="text-white/30 text-[10px] py-1 leading-tight">
+                <td key={label} className="text-[var(--text-muted)] text-[10px] py-1 leading-tight">
                   {(p?.tenGods || []).slice(1).map((tg, i) => (
                     <div key={i}>{tg.god}</div>
                   ))}
@@ -197,23 +192,23 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
             </tr>
             {/* Row: 十二长生 */}
             <tr className="border-t border-white/5">
-              <td className="text-white/30 text-[10px] py-1">{T(lang, '長生', 'Stage')}</td>
+              <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '長生', 'Stage')}</td>
               {pillars.map(({ label, data: p }) => (
-                <td key={label} className="text-white/40 text-[10px] py-1">{p?.changSheng || ''}</td>
+                <td key={label} className="text-[var(--text-muted)] text-[10px] py-1">{p?.changSheng || ''}</td>
               ))}
             </tr>
             {/* Row: 纳音 */}
             <tr className="border-t border-white/5">
-              <td className="text-white/30 text-[10px] py-1">{T(lang, '納音', 'Nayin')}</td>
+              <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '納音', 'Nayin')}</td>
               {pillars.map(({ label, data: p }) => (
-                <td key={label} className="text-white/30 text-[10px] py-1">{p?.nayin || ''}</td>
+                <td key={label} className="text-[var(--text-muted)] text-[10px] py-1">{p?.nayin || ''}</td>
               ))}
             </tr>
             {/* Row: 空亡 */}
             <tr className="border-t border-white/5">
-              <td className="text-white/30 text-[10px] py-1">{T(lang, '空亡', 'Void')}</td>
+              <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '空亡', 'Void')}</td>
               {pillars.map(({ label, data: p }) => (
-                <td key={label} className="text-white/30 text-[10px] py-1">{(p?.kongWang || []).join('')}</td>
+                <td key={label} className="text-[var(--text-muted)] text-[10px] py-1">{(p?.kongWang || []).join('')}</td>
               ))}
             </tr>
           </tbody>
@@ -245,7 +240,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                 <div className="flex-1 bg-navy-900 rounded-full h-1.5">
                   <div className={`h-1.5 rounded-full ${elBar[el]}`} style={{ width: `${(count / feMax) * 100}%` }} />
                 </div>
-                <span className="text-white/40 text-[10px] w-4 text-right">{count}</span>
+                <span className="text-[var(--text-muted)] text-[10px] w-4 text-right">{count}</span>
               </div>
             ))}
           </div>
@@ -253,13 +248,13 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           {/* Lucky/Avoid compact */}
           <div className="flex-shrink-0 text-right space-y-1">
             <div>
-              <span className="text-white/40 text-[10px]">{T(lang, '喜', 'Lucky')}: </span>
+              <span className="text-[var(--text-muted)] text-[10px]">{T(lang, '喜', 'Lucky')}: </span>
               {(d.luckyElements || []).map(el => (
                 <span key={el} className={`text-[10px] sm:text-xs font-bold ${elClr[el] || ''}`}>{el}</span>
               ))}
             </div>
             <div>
-              <span className="text-white/40 text-[10px]">{T(lang, '忌', 'Avoid')}: </span>
+              <span className="text-[var(--text-muted)] text-[10px]">{T(lang, '忌', 'Avoid')}: </span>
               {(d.avoidElements || []).map(el => (
                 <span key={el} className="text-red-400 text-[10px] sm:text-xs font-bold">{el}</span>
               ))}
@@ -300,7 +295,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                       const label = lang === 'en' ? (key === 'year' ? 'Year' : key === 'month' ? 'Month' : key === 'day' ? 'Day' : 'Hour') : (key === 'year' ? '年' : key === 'month' ? '月' : key === 'day' ? '日' : '時')
                       return (
                         <div key={key}>
-                          <div className="text-white/40 text-[10px] mb-1">{label}</div>
+                          <div className="text-[var(--text-muted)] text-[10px] mb-1">{label}</div>
                           <div className="flex flex-wrap gap-0.5">
                             {ss.length > 0 ? ss.map((s, i) => (
                               <span key={i} className="group relative px-1.5 py-0.5 rounded border border-gold/20 bg-gold/5 text-gold text-[10px] cursor-default">
@@ -309,7 +304,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                                   {s.description}
                                 </span>
                               </span>
-                            )) : <span className="text-white/15 text-[10px]">—</span>}
+                            )) : <span className="text-[var(--text-muted)] text-[10px]">—</span>}
                           </div>
                         </div>
                       )
@@ -331,7 +326,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-gold font-serif text-xs">{T(lang, '大運', 'Da Yun')}</h3>
                   {d.qiYun && (
-                    <span className="text-white/30 text-[9px]">
+                    <span className="text-[var(--text-muted)] text-[9px]">
                       {d.qiYun.direction} · {d.qiYun.startAgeLabel}{T(lang, '起運', ' start')}
                     </span>
                   )}
@@ -341,13 +336,13 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                     {d.daYun.map((dy, i) => {
                       const el = STEM_ELEMENT_MAP[dy.stem] || ''
                       return (
-                        <div key={i} className={`rounded-lg border px-2 py-1.5 text-center min-w-[60px] ${elBg[el] || 'border-gold/20'}`}>
-                          <div className="text-white/30 text-[9px]">{dy.startAge}-{dy.endAge}</div>
+                        <div key={i} className="rounded-lg border border-gold/20 bg-white/5 dark:bg-white/5 px-2 py-1.5 text-center min-w-[60px]">
+                          <div className="text-[var(--text-muted)] text-[10px]">{dy.startAge}-{dy.endAge}</div>
                           <div className="text-sm font-serif font-bold">
-                            <span className={elClr[charElement(dy.stem)] || 'text-white'}>{dy.stem}</span>
-                            <span className={elClr[charElement(dy.branch)] || 'text-white'}>{dy.branch}</span>
+                            <span className={elClr[charElement(dy.stem)] || 'text-[var(--text-primary)]'}>{dy.stem}</span>
+                            <span className={elClr[charElement(dy.branch)] || 'text-[var(--text-primary)]'}>{dy.branch}</span>
                           </div>
-                          <div className="text-white/20 text-[9px]">{dy.startYear}-{dy.endYear}</div>
+                          <div className="text-[var(--text-muted)] text-[10px]">{dy.startYear}-{dy.endYear}</div>
                         </div>
                       )
                     })}
@@ -362,11 +357,11 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                 <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '小運（起運前）', 'Xiao Yun')}</h3>
                 <div className="flex flex-wrap gap-1">
                   {d.xiaoYun.map((xy, i) => (
-                    <div key={i} className="px-1.5 py-1 rounded border border-white/10 bg-white/5 text-center">
-                      <div className="text-white/20 text-[8px]">{xy.age}{T(lang, '歲', '')}</div>
-                      <div className="text-xs font-serif">
-                        <span className={elClr[charElement(xy.stem)] || 'text-white/60'}>{xy.stem}</span>
-                        <span className={elClr[charElement(xy.branch)] || 'text-white/60'}>{xy.branch}</span>
+                    <div key={i} className="px-2 py-1.5 rounded border border-gold/20 bg-white/5 dark:bg-white/5 text-center">
+                      <div className="text-[var(--text-muted)] text-[10px]">{xy.age}{T(lang, '歲', '')}</div>
+                      <div className="text-sm font-serif">
+                        <span className={elClr[charElement(xy.stem)] || 'text-[var(--text-primary)]'}>{xy.stem}</span>
+                        <span className={elClr[charElement(xy.branch)] || 'text-[var(--text-primary)]'}>{xy.branch}</span>
                       </div>
                     </div>
                   ))}
@@ -387,7 +382,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
         <div className="flex flex-wrap gap-1 mb-3">
           {sectionsList.map(s => (
             <button key={s.key} onClick={() => setActiveSection(s.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}>
+              className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-[var(--text-secondary)] hover:text-gold border border-gold/20'}`}>
               {s.icon} {lang === 'en' ? s.en : s.label}
             </button>
           ))}
@@ -399,7 +394,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
           >
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
+            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-[var(--text-secondary)] text-sm leading-relaxed whitespace-pre-wrap">
               {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
             </div>
           </motion.div>
@@ -414,7 +409,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
             {d.keyAdvice.map((advice, i) => (
               <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">
                 <span className="w-5 h-5 rounded-full bg-gold/20 text-gold text-[10px] flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
-                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
+                <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{advice}</p>
               </div>
             ))}
           </div>
@@ -430,13 +425,13 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           className="glass-card rounded-xl p-3 border border-gold/20">
           <div className="flex flex-wrap gap-4 text-xs">
             {d.luckyInfo.numbers?.length > 0 && (
-              <div><span className="text-white/40">{T(lang, '幸運數:', 'Lucky #:')}</span> <span className="text-gold">{d.luckyInfo.numbers.join(', ')}</span></div>
+              <div><span className="text-[var(--text-muted)]">{T(lang, '幸運數:', 'Lucky #:')}</span> <span className="text-gold">{d.luckyInfo.numbers.join(', ')}</span></div>
             )}
             {d.luckyInfo.colors?.length > 0 && (
-              <div><span className="text-white/40">{T(lang, '幸運色:', 'Colors:')}</span> <span className="text-gold">{d.luckyInfo.colors.join(', ')}</span></div>
+              <div><span className="text-[var(--text-muted)]">{T(lang, '幸運色:', 'Colors:')}</span> <span className="text-gold">{d.luckyInfo.colors.join(', ')}</span></div>
             )}
             {d.luckyInfo.directions?.length > 0 && (
-              <div><span className="text-white/40">{T(lang, '吉方位:', 'Directions:')}</span> <span className="text-gold">{d.luckyInfo.directions.join(', ')}</span></div>
+              <div><span className="text-[var(--text-muted)]">{T(lang, '吉方位:', 'Directions:')}</span> <span className="text-gold">{d.luckyInfo.directions.join(', ')}</span></div>
             )}
           </div>
         </motion.div>
