@@ -34,6 +34,7 @@ interface ReadingDetail {
   id: string; type: string; modelTier: string; question: string | null
   inputData: Record<string, unknown>; result: string
   calculationData: string | null; llmPrompt: string | null; llmRawOutput: string | null
+  chatMessages: string | null
   language: string; targetType: string; rating: number | null; createdAt: string
   user: { id: string; name: string | null; email: string | null }
   familyMember: { name: string | null; relation: string } | null
@@ -83,7 +84,7 @@ export default function AdminSystemLogs() {
   const [readingsTypeFilter, setReadingsTypeFilter] = useState('')
   const [readingsLoading, setReadingsLoading] = useState(true)
   const [readingDetail, setReadingDetail] = useState<ReadingDetail | null>(null)
-  const [readingDetailTab, setReadingDetailTab] = useState<'result' | 'input' | 'calculation' | 'llmPrompt' | 'llmOutput'>('result')
+  const [readingDetailTab, setReadingDetailTab] = useState<'result' | 'input' | 'calculation' | 'llmPrompt' | 'llmOutput' | 'chat'>('result')
 
   // Divination performance state
   interface DivReading {
@@ -587,6 +588,7 @@ export default function AdminSystemLogs() {
                   { key: 'calculation' as const, label: '🔢 程序計算', available: !!readingDetail.calculationData },
                   { key: 'llmPrompt' as const, label: '🤖 LLM輸入', available: !!readingDetail.llmPrompt },
                   { key: 'llmOutput' as const, label: '💬 LLM輸出', available: !!readingDetail.llmRawOutput },
+                  { key: 'chat' as const, label: '☯ 玄機問答', available: !!readingDetail.chatMessages },
                 ]).map(t => (
                   <button key={t.key} onClick={() => setReadingDetailTab(t.key)} disabled={!t.available}
                     className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
@@ -612,6 +614,25 @@ export default function AdminSystemLogs() {
                 {readingDetailTab === 'llmOutput' && readingDetail.llmRawOutput && (
                   <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{readingDetail.llmRawOutput}</pre>
                 )}
+                {readingDetailTab === 'chat' && readingDetail.chatMessages && (() => {
+                  try {
+                    const msgs = JSON.parse(readingDetail.chatMessages) as { role: string; content: string; timestamp?: string }[]
+                    return (
+                      <div className="p-4 space-y-3 max-h-[70vh] overflow-y-auto">
+                        {msgs.length === 0 ? <p className="text-white/30 text-sm">暫無問答記錄</p> : msgs.map((msg, i) => (
+                          <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`rounded-2xl px-3 py-2 text-sm leading-relaxed max-w-[85%] ${
+                              msg.role === 'user' ? 'bg-gold text-navy-950 rounded-br-sm' : 'bg-white/5 border border-gold/20 text-white/80 rounded-bl-sm'
+                            }`}>
+                              <p className="whitespace-pre-wrap">{msg.content}</p>
+                              {msg.timestamp && <p className="text-[10px] opacity-50 mt-1">{new Date(msg.timestamp).toLocaleString('zh-TW')}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  } catch { return <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap">{readingDetail.chatMessages}</pre> }
+                })()}
               </div>
 
               {readingDetail.feedbacks.length > 0 && (
