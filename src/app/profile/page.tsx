@@ -38,7 +38,6 @@ interface FamilyMember {
 }
 
 const shichen = [
-  { value: 'zi',   label: '子時  23:00 – 01:00' },
   { value: 'chou', label: '丑時  01:00 – 03:00' },
   { value: 'yin',  label: '寅時  03:00 – 05:00' },
   { value: 'mao',  label: '卯時  05:00 – 07:00' },
@@ -50,6 +49,7 @@ const shichen = [
   { value: 'you',  label: '酉時  17:00 – 19:00' },
   { value: 'xu',   label: '戌時  19:00 – 21:00' },
   { value: 'hai',  label: '亥時  21:00 – 23:00' },
+  { value: 'zi_late', label: '晚子時  23:00 – 00:00' },
 ]
 
 const T = (lang: string, zhTW: string, en: string) =>
