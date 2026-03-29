@@ -9,8 +9,5 @@ node_modules
 .env.production
 .env.*.local
 
-# Deploy script (contains local paths)
-deploy.sh
-
 # Agent
 AGENT_TASK.md
