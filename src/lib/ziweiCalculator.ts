@@ -127,7 +127,9 @@ export function calculateZiwei(
     // Compute four pillars (四柱) using lunar-typescript for correct solar-term-based month pillar
     // (iztro's chart.chineseDate uses lunar month which is incorrect for 月柱)
     chineseDate: (() => {
-      const solarHour = timeIndex === 0 ? 23 : timeIndex * 2 - 1
+      // For zi hour (timeIndex 0): use hour 0 (early zi) on the given date
+      // The caller is responsible for adding 1 day for zi_late before calling this function
+      const solarHour = timeIndex === 0 ? 0 : timeIndex * 2 - 1
       const solar = Solar.fromYmdHms(y, m, d, solarHour, 0, 0)
       const lunar = solar.getLunar()
       const ec = lunar.getEightChar()
