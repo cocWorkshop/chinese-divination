@@ -104,7 +104,7 @@ const schemas: Record<string, object> = {
     luckyElements: ['喜用五行'],
     avoidElements: ['忌神五行'],
     sections: {
-      overview: '命主性格与出身分析(150+字)：日主强弱、性格特征、家庭出身、六亲关系',
+      overview: '命主性格与出身分析(200+字)：日主强弱、性格特征、家庭出身、六亲关系',
       career: '事业官运分析(150+字)：适合行业、发展方向、贵人运',
       marriage: '婚姻感情分析(150+字)：配偶特征、婚姻质量、感情运势',
       wealth: '财运分析(150+字)：正财偏财、理财建议、财运高峰期',
