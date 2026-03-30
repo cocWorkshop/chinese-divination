@@ -51,6 +51,10 @@ const PALACE_EN: Record<string, string> = {
   '命宫': 'Life', '兄弟宫': 'Siblings', '夫妻宫': 'Spouse', '子女宫': 'Children',
   '财帛宫': 'Wealth', '疾厄宫': 'Health', '迁移宫': 'Travel', '奴仆宫': 'Friends',
   '官禄宫': 'Career', '田宅宫': 'Property', '福德宫': 'Fortune', '父母宫': 'Parents',
+  // Short names (without 宫) from iztro zh-CN locale
+  '兄弟': 'Siblings', '夫妻': 'Spouse', '子女': 'Children',
+  '财帛': 'Wealth', '疾厄': 'Health', '迁移': 'Travel', '仆役': 'Friends',
+  '官禄': 'Career', '田宅': 'Property', '福德': 'Fortune', '父母': 'Parents',
 }
 
 // Zodiac English
@@ -76,17 +80,17 @@ const zodiacLabel = (zodiac: string, lang: string) => {
 
 const PALACE_NAME_VARIANTS: Record<string, string[]> = {
   '命宫': ['命宫', '命宮'],
-  '兄弟宫': ['兄弟宫', '兄弟宮'],
-  '夫妻宫': ['夫妻宫', '夫妻宮'],
-  '子女宫': ['子女宫', '子女宮'],
-  '财帛宫': ['财帛宫', '財帛宮', '财帛宮'],
-  '疾厄宫': ['疾厄宫', '疾厄宮'],
-  '迁移宫': ['迁移宫', '遷移宮', '迁移宮'],
-  '奴仆宫': ['奴仆宫', '奴僕宮', '交友宫', '交友宮', '僕役宮', '仆役宫'],
-  '官禄宫': ['官禄宫', '官祿宮', '官禄宮'],
-  '田宅宫': ['田宅宫', '田宅宮'],
-  '福德宫': ['福德宫', '福德宮'],
-  '父母宫': ['父母宫', '父母宮'],
+  '兄弟宫': ['兄弟宫', '兄弟宮', '兄弟'],
+  '夫妻宫': ['夫妻宫', '夫妻宮', '夫妻'],
+  '子女宫': ['子女宫', '子女宮', '子女'],
+  '财帛宫': ['财帛宫', '財帛宮', '财帛宮', '财帛'],
+  '疾厄宫': ['疾厄宫', '疾厄宮', '疾厄'],
+  '迁移宫': ['迁移宫', '遷移宮', '迁移宮', '迁移'],
+  '奴仆宫': ['奴仆宫', '奴僕宮', '交友宫', '交友宮', '僕役宮', '仆役宫', '仆役'],
+  '官禄宫': ['官禄宫', '官祿宮', '官禄宮', '官禄'],
+  '田宅宫': ['田宅宫', '田宅宮', '田宅'],
+  '福德宫': ['福德宫', '福德宮', '福德'],
+  '父母宫': ['父母宫', '父母宮', '父母'],
 }
 
 function findPalace(palaces: Record<string, ZiweiPalaceData>, canonicalName: string): ZiweiPalaceData | undefined {
