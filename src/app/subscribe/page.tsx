@@ -167,7 +167,7 @@ export default function SubscribePage() {
                 </span>
                 {pack.discount && (
                   <span className="ml-2 text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: '#22c55e' }}>
-                    {T(lang, `額外${pack.discount}`, `Extra ${pack.discount} off`)}
+                    {T(lang, `額外${pack.discount.zh}`, `Extra ${pack.discount.en}`)}
                   </span>
                 )}
               </div>
