@@ -292,6 +292,7 @@ export default function DivinationFormPage() {
 
     // Step 1: Create pending reading via /api/divination/init (fast, <1s)
     let pendingReadingId: string | null = null
+    let resolvedMemberId: string | undefined = targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined
     try {
       const initRes = await fetch('/api/divination/init', {
         method: 'POST',
@@ -317,6 +318,10 @@ export default function DivinationFormPage() {
         return
       }
       pendingReadingId = initData.readingId
+      // If init created a new family member, use the returned ID for Step 2 (avoid duplicate creation)
+      if (initData.familyMemberId && selectedMemberId === '__new__') {
+        resolvedMemberId = initData.familyMemberId
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Network error'
       toast.error(T(lang, '網絡錯誤，請重試', 'Network error, please retry'))
@@ -340,8 +345,7 @@ export default function DivinationFormPage() {
           saveProfile: saveProfile,
           saveHistory,
           targetType,
-          familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
-          newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, name: newMemberName || undefined } : undefined,
+          familyMemberId: resolvedMemberId || undefined,
           readingId: pendingReadingId,
           clientTime: new Date().toISOString(),
           ...(paipanOnly ? { paipanOnly: true } : {}),
@@ -438,7 +442,7 @@ export default function DivinationFormPage() {
           body: JSON.stringify({
             type,
             targetType,
-            familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
+            familyMemberId: resolvedMemberId || undefined,
             inputData: { birthDate: form.birthDate, birthTime: form.birthTime, gender: form.gender },
           }),
         })
