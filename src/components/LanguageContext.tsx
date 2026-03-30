@@ -25,6 +25,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       // Migrate from old simplified Chinese to Traditional
       setLangState('zh-TW')
       localStorage.setItem('lang', 'zh-TW')
+    } else {
+      // Auto-detect from browser language: zh-* → zh-TW, everything else → en
+      const browserLang = navigator.language || ''
+      const detected: Lang = browserLang.startsWith('zh') ? 'zh-TW' : 'en'
+      setLangState(detected)
+      localStorage.setItem('lang', detected)
     }
   }, [])
 
