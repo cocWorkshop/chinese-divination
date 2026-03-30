@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { message, history, readingContext, readingType, readingId: chatReadingId, clientTime } = await req.json()
+    const { message, history, readingContext, readingType, readingId: chatReadingId, clientTime, lang } = await req.json()
+    const isEnglish = lang === 'en'
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
     }
@@ -93,19 +94,60 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const typeLabel: Record<string, string> = {
+    const typeLabelZh: Record<string, string> = {
       bazi: '八字命理', ziwei: '紫微斗数', liuyao: '六爻', iching: '易经',
       qimen: '奇门遁甲', fengshui: '风水', meihua: '梅花易数', other: '命理',
     }
-    const currentType = typeLabel[readingType] || '命理'
+    const typeLabelEn: Record<string, string> = {
+      bazi: 'BaZi (Four Pillars)', ziwei: 'Zi Wei Dou Shu', liuyao: 'Liu Yao', iching: 'I Ching',
+      qimen: 'Qi Men Dun Jia', fengshui: 'Feng Shui', meihua: 'Mei Hua Yi Shu', other: 'Divination',
+    }
+    const currentTypeZh = typeLabelZh[readingType] || '命理'
+    const currentTypeEn = typeLabelEn[readingType] || 'Divination'
 
     const clientDate = clientTime ? new Date(clientTime) : new Date()
-    const todayStr = clientDate.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
+    const todayStr = isEnglish
+      ? clientDate.toLocaleDateString('en-US', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
+      : clientDate.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
     // Determine if the reading subject is different from the logged-in user
     const isSubjectUser = !targetLabel && subjectInfo.name === (user.name || '未知')
-    const subjectLabel = isSubjectUser ? '用户本人' : '命主'
+    const subjectLabel = isSubjectUser ? (isEnglish ? 'The user' : '用户本人') : (isEnglish ? 'Subject' : '命主')
 
-    const systemPrompt = `你是一位专业的${currentType}解盘师。你正在帮助用户深入分析他们刚刚获得的${currentType}预测结果。
+    const systemPrompt = isEnglish
+      ? `You are a professional ${currentTypeEn} reading analyst. You are helping the user deeply analyze their ${currentTypeEn} reading result.
+Today's date: ${todayStr}.
+
+${subjectLabel} information${targetLabel}:
+- Birth date: ${subjectInfo.birthDate}
+- Birth time: ${subjectInfo.birthTime}
+- Birth place: ${subjectInfo.birthPlace}
+- Gender: ${subjectInfo.gender}
+
+Current ${currentTypeEn} reading result:
+${readingData || '(No reading data)'}
+
+【Core Responsibility】
+Your sole task is to provide in-depth interpretation and analysis based on the reading result above. Every question from the user should be answered in the context of this specific reading.
+
+【Analysis Principles】
+- Must reference specific data from the reading (e.g., specific stars, hexagrams, line texts, pillars, five elements, etc.) — no generic talk
+- Translate technical terms into practical impacts and actionable advice the user can understand
+- Guide with a positive perspective — even unfavorable patterns should include remedies
+- Focus each answer on the user's specific question with targeted analysis
+
+【Response Requirements】
+- Keep within 200 words, concise yet insightful
+- Natural and conversational, as if doing a face-to-face reading
+- Do not repeat what the reading result already stated — go deeper or offer a different angle
+- ALWAYS respond in English
+
+【Conversation Guidance】
+- At the end of each answer, suggest 1-2 follow-up questions the user might care about, based on the subject's info and reading
+- Questions should be specific, targeted, and relevant to the current topic
+- Use natural phrasing like: "You might also want to know...", "Speaking of which, have you considered..."
+- Vary your lead-in phrases to keep it natural
+`
+      : `你是一位专业的${currentTypeZh}解盘师。你正在帮助用户深入分析他们刚刚获得的${currentTypeZh}预测结果。
 今天日期：${todayStr}。
 
 ${subjectLabel}信息${targetLabel}：
@@ -114,7 +156,7 @@ ${subjectLabel}信息${targetLabel}：
 - 出生地：${subjectInfo.birthPlace}
 - 性别：${subjectInfo.gender}
 
-当前${currentType}预测结果：
+当前${currentTypeZh}预测结果：
 ${readingData || '（无预测数据）'}
 
 【核心职责】
