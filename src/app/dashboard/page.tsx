@@ -151,6 +151,8 @@ export default function DashboardPage() {
   }
 
   const deleteReading = async (id: string) => {
+    const msg = lang === 'en' ? 'Are you sure you want to delete this reading?' : '確定要刪除這條記錄嗎？'
+    if (!window.confirm(msg)) return
     await fetch(`/api/readings/${id}`, { method: 'DELETE' })
     setReadings(r => r.filter(x => x.id !== id))
   }

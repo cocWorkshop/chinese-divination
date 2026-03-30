@@ -7,7 +7,7 @@ export interface CreditPack {
   originalPrice: number // in cents (display as strikethrough)
   credits: number // unified credit points
   popular?: boolean
-  discount?: string // display label
+  discount?: { zh: string; en: string } // display label
 }
 
 export const CREDIT_PACKS: Record<PackId, CreditPack> = {
@@ -25,7 +25,7 @@ export const CREDIT_PACKS: Record<PackId, CreditPack> = {
     originalPrice: 9900, // $99.00
     credits: 100,
     popular: true,
-    discount: '9折',
+    discount: { zh: '9折', en: '10% OFF' },
   },
   pack200: {
     name: { zh: '200 機緣', en: '200 Karma' },
@@ -33,6 +33,6 @@ export const CREDIT_PACKS: Record<PackId, CreditPack> = {
     price: 1782, // $17.82 (10% off of $19.80)
     originalPrice: 19800, // $198.00
     credits: 200,
-    discount: '9折',
+    discount: { zh: '9折', en: '10% OFF' },
   },
 }
