@@ -15,6 +15,8 @@ import { calculateQimen, QimenChart } from '@/lib/qimenCalculator'
 import { calculateLiuYao, LiuYaoChart } from '@/lib/liuyaoCalculator'
 import { calculateMeihua, MeihuaChart } from '@/lib/meihuaCalculator'
 import { logLlmCall } from '@/lib/llmLogger'
+import { trueSolarTime, getTrueSolarTimeCorrection, getShichen } from '@/lib/trueSolarTime'
+import { getTimezoneOffset } from '@/lib/dstDetection'
 import { Lunar } from 'lunar-typescript'
 
 const refFileMap: Record<string, string> = {
@@ -430,18 +432,66 @@ ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 输入信息：${JSON.stringify(inputData, null, 2)}
 ${question ? `特别关注：${question}` : ''}`
       }
-    } else if (type === 'ziwei' && solarBirthDate && inputData.birthTime) {
+    } else if (type === 'ziwei' && solarBirthDate && (inputData.birthTime || inputData.exactTime)) {
       try {
-        // Handle zi_late: add 1 day to date for day pillar calculation
+        const [zy, zm, zd] = solarBirthDate.split('-').map(Number)
+        let shichen = inputData.birthTime || ''
         let adjustedDate = solarBirthDate
-        if (inputData.birthTime === 'zi_late') {
-          const [y, m, d] = solarBirthDate.split('-').map(Number)
-          const nextDay = new Date(y, m - 1, d + 1)
+        let ziweiTrueSolarInfo = ''
+
+        if (inputData.timeMode === 'precise' && inputData.exactTime) {
+          // Precise mode: apply true solar time correction (same logic as bazi)
+          const longitude = inputData.birthLng ?? 120.0
+          const [exactHour, exactMinute] = inputData.exactTime.split(':').map(Number)
+          const parsedHour = exactHour
+          const tzResult = getTimezoneOffset(zy, zm, zd, parsedHour, longitude, inputData.birthLat)
+          const timezone = tzResult.offset
+
+          // DST adjustment
+          let adjHour = exactHour
+          let adjDay = zd, adjMonth = zm, adjYear = zy
+          if (tzResult.isDST) {
+            adjHour -= 1
+            if (adjHour < 0) {
+              adjHour += 24
+              const prevDate = new Date(zy, zm - 1, zd - 1)
+              adjYear = prevDate.getFullYear()
+              adjMonth = prevDate.getMonth() + 1
+              adjDay = prevDate.getDate()
+            }
+          }
+
+          const standardDate = new Date(adjYear, adjMonth - 1, adjDay, adjHour, exactMinute, 0)
+          const correctedDate = trueSolarTime(standardDate, longitude, tzResult.isDST ? timezone - 1 : timezone)
+          const correctedShichen = getShichen(correctedDate)
+          const correctedHour = correctedDate.getHours()
+
+          shichen = correctedShichen.name
+          // Handle zi_late after solar time correction
+          if (correctedHour >= 23) {
+            shichen = 'zi_late'
+          }
+
+          const originalDate = new Date(zy, zm - 1, zd, exactHour, exactMinute, 0)
+          const originalShichen = getShichen(originalDate)
+          const correctionMinutes = getTrueSolarTimeCorrection(standardDate, longitude, tzResult.isDST ? timezone - 1 : timezone)
+          const shichenChanged = correctedShichen.branch !== originalShichen.branch
+          const formatT = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+          ziweiTrueSolarInfo = `（精确时间，已真太阳时校正：${formatT(originalDate)} → ${formatT(correctedDate)}，校正${Math.round(correctionMinutes * 10) / 10}分钟${shichenChanged ? '，时辰已变更' : ''}${tzResult.isDST ? '，已扣除夏令时' : ''}）`
+        } else {
+          // Fuzzy mode: use shichen directly
+          shichen = inputData.birthTime || 'zi'
+        }
+
+        // Handle zi_late: add 1 day
+        if (shichen === 'zi_late') {
+          const nextDay = new Date(zy, zm - 1, zd + 1)
           adjustedDate = `${nextDay.getFullYear()}-${nextDay.getMonth() + 1}-${nextDay.getDate()}`
         }
+
         ziweiChart = calculateZiwei(
           adjustedDate,
-          inputData.birthTime === 'zi_late' ? 'zi' : inputData.birthTime, // Convert zi_late to zi for iztro
+          shichen === 'zi_late' ? 'zi' : shichen,
           inputData.gender || 'male'
         )
         const palaceSummary = ziweiChart.palaces.map(p => ({
@@ -474,8 +524,10 @@ ${JSON.stringify({
 
 ## 用户输入
 - 出生日期：${solarBirthDate}（公历）${inputData.lunarToggle === 'lunar' ? `（用户输入农历 ${inputData.birthDate}）` : ''}
-- 出生时辰：${ziweiChart.time}
+- 出生时辰：${inputData.timeMode === 'precise' ? inputData.exactTime : inputData.birthTime}${ziweiTrueSolarInfo || (inputData.timeMode === 'precise' ? '' : '（模糊时辰）')}
+- 出生地：${inputData.birthPlace || '未提供'}
 - 性别：${inputData.gender}
+${inputData.birthEnvironment ? `- 出生地环境：${inputData.birthEnvironment}` : ''}
 ${question ? `- 特别关注：${question}` : ''}
 
 ## 解盘要求
