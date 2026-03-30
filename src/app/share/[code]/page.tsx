@@ -13,6 +13,7 @@ import { catchAndReport } from '@/lib/errorReporter'
 function T(lang: string, zh: React.ReactNode, en: React.ReactNode): React.ReactNode {
   return lang === 'en' ? en : zh
 }
+const Ts = (lang: string, zh: string, en: string): string => lang === 'en' ? en : zh
 
 export default function SharePage() {
   const { code } = useParams<{ code: string }>()
@@ -78,15 +79,15 @@ export default function SharePage() {
   const copyLink = () => {
     navigator.clipboard.writeText(shareUrl)
     setCopied(true)
-    toast.success(T(lang, '已複製連結！', 'Link copied!'))
+    toast.success(Ts(lang, '已複製連結！', 'Link copied!'))
     setTimeout(() => setCopied(false), 2000)
   }
 
   const shareButtons = [
-    { name: 'WeChat', icon: '💬', action: () => { copyLink(); toast(T(lang, '已複製連結，請貼到微信', 'Link copied, paste to WeChat')) } },
-    { name: 'WhatsApp', icon: '📱', action: () => window.open(`https://wa.me/?text=${encodeURIComponent(T(lang, '玄機 - 中國傳統占卜 ', 'Xuanji - Chinese Divination ') + shareUrl)}`) },
-    { name: 'Telegram', icon: '✈️', action: () => window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(T(lang, '玄機 - 中國傳統占卜', 'Xuanji - Chinese Divination'))}`) },
-    { name: 'Twitter/X', icon: '🐦', action: () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(T(lang, '玄機 - 中國傳統占卜 ', 'Xuanji - Chinese Divination ') + shareUrl)}`) },
+    { name: 'WeChat', icon: '💬', action: () => { copyLink(); toast(Ts(lang, '已複製連結，請貼到微信', 'Link copied, paste to WeChat')) } },
+    { name: 'WhatsApp', icon: '📱', action: () => window.open(`https://wa.me/?text=${encodeURIComponent(Ts(lang, '玄機 - 中國傳統占卜 ', 'Xuanji - Chinese Divination ') + shareUrl)}`) },
+    { name: 'Telegram', icon: '✈️', action: () => window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(Ts(lang, '玄機 - 中國傳統占卜', 'Xuanji - Chinese Divination'))}`) },
+    { name: 'Twitter/X', icon: '🐦', action: () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(Ts(lang, '玄機 - 中國傳統占卜 ', 'Xuanji - Chinese Divination ') + shareUrl)}`) },
   ]
 
   if (status === 'loading') {
