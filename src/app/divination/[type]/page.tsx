@@ -442,7 +442,7 @@ export default function DivinationFormPage() {
           body: JSON.stringify({
             type,
             targetType,
-            familyMemberId: resolvedMemberId || undefined,
+            familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
             inputData: { birthDate: form.birthDate, birthTime: form.birthTime, gender: form.gender },
           }),
         })
