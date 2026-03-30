@@ -57,6 +57,7 @@ model User {
   shareLinks    ShareLink[]
   familyMembers FamilyMember[]
   masterSession MasterSession?
+  deviceTokens  DeviceToken[]
   notificationReads NotificationRead[]
 }
 
@@ -275,6 +276,21 @@ model NotificationRead {
   @@unique([userId, notificationId])
   @@index([userId])
   @@index([notificationId])
+}
+
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @db.Text
+  platform  String   // "ios" | "android"
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, token])
+  @@index([userId])
+  @@index([token])
 }
 
 model MasterSession {

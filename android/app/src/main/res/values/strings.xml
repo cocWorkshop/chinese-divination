@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Chinese Divination</string>
+    <string name="title_activity_main">Chinese Divination</string>
+    <string name="package_name">com.chinese.divination</string>
+    <string name="custom_url_scheme">com.chinese.divination</string>
+</resources>
