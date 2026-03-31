@@ -25,6 +25,19 @@ export default class ResultErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error) {
+    // Auto-reload on chunk load failure (stale deployment)
+    if (this.isChunkLoadError(error)) {
+      const key = 'chunk_reload_' + window.location.pathname
+      const lastReload = sessionStorage.getItem(key)
+      const now = Date.now()
+      // Only auto-reload once per path per session (avoid infinite loops)
+      if (!lastReload || now - Number(lastReload) > 30000) {
+        sessionStorage.setItem(key, String(now))
+        window.location.reload()
+        return
+      }
+    }
+
     reportError({
       endpoint: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
       error: error.message || 'Component render error',
@@ -32,22 +45,33 @@ export default class ResultErrorBoundary extends Component<Props, State> {
     })
   }
 
+  private isChunkLoadError(error: Error): boolean {
+    return (
+      error.name === 'ChunkLoadError' ||
+      error.message?.includes('Loading chunk') ||
+      error.message?.includes('Failed to fetch dynamically imported module')
+    )
+  }
+
   render() {
     if (this.state.hasError) {
+      const isChunk = this.state.error ? this.isChunkLoadError(this.state.error) : false
       return (
         <div className="glass-card rounded-2xl p-8 text-center my-4">
           <div className="text-4xl mb-3">⚠️</div>
           <h3 className="text-lg font-serif text-gold mb-2">
-            {this.props.fallbackTitle || '結果顯示異常'}
+            {isChunk ? '頁面版本已更新' : (this.props.fallbackTitle || '結果顯示異常')}
           </h3>
           <p className="text-white/50 text-sm mb-4">
-            此部分內容載入失敗，其他功能不受影響。
+            {isChunk
+              ? '網站剛剛更新了新版本，請刷新頁面即可正常使用。'
+              : '此部分內容載入失敗，其他功能不受影響。'}
           </p>
           <button
-            onClick={() => this.setState({ hasError: false, error: null })}
+            onClick={() => isChunk ? window.location.reload() : this.setState({ hasError: false, error: null })}
             className="px-4 py-2 bg-gold/20 text-gold rounded-lg text-sm hover:bg-gold/30 transition-colors"
           >
-            重試
+            {isChunk ? '刷新頁面' : '重試'}
           </button>
           {this.state.error && (
             <details className="mt-4 text-left">
