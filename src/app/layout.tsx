@@ -11,6 +11,7 @@ import ConsentPopup from '@/components/ConsentPopup'
 import CookieBanner from '@/components/CookieBanner'
 import Footer from '@/components/Footer'
 import NotificationPopup from '@/components/NotificationPopup'
+import NativeInitializer from '@/components/NativeInitializer'
 import FeedbackButton from '@/components/FeedbackButton'
 import './globals.css'
 
@@ -155,6 +156,7 @@ export default function RootLayout({
               {children}
             </main>
 
+            <NativeInitializer />
             <NotificationPopup />
             <FeedbackButton />
             <ConsentPopup />

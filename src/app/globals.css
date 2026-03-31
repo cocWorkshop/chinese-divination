@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Native app safe areas (Capacitor / PWA) */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
 :root {
   --font-noto-serif: 'Noto Serif SC', serif;
   --font-inter: 'Inter', sans-serif;
