@@ -145,12 +145,9 @@ export default function DivinationPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-center mb-6"
             >
-              <h1 className="text-3xl sm:text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
-                {lang === 'zh-TW' ? '選擇占卜方式' : 'Choose Your Oracle'}
+              <h1 className="text-2xl sm:text-3xl font-serif" style={{ color: 'var(--gold)' }}>
+                {lang === 'zh-TW' ? '選擇占卜' : 'Choose Your Oracle'}
               </h1>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {lang === 'zh-TW' ? '六大傳統命理體系，AI深度解讀' : 'Six classical systems, powered by AI'}
-              </p>
             </motion.div>
 
             {/* Welcome tip banner */}
@@ -162,7 +159,6 @@ export default function DivinationPage() {
                 className="mb-6 max-w-3xl mx-auto rounded-xl px-4 py-2.5 flex items-center justify-center gap-3 text-center"
                 style={{ background: 'rgba(212,168,83,0.08)', border: '1px solid var(--border-gold)' }}
               >
-                <span className="text-gold text-sm opacity-60">💡</span>
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={welcomeIndex}
@@ -170,7 +166,7 @@ export default function DivinationPage() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="text-sm leading-relaxed flex-1"
+                    className="text-sm leading-relaxed flex-1 min-h-[2.5rem] flex items-center justify-center flex-wrap"
                     style={{ color: 'var(--text-secondary)' }}
                   >
                     {lang === 'en' ? welcomeMessages[welcomeIndex].en : welcomeMessages[welcomeIndex].zh}
