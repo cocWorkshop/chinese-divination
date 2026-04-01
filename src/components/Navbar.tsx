@@ -55,11 +55,11 @@ export default function Navbar() {
             </Link>
             {session && (
               <Link href="/dashboard" className="text-white/80 hover:text-gold transition-colors">
-                {lang === 'zh-TW' ? '歷史' : 'History'}
+                {lang === 'zh-TW' ? '占卜歷史' : 'Divination History'}
               </Link>
             )}
             <Link href="/subscribe" className="text-white/80 hover:text-gold transition-colors">
-              {lang === 'en' ? 'Karma' : '機緣'}
+              {lang === 'en' ? 'Karma Shop' : '機緣商店'}
             </Link>
             {session && (
               <button
@@ -67,7 +67,7 @@ export default function Navbar() {
                 disabled={sharing}
                 className="text-white/80 hover:text-gold transition-colors disabled:opacity-50"
               >
-                {lang === 'en' ? '🔗 Share' : '🔗 分享'}
+                {lang === 'en' ? '🔗 Share for Karma' : '🔗 分享賺機緣'}
               </button>
             )}
 
@@ -161,11 +161,11 @@ export default function Navbar() {
             {lang === 'en' ? 'Divination' : '占卜'}
           </Link>
           <Link href="/subscribe" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
-            {lang === 'en' ? 'Karma' : '機緣'}
+            {lang === 'en' ? 'Karma Shop' : '機緣商店'}
           </Link>
           {session && (
             <Link href="/dashboard" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
-              {lang === 'zh-TW' ? '歷史' : 'History'}
+              {lang === 'zh-TW' ? '占卜歷史' : 'Divination History'}
             </Link>
           )}
           {session && (
@@ -175,7 +175,7 @@ export default function Navbar() {
           )}
           {session && (
             <button onClick={() => { handleShare(); setMenuOpen(false) }} className="text-left text-white/80 hover:text-gold">
-              {lang === 'en' ? '🔗 Share & Earn' : '🔗 分享賺次數'}
+              {lang === 'en' ? '🔗 Share for Karma' : '🔗 分享賺機緣'}
             </button>
           )}
           <button
