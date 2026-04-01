@@ -16,6 +16,21 @@ function getTimeOfDay(hour: number): string {
   return 'evening'
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+interface WelcomeItem {
+  zh: string
+  en: string
+  recommendType: string | null
+}
+
 export async function GET() {
   try {
     const session = await auth()
@@ -39,49 +54,64 @@ export async function GET() {
       orderBy: { priority: 'desc' },
     })
 
-    // Collect all matching rules, grouped by priority
+    // Collect ALL matching rules
     const matchingRules = []
     for (const rule of rules) {
       const cond = rule.condition as { stage?: string; isWeekend?: boolean; timeOfDay?: string }
-      // Weekend rules only match on weekends
       if (cond.isWeekend === true && !isWeekend) continue
-      // Time of day check
       if (cond.timeOfDay && cond.timeOfDay !== timeOfDay) continue
-      // Stage match: 'any' matches all, or exact match
       if (cond.stage && cond.stage !== 'any' && cond.stage !== stage) continue
       matchingRules.push(rule)
     }
 
     if (matchingRules.length === 0) {
-      return NextResponse.json({ message: null, messages: [], recommendType: null })
+      return NextResponse.json({ message: null, recommendType: null, messages: [] })
     }
 
-    // Collect messages from all matching rules (highest priority first)
-    const allMessages: { zh: string; en: string; recommendType: string | null }[] = []
+    // Build a pool of welcome items from all matching rules
+    const items: WelcomeItem[] = []
     for (const rule of matchingRules) {
       const msgs = rule.messages as { zh: string[]; en: string[] }
-      const zhMessages = msgs.zh || []
-      const enMessages = msgs.en || []
-      const count = Math.max(zhMessages.length, enMessages.length)
+      const zhArr = msgs.zh || []
+      const enArr = msgs.en || []
+      const count = Math.min(zhArr.length, enArr.length)
       for (let i = 0; i < count; i++) {
-        allMessages.push({
-          zh: zhMessages[i % zhMessages.length] || '',
-          en: enMessages[i % enMessages.length] || '',
-          recommendType: rule.recommendType,
-        })
+        items.push({ zh: zhArr[i], en: enArr[i], recommendType: rule.recommendType })
       }
     }
 
-    // Return first message for backward compatibility + all messages for carousel
-    const first = allMessages[0]
+    // Shuffle and pick at least 3 (up to 5) diverse items
+    const shuffled = shuffle(items)
+    // Try to ensure diversity: pick from different recommendTypes first
+    const seen = new Set<string>()
+    const diverse: WelcomeItem[] = []
+    const rest: WelcomeItem[] = []
+    for (const item of shuffled) {
+      const key = item.recommendType || 'none'
+      if (!seen.has(key) && diverse.length < 5) {
+        seen.add(key)
+        diverse.push(item)
+      } else {
+        rest.push(item)
+      }
+    }
+    // Fill up to at least 3
+    while (diverse.length < 3 && rest.length > 0) {
+      diverse.push(rest.shift()!)
+    }
+    const finalItems = shuffle(diverse.slice(0, 5))
+
+    // Legacy single message (first item)
+    const first = finalItems[0]
+
     return NextResponse.json({
-      message: { zh: first.zh, en: first.en },
-      messages: allMessages,
-      recommendType: first.recommendType,
+      message: first ? { zh: first.zh, en: first.en } : null,
+      recommendType: first?.recommendType || null,
       stage,
+      messages: finalItems,
     })
   } catch (e) {
     console.error('Welcome API error:', e)
-    return NextResponse.json({ message: null, recommendType: null })
+    return NextResponse.json({ message: null, recommendType: null, messages: [] })
   }
 }
