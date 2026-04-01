@@ -43,7 +43,8 @@ export default function NativeInitializer() {
 
 function getPlatform(): 'ios' | 'android' | 'web' {
   if (typeof window === 'undefined') return 'web'
-  const cap = (window as Record<string, unknown>).Capacitor as Record<string, unknown> | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cap = (window as any).Capacitor as Record<string, unknown> | undefined
   const platform = cap?.getPlatform as (() => string) | undefined
   if (platform) {
     const p = platform()
