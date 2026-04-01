@@ -288,12 +288,86 @@ ${familyRefZh}`
               ? `${refReading.familyMember.relation}${refReading.familyMember.name ? '（' + refReading.familyMember.name + '）' : ''}`
               : isEnglish ? 'Family member' : '家庭成員'
             const refType = (isEnglish ? typeLabelEn : typeLabelZh)[refReading.type] || refReading.type
-            const fullResult = refReading.result.substring(0, 6000)
+            
+            // Extract readable content from result (which may be JSON)
+            let readableResult = refReading.result
+            try {
+              const parsed = JSON.parse(refReading.result)
+              const parts: string[] = []
+              
+              // Day master info
+              if (parsed.dayMaster) {
+                const dm = parsed.dayMaster
+                parts.push(`日主：${dm.stem || ''}${dm.element || ''} (${dm.yinYang || ''}) ${dm.strengthLabel || dm.strength || ''}`)
+              }
+              
+              // Five elements
+              if (parsed.fiveElements) {
+                const fe = parsed.fiveElements
+                const feStr = Object.entries(fe).map(([k, v]) => `${k}:${v}`).join(' ')
+                parts.push(`五行分佈：${feStr}`)
+              }
+              
+              // Lucky info
+              if (parsed.luckyElements) {
+                const le = Array.isArray(parsed.luckyElements) ? parsed.luckyElements.join('、') : String(parsed.luckyElements)
+                parts.push(`喜用神：${le}`)
+              }
+              
+              // Key advice (most important readable part)
+              if (parsed.keyAdvice) {
+                const advice = Array.isArray(parsed.keyAdvice) ? parsed.keyAdvice.join('\n') : String(parsed.keyAdvice)
+                parts.push(`\n核心建議：\n${advice}`)
+              }
+              
+              // Sections (detailed analysis)
+              if (parsed.sections && typeof parsed.sections === 'object') {
+                for (const [key, val] of Object.entries(parsed.sections)) {
+                  if (typeof val === 'object' && val !== null) {
+                    const sec = val as Record<string, unknown>
+                    const title = sec.title || sec.label || key
+                    const content = sec.content || sec.text || sec.analysis || ''
+                    if (content) parts.push(`\n【${title}】\n${String(content).substring(0, 500)}`)
+                  } else if (typeof val === 'string') {
+                    parts.push(`\n【${key}】\n${val.substring(0, 500)}`)
+                  }
+                }
+              }
+              
+              // Pillars summary
+              if (parsed.pillars) {
+                const p = parsed.pillars
+                const pillarStr = ['year', 'month', 'day', 'hour']
+                  .filter(k => p[k])
+                  .map(k => `${p[k].stem || ''}${p[k].branch || ''}`)
+                  .join(' ')
+                if (pillarStr) parts.unshift(`四柱：${pillarStr}`)
+              }
+              
+              // Da Yun (major luck periods)
+              if (parsed.daYun && Array.isArray(parsed.daYun)) {
+                const currentAge = new Date().getFullYear() - 1988 // approximate
+                const currentDaYun = parsed.daYun.find((d: Record<string, unknown>) => {
+                  const start = Number(d.startAge || d.start || 0)
+                  const end = Number(d.endAge || d.end || 0)
+                  return currentAge >= start && currentAge <= end
+                })
+                if (currentDaYun) {
+                  parts.push(`當前大運：${(currentDaYun as Record<string, unknown>).stem || ''}${(currentDaYun as Record<string, unknown>).branch || ''}（${(currentDaYun as Record<string, unknown>).startAge || ''}~${(currentDaYun as Record<string, unknown>).endAge || ''}歲）`)
+                }
+              }
+              
+              readableResult = parts.length > 0 ? parts.join('\n') : refReading.result.substring(0, 4000)
+            } catch {
+              // Not JSON or parse failed, use as-is but truncate
+              readableResult = refReading.result.substring(0, 4000)
+            }
+            
             messages.splice(-1, 0, {
               role: 'system' as const,
               content: isEnglish
-                ? `【Referenced Reading Loaded】Full ${refType} reading for ${refLabel}. Please do a cross-analysis with the current reading:\n${fullResult}`
-                : `【已載入引用記錄】${refLabel}的${refType}預測完整結果如下，請結合當前預測結果進行交叉分析：\n${fullResult}`,
+                ? `【Referenced Reading Loaded】${refType} reading summary for ${refLabel}. Use this data for cross-analysis with the current reading:\n${readableResult}`
+                : `【已載入引用記錄】${refLabel}的${refType}預測結果摘要如下，請結合當前預測結果進行交叉分析：\n${readableResult}`,
             })
           }
         } catch {
