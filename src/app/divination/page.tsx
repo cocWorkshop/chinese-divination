@@ -166,23 +166,10 @@ export default function DivinationPage() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="text-sm leading-relaxed flex-1 min-h-[2.5rem] flex items-center justify-center flex-wrap"
+                    className="text-sm leading-relaxed flex-1 h-[4rem] sm:h-[2.5rem] flex items-center justify-center flex-wrap overflow-hidden"
                     style={{ color: 'var(--text-secondary)' }}
                   >
                     {lang === 'en' ? welcomeMessages[welcomeIndex].en : welcomeMessages[welcomeIndex].zh}
-                    {(() => {
-                      const rec = welcomeMessages[welcomeIndex]?.recommendType
-                      if (!rec || !serviceMap[rec]) return null
-                      return (
-                        <button
-                          onClick={() => router.push(`/divination/${rec}`)}
-                          className="ml-2 font-medium hover:underline"
-                          style={{ color: 'var(--gold)' }}
-                        >
-                          {lang === 'en' ? `→ ${serviceMap[rec].enName}` : `→ ${serviceMap[rec].twName}`}
-                        </button>
-                      )
-                    })()}
                   </motion.span>
                 </AnimatePresence>
                 {welcomeMessages.length > 1 && (
