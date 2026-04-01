@@ -43,8 +43,15 @@ const categoryColors: Record<string, string> = {
 const routeIdMap: Record<string, string> = {}
 const getRouteId = (type: string) => routeIdMap[type] || type
 
+interface WelcomeMessage {
+  zh: string
+  en: string
+  recommendType: string | null
+}
+
 interface WelcomeData {
   message: { zh: string; en: string } | null
+  messages?: WelcomeMessage[]
   recommendType: string | null
   stage?: string
 }
@@ -58,6 +65,8 @@ export default function DivinationPage() {
   const [masterMode, setMasterMode] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [welcome, setWelcome] = useState<WelcomeData | null>(null)
+  const [welcomeMessages, setWelcomeMessages] = useState<WelcomeMessage[]>([])
+  const [welcomeIndex, setWelcomeIndex] = useState(0)
   const langShort = lang === 'en' ? 'en' : 'zh'
 
   useEffect(() => {
@@ -78,9 +87,21 @@ export default function DivinationPage() {
   useEffect(() => {
     fetch('/api/welcome')
       .then(r => r.json())
-      .then((data: WelcomeData) => { if (data.message) setWelcome(data) })
+      .then((data: WelcomeData) => {
+        if (data.message) setWelcome(data)
+        if (data.messages && data.messages.length > 0) setWelcomeMessages(data.messages)
+      })
       .catch(() => {})
   }, [])
+
+  // Auto-rotate welcome messages every 5 seconds
+  useEffect(() => {
+    if (welcomeMessages.length <= 1) return
+    const timer = setInterval(() => {
+      setWelcomeIndex(prev => (prev + 1) % welcomeMessages.length)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [welcomeMessages.length])
 
   useEffect(() => {
     fetch('/api/divination/visibility')
@@ -126,7 +147,7 @@ export default function DivinationPage() {
             transition={{ duration: 0.3 }}
           >
             <AnimatePresence>
-              {welcome?.message && (
+              {welcomeMessages.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -136,20 +157,68 @@ export default function DivinationPage() {
                   style={{ borderColor: 'var(--border-gold)', borderWidth: '1px' }}
                 >
                   <div className="absolute top-0 left-0 w-full h-0.5" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
-                  <p className="text-sm sm:text-base leading-relaxed mb-3" style={{ color: 'var(--text-secondary)' }}>
-                    {lang === 'en' ? welcome.message.en : welcome.message.zh}
-                  </p>
-                  {welcome.recommendType && serviceMap[welcome.recommendType] && (
-                    <button
-                      onClick={() => router.push(`/divination/${welcome.recommendType}`)}
-                      className="text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-80"
-                      style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.15)', color: 'var(--gold)', border: '1px solid var(--border-gold)' }}
-                    >
-                      {lang === 'en'
-                        ? `Try ${serviceMap[welcome.recommendType!].enName} →`
-                        : `試試${serviceMap[welcome.recommendType!].twName} →`}
-                    </button>
-                  )}
+                  <div className="relative min-h-[3rem]">
+                    <AnimatePresence mode="wait">
+                      <motion.p
+                        key={welcomeIndex}
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -30 }}
+                        transition={{ duration: 0.4, ease: 'easeInOut' }}
+                        className="text-sm sm:text-base leading-relaxed mb-3"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
+                        {lang === 'en' ? welcomeMessages[welcomeIndex].en : welcomeMessages[welcomeIndex].zh}
+                      </motion.p>
+                    </AnimatePresence>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      {(() => {
+                        const rec = welcomeMessages[welcomeIndex].recommendType
+                        if (!rec || !serviceMap[rec]) return null
+                        return (
+                          <button
+                            onClick={() => router.push(`/divination/${rec}`)}
+                            className="text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-80"
+                            style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.15)', color: 'var(--gold)', border: '1px solid var(--border-gold)' }}
+                          >
+                            {lang === 'en'
+                              ? `Try ${serviceMap[rec].enName} →`
+                              : `試試${serviceMap[rec].twName} →`}
+                          </button>
+                        )
+                      })()}
+                    </div>
+                    {welcomeMessages.length > 1 && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setWelcomeIndex(prev => (prev - 1 + welcomeMessages.length) % welcomeMessages.length)}
+                          className="w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          ‹
+                        </button>
+                        <div className="flex gap-1.5">
+                          {welcomeMessages.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setWelcomeIndex(i)}
+                              className="w-1.5 h-1.5 rounded-full transition-all"
+                              style={{ backgroundColor: i === welcomeIndex ? 'var(--gold)' : 'var(--text-muted)', opacity: i === welcomeIndex ? 1 : 0.4 }}
+                            />
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => setWelcomeIndex(prev => (prev + 1) % welcomeMessages.length)}
+                          className="w-7 h-7 rounded-full flex items-center justify-center transition-colors hover:bg-white/10"
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          ›
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

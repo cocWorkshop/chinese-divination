@@ -53,27 +53,31 @@ export async function GET() {
     }
 
     if (matchingRules.length === 0) {
-      return NextResponse.json({ message: null, recommendType: null })
+      return NextResponse.json({ message: null, messages: [], recommendType: null })
     }
 
-    // Pick from the highest priority group (there may be multiple rules with the same priority)
-    const topPriority = matchingRules[0].priority
-    const topRules = matchingRules.filter(r => r.priority === topPriority)
-    
-    // Random pick among same-priority rules (important for advanced users who have multiple recommendations)
-    const bestRule = topRules[Math.floor(Math.random() * topRules.length)]
+    // Collect messages from all matching rules (highest priority first)
+    const allMessages: { zh: string; en: string; recommendType: string | null }[] = []
+    for (const rule of matchingRules) {
+      const msgs = rule.messages as { zh: string[]; en: string[] }
+      const zhMessages = msgs.zh || []
+      const enMessages = msgs.en || []
+      const count = Math.max(zhMessages.length, enMessages.length)
+      for (let i = 0; i < count; i++) {
+        allMessages.push({
+          zh: zhMessages[i % zhMessages.length] || '',
+          en: enMessages[i % enMessages.length] || '',
+          recommendType: rule.recommendType,
+        })
+      }
+    }
 
-    const msgs = bestRule.messages as { zh: string[]; en: string[] }
-    const zhMessages = msgs.zh || []
-    const enMessages = msgs.en || []
-    const zhIdx = Math.floor(Math.random() * zhMessages.length)
-    const enIdx = Math.floor(Math.random() * enMessages.length)
-    const zhMsg = zhMessages[zhIdx] || ''
-    const enMsg = enMessages[enIdx] || ''
-
+    // Return first message for backward compatibility + all messages for carousel
+    const first = allMessages[0]
     return NextResponse.json({
-      message: { zh: zhMsg, en: enMsg },
-      recommendType: bestRule.recommendType,
+      message: { zh: first.zh, en: first.en },
+      messages: allMessages,
+      recommendType: first.recommendType,
       stage,
     })
   } catch (e) {
