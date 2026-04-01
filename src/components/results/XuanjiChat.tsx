@@ -137,23 +137,37 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
     setLoading(true)
 
     try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 120000)
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMsg,
-          history: messages,
-          readingContext: readingResult,
-          readingType,
-          readingId: readingId || undefined,
-          clientTime: new Date().toISOString(),
-          lang,
-        }),
-        signal: controller.signal,
-      })
-      clearTimeout(timeoutId)
+      const doFetch = async (attempt = 1): Promise<Response> => {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 120000)
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: userMsg,
+              history: messages,
+              readingContext: readingResult,
+              readingType,
+              readingId: readingId || undefined,
+              clientTime: new Date().toISOString(),
+              lang,
+            }),
+            signal: controller.signal,
+          })
+          clearTimeout(timeoutId)
+          return res
+        } catch (fetchErr) {
+          clearTimeout(timeoutId)
+          // Auto-retry once on Safari "Load failed" (background tab/lock screen)
+          if (attempt < 2 && fetchErr instanceof Error && /load failed|network/i.test(fetchErr.message)) {
+            await new Promise(r => setTimeout(r, 1500))
+            return doFetch(attempt + 1)
+          }
+          throw fetchErr
+        }
+      }
+      const res = await doFetch()
       const data = await res.json()
       if (res.ok) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply, suggestions: data.suggestions }])
