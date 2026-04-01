@@ -19,7 +19,7 @@ export default function Navbar() {
   const [sharing, setSharing] = useState(false)
 
   useEffect(() => {
-    document.title = lang === 'en' ? 'Chinese Divination - Ancient Wisdom, Modern Heritage' : '玄機 - 古法智慧，現代傳承'
+    document.title = lang === 'en' ? 'XuanJi AI - Ancient Wisdom, Modern Heritage' : '玄機AI - 古法智慧，現代傳承'
   }, [lang])
 
   const handleShare = async () => {
@@ -45,7 +45,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="text-2xl font-serif text-gold hover:text-gold-light transition-colors">
-            玄機
+            玄機AI
           </Link>
 
           {/* Desktop nav */}
