@@ -5,7 +5,8 @@
 
 export function isNativeApp(): boolean {
   if (typeof window === 'undefined') return false
-  return !!(window as Record<string, unknown>).Capacitor
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return !!(window as any).Capacitor
 }
 
 /**
