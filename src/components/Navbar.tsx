@@ -55,7 +55,7 @@ export default function Navbar() {
             </Link>
             {session && (
               <Link href="/dashboard" className="text-white/80 hover:text-gold transition-colors">
-                {lang === 'zh-TW' ? '占卜歷史' : 'Divination History'}
+                {lang === 'zh-TW' ? '歷史' : 'History'}
               </Link>
             )}
             <Link href="/subscribe" className="text-white/80 hover:text-gold transition-colors">
@@ -165,7 +165,7 @@ export default function Navbar() {
           </Link>
           {session && (
             <Link href="/dashboard" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
-              {lang === 'zh-TW' ? '占卜歷史' : 'Divination History'}
+              {lang === 'zh-TW' ? '歷史' : 'History'}
             </Link>
           )}
           {session && (
