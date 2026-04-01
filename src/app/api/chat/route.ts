@@ -146,10 +146,10 @@ export async function POST(req: NextRequest) {
 
     // Build family reference section for system prompt
     const familyRefEn = familyReadingsBlock
-      ? `\n【Family Members & Reading History】\nThe user has the following family members on file:\n${familyReadingsBlock}\n\n【Family Reading Reference Rules】\n- When the user mentions someone by name or relation (e.g., "my mom", "my son Xiaoming"), look up from the family data above\n- If found WITH a reading: briefly mention the reading type, date, and key points from the summary. Ask the user if they want a deeper cross-analysis with the current reading. If they confirm, incorporate that reading context into your analysis.\n- If found but NO reading: tell the user "I don't have a reading on file for [person]. Please go to the [Divination page](/divination) to create a reading for them first, then come back to chat."\n- If the person is NOT found at all: tell the user "I don't see [person] in your family members. Please add them on your [Profile page](/profile) first, then create a reading for them on the [Divination page](/divination)."\n- IMPORTANT: If the user provides raw birth info (date, time, place) and asks you to do a reading or interpretation directly in chat, REFUSE. Say: "Xuanji Chat is for analyzing existing readings only. Please go to the [Divination page](/divination) to create a reading first, then come back to discuss the results."\n`
+      ? `\n【Family Members & Reading History】\nThe user has the following family members on file:\n${familyReadingsBlock}\n\n【Family Reading Reference Rules】\n- When the user mentions someone by name or relation (e.g., "my mom", "my son Xiaoming"), look up from the family data above\n- If found WITH a reading: briefly mention the reading type, date, and key points from the summary. Then ask the user: "Would you like me to load the full reading for a cross-analysis?" and include the tag <!--ref:READING_ID_HERE--> at the end of your message (replace READING_ID_HERE with the actual readingId from the data above). This tag is hidden from the user.\n- If found but NO reading: tell the user "I don't have a reading on file for [person]. Please go to the [Divination page](/divination) to create a reading for them first, then come back to chat."\n- If the person is NOT found at all: tell the user "I don't see [person] in your family members. Please add them on your [Profile page](/profile) first, then create a reading for them on the [Divination page](/divination)."\n- IMPORTANT: If the user provides raw birth info (date, time, place) and asks you to do a reading or interpretation directly in chat, REFUSE. Say: "Xuanji Chat is for analyzing existing readings only. Please go to the [Divination page](/divination) to create a reading first, then come back to discuss the results."\n`
       : ''
     const familyRefZh = familyReadingsBlock
-      ? `\n【家庭成员及预测记录】\n用户已登记的家庭成员：\n${familyReadingsBlock}\n\n【引用家庭预测记录规则】\n- 当用户提到某人的名字或关系（如"我妈妈"、"我儿子小明"），从上方家庭成员数据中查找匹配\n- 如果找到且有预测记录：简要提及预测类型、日期和摘要要点，询问用户是否需要结合当前预测结果进行交叉分析。用户确认后，将该记录上下文纳入分析。\n- 如果找到但没有预测记录：告诉用户"目前没有找到[此人]的预测记录，建议先前往[排盘页面](/divination)为其排盘，完成后回来继续聊天。"\n- 如果完全找不到此人：告诉用户"未在您的家庭成员中找到[此人]，建议先在[个人资料页面](/profile)添加该家庭成员，然后前往[排盘页面](/divination)排盘。"\n- 重要：如果用户在聊天中直接提供生辰八字（出生日期、时辰、地点等）要求你排盘或解读，必须拒绝。回复："玄机问答仅用于解读已有的预测结果，请先前往[排盘页面](/divination)排盘，完成后回来继续聊天。"\n`
+      ? `\n【家庭成员及预测记录】\n用户已登记的家庭成员：\n${familyReadingsBlock}\n\n【引用家庭预测记录规则】\n- 当用户提到某人的名字或关系（如"我妈妈"、"我儿子小明"），从上方家庭成员数据中查找匹配\n- 如果找到且有预测记录：简要提及预测类型、日期和摘要要点，然后询问用户："需要我调取完整的预测记录来做交叉分析吗？"并在回复最末尾添加标记 <!--ref:此处填写readingId-->（将readingId替换为上方数据中的实际readingId）。这个标记用户看不到。\n- 如果找到但没有预测记录：告诉用户"目前没有找到[此人]的预测记录，建议先前往[排盘页面](/divination)为其排盘，完成后回来继续聊天。"\n- 如果完全找不到此人：告诉用户"未在您的家庭成员中找到[此人]，建议先在[个人资料页面](/profile)添加该家庭成员，然后前往[排盘页面](/divination)排盘。"\n- 重要：如果用户在聊天中直接提供生辰八字（出生日期、时辰、地点等）要求你排盘或解读，必须拒绝。回复："玄机问答仅用于解读已有的预测结果，请先前往[排盘页面](/divination)排盘，完成后回来继续聊天。"\n`
       : ''
 
     const systemPrompt = isEnglish
@@ -267,36 +267,39 @@ ${familyRefZh}`
       { role: 'user', content: message },
     ]
 
-    // Check if user confirmed a family reading reference — look for readingId in recent assistant message
-    // and a confirmation-like user reply
-    if (conversationHistory.length >= 2) {
-      const lastAssistant = conversationHistory[conversationHistory.length - 1]
-      if (lastAssistant?.role === 'assistant') {
-        const readingIdMatch = lastAssistant.content.match(/readingId[=:]\s*([a-z0-9]+)/i)
-        if (readingIdMatch) {
-          const confirmPatterns = /好|是|对|确认|没错|就是|可以|yes|ok|sure|confirm|right|yeah|yep|对的|嗯|行/i
-          if (confirmPatterns.test(message)) {
-            try {
-              const refReading = await prisma.reading.findFirst({
-                where: { id: readingIdMatch[1], userId: session.user.id, deletedAt: null },
-                select: { type: true, result: true, createdAt: true, familyMember: { select: { name: true, relation: true } } },
-              })
-              if (refReading?.result) {
-                const refLabel = refReading.familyMember
-                  ? `${refReading.familyMember.relation}${refReading.familyMember.name ? '（' + refReading.familyMember.name + '）' : ''}`
-                  : '家庭成员'
-                const refType = typeLabelZh[refReading.type] || refReading.type
-                const fullResult = refReading.result.substring(0, 6000)
-                messages.splice(-1, 0, {
-                  role: 'system' as const,
-                  content: `【已加载引用记录】${refLabel}的${refType}预测完整结果如下，请结合此记录进行交叉分析：\n${fullResult}`,
-                })
-              }
-            } catch {
-              // Ignore errors loading referenced reading
-            }
+    // Check if user confirmed a family reading reference
+    // Scan recent history for <!--ref:READING_ID--> tags in assistant messages
+    // If the user's current message is a confirmation, load the full reading
+    const confirmPatterns = /^(好|是|对|确认|没错|就是|可以|yes|ok|sure|confirm|right|yeah|yep|对的|嗯|行|要|想|需要|请|好的|沒錯|可以的|當然|当然)/i
+    if (confirmPatterns.test(message.trim())) {
+      // Find the most recent assistant message with a <!--ref:xxx--> tag
+      for (let i = conversationHistory.length - 1; i >= 0; i--) {
+        const msg = conversationHistory[i]
+        if (msg.role !== 'assistant') continue
+        const refMatch = msg.content.match(/<!--ref:\s*([a-z0-9]+)\s*-->/i)
+        if (!refMatch) continue
+        try {
+          const refReading = await prisma.reading.findFirst({
+            where: { id: refMatch[1], userId: session.user.id, deletedAt: null },
+            select: { type: true, result: true, createdAt: true, familyMember: { select: { name: true, relation: true } } },
+          })
+          if (refReading?.result) {
+            const refLabel = refReading.familyMember
+              ? `${refReading.familyMember.relation}${refReading.familyMember.name ? '（' + refReading.familyMember.name + '）' : ''}`
+              : isEnglish ? 'Family member' : '家庭成員'
+            const refType = (isEnglish ? typeLabelEn : typeLabelZh)[refReading.type] || refReading.type
+            const fullResult = refReading.result.substring(0, 6000)
+            messages.splice(-1, 0, {
+              role: 'system' as const,
+              content: isEnglish
+                ? `【Referenced Reading Loaded】Full ${refType} reading for ${refLabel}. Please do a cross-analysis with the current reading:\n${fullResult}`
+                : `【已載入引用記錄】${refLabel}的${refType}預測完整結果如下，請結合當前預測結果進行交叉分析：\n${fullResult}`,
+            })
           }
+        } catch {
+          // Ignore errors loading referenced reading
         }
+        break // only load the most recent ref
       }
     }
 
@@ -340,7 +343,7 @@ ${familyRefZh}`
     // Fetch updated credits to return to frontend
     const updatedCredits = await checkCredits(session.user.id, 'chat')
 
-    // Parse dynamic suggestions from reply
+    // Parse dynamic suggestions and strip hidden tags from reply
     let cleanedReply = reply
     let suggestions: string[] = []
     const suggestionsMatch = reply.match(/<!--suggestions:\s*(\[.*?\])\s*-->/)
@@ -349,8 +352,10 @@ ${familyRefZh}`
         const parsed = JSON.parse(suggestionsMatch[1])
         if (Array.isArray(parsed)) suggestions = parsed.map(String)
       } catch { /* ignore parse errors */ }
-      cleanedReply = reply.replace(/<!--suggestions:\s*\[.*?\]\s*-->/g, '').trimEnd()
+      cleanedReply = cleanedReply.replace(/<!--suggestions:\s*\[.*?\]\s*-->/g, '').trimEnd()
     }
+    // Strip <!--ref:xxx--> tags (hidden from user, used for backend reference loading)
+    cleanedReply = cleanedReply.replace(/<!--ref:\s*[a-z0-9]+\s*-->/gi, '').trimEnd()
 
     return NextResponse.json({
       reply: cleanedReply,
