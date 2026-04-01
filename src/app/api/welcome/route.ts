@@ -9,6 +9,13 @@ function getStage(readingCount: number): string {
   return 'advanced'
 }
 
+function getTimeOfDay(hour: number): string {
+  if (hour >= 21 || hour < 6) return 'evening'
+  if (hour >= 6 && hour < 12) return 'morning'
+  if (hour >= 12 && hour < 18) return 'afternoon'
+  return 'evening'
+}
+
 export async function GET() {
   try {
     const session = await auth()
@@ -24,6 +31,7 @@ export async function GET() {
     const now = new Date()
     const day = now.getDay()
     const isWeekend = day === 0 || day === 6
+    const timeOfDay = getTimeOfDay(now.getHours())
 
     // Find all enabled rules, ordered by priority desc
     const rules = await prisma.welcomeRule.findMany({
@@ -31,38 +39,41 @@ export async function GET() {
       orderBy: { priority: 'desc' },
     })
 
-    // Find best matching rule
-    let bestRule = null
+    // Collect all matching rules, grouped by priority
+    const matchingRules = []
     for (const rule of rules) {
-      const cond = rule.condition as { stage?: string; isWeekend?: boolean }
+      const cond = rule.condition as { stage?: string; isWeekend?: boolean; timeOfDay?: string }
       // Weekend rules only match on weekends
       if (cond.isWeekend === true && !isWeekend) continue
+      // Time of day check
+      if (cond.timeOfDay && cond.timeOfDay !== timeOfDay) continue
       // Stage match: 'any' matches all, or exact match
       if (cond.stage && cond.stage !== 'any' && cond.stage !== stage) continue
-      bestRule = rule
-      break
+      matchingRules.push(rule)
     }
 
-    if (!bestRule) {
+    if (matchingRules.length === 0) {
       return NextResponse.json({ message: null, recommendType: null })
     }
+
+    // Pick from the highest priority group (there may be multiple rules with the same priority)
+    const topPriority = matchingRules[0].priority
+    const topRules = matchingRules.filter(r => r.priority === topPriority)
+    
+    // Random pick among same-priority rules (important for advanced users who have multiple recommendations)
+    const bestRule = topRules[Math.floor(Math.random() * topRules.length)]
 
     const msgs = bestRule.messages as { zh: string[]; en: string[] }
     const zhMessages = msgs.zh || []
     const enMessages = msgs.en || []
-    const zhMsg = zhMessages[Math.floor(Math.random() * zhMessages.length)] || ''
-    const enMsg = enMessages[Math.floor(Math.random() * enMessages.length)] || ''
-
-    // For advanced users with no specific recommendType, pick random
-    let recommendType = bestRule.recommendType
-    if (!recommendType) {
-      const types = ['bazi', 'ziwei', 'liuyao', 'qimen', 'meihua', 'fengshui']
-      recommendType = types[Math.floor(Math.random() * types.length)]
-    }
+    const zhIdx = Math.floor(Math.random() * zhMessages.length)
+    const enIdx = Math.floor(Math.random() * enMessages.length)
+    const zhMsg = zhMessages[zhIdx] || ''
+    const enMsg = enMessages[enIdx] || ''
 
     return NextResponse.json({
       message: { zh: zhMsg, en: enMsg },
-      recommendType,
+      recommendType: bestRule.recommendType,
       stage,
     })
   } catch (e) {
