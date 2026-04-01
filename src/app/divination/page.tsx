@@ -43,6 +43,12 @@ const categoryColors: Record<string, string> = {
 const routeIdMap: Record<string, string> = {}
 const getRouteId = (type: string) => routeIdMap[type] || type
 
+interface WelcomeData {
+  message: { zh: string; en: string } | null
+  recommendType: string | null
+  stage?: string
+}
+
 export default function DivinationPage() {
   const { lang } = useLang()
   const { data: session } = useSession()
@@ -51,6 +57,7 @@ export default function DivinationPage() {
   const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
   const [masterMode, setMasterMode] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [welcome, setWelcome] = useState<WelcomeData | null>(null)
   const langShort = lang === 'en' ? 'en' : 'zh'
 
   useEffect(() => {
@@ -67,6 +74,13 @@ export default function DivinationPage() {
       setMasterMode(true)
     }
   }, [searchParams, isAdmin])
+
+  useEffect(() => {
+    fetch('/api/welcome')
+      .then(r => r.json())
+      .then((data: WelcomeData) => { if (data.message) setWelcome(data) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     fetch('/api/divination/visibility')
@@ -111,6 +125,35 @@ export default function DivinationPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
+            <AnimatePresence>
+              {welcome?.message && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  className="glass-card rounded-2xl p-5 sm:p-6 mb-8 max-w-2xl mx-auto relative overflow-hidden"
+                  style={{ borderColor: 'var(--border-gold)', borderWidth: '1px' }}
+                >
+                  <div className="absolute top-0 left-0 w-full h-0.5" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
+                  <p className="text-sm sm:text-base leading-relaxed mb-3" style={{ color: 'var(--text-secondary)' }}>
+                    {lang === 'en' ? welcome.message.en : welcome.message.zh}
+                  </p>
+                  {welcome.recommendType && serviceMap[welcome.recommendType] && (
+                    <button
+                      onClick={() => router.push(`/divination/${welcome.recommendType}`)}
+                      className="text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-80"
+                      style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.15)', color: 'var(--gold)', border: '1px solid var(--border-gold)' }}
+                    >
+                      {lang === 'en'
+                        ? `Try ${serviceMap[welcome.recommendType!].enName} →`
+                        : `試試${serviceMap[welcome.recommendType!].twName} →`}
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}

@@ -46,7 +46,7 @@ export default function PublicReadingPage() {
   const [data, setData] = useState<ReadingData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [shareBonus, setShareBonus] = useState<{divination: number, chat: number, shareBonus?: number} | null>(null)
+  const [shareBonus, setShareBonus] = useState<{divination: number, chat: number, shareBonus?: number, registerBonus?: number} | null>(null)
 
   // Hide navbar, chat widget, and remove top padding for public page
   useEffect(() => {
@@ -155,8 +155,8 @@ export default function PublicReadingPage() {
           {shareBonus && (
             <p className="text-xs mb-4" style={{ color: 'var(--gold)' }}>
               🎁 {lang === 'en'
-                ? `Register now — both you and the person who shared this get ${shareBonus.shareBonus || (shareBonus.divination || 0) + (shareBonus.chat || 0)} Karma!`
-                : `註冊後雙方各獲得 ${shareBonus.shareBonus || (shareBonus.divination || 0) + (shareBonus.chat || 0)} 點機緣！`}
+                ? `Register now and get ${shareBonus.registerBonus || 6} Karma for free!`
+                : `新用戶註冊即獲得 ${shareBonus.registerBonus || 6} 點機緣！`}
             </p>
           )}
           <div className="flex justify-center gap-3">

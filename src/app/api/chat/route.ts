@@ -340,9 +340,21 @@ ${familyRefZh}`
     // Fetch updated credits to return to frontend
     const updatedCredits = await checkCredits(session.user.id, 'chat')
 
-    // Generate condensed summary in background (fire-and-forget)
+    // Parse dynamic suggestions from reply
+    let cleanedReply = reply
+    let suggestions: string[] = []
+    const suggestionsMatch = reply.match(/<!--suggestions:\s*(\[.*?\])\s*-->/)
+    if (suggestionsMatch) {
+      try {
+        const parsed = JSON.parse(suggestionsMatch[1])
+        if (Array.isArray(parsed)) suggestions = parsed.map(String)
+      } catch { /* ignore parse errors */ }
+      cleanedReply = reply.replace(/<!--suggestions:\s*\[.*?\]\s*-->/g, '').trimEnd()
+    }
+
     return NextResponse.json({
-      reply,
+      reply: cleanedReply,
+      suggestions,
       credits: updatedCredits.remaining,
       chatCredits: { remaining: updatedCredits.remaining },
     })

@@ -14,6 +14,7 @@ interface Message {
   content: string
   link?: { text: string; href: string }
   retryMessage?: string // store failed user message for retry
+  suggestions?: string[] // dynamic suggestions from LLM
 }
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
@@ -84,6 +85,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
       return next
     })
   }
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<string[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -154,7 +156,10 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
       clearTimeout(timeoutId)
       const data = await res.json()
       if (res.ok) {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+        setMessages(prev => [...prev, { role: 'assistant', content: data.reply, suggestions: data.suggestions }])
+        if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+          setDynamicSuggestions(data.suggestions)
+        }
         if (data.credits != null) setChatRemaining(data.credits)
         // Save the new user+assistant pair to DB (fire and forget)
         if (readingId) {
@@ -331,8 +336,29 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
         )}
       </div>
 
-      {/* Remaining suggested questions (hide ones already clicked) */}
+      {/* Dynamic or static suggested questions */}
       {messages.length > 0 && !loading && (() => {
+        // After conversation starts, prefer dynamic suggestions from LLM
+        if (dynamicSuggestions.length > 0) {
+          return (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {dynamicSuggestions.map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setDynamicSuggestions([]); sendMessage(q) }}
+                  className="text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:opacity-80"
+                  style={{ border: '1px solid var(--border-gold)', color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--gold)' }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+                >
+                  <span style={{ color: 'var(--gold)', opacity: 0.6 }} className="mr-1">💬</span>
+                  {q}
+                </button>
+              ))}
+            </div>
+          )
+        }
+        // Fall back to static questions if no dynamic ones yet
         const remaining = questions.map((q, i) => ({ q, i })).filter(({ i }) => !usedQuestionIndexes.has(i))
         if (remaining.length === 0) return null
         return (
