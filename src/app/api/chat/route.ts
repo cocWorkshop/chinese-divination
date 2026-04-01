@@ -113,6 +113,45 @@ export async function POST(req: NextRequest) {
     const isSubjectUser = !targetLabel && subjectInfo.name === (user.name || '未知')
     const subjectLabel = isSubjectUser ? (isEnglish ? 'The user' : '用户本人') : (isEnglish ? 'Subject' : '命主')
 
+    // Load family members and their recent readings for reference
+    const familyMembers = await prisma.familyMember.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, relation: true, name: true },
+    })
+    let familyReadingsBlock = ''
+    if (familyMembers.length > 0) {
+      const memberReadings = await Promise.all(
+        familyMembers.map(async (fm) => {
+          const latest = await prisma.reading.findFirst({
+            where: { familyMemberId: fm.id, userId: session.user.id, deletedAt: null, status: 'completed' },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, type: true, createdAt: true, result: true },
+          })
+          return { ...fm, latestReading: latest }
+        })
+      )
+      const lines = memberReadings.map((m) => {
+        const label = `${m.relation}${m.name ? '（' + m.name + '）' : ''}`
+        if (m.latestReading) {
+          const typeLabel = typeLabelZh[m.latestReading.type] || m.latestReading.type
+          const date = new Date(m.latestReading.createdAt).toLocaleDateString('zh-CN')
+          const summary = (m.latestReading.result || '').substring(0, 200).replace(/\n/g, ' ')
+          return `- ${label}: 最近预测=${typeLabel}（${date}），readingId=${m.latestReading.id}，摘要：${summary}…`
+        }
+        return `- ${label}: 暂无预测记录`
+      })
+      familyReadingsBlock = lines.join('\n')
+    }
+
+    // Build family reference section for system prompt
+    const familyRefEn = familyReadingsBlock
+      ? `\n【Family Members & Reading History】\nThe user has the following family members on file:\n${familyReadingsBlock}\n\n【Family Reading Reference Rules】\n- When the user mentions someone by name or relation (e.g., "my mom", "my son Xiaoming"), look up from the family data above\n- If found WITH a reading: briefly mention the reading type, date, and key points from the summary. Ask the user if they want a deeper cross-analysis with the current reading. If they confirm, incorporate that reading context into your analysis.\n- If found but NO reading: tell the user "I don't have a reading on file for [person]. Please go to the [Divination page](/divination) to create a reading for them first, then come back to chat."\n- If the person is NOT found at all: tell the user "I don't see [person] in your family members. Please add them on your [Profile page](/profile) first, then create a reading for them on the [Divination page](/divination)."\n- IMPORTANT: If the user provides raw birth info (date, time, place) and asks you to do a reading or interpretation directly in chat, REFUSE. Say: "Xuanji Chat is for analyzing existing readings only. Please go to the [Divination page](/divination) to create a reading first, then come back to discuss the results."\n`
+      : ''
+    const familyRefZh = familyReadingsBlock
+      ? `\n【家庭成员及预测记录】\n用户已登记的家庭成员：\n${familyReadingsBlock}\n\n【引用家庭预测记录规则】\n- 当用户提到某人的名字或关系（如"我妈妈"、"我儿子小明"），从上方家庭成员数据中查找匹配\n- 如果找到且有预测记录：简要提及预测类型、日期和摘要要点，询问用户是否需要结合当前预测结果进行交叉分析。用户确认后，将该记录上下文纳入分析。\n- 如果找到但没有预测记录：告诉用户"目前没有找到[此人]的预测记录，建议先前往[排盘页面](/divination)为其排盘，完成后回来继续聊天。"\n- 如果完全找不到此人：告诉用户"未在您的家庭成员中找到[此人]，建议先在[个人资料页面](/profile)添加该家庭成员，然后前往[排盘页面](/divination)排盘。"\n- 重要：如果用户在聊天中直接提供生辰八字（出生日期、时辰、地点等）要求你排盘或解读，必须拒绝。回复："玄机问答仅用于解读已有的预测结果，请先前往[排盘页面](/divination)排盘，完成后回来继续聊天。"\n`
+      : ''
+
     const systemPrompt = isEnglish
       ? `You are a professional ${currentTypeEn} reading analyst. You are helping the user deeply analyze their ${currentTypeEn} reading result.
 Today's date: ${todayStr}.
@@ -146,7 +185,7 @@ Your sole task is to provide in-depth interpretation and analysis based on the r
 - Questions should be specific, targeted, and relevant to the current topic
 - Use natural phrasing like: "You might also want to know...", "Speaking of which, have you considered..."
 - Vary your lead-in phrases to keep it natural
-`
+${familyRefEn}`
       : `你是一位专业的${currentTypeZh}解盘师。你正在帮助用户深入分析他们刚刚获得的${currentTypeZh}预测结果。
 今天日期：${todayStr}。
 
@@ -178,7 +217,7 @@ ${readingData || '（无预测数据）'}
 - 问题要具体、有针对性，与当前话题和命主实际情况相关
 - 用自然的语气引出，例如："你可能还想了解……"、"说到这里，你有没有想过……"
 - 不要每次都用相同的引导句式，保持自然多样
-`
+${familyRefZh}`
 
     // Read configurable timeout and chat model
     const [timeoutSetting, chatModelSetting, model1Setting, maxTurnsSetting] = await Promise.all([
@@ -202,10 +241,44 @@ ${readingData || '（无预测数据）'}
     })
 
     // Build conversation messages
-    const messages: { role: 'user' | 'assistant'; content: string }[] = [
-      ...((history || []) as { role: 'user' | 'assistant'; content: string }[]).slice(-maxTurns * 2),
+    const conversationHistory = ((history || []) as { role: 'user' | 'assistant'; content: string }[]).slice(-maxTurns * 2)
+    const messages: { role: 'user' | 'assistant' | 'system'; content: string }[] = [
+      ...conversationHistory,
       { role: 'user', content: message },
     ]
+
+    // Check if user confirmed a family reading reference — look for readingId in recent assistant message
+    // and a confirmation-like user reply
+    if (conversationHistory.length >= 2) {
+      const lastAssistant = conversationHistory[conversationHistory.length - 1]
+      if (lastAssistant?.role === 'assistant') {
+        const readingIdMatch = lastAssistant.content.match(/readingId[=:]\s*([a-z0-9]+)/i)
+        if (readingIdMatch) {
+          const confirmPatterns = /好|是|对|确认|没错|就是|可以|yes|ok|sure|confirm|right|yeah|yep|对的|嗯|行/i
+          if (confirmPatterns.test(message)) {
+            try {
+              const refReading = await prisma.reading.findFirst({
+                where: { id: readingIdMatch[1], userId: session.user.id, deletedAt: null },
+                select: { type: true, result: true, createdAt: true, familyMember: { select: { name: true, relation: true } } },
+              })
+              if (refReading?.result) {
+                const refLabel = refReading.familyMember
+                  ? `${refReading.familyMember.relation}${refReading.familyMember.name ? '（' + refReading.familyMember.name + '）' : ''}`
+                  : '家庭成员'
+                const refType = typeLabelZh[refReading.type] || refReading.type
+                const fullResult = refReading.result.substring(0, 6000)
+                messages.splice(-1, 0, {
+                  role: 'system' as const,
+                  content: `【已加载引用记录】${refLabel}的${refType}预测完整结果如下，请结合此记录进行交叉分析：\n${fullResult}`,
+                })
+              }
+            } catch {
+              // Ignore errors loading referenced reading
+            }
+          }
+        }
+      }
+    }
 
     const chatStart = Date.now()
     const completion = await client.chat.completions.create({
