@@ -43,10 +43,10 @@ const categoryColors: Record<string, string> = {
 const routeIdMap: Record<string, string> = {}
 const getRouteId = (type: string) => routeIdMap[type] || type
 
-interface WelcomeData {
-  message: { zh: string; en: string } | null
+interface WelcomeItem {
+  zh: string
+  en: string
   recommendType: string | null
-  stage?: string
 }
 
 export default function DivinationPage() {
@@ -57,7 +57,8 @@ export default function DivinationPage() {
   const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
   const [masterMode, setMasterMode] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [welcome, setWelcome] = useState<WelcomeData | null>(null)
+  const [welcomeMessages, setWelcomeMessages] = useState<WelcomeItem[]>([])
+  const [welcomeIndex, setWelcomeIndex] = useState(0)
   const langShort = lang === 'en' ? 'en' : 'zh'
 
   useEffect(() => {
@@ -78,9 +79,22 @@ export default function DivinationPage() {
   useEffect(() => {
     fetch('/api/welcome')
       .then(r => r.json())
-      .then((data: WelcomeData) => { if (data.message) setWelcome(data) })
+      .then((data: { messages?: WelcomeItem[] }) => {
+        if (data.messages && data.messages.length > 0) {
+          setWelcomeMessages(data.messages)
+        }
+      })
       .catch(() => {})
   }, [])
+
+  // Auto-rotate welcome messages every 6 seconds
+  useEffect(() => {
+    if (welcomeMessages.length <= 1) return
+    const timer = setInterval(() => {
+      setWelcomeIndex(prev => (prev + 1) % welcomeMessages.length)
+    }, 6000)
+    return () => clearInterval(timer)
+  }, [welcomeMessages.length])
 
   useEffect(() => {
     fetch('/api/divination/visibility')
@@ -125,76 +139,125 @@ export default function DivinationPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            <AnimatePresence>
-              {welcome?.message && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className="glass-card rounded-2xl p-5 sm:p-6 mb-8 max-w-2xl mx-auto relative overflow-hidden"
-                  style={{ borderColor: 'var(--border-gold)', borderWidth: '1px' }}
-                >
-                  <div className="absolute top-0 left-0 w-full h-0.5" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
-                  <p className="text-sm sm:text-base leading-relaxed mb-3" style={{ color: 'var(--text-secondary)' }}>
-                    {lang === 'en' ? welcome.message.en : welcome.message.zh}
-                  </p>
-                  {welcome.recommendType && serviceMap[welcome.recommendType] && (
-                    <button
-                      onClick={() => router.push(`/divination/${welcome.recommendType}`)}
-                      className="text-sm font-semibold px-4 py-2 rounded-xl transition-all hover:opacity-80"
-                      style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.15)', color: 'var(--gold)', border: '1px solid var(--border-gold)' }}
-                    >
-                      {lang === 'en'
-                        ? `Try ${serviceMap[welcome.recommendType!].enName} →`
-                        : `試試${serviceMap[welcome.recommendType!].twName} →`}
-                    </button>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
+            {/* Title — always at the top */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-12"
+              className="text-center mb-6"
             >
-              <h1 className="text-4xl font-serif mb-3" style={{ color: 'var(--gold)' }}>
+              <h1 className="text-3xl sm:text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
                 {lang === 'zh-TW' ? '選擇占卜方式' : 'Choose Your Oracle'}
               </h1>
-              <p style={{ color: 'var(--text-muted)' }}>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 {lang === 'zh-TW' ? '六大傳統命理體系，AI深度解讀' : 'Six classical systems, powered by AI'}
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Welcome carousel */}
+            {welcomeMessages.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+                className="glass-card rounded-2xl p-4 sm:p-5 mb-8 max-w-2xl mx-auto relative overflow-hidden"
+                style={{ borderColor: 'var(--border-gold)', borderWidth: '1px' }}
+              >
+                <div className="absolute top-0 left-0 w-full h-0.5" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
+                <div className="relative min-h-[3.5rem]">
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={welcomeIndex}
+                      initial={{ opacity: 0, x: 30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -30 }}
+                      transition={{ duration: 0.35, ease: 'easeInOut' }}
+                      className="text-sm sm:text-base leading-relaxed"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      {lang === 'en' ? welcomeMessages[welcomeIndex].en : welcomeMessages[welcomeIndex].zh}
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+                <div className="flex items-center justify-between mt-3">
+                  <div>
+                    {(() => {
+                      const rec = welcomeMessages[welcomeIndex]?.recommendType
+                      if (!rec || !serviceMap[rec]) return null
+                      return (
+                        <button
+                          onClick={() => router.push(`/divination/${rec}`)}
+                          className="text-sm font-semibold px-4 py-1.5 rounded-xl transition-all hover:scale-105 hover:shadow-lg"
+                          style={{ backgroundColor: 'rgba(var(--gold-rgb, 212,168,83), 0.15)', color: 'var(--gold)', border: '1px solid var(--border-gold)' }}
+                        >
+                          {lang === 'en'
+                            ? `Try ${serviceMap[rec].enName} →`
+                            : `試試${serviceMap[rec].twName} →`}
+                        </button>
+                      )
+                    })()}
+                  </div>
+                  {welcomeMessages.length > 1 && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setWelcomeIndex(prev => (prev - 1 + welcomeMessages.length) % welcomeMessages.length)}
+                        className="w-6 h-6 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 text-xs"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        ‹
+                      </button>
+                      <div className="flex gap-1">
+                        {welcomeMessages.map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setWelcomeIndex(i)}
+                            className="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                            style={{ backgroundColor: i === welcomeIndex ? 'var(--gold)' : 'var(--text-muted)', opacity: i === welcomeIndex ? 1 : 0.3, transform: i === welcomeIndex ? 'scale(1.3)' : 'scale(1)' }}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setWelcomeIndex(prev => (prev + 1) % welcomeMessages.length)}
+                        className="w-6 h-6 rounded-full flex items-center justify-center transition-colors hover:bg-white/10 text-xs"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        ›
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {visibleServices.map((svc, i) => (
                 <motion.div
                   key={svc.id}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
+                  transition={{ delay: 0.3 + i * 0.08 }}
                 >
                   <div
                     onClick={(e) => handleClick(svc.id, e)}
-                    className="glass-card rounded-2xl p-5 sm:p-8 h-full hover:shadow-xl transition-all group cursor-pointer relative"
+                    className="glass-card rounded-2xl p-5 sm:p-6 h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
                     style={{ borderColor: 'var(--card-border)', background: categoryColors[svc.id] || undefined }}
                   >
                     {svc.id === "bazi" && (
-                      <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "var(--gold)", color: "#1a1a2e" }}>
+                      <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-medium animate-pulse" style={{ background: "var(--gold)", color: "#1a1a2e" }}>
                         {lang === "en" ? "Popular" : "推薦"}
                       </span>
                     )}
-                    <div className="text-5xl mb-4 transition-transform duration-300 group-hover:scale-110">{svc.symbol}</div>
-                    <h2 className="text-xl font-serif mb-2 transition-colors" style={{ color: 'var(--gold)' }}>
+                    <div className="text-4xl sm:text-5xl mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">{svc.symbol}</div>
+                    <h2 className="text-lg sm:text-xl font-serif mb-1.5 transition-colors group-hover:text-gold" style={{ color: 'var(--gold)' }}>
                       {lang === 'en' ? svc.enName : svc.twName}
                     </h2>
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                       {lang === 'en' ? svc.enDesc : svc.twDesc}
                     </p>
-                    <div className="mt-4 text-sm flex items-center gap-1 transition-colors" style={{ color: 'var(--text-muted)' }}>
-                      {lang === 'zh-TW' ? '開始占卜' : 'Start'} →
+                    <div className="mt-3 text-sm flex items-center gap-1 transition-all group-hover:gap-2" style={{ color: 'var(--gold)', opacity: 0.7 }}>
+                      {lang === 'zh-TW' ? '開始占卜' : 'Start'} <span className="transition-transform group-hover:translate-x-1">→</span>
                     </div>
+                    {/* Subtle hover glow */}
+                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ boxShadow: 'inset 0 0 30px rgba(212,168,83,0.05)' }} />
                   </div>
                 </motion.div>
               ))}
