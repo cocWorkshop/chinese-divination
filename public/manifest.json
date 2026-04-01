@@ -1,0 +1,13 @@
+{
+  "name": "玄機 · Xuanji",
+  "short_name": "玄機",
+  "description": "Ancient Chinese divination powered by AI",
+  "start_url": "/divination",
+  "display": "standalone",
+  "background_color": "#0a0a1a",
+  "theme_color": "#d4a853",
+  "icons": [
+    { "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -13,6 +13,7 @@ import Footer from '@/components/Footer'
 import NotificationPopup from '@/components/NotificationPopup'
 import NativeInitializer from '@/components/NativeInitializer'
 import FeedbackButton from '@/components/FeedbackButton'
+import InstallPrompt from '@/components/InstallPrompt'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -86,7 +87,12 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+    apple: '/icons/apple-touch-icon.png',
+  },
+  manifest: '/manifest.json',
+  other: {
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
   },
   robots: {
     index: true,
@@ -159,6 +165,7 @@ export default function RootLayout({
             <NativeInitializer />
             <NotificationPopup />
             <FeedbackButton />
+            <InstallPrompt />
             <ConsentPopup />
             <CookieBanner />
             <Footer />
