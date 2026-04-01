@@ -185,6 +185,16 @@ Your sole task is to provide in-depth interpretation and analysis based on the r
 - Questions should be specific, targeted, and relevant to the current topic
 - Use natural phrasing like: "You might also want to know...", "Speaking of which, have you considered..."
 - Vary your lead-in phrases to keep it natural
+
+【Dynamic Suggested Questions】
+At the very end of EVERY reply, append a hidden comment with exactly 3 suggested follow-up questions in this format:
+<!--suggestions:["question1","question2","question3"]-->
+Rules for generating these 3 questions:
+1. If your reply ends with a question to the user, the FIRST suggestion must be a natural affirmative/continuation like "Please go ahead" or "Yes, tell me more" or "Sure, I'd like to know"
+2. The other 2 questions should be enticing, specific follow-ups that make the user curious to continue chatting — based on what was just discussed and what angles haven't been explored yet
+3. Questions should evolve with the conversation — never repeat previously asked questions
+4. Keep each question under 30 characters
+5. Make questions feel like something the user would naturally want to ask next
 ${familyRefEn}`
       : `你是一位专业的${currentTypeZh}解盘师。你正在帮助用户深入分析他们刚刚获得的${currentTypeZh}预测结果。
 今天日期：${todayStr}。
@@ -217,6 +227,16 @@ ${readingData || '（无预测数据）'}
 - 问题要具体、有针对性，与当前话题和命主实际情况相关
 - 用自然的语气引出，例如："你可能还想了解……"、"说到这里，你有没有想过……"
 - 不要每次都用相同的引导句式，保持自然多样
+
+【动态建议问题】
+在每次回复的最末尾，必须附加一个隐藏注释，包含3个建议的后续问题，格式如下：
+<!--suggestions:["问题1","问题2","问题3"]-->
+生成规则：
+1. 如果你的回复以向用户提问结尾，第一个建议必须是自然的肯定/继续回应，如"请讲"、"好的，请说"、"想了解"、"请详细说说"
+2. 另外2个问题应当是有吸引力的、具体的后续问题，让用户有好奇心想继续聊下去——基于刚才讨论的内容和尚未探索的角度
+3. 问题应随对话推进而变化，不要重复之前已经问过的问题
+4. 每个问题控制在20字以内
+5. 问题要像用户自然会想问的那样
 ${familyRefZh}`
 
     // Read configurable timeout and chat model
