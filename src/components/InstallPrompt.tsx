@@ -37,7 +37,8 @@ export default function InstallPrompt() {
 
     // iOS: detect Safari on iOS
     const ua = navigator.userAgent
-    const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as Record<string, unknown>).MSStream
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream
     const isSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS/.test(ua)
     if (isSafari) {
       setMode('ios')
