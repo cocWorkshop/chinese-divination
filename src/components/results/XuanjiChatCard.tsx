@@ -2,6 +2,8 @@
 
 import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 
 const XuanjiChat = dynamic(() => import('./XuanjiChat'), { ssr: false })
@@ -44,7 +46,13 @@ export default function XuanjiChatCard({ readingResult, readingType, readingId, 
                     : { backgroundColor: 'var(--accent-bg)', color: 'var(--text-secondary)', border: '1px solid var(--border-gold)' }
                   }
                 >
-                  {msg.content}
+                  {msg.role === 'assistant' ? (
+                    <div className="prose prose-invert prose-sm prose-gold max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>h1]:text-gold [&>h2]:text-gold [&>h3]:text-gold [&>h4]:text-gold [&>strong]:text-gold/90 [&>ul>li::marker]:text-gold/50 [&>ol>li::marker]:text-gold/50">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    msg.content
+                  )}
                 </div>
               </div>
             ))}
