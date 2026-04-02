@@ -56,12 +56,11 @@ const shichen = [
 const T = (lang: string, zhTW: string, en: string) =>
   lang === 'en' ? en : zhTW
 
-type TabKey = 'personal' | 'family' | 'stats' | 'credits' | 'account'
+type TabKey = 'personal' | 'family' | 'credits' | 'account'
 
 const TABS: { key: TabKey; icon: string; zh: string; en: string }[] = [
   { key: 'personal', icon: '👤', zh: '個人資料', en: 'Personal Info' },
   { key: 'family', icon: '👨‍👩‍👦', zh: '家庭成員', en: 'Family Members' },
-  { key: 'stats', icon: '📊', zh: '使用統計', en: 'Usage Stats' },
   { key: 'credits', icon: '✨', zh: '機緣簿', en: 'Credit Ledger' },
   { key: 'account', icon: '⚙️', zh: '帳號設置', en: 'Account' },
 ]
@@ -670,113 +669,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* ========== Usage Stats Tab ========== */}
-      {activeTab === 'stats' && (
-        <div className="space-y-6">
-          {/* Credits Card */}
-          {credits && (
-            <div className="glass-card rounded-2xl">
-              <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
-                <span className="text-lg">✦</span>
-                <h2 className="text-lg font-serif text-gold">{T(lang, '機緣信息', 'Karma')}</h2>
-              </div>
-              <div className="p-4 sm:p-6">
-                <div className="rounded-xl p-4 border border-gold/10 bg-navy-900/50">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-white/80">{T(lang, '✨ 機緣 / Karma', '✨ Karma')}</span>
-                    <span className="text-lg text-gold font-mono font-bold">
-                      {credits.credits === 999 ? '∞' : credits.credits}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Feedback Card */}
-          <div className="glass-card rounded-2xl">
-            <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
-              <span className="text-lg">💬</span>
-              <h2 className="text-lg font-serif text-gold">{T(lang, '意見回饋', 'Feedback')}</h2>
-            </div>
-            <div className="p-4 sm:p-6">
-              {fbSent ? (
-                <div className="py-6 text-center rounded-xl" style={{ backgroundColor: 'rgba(45,212,137,0.08)', border: '1px solid rgba(45,212,137,0.2)' }}>
-                  <span className="text-2xl">🙏</span>
-                  <p className="text-emerald-400 text-sm mt-2">{T(lang, '感謝您的回饋！', 'Thank you for your feedback!')}</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm mb-2 text-white/50">{T(lang, '整體評分', 'Overall Rating')}</label>
-                    <div className="flex gap-1">
-                      {[1,2,3,4,5].map(n => (
-                        <button key={n} type="button" onClick={() => setFbRating(n)}
-                          className="text-2xl transition-all hover:scale-125"
-                          style={{ color: n <= fbRating ? '#d4a853' : 'rgba(255,255,255,0.15)' }}
-                        >★</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1 text-white/50">{T(lang, '建議或意見', 'Comments')}</label>
-                    <textarea
-                      value={fbText}
-                      onChange={e => setFbText(e.target.value)}
-                      rows={3}
-                      maxLength={2000}
-                      placeholder={T(lang, '分享您的使用體驗...', 'Share your experience...')}
-                      className={inputCls + ' resize-none'}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    disabled={!fbText.trim() || fbSending}
-                    onClick={async () => {
-                      setFbSending(true)
-                      try {
-                        const res = await fetch('/api/site-feedback', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ rating: fbRating || null, feedback: fbText }),
-                        })
-                        if (res.ok) {
-                          setFbSent(true)
-                          toast.success(T(lang, '感謝回饋！', 'Thanks!'))
-                          setTimeout(() => { setFbSent(false); setFbRating(0); setFbText('') }, 3000)
-                          fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(catchAndReport('/api/site-feedback'))
-                        }
-                      } catch { toast.error('Error') }
-                      setFbSending(false)
-                    }}
-                    className="px-5 py-2.5 rounded-xl font-medium text-sm bg-gold text-navy-950 hover:bg-gold-light transition-colors disabled:opacity-40"
-                  >
-                    {fbSending ? '...' : T(lang, '提交回饋', 'Submit')}
-                  </button>
-                </div>
-              )}
-
-              {fbHistory.length > 0 && (
-                <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(212,168,83,0.1)' }}>
-                  <h3 className="text-xs uppercase tracking-wider text-white/40 mb-3">{T(lang, '過往回饋', 'Past Feedback')}</h3>
-                  <div className="space-y-2">
-                    {fbHistory.map(fb => (
-                      <div key={fb.id} className="rounded-lg px-4 py-3 border border-gold/5 bg-navy-900/50">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-gold text-xs">{fb.rating ? '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating) : ''}</span>
-                          <span className="text-white/30 text-xs">{new Date(fb.createdAt).toLocaleDateString()}</span>
-                        </div>
-                        <p className="text-white/60 text-sm">{fb.feedback}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ========== Credits Ledger Tab ========== */}
       {activeTab === 'credits' && (
         <div className="space-y-6">
@@ -899,6 +791,78 @@ export default function ProfilePage() {
                     </div>
                   )}
                 </>
+              )}
+            </div>
+          </div>
+
+          {/* Feedback Card */}
+          <div className="glass-card rounded-2xl">
+            <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+              <span className="text-lg">💬</span>
+              <h2 className="text-lg font-serif text-gold">{T(lang, '意見回饋', 'Feedback')}</h2>
+            </div>
+            <div className="p-4 sm:p-6">
+              {fbSent ? (
+                <div className="py-6 text-center rounded-xl" style={{ backgroundColor: 'rgba(45,212,137,0.08)', border: '1px solid rgba(45,212,137,0.2)' }}>
+                  <span className="text-2xl">🙏</span>
+                  <p className="text-emerald-400 text-sm mt-2">{T(lang, '感謝您的回饋！', 'Thank you for your feedback!')}</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm mb-2 text-white/50">{T(lang, '整體評分', 'Overall Rating')}</label>
+                    <div className="flex gap-1">
+                      {[1,2,3,4,5].map(n => (
+                        <button key={n} type="button" onClick={() => setFbRating(n)}
+                          className="text-2xl transition-all hover:scale-125"
+                          style={{ color: n <= fbRating ? '#d4a853' : 'rgba(255,255,255,0.15)' }}
+                        >★</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm mb-1 text-white/50">{T(lang, '建議或意見', 'Comments')}</label>
+                    <textarea value={fbText} onChange={e => setFbText(e.target.value)}
+                      rows={3} maxLength={2000}
+                      placeholder={T(lang, '分享您的使用體驗...', 'Share your experience...')}
+                      className={inputCls + ' resize-none'} />
+                  </div>
+                  <button type="button" disabled={!fbText.trim() || fbSending}
+                    onClick={async () => {
+                      setFbSending(true)
+                      try {
+                        const res = await fetch('/api/site-feedback', {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ rating: fbRating || null, feedback: fbText }),
+                        })
+                        if (res.ok) {
+                          setFbSent(true); toast.success(T(lang, '感謝回饋！', 'Thanks!'))
+                          setTimeout(() => { setFbSent(false); setFbRating(0); setFbText('') }, 3000)
+                          fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(catchAndReport('/api/site-feedback'))
+                        }
+                      } catch { toast.error('Error') }
+                      setFbSending(false)
+                    }}
+                    className="px-5 py-2.5 rounded-xl font-medium text-sm bg-gold text-navy-950 hover:bg-gold-light transition-colors disabled:opacity-40">
+                    {fbSending ? '...' : T(lang, '提交回饋', 'Submit')}
+                  </button>
+                </div>
+              )}
+              {fbHistory.length > 0 && (
+                <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(212,168,83,0.1)' }}>
+                  <h3 className="text-xs uppercase tracking-wider text-white/40 mb-3">{T(lang, '過往回饋', 'Past Feedback')}</h3>
+                  <div className="space-y-2">
+                    {fbHistory.map(fb => (
+                      <div key={fb.id} className="rounded-lg px-4 py-3 border border-gold/5 bg-navy-900/50">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-gold text-xs">{fb.rating ? '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating) : ''}</span>
+                          <span className="text-white/30 text-xs">{new Date(fb.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-white/60 text-sm">{fb.feedback}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>
