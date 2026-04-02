@@ -87,9 +87,10 @@ function isStarBright(palaces: ZiweiPalace[], starName: string): boolean {
 }
 
 // Helper: is star dim (落陷 or 不得地)
+// iztro brightness values: 庙|旺|得|利|平|不|陷 (不=不得地)
 function isStarDim(palaces: ZiweiPalace[], starName: string): boolean {
   const b = getStarBrightness(palaces, starName)
-  return b === '陷' || b === '不得地' || b === '闲'
+  return b === '陷' || b === '不' || b === '不得地' || b === '闲'
 }
 
 // Helper: get adjacent branches (for "夹" patterns)
@@ -333,11 +334,14 @@ function detect石中隐玉(chart: ZiweiChart): DetectedPattern | null {
 
 function detect火贪格(chart: ZiweiChart): DetectedPattern | null {
   // 火星或铃星与贪狼同宫在命宫或财帛宫或官禄宫
-  const targetPalaces = ['命宫', '财帛宫', '官禄宫']
-  for (const pName of targetPalaces) {
-    const p = getPalace(chart.palaces, pName)
-      || (pName === '命宫' ? getSoulPalace(chart) : undefined)
-    if (!p) continue
+  // iztro palace names: 命宫, 财帛, 官禄 (no 宫 suffix except 命宫)
+  const soul = getSoulPalace(chart)
+  const targetPalaces = [
+    soul,
+    getPalace(chart.palaces, '财帛'),
+    getPalace(chart.palaces, '官禄'),
+  ].filter((p): p is ZiweiPalace => !!p)
+  for (const p of targetPalaces) {
 
     const stars = allStarNames(p)
     if (stars.includes('贪狼') && stars.includes('火星')) {
