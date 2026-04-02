@@ -12,6 +12,8 @@ export default function GiftClaimPage() {
   const [status, setStatus] = useState<GiftStatus>('loading')
   const [credits, setCredits] = useState(0)
   const [note, setNote] = useState('')
+  const [claimCount, setClaimCount] = useState(0)
+  const [maxClaims, setMaxClaims] = useState(0)
   const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => {
@@ -21,11 +23,17 @@ export default function GiftClaimPage() {
         if (data.status === 'ready') {
           setCredits(data.credits)
           setNote(data.note || '')
+          setClaimCount(data.claimCount || 0)
+          setMaxClaims(data.maxClaims || 0)
           setStatus('ready')
         } else if (data.status === 'already_claimed') {
           setCredits(data.credits)
+          setClaimCount(data.claimCount || 0)
+          setMaxClaims(data.maxClaims || 0)
           setStatus('already_claimed')
         } else {
+          if (data.claimCount !== undefined) setClaimCount(data.claimCount)
+          if (data.maxClaims !== undefined) setMaxClaims(data.maxClaims)
           setStatus(data.status || 'invalid')
         }
       })
@@ -77,6 +85,12 @@ export default function GiftClaimPage() {
         <div className="text-5xl">{cfg.icon}</div>
         <h1 className={`text-xl font-serif ${cfg.color}`}>{cfg.title}</h1>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{cfg.desc}</p>
+
+        {maxClaims > 0 && (status === 'ready' || status === 'already_claimed' || status === 'exhausted') && (
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            已領取 {claimCount} / {maxClaims}
+          </p>
+        )}
 
         {status === 'ready' && (
           <button onClick={handleClaim}

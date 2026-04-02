@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
     return NextResponse.json({ status: 'expired' })
   }
   if (link.maxClaims > 0 && link.claimCount >= link.maxClaims) {
-    return NextResponse.json({ status: 'exhausted' })
+    return NextResponse.json({ status: 'exhausted', claimCount: link.claimCount, maxClaims: link.maxClaims })
   }
 
   // Check if current user already claimed
@@ -37,6 +37,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
     status: alreadyClaimed ? 'already_claimed' : 'ready',
     credits: link.credits,
     note: link.note,
+    claimCount: link.claimCount,
+    maxClaims: link.maxClaims,
   })
 }
 
