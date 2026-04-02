@@ -954,8 +954,8 @@ ${question ? `特别关注：${question}` : ''}`
     const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'http://127.0.0.1:8095'
     const llmTimeoutMs = (parseInt(settingsMap.llmTimeoutSeconds || '240', 10) || 240) * 1000
     const llmMaxTokens = parseInt(settingsMap.llmMaxTokens || '8192', 10) || 8192
-    // Ziwei needs more tokens for expanded sections
-    const effectiveMaxTokens = type === 'ziwei' ? Math.max(llmMaxTokens, 12000) : llmMaxTokens
+    // Ziwei needs more tokens for expanded sections (8 sections + patterns + keyPredictions + 12 palaces)
+    const effectiveMaxTokens = type === 'ziwei' ? Math.max(llmMaxTokens, 16000) : llmMaxTokens
 
     let resultText: string
     const preLlmMs = Date.now() - apiStart
@@ -1101,8 +1101,8 @@ ${question ? `特别关注：${question}` : ''}`
 
     // Parse JSON from Claude's response — handle various LLM output formats
     let structuredResult: Record<string, unknown>
+    let cleaned = resultText.trim()
     try {
-      let cleaned = resultText.trim()
       // Extract JSON from markdown code blocks (```json ... ``` or ``` ... ```)
       const codeBlockMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/)
       if (codeBlockMatch) {
