@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma'
 import { checkCredits, deductCredits } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
 import { calculateZiwei, ZiweiChart } from '@/lib/ziweiCalculator'
+import { detectPatterns, DetectedPattern } from '@/lib/ziweiPatterns'
 import { calculateQimen, QimenChart } from '@/lib/qimenCalculator'
 import { calculateLiuYao, LiuYaoChart } from '@/lib/liuyaoCalculator'
 import { calculateMeihua, MeihuaChart } from '@/lib/meihuaCalculator'
@@ -374,6 +375,7 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
     let userMessage: string
     let baziChart: BaziChart | null = null
     let ziweiChart: ZiweiChart | null = null
+    let detectedPatterns: DetectedPattern[] = []
     let qimenChart: QimenChart | null = null
     let liuyaoChart: LiuYaoChart | null = null
     let meihuaChart: MeihuaChart | null = null
@@ -505,6 +507,8 @@ ${question ? `特别关注：${question}` : ''}`
           shichen === 'zi_late' ? 'zi' : shichen,
           inputData.gender || 'male'
         )
+        // Programmatic pattern detection (consistent results every time)
+        detectedPatterns = detectPatterns(ziweiChart)
         const palaceSummary = ziweiChart.palaces.map(p => ({
           name: p.name,
           heavenlyStem: p.heavenlyStem,
@@ -536,6 +540,7 @@ ${JSON.stringify({
     body: ziweiChart.body,
   },
   siHua: ziweiChart.siHua,
+  detectedPatterns: detectedPatterns.map(p => ({ name: p.name, level: p.level, description: p.description, stars: p.involvedStars, palaces: p.involvedPalaces })),
   palaces: palaceSummary,
 }, null, 2)}
 
@@ -555,9 +560,10 @@ ${question ? `- 特别关注：${question}` : ''}
 ## 分析方法论（按此顺序思考）
 
 ### 第一步：定格局
-1. 识别命盘所属格局类型（杀破狼格/机月同梁格/紫府格/日月格/府相朝垣/其他）
-2. 判断格局高低：看命宫主星亮度、六吉星辅佐、煞星是否破格
-3. 输出到 patterns 数组
+1. 程序已自动检测格局，结果在 detectedPatterns 数组中（每次一致）
+2. 你的任务：将 detectedPatterns 直接输出到 patterns 数组，并在 overview 中解释格局含义
+3. 如果你发现程序未检测到但确实存在的格局，可以补充（标注"补充检测"）
+4. **不要遗漏或修改程序检测到的格局**
 
 ### 第二步：看四化飞星
 1. 本命四化（年干决定）已在 siHua 中列出
@@ -1174,6 +1180,7 @@ ${question ? `特别关注：${question}` : ''}`
         earthlyBranchOfSoulPalace: ziweiChart.earthlyBranchOfSoulPalace,
         earthlyBranchOfBodyPalace: ziweiChart.earthlyBranchOfBodyPalace,
         siHua: ziweiChart.siHua,
+        detectedPatterns,
       }
       // Override palaces with programmatic data, keep LLM analysis
       const llmPalaces = (structuredResult.palaces || {}) as Record<string, { stars?: string[]; analysis?: string }>
