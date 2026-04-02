@@ -22,14 +22,21 @@ export default function GiftLinksAdmin() {
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState({ credits: 5, maxClaims: 1, expiresInHours: 72, note: '' })
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [budget, setBudget] = useState<{ limit: number; distributed: number; allocated: number } | null>(null)
+  const [createError, setCreateError] = useState('')
 
   const load = () => {
-    fetch('/api/admin/gift-links').then(r => r.json()).then(d => { setLinks(d.links || []); setLoading(false) })
+    fetch('/api/admin/gift-links').then(r => r.json()).then(d => {
+      setLinks(d.links || [])
+      setBudget(d.budget || null)
+      setLoading(false)
+    })
   }
   useEffect(load, [])
 
   const create = async () => {
     setCreating(true)
+    setCreateError('')
     const res = await fetch('/api/admin/gift-links', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -39,6 +46,8 @@ export default function GiftLinksAdmin() {
     if (data.success) {
       setForm({ credits: 5, maxClaims: 1, expiresInHours: 72, note: '' })
       load()
+    } else if (data.error) {
+      setCreateError(data.error)
     }
     setCreating(false)
   }
@@ -77,6 +86,22 @@ export default function GiftLinksAdmin() {
         <p className="text-white/40 text-sm mt-1">Gift Link Management</p>
       </div>
 
+      {/* Budget info */}
+      {budget && (
+        <div className="rounded-xl p-4 flex gap-6 flex-wrap items-center" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+          <div className="text-xs text-white/40">
+            📊 已釋放: <span className="text-white font-medium">{budget.distributed}</span>
+            {' · '}待釋放: <span className="text-white font-medium">{budget.allocated}</span>
+            {budget.limit > 0 && <>{' · '}上限: <span className="text-gold font-medium">{budget.limit}</span>
+              {' · '}剩餘: <span className={`font-medium ${budget.limit - budget.distributed - budget.allocated > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {budget.limit - budget.distributed - budget.allocated}
+              </span>
+            </>}
+            {budget.limit === 0 && <>{' · '}<span className="text-white/30">無上限 (在設置中配置 giftLinkTotalBudget)</span></>}
+          </div>
+        </div>
+      )}
+
       {/* Create form */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         className="rounded-xl p-6 space-y-4" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
@@ -108,6 +133,7 @@ export default function GiftLinksAdmin() {
               className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white placeholder-white/20" />
           </div>
         </div>
+        {createError && <p className="text-red-400 text-xs">{createError}</p>}
         <button onClick={create} disabled={creating}
           className="px-6 py-2 rounded-lg text-sm font-medium transition-all"
           style={{ backgroundColor: 'var(--gold)', color: '#000' }}>
