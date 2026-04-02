@@ -243,7 +243,7 @@ export default function DashboardPage() {
                     className="border-t border-gold/10 px-5 pb-5 pt-4"
                   >
                     {r.status === 'pending' ? (
-                      <LoadingOracle divinationType={r.type} />
+                      <LoadingOracle divinationType={r.type} startTime={new Date(r.createdAt).getTime()} />
                     ) : r.status === 'failed' ? (
                       <div className="text-center py-8 text-red-300">
                         <p className="text-2xl mb-2">⚠️</p>

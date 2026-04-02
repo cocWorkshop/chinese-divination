@@ -68,9 +68,10 @@ interface MysticalLoaderProps {
   lang: string
   variant?: 'divination' | 'chat' | 'page'
   divinationType?: string
+  startTime?: number  // Unix timestamp (ms) for elapsed timer — defaults to Date.now() on mount
 }
 
-export default function MysticalLoader({ lang, variant = 'divination', divinationType }: MysticalLoaderProps) {
+export default function MysticalLoader({ lang, variant = 'divination', divinationType, startTime }: MysticalLoaderProps) {
   const [quoteIndex, setQuoteIndex] = useState(0)
   const quotes = lang === 'en' ? divinationQuotes.en : divinationQuotes['zh-TW']
   const [elapsed, setElapsed] = useState(0)
@@ -103,7 +104,8 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
   // Elapsed timer for progress bar
   useEffect(() => {
     if (variant !== 'divination') return
-    const start = Date.now()
+    const start = startTime || Date.now()
+    setElapsed(Math.floor((Date.now() - start) / 1000))
     const interval = setInterval(() => {
       setElapsed(Math.floor((Date.now() - start) / 1000))
     }, 1000)
