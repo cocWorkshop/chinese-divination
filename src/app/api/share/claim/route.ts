@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logCreditChange } from '@/lib/creditLogger'
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -34,6 +35,28 @@ export async function POST(req: NextRequest) {
   ]
 
   await prisma.$transaction(ops)
+
+  // Log credit changes for both users
+  const [claimer, sharer] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { credits: true } }),
+    prisma.user.findUnique({ where: { id: link.userId }, select: { credits: true } }),
+  ])
+  logCreditChange({
+    userId: session.user.id,
+    action: 'grant_share',
+    amount: bonus,
+    balance: claimer?.credits ?? 0,
+    source: `share:${code}`,
+    note: 'claimer',
+  })
+  logCreditChange({
+    userId: link.userId,
+    action: 'grant_share',
+    amount: bonus,
+    balance: sharer?.credits ?? 0,
+    source: `share:${code}`,
+    note: 'sharer',
+  })
 
   return NextResponse.json({ success: true, credits: bonus })
 }

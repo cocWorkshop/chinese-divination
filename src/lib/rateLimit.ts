@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { logCreditChange } from './creditLogger'
 
 // Default costs per divination type (overridden by AdminSetting)
 const DEFAULT_COSTS: Record<string, number> = {
@@ -76,7 +77,19 @@ export async function deductCredits(userId: string, type: string): Promise<boole
     `UPDATE "User" SET "credits" = "credits" - $1, "${usageField}" = "${usageField}" + 1 WHERE id = $2 AND "credits" >= $1`,
     cost, userId
   )
-  return result > 0
+  if (result > 0) {
+    // Query balance after deduction for audit log
+    const updated = await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } })
+    logCreditChange({
+      userId,
+      action: 'deduct',
+      amount: -cost,
+      balance: updated?.credits ?? 0,
+      source: type === 'chat' ? 'chat' : type === 'master' ? 'master' : `divination:${type}`,
+    })
+    return true
+  }
+  return false
 }
 
 // Legacy wrappers for backward compatibility during migration
@@ -121,12 +134,20 @@ export async function grantDailyBonus(userId: string): Promise<{ granted: boolea
   const setting = await prisma.adminSetting.findUnique({ where: { key: 'dailyBonusCredits' } })
   const bonus = parseInt(setting?.value ?? '2', 10) || 2
 
-  await prisma.user.update({
+  const updated = await prisma.user.update({
     where: { id: userId },
     data: {
       credits: { increment: bonus },
       lastDailyBonus: now,
     },
+    select: { credits: true },
+  })
+  logCreditChange({
+    userId,
+    action: 'grant_daily',
+    amount: bonus,
+    balance: updated.credits,
+    source: 'daily_bonus',
   })
   return { granted: true, credits: bonus }
 }

@@ -6,6 +6,7 @@ import OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkCredits, deductCredits } from '@/lib/rateLimit'
+import { logLlmCall } from '@/lib/llmLogger'
 import { calculateBazi } from '@/lib/baziCalculator'
 import { calculateZiwei } from '@/lib/ziweiCalculator'
 import { calculateQimen } from '@/lib/qimenCalculator'
@@ -280,6 +281,7 @@ async function summariseOldMessages(
   const old = messages.slice(0, messages.length - keep)
   const recent = messages.slice(messages.length - keep)
 
+  const sumStart = Date.now()
   const summaryResp = await openai.chat.completions.create({
     model,
     messages: [
@@ -290,6 +292,16 @@ async function summariseOldMessages(
   })
 
   const summary = summaryResp.choices[0]?.message?.content || ''
+  // Log as internal call (no user credit cost)
+  logLlmCall({
+    endpoint: 'master-summary',
+    model,
+    promptTokens: summaryResp.usage?.prompt_tokens,
+    completionTokens: summaryResp.usage?.completion_tokens,
+    totalTokens: summaryResp.usage?.total_tokens,
+    latencyMs: Date.now() - sumStart,
+    status: 'success',
+  })
   // Prepend summary as a system message
   const summaryMsg: MasterMessage = {
     role: 'system',
@@ -377,6 +389,7 @@ export async function POST(req: NextRequest) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
         }
 
+        const llmStartTime = Date.now()
         try {
           let currentMessages = [...openaiMessages]
           let assistantContent = ''
@@ -463,6 +476,17 @@ export async function POST(req: NextRequest) {
             contentChunk = ''
           }
 
+          // Log LLM call
+          logLlmCall({
+            userId,
+            endpoint: 'master',
+            model,
+            latencyMs: Date.now() - llmStartTime,
+            status: 'success',
+            inputPreview: message,
+            outputPreview: assistantContent.slice(0, 500),
+          })
+
           // Save assistant message to history
           const assistantHistoryMsg: MasterMessage = {
             role: 'assistant',
@@ -495,6 +519,15 @@ export async function POST(req: NextRequest) {
 
           send({ type: 'done' })
         } catch (err) {
+          logLlmCall({
+            userId,
+            endpoint: 'master',
+            model,
+            latencyMs: Date.now() - llmStartTime,
+            status: 'error',
+            errorMessage: err instanceof Error ? err.message : 'Unknown error',
+            inputPreview: message,
+          })
           send({ type: 'error', error: err instanceof Error ? err.message : 'Unknown error' })
         } finally {
           controller.close()

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
+import { logCreditChange } from '@/lib/creditLogger'
 import Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
@@ -36,11 +37,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ received: true, duplicate: true })
       }
 
-      await prisma.user.update({
+      const updatedUser = await prisma.user.update({
         where: { id: userId },
         data: {
           credits: { increment: totalCredits },
         },
+        select: { credits: true },
+      })
+      logCreditChange({
+        userId,
+        action: 'grant_purchase',
+        amount: totalCredits,
+        balance: updatedUser.credits,
+        source: `stripe:${session.id}`,
       })
       console.log(`[stripe] Credits granted: user=${userId} credits=${totalCredits} session=${session.id}`)
     }

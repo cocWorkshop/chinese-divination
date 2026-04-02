@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logCreditChange } from '@/lib/creditLogger'
 
 // GET: check compensation status (for claim page)
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -61,19 +62,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   }
 
   // Apply credits
-  await prisma.user.update({
+  const totalCompCredits = comp.bonusModel1 + comp.bonusChat
+  const updatedUser = await prisma.user.update({
     where: { id: user.id },
     data: {
       divinationCredits: { increment: comp.bonusModel1 },
       chatCredits: { increment: comp.bonusChat },
-      credits: { increment: comp.bonusModel1 + comp.bonusChat },
+      credits: { increment: totalCompCredits },
     },
+    select: { credits: true },
   })
 
   // Mark claimed
   await prisma.compensation.update({
     where: { id: comp.id },
     data: { status: 'claimed', claimedAt: new Date(), userId: user.id },
+  })
+
+  logCreditChange({
+    userId: user.id,
+    action: 'grant_compensation',
+    amount: totalCompCredits,
+    balance: updatedUser.credits,
+    source: `compensation:${comp.id}`,
+    note: comp.reason,
   })
 
   return NextResponse.json({

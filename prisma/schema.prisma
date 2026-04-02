@@ -293,6 +293,21 @@ model DeviceToken {
   @@index([token])
 }
 
+model CreditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // "deduct" | "grant_daily" | "grant_purchase" | "grant_share" | "grant_compensation" | "grant_admin"
+  amount    Int      // positive for grants, negative for deductions
+  balance   Int      // credits balance AFTER this change
+  source    String   // "divination:bazi" | "chat" | "master" | "stripe:sess_xxx" | "share:code_xxx" | "compensation:id_xxx" | "daily_bonus" | "admin"
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+}
+
 model WelcomeRule {
   id            String   @id @default(cuid())
   name          String
