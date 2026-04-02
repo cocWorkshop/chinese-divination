@@ -146,8 +146,9 @@ const schemas: Record<string, object> = {
   ziwei: {
     type: 'ziwei',
     mainStars: [{ name: '紫微', palace: '命宫', element: '土' }],
+    patterns: [{ name: '格局名', level: '上格/中格/下格', description: '格局说明' }],
     palaces: {
-      '命宫': { stars: ['星名'], analysis: '分析' },
+      '命宫': { stars: ['星名'], analysis: '分析(80-120字)' },
       '财帛宫': { stars: [], analysis: '' },
       '官禄宫': { stars: [], analysis: '' },
       '夫妻宫': { stars: [], analysis: '' },
@@ -160,7 +161,17 @@ const schemas: Record<string, object> = {
       '福德宫': { stars: [], analysis: '' },
       '父母宫': { stars: [], analysis: '' },
     },
-    sections: { overview: '总论(100+字)', career: '事业官禄(100+字)', marriage: '夫妻感情(100+字)', wealth: '财运(100+字)' },
+    sections: {
+      overview: '命盘总论：格局判定+命宫主星+身宫+五行局',
+      personality: '性格深析：命宫(外在)vs福德宫(内在)对比',
+      career: '事业分析：官禄宫+三方四正+适合行业',
+      marriage: '婚姻分析：配偶特征推断+婚姻模式+最佳婚期',
+      wealth: '财运分析：正财偏财+理财方式+财运高峰低谷期',
+      health: '健康分析：疾厄宫主星对应身体系统+注意年龄段',
+      family: '六亲分析：父母/兄弟/子女特征推断',
+      dayun: '大运精批：逐个大运分析，标注当前大运',
+    },
+    keyPredictions: [{ age: '28岁', event: '事件描述', basis: '命理依据' }],
     keyAdvice: ['建议一', '建议二'],
     luckyInfo: { numbers: [], colors: [], directions: [] },
     suggestedQuestions: ['命盘中最强的一颗星暗示了什么命运走向？据此提问(15字内)', '哪个宫位藏着此人最大的人生变局？据此提问(15字内)', '命盘中有什么被忽视的贵人或机遇？据此提问(15字内)'],
@@ -502,7 +513,13 @@ ${question ? `特别关注：${question}` : ''}`
           minorStars: p.minorStars.map(s => ({ name: s.name, brightness: s.brightness, mutagen: s.mutagen })),
           isBodyPalace: p.isBodyPalace,
           decadal: p.decadal,
+          changsheng12: p.changsheng12,
         }))
+        // Calculate current age for dayun analysis
+        const birthYear = parseInt(solarBirthDate.split('-')[0])
+        const currentYear = new Date().getFullYear()
+        const currentAge = currentYear - birthYear
+
         userMessage = `请为我进行紫微斗数命盘精批。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
 ## 程序预计算的紫微斗数命盘（已验证准确，请直接使用）
@@ -522,22 +539,71 @@ ${JSON.stringify({
   palaces: palaceSummary,
 }, null, 2)}
 
-## 用户输入
+## 用户信息
 - 出生日期：${solarBirthDate}（公历）${inputData.lunarToggle === 'lunar' ? `（用户输入农历 ${inputData.birthDate}）` : ''}
 - 出生时辰：${inputData.timeMode === 'precise' ? inputData.exactTime : inputData.birthTime}${ziweiTrueSolarInfo || (inputData.timeMode === 'precise' ? '' : '（模糊时辰）')}
 - 出生地：${inputData.birthPlace || '未提供'}
 - 性别：${inputData.gender}
+- 当前年龄：约${currentAge}岁（${currentYear}年）
 ${inputData.birthEnvironment ? `- 出生地环境：${inputData.birthEnvironment}` : ''}
 ${question ? `- 特别关注：${question}` : ''}
 
-## 解盘要求
-你是资深紫微斗数命理师，请基于以上程序排出的命盘进行精批。重点：
-1. **overview**：命主性格特质、命宫主星分析、身宫解读、五行局含义（150字以上）
-2. **career**：官禄宫主星分析、事业方向、适合行业、三方四正格局（150字以上）
-3. **marriage**：夫妻宫主星分析、配偶特征、婚姻质量（150字以上）
-4. **wealth**：财帛宫主星分析、财运格局、正财偏财（150字以上）
+## 解盘身份与风格
+你是一位执业三十年的紫微斗数命理师，师承中州派，擅长断具体事件和六亲关系。
+风格：先给结论再解释原因；敢于给出具体断语，不说模棱两可的废话。
 
-关于palaces中各宫的分析(analysis字段)：请为每个宫位写50-100字的分析。
+## 分析方法论（按此顺序思考）
+
+### 第一步：定格局
+1. 识别命盘所属格局类型（杀破狼格/机月同梁格/紫府格/日月格/府相朝垣/其他）
+2. 判断格局高低：看命宫主星亮度、六吉星辅佐、煞星是否破格
+3. 输出到 patterns 数组
+
+### 第二步：看四化飞星
+1. 本命四化（年干决定）已在 siHua 中列出
+2. 分析：化禄落宫=一生最顺领域，化忌落宫=最需注意领域
+3. 注意双化叠加和三方四正会照的升降格效果
+
+### 第三步：看大运走势
+用命盘中每个宫位的 decadal.range 数据，逐个大运分析：
+- 该大运宫位里的星曜组合
+- 与本命四化的叠加效果
+- 用"▶"标记当前正在走的大运（命主当前约${currentAge}岁）
+- **每个大运必须给出关键事件预测**
+
+### 第四步：看六亲
+- 父母宫 → 推断父亲/母亲特征（职业类型、性格）
+- 夫妻宫 → 推断配偶特征（年龄差、职业、外貌、性格）
+- 子女宫 → 推断子女数量倾向、与子女关系
+
+### 第五步：综合硬核预测
+基于以上分析，给出3-5个最具体的可验证预测，输出到 keyPredictions 数组。
+示例格式：{ age: "28岁", event: "重大工作变动或搬迁", basis: "大运走迁移宫，流年太岁冲命宫" }
+
+## sections 各字段要求
+
+- **overview**：格局判定 + 命宫主星组合含义 + 身宫解读 + 五行局 + 一句话定性此命
+- **personality**：命宫(别人眼中的你) vs 福德宫(内心真实的你) 对比分析，指出外在与内在的反差
+- **career**：官禄宫主星 + 三方四正联合分析 + 具体适合的子行业 + 当前大运对事业的影响
+- **marriage**：配偶具体特征推断(职业类型/性格/年龄差/外貌特点) + 婚姻模式 + 最佳婚期 + 桃花星分析
+- **wealth**：正财偏财格局 + 最佳理财方式 + 财运高峰/低谷年龄段 + 田宅宫联合分析
+- **health**：疾厄宫主星对应的身体系统(紫微→脾胃免疫/天机→肝胆神经/太阳→心脏血压眼睛/武曲→肺呼吸骨骼/天同→膀胱肾内分泌/廉贞→心脑血管/天府→脾胃消化/太阴→肾眼睛视力/贪狼→肝生殖/巨门→口腔咽喉肠胃/天相→面部皮肤/天梁→脾胃慢性病/七杀→肺大肠意外伤/破军→泌尿手术) + 煞星加重的风险 + 需注意的年龄段
+- **family**：父亲特征(父母宫太阳系分析) + 母亲特征(父母宫太阴系) + 兄弟姐妹关系 + 子女缘分
+- **dayun**：逐个大运分析，每步标注起止年龄+所在宫位+核心主题+关键预测。用▶标记当前大运。
+
+## 宫位分析要求（palaces 中每个宫的 analysis）
+每个宫位分析必须包含：
+1. 主星组合核心含义（一句话）
+2. 辅星/煞星的修正作用
+3. 与三方四正的关联（至少提一个相关宫位）
+4. 对所管事项的具体影响
+
+## 禁止事项
+- 不要重复排盘数据（已提供，你只解读）
+- 不要说"建议结合实际情况"等废话
+- 不要用巴纳姆式描述（"你有时外向有时内向"）
+- 每个断语必须基于具体星曜组合
+
 四化飞星和星耀数据以程序计算结果为准，你只负责解盘分析。`
       } catch (e) {
         console.error('Ziwei calculation error:', e)
@@ -888,6 +954,8 @@ ${question ? `特别关注：${question}` : ''}`
     const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'http://127.0.0.1:8095'
     const llmTimeoutMs = (parseInt(settingsMap.llmTimeoutSeconds || '240', 10) || 240) * 1000
     const llmMaxTokens = parseInt(settingsMap.llmMaxTokens || '8192', 10) || 8192
+    // Ziwei needs more tokens for expanded sections
+    const effectiveMaxTokens = type === 'ziwei' ? Math.max(llmMaxTokens, 12000) : llmMaxTokens
 
     let resultText: string
     const preLlmMs = Date.now() - apiStart
@@ -904,7 +972,7 @@ ${question ? `特别关注：${question}` : ''}`
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userMessage },
             ],
-            max_tokens: llmMaxTokens,
+            max_tokens: effectiveMaxTokens,
           }),
           signal: AbortSignal.timeout(llmTimeoutMs),
         })
@@ -969,7 +1037,7 @@ ${question ? `特别关注：${question}` : ''}`
       try {
         const completion = await client.chat.completions.create({
           model: modelName,
-          max_tokens: llmMaxTokens,
+          max_tokens: effectiveMaxTokens,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage },
@@ -1196,7 +1264,7 @@ ${question ? `特别关注：${question}` : ''}`
     // ═══ VALIDATE LLM OUTPUT STRUCTURE ═══
     const validationRules: Record<string, (r: Record<string, unknown>) => boolean> = {
       bazi: r => !!(r.sections && typeof r.sections === 'object' && Object.keys(r.sections as object).length >= 3),
-      ziwei: r => !!(r.sections && typeof r.sections === 'object' && Object.keys(r.sections as object).length >= 2),
+      ziwei: r => !!(r.sections && typeof r.sections === 'object' && Object.keys(r.sections as object).length >= 3),
       iching: r => !!(r.interpretation || r.sections),
       liuyao: r => !!(r.interpretation || r.sections),
       qimen: r => !!(r.sections && typeof r.sections === 'object'),

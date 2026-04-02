@@ -105,9 +105,13 @@ const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 const sectionTabs = [
   { key: 'overview', label: '總覽', en: 'Overview' },
+  { key: 'personality', label: '性格', en: 'Personality' },
   { key: 'career', label: '事業', en: 'Career' },
   { key: 'marriage', label: '婚姻', en: 'Marriage' },
   { key: 'wealth', label: '財運', en: 'Wealth' },
+  { key: 'health', label: '健康', en: 'Health' },
+  { key: 'family', label: '六親', en: 'Family' },
+  { key: 'dayun', label: '大運', en: 'Fate Periods' },
 ]
 
 function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
@@ -434,10 +438,27 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       )}
       </AnimatePresence>
 
+      {/* Patterns / 格局 */}
+      {d.patterns && d.patterns.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {d.patterns.map((p, i) => (
+            <span key={i} className="px-3 py-1 rounded-full text-xs font-medium"
+              style={{
+                backgroundColor: p.level?.includes('上') ? 'rgba(234,179,8,0.2)' : p.level?.includes('下') ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)',
+                color: p.level?.includes('上') ? '#eab308' : p.level?.includes('下') ? '#ef4444' : '#3b82f6',
+                border: `1px solid ${p.level?.includes('上') ? 'rgba(234,179,8,0.3)' : p.level?.includes('下') ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'}`,
+              }}
+              title={p.description}>
+              {p.level?.includes('上') ? '🏆' : p.level?.includes('下') ? '⚠️' : '⭐'} {p.name}（{p.level}）
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* ═══ SECTIONS TABS (Analysis) ═══ */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
         <div className="flex flex-wrap gap-1 mb-4">
-          {sectionTabs.map(s => (
+          {sectionTabs.filter(tab => !!(d.sections as Record<string, string>)?.[tab.key]).map(s => (
             <button
               key={s.key}
               onClick={() => setActiveSection(s.key)}
@@ -474,6 +495,28 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
             ))}
           </div>
         </motion.div>
+      )}
+
+      {/* Key Predictions / 关键预测 */}
+      {d.keyPredictions && d.keyPredictions.length > 0 && (
+        <div className="rounded-xl p-4 mb-4" style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)' }}>
+          <h3 className="font-serif text-sm mb-3" style={{ color: 'var(--gold)' }}>
+            🔮 {T(lang, '關鍵預測', 'Key Predictions')}
+          </h3>
+          <div className="space-y-3">
+            {d.keyPredictions.map((p, i) => (
+              <div key={i} className="flex gap-3 items-start">
+                <span className="shrink-0 px-2 py-0.5 rounded text-xs font-bold" style={{ backgroundColor: 'rgba(234,179,8,0.2)', color: '#eab308' }}>
+                  {p.age}
+                </span>
+                <div>
+                  <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{p.event}</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{T(lang, '依据', 'Basis')}：{p.basis}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* ═══ XUANJI Q&A ═══ */}

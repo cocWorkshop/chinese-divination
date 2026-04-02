@@ -108,8 +108,19 @@ export interface ZiweiChartInfo {
 
 export interface ZiweiData {
   mainStars: { name: string; palace: string; element?: string; brightness?: string; mutagen?: string }[]
+  patterns?: { name: string; level: string; description: string }[]
   palaces: Record<string, ZiweiPalaceData>
-  sections: { overview: string; career: string; marriage: string; wealth: string }
+  sections: {
+    overview: string
+    career: string
+    marriage: string
+    wealth: string
+    personality?: string
+    health?: string
+    family?: string
+    dayun?: string
+  }
+  keyPredictions?: { age: string; event: string; basis: string }[]
   keyAdvice: string[]
   luckyInfo: { numbers: number[]; colors: string[]; directions: string[] }
   ziweiChart?: ZiweiChartInfo
