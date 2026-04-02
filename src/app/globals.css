@@ -247,3 +247,27 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Ziwei markdown rendering */
+.ziwei-markdown h1, .ziwei-markdown h2, .ziwei-markdown h3, .ziwei-markdown h4 {
+  color: var(--gold, #d4a853);
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+}
+.ziwei-markdown h3 { font-size: 1em; }
+.ziwei-markdown h4 { font-size: 0.95em; }
+.ziwei-markdown strong { color: rgba(255,255,255,0.95); }
+.ziwei-markdown ul, .ziwei-markdown ol { padding-left: 1.2em; margin: 0.4em 0; }
+.ziwei-markdown li { margin: 0.15em 0; }
+.ziwei-markdown p { margin: 0.4em 0; }
+.ziwei-markdown blockquote {
+  border-left: 2px solid var(--gold, #d4a853);
+  padding-left: 0.8em;
+  margin: 0.5em 0;
+  color: rgba(255,255,255,0.6);
+}
+.ziwei-markdown table { width: 100%; border-collapse: collapse; margin: 0.5em 0; font-size: 0.85em; }
+.ziwei-markdown th, .ziwei-markdown td { border: 1px solid rgba(255,255,255,0.15); padding: 0.3em 0.5em; }
+.ziwei-markdown th { background: rgba(255,255,255,0.05); color: var(--gold, #d4a853); }
+.ziwei-markdown hr { border-color: rgba(255,255,255,0.1); margin: 0.8em 0; }
