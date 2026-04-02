@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma'
 import { checkCredits, deductCredits } from '@/lib/rateLimit'
 import { calculateBazi, BaziChart } from '@/lib/baziCalculator'
 import { calculateZiwei, ZiweiChart } from '@/lib/ziweiCalculator'
+import { detectPatterns, DetectedPattern } from '@/lib/ziweiPatterns'
 import { calculateQimen, QimenChart } from '@/lib/qimenCalculator'
 import { calculateLiuYao, LiuYaoChart } from '@/lib/liuyaoCalculator'
 import { calculateMeihua, MeihuaChart } from '@/lib/meihuaCalculator'
@@ -149,17 +150,17 @@ const schemas: Record<string, object> = {
     patterns: [{ name: '格局名', level: '上格/中格/下格', description: '格局说明' }],
     palaces: {
       '命宫': { stars: ['星名'], analysis: '分析(80-120字)' },
-      '财帛宫': { stars: [], analysis: '' },
-      '官禄宫': { stars: [], analysis: '' },
-      '夫妻宫': { stars: [], analysis: '' },
-      '兄弟宫': { stars: [], analysis: '' },
-      '子女宫': { stars: [], analysis: '' },
-      '疾厄宫': { stars: [], analysis: '' },
-      '迁移宫': { stars: [], analysis: '' },
-      '交友宫': { stars: [], analysis: '' },
-      '田宅宫': { stars: [], analysis: '' },
-      '福德宫': { stars: [], analysis: '' },
-      '父母宫': { stars: [], analysis: '' },
+      '财帛': { stars: [], analysis: '' },
+      '官禄': { stars: [], analysis: '' },
+      '夫妻': { stars: [], analysis: '' },
+      '兄弟': { stars: [], analysis: '' },
+      '子女': { stars: [], analysis: '' },
+      '疾厄': { stars: [], analysis: '' },
+      '迁移': { stars: [], analysis: '' },
+      '仆役': { stars: [], analysis: '' },
+      '田宅': { stars: [], analysis: '' },
+      '福德': { stars: [], analysis: '' },
+      '父母': { stars: [], analysis: '' },
     },
     sections: {
       overview: '命盘总论：格局判定+命宫主星+身宫+五行局',
@@ -374,6 +375,7 @@ For the pillars/stars/palace data fields, use proper Chinese characters (e.g. �
     let userMessage: string
     let baziChart: BaziChart | null = null
     let ziweiChart: ZiweiChart | null = null
+    let detectedPatterns: DetectedPattern[] = []
     let qimenChart: QimenChart | null = null
     let liuyaoChart: LiuYaoChart | null = null
     let meihuaChart: MeihuaChart | null = null
@@ -505,6 +507,8 @@ ${question ? `特别关注：${question}` : ''}`
           shichen === 'zi_late' ? 'zi' : shichen,
           inputData.gender || 'male'
         )
+        // Programmatic pattern detection (consistent results every time)
+        detectedPatterns = detectPatterns(ziweiChart)
         const palaceSummary = ziweiChart.palaces.map(p => ({
           name: p.name,
           heavenlyStem: p.heavenlyStem,
@@ -519,6 +523,19 @@ ${question ? `特别关注：${question}` : ''}`
         const birthYear = parseInt(solarBirthDate.split('-')[0])
         const currentYear = new Date().getFullYear()
         const currentAge = currentYear - birthYear
+
+        // Pre-sort dayun (大运) by age for LLM convenience
+        const dayunSorted = ziweiChart.palaces
+          .filter(p => p.decadal && p.decadal.range.length === 2)
+          .map(p => ({
+            range: `${p.decadal.range[0]}-${p.decadal.range[1]}岁`,
+            palace: p.name,
+            heavenlyStem: p.decadal.heavenlyStem,
+            earthlyBranch: p.decadal.earthlyBranch,
+            majorStars: p.majorStars.map(s => s.name + (s.brightness ? `(${s.brightness})` : '') + (s.mutagen ? `[${s.mutagen}]` : '')).join('、') || '无正曜',
+            isCurrent: currentAge >= p.decadal.range[0] && currentAge <= p.decadal.range[1],
+          }))
+          .sort((a, b) => parseInt(a.range) - parseInt(b.range))
 
         userMessage = `请为我进行紫微斗数命盘精批。
 ${targetPersonInfo ? `\n${targetPersonInfo}\n` : ''}
@@ -536,6 +553,8 @@ ${JSON.stringify({
     body: ziweiChart.body,
   },
   siHua: ziweiChart.siHua,
+  detectedPatterns: detectedPatterns.map(p => ({ name: p.name, level: p.level, description: p.description, stars: p.involvedStars, palaces: p.involvedPalaces })),
+  dayunTimeline: dayunSorted,
   palaces: palaceSummary,
 }, null, 2)}
 
@@ -555,9 +574,10 @@ ${question ? `- 特别关注：${question}` : ''}
 ## 分析方法论（按此顺序思考）
 
 ### 第一步：定格局
-1. 识别命盘所属格局类型（杀破狼格/机月同梁格/紫府格/日月格/府相朝垣/其他）
-2. 判断格局高低：看命宫主星亮度、六吉星辅佐、煞星是否破格
-3. 输出到 patterns 数组
+1. 程序已自动检测格局，结果在 detectedPatterns 数组中（每次一致）
+2. 你的任务：将 detectedPatterns 直接输出到 patterns 数组，并在 overview 中解释格局含义
+3. 如果你发现程序未检测到但确实存在的格局，可以补充（标注"补充检测"）
+4. **不要遗漏或修改程序检测到的格局**
 
 ### 第二步：看四化飞星
 1. 本命四化（年干决定）已在 siHua 中列出
@@ -565,10 +585,10 @@ ${question ? `- 特别关注：${question}` : ''}
 3. 注意双化叠加和三方四正会照的升降格效果
 
 ### 第三步：看大运走势
-用命盘中每个宫位的 decadal.range 数据，逐个大运分析：
-- 该大运宫位里的星曜组合
-- 与本命四化的叠加效果
-- 用"▶"标记当前正在走的大运（命主当前约${currentAge}岁）
+大运已按年龄预排序在 dayunTimeline 数组中（isCurrent=true 为当前大运）。逐个分析：
+- 该大运宫位里的星曜组合（已列出）
+- 大运天干产生的四化，叠加本命四化
+- 用"▶"标记 isCurrent=true 的大运（命主当前约${currentAge}岁）
 - **每个大运必须给出关键事件预测**
 
 ### 第四步：看六亲
@@ -587,7 +607,7 @@ ${question ? `- 特别关注：${question}` : ''}
 - **career**：官禄宫主星 + 三方四正联合分析 + 具体适合的子行业 + 当前大运对事业的影响
 - **marriage**：配偶具体特征推断(职业类型/性格/年龄差/外貌特点) + 婚姻模式 + 最佳婚期 + 桃花星分析
 - **wealth**：正财偏财格局 + 最佳理财方式 + 财运高峰/低谷年龄段 + 田宅宫联合分析
-- **health**：疾厄宫主星对应的身体系统(紫微→脾胃免疫/天机→肝胆神经/太阳→心脏血压眼睛/武曲→肺呼吸骨骼/天同→膀胱肾内分泌/廉贞→心脑血管/天府→脾胃消化/太阴→肾眼睛视力/贪狼→肝生殖/巨门→口腔咽喉肠胃/天相→面部皮肤/天梁→脾胃慢性病/七杀→肺大肠意外伤/破军→泌尿手术) + 煞星加重的风险 + 需注意的年龄段
+- **health**：根据参考资料中的"健康对应"表，分析疾厄宫主星对应的身体系统 + 煞星加重的风险 + 需注意的年龄段
 - **family**：父亲特征(父母宫太阳系分析) + 母亲特征(父母宫太阴系) + 兄弟姐妹关系 + 子女缘分
 - **dayun**：逐个大运分析，每步标注起止年龄+所在宫位+核心主题+关键预测。用▶标记当前大运。
 
@@ -1174,6 +1194,7 @@ ${question ? `特别关注：${question}` : ''}`
         earthlyBranchOfSoulPalace: ziweiChart.earthlyBranchOfSoulPalace,
         earthlyBranchOfBodyPalace: ziweiChart.earthlyBranchOfBodyPalace,
         siHua: ziweiChart.siHua,
+        detectedPatterns,
       }
       // Override palaces with programmatic data, keep LLM analysis
       const llmPalaces = (structuredResult.palaces || {}) as Record<string, { stars?: string[]; analysis?: string }>
