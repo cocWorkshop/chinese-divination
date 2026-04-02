@@ -954,8 +954,7 @@ ${question ? `特别关注：${question}` : ''}`
     const PROXY_URL = process.env.CLAUDE_PROXY_URL || 'http://127.0.0.1:8095'
     const llmTimeoutMs = (parseInt(settingsMap.llmTimeoutSeconds || '240', 10) || 240) * 1000
     const llmMaxTokens = parseInt(settingsMap.llmMaxTokens || '8192', 10) || 8192
-    // Ziwei needs more tokens for expanded sections (8 sections + patterns + keyPredictions + 12 palaces)
-    const effectiveMaxTokens = type === 'ziwei' ? Math.max(llmMaxTokens, 16000) : llmMaxTokens
+    const effectiveMaxTokens = llmMaxTokens
 
     let resultText: string
     const preLlmMs = Date.now() - apiStart
