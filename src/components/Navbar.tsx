@@ -17,6 +17,13 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [sharing, setSharing] = useState(false)
+  const [showWiki, setShowWiki] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/config/nav').then(r => r.json()).then(data => {
+      if (data.showWikiNav) setShowWiki(true)
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     document.title = lang === 'en' ? 'XuanJi AI - Ancient Wisdom, Modern Heritage' : '玄機AI - 古法智慧，現代傳承'
@@ -69,6 +76,11 @@ export default function Navbar() {
               >
                 {lang === 'en' ? '🔗 Share for Karma' : '🔗 分享賺機緣'}
               </button>
+            )}
+            {showWiki && (
+              <Link href="/wiki" className="text-white/80 hover:text-gold transition-colors">
+                {lang === 'en' ? 'Wiki' : '知識庫'}
+              </Link>
             )}
 
             <NotificationBell />
@@ -177,6 +189,11 @@ export default function Navbar() {
             <button onClick={() => { handleShare(); setMenuOpen(false) }} className="text-left text-white/80 hover:text-gold">
               {lang === 'en' ? '🔗 Share for Karma' : '🔗 分享賺機緣'}
             </button>
+          )}
+          {showWiki && (
+            <Link href="/wiki" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+              {lang === 'en' ? '📚 Wiki' : '📚 知識庫'}
+            </Link>
           )}
           <button
             onClick={() => { toggleTheme(); setMenuOpen(false) }}

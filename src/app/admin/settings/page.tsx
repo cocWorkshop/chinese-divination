@@ -52,6 +52,7 @@ export default function AdminSettings() {
     cost_fengshui: '3',
     cost_chat: '2',
     cost_master: '1',
+    showWikiNav: 'false',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -244,6 +245,7 @@ export default function AdminSettings() {
           <div className="space-y-4">
             {[
               { key: 'divinationEnabled', label: '占卜功能', enLabel: 'Divination enabled', desc: '關閉後所有用戶將無法提交占卜請求' },
+              { key: 'showWikiNav', label: 'Wiki 知識庫入口', enLabel: 'Show Wiki in nav', desc: '在導航欄顯示 Wiki 知識庫連結' },
               { key: 'maintenanceMode', label: '維護模式', enLabel: 'Maintenance mode', desc: '開啟後所有占卜請求返回維護提示', danger: true },
             ].map(item => (
               <label key={item.key} className="flex items-start gap-4 cursor-pointer group">
