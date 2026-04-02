@@ -308,6 +308,37 @@ model CreditLog {
   @@index([action])
 }
 
+model GiftLink {
+  id          String   @id @default(cuid())
+  code        String   @unique // short URL code
+  credits     Int      // credits to grant
+  maxClaims   Int      @default(1) // how many users can claim (0 = unlimited)
+  claimCount  Int      @default(0)
+  note        String?  // admin note / description
+  expiresAt   DateTime?
+  createdBy   String   // admin userId
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  claims      GiftClaim[]
+
+  @@index([code])
+  @@index([createdAt])
+}
+
+model GiftClaim {
+  id         String   @id @default(cuid())
+  giftLinkId String
+  userId     String
+  credits    Int
+  createdAt  DateTime @default(now())
+
+  giftLink   GiftLink @relation(fields: [giftLinkId], references: [id])
+
+  @@unique([giftLinkId, userId]) // each user can only claim once per link
+  @@index([userId])
+}
+
 model WelcomeRule {
   id            String   @id @default(cuid())
   name          String
