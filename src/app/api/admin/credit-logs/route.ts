@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   ])
 
   // Enrich with user email
-  const userIds = [...new Set(logs.map(l => l.userId))]
+  const userIds = Array.from(new Set(logs.map(l => l.userId)))
   const users = await prisma.user.findMany({
     where: { id: { in: userIds } },
     select: { id: true, email: true, name: true },
