@@ -95,6 +95,10 @@ export default function ProfilePage() {
   const [deleteEmailSent, setDeleteEmailSent] = useState(false)
   const [familySearch, setFamilySearch] = useState('')
   const [familyPage, setFamilyPage] = useState(0)
+  const [creditLogs, setCreditLogs] = useState<{ id: string; action: string; amount: number; balance: number; source: string; note: string | null; createdAt: string }[]>([])
+  const [creditLogPage, setCreditLogPage] = useState(1)
+  const [creditLogPages, setCreditLogPages] = useState(1)
+  const [creditLogLoading, setCreditLogLoading] = useState(false)
 
   const handleDeleteAccount = useCallback(async () => {
     if (!deletePassword) return
@@ -150,6 +154,10 @@ export default function ProfilePage() {
       fetch('/api/credits').then(r => r.json()).then(data => {
         setCredits(data)
       }).catch(catchAndReport('/api/credits'))
+      fetch('/api/credits/history').then(r => r.json()).then(data => {
+        setCreditLogs(data.logs || [])
+        setCreditLogPages(data.pages || 1)
+      }).catch(catchAndReport('/api/credits/history'))
     }
   }, [session])
 
@@ -683,6 +691,117 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+
+          {/* Karma Ledger Card */}
+          <div className="glass-card rounded-2xl">
+            <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+              <span className="text-lg">📜</span>
+              <h2 className="text-lg font-serif text-gold">{T(lang, '機緣流水', 'Karma Ledger')}</h2>
+            </div>
+            <div className="p-4 sm:p-6">
+              {creditLogs.length === 0 ? (
+                <p className="text-white/40 text-sm text-center py-4">{T(lang, '暫無記錄', 'No records yet')}</p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    {creditLogs.map(log => {
+                      const actionLabels: Record<string, { zh: string; en: string; color: string }> = {
+                        deduct: { zh: '消耗', en: 'Used', color: 'text-red-400' },
+                        deduct_admin: { zh: '使用(管理員)', en: 'Used(Admin)', color: 'text-orange-400' },
+                        grant_daily: { zh: '每日贈送', en: 'Daily Bonus', color: 'text-green-400' },
+                        grant_purchase: { zh: '購買', en: 'Purchase', color: 'text-emerald-400' },
+                        grant_share: { zh: '分享獎勵', en: 'Share Reward', color: 'text-blue-400' },
+                        grant_compensation: { zh: '補償', en: 'Compensation', color: 'text-purple-400' },
+                        grant_gift: { zh: '禮品領取', en: 'Gift', color: 'text-pink-400' },
+                        grant_admin: { zh: '管理員發放', en: 'Admin Grant', color: 'text-yellow-400' },
+                      }
+                      const info = actionLabels[log.action] || { zh: log.action, en: log.action, color: 'text-white/60' }
+                      const sourceLabels: Record<string, { zh: string; en: string }> = {
+                        'chat': { zh: '玄機問答', en: 'Chat' },
+                        'master': { zh: '大師對話', en: 'Master' },
+                        'daily_bonus': { zh: '每日登入', en: 'Daily Login' },
+                      }
+                      const divTypeLabels: Record<string, { zh: string; en: string }> = {
+                        'bazi': { zh: '八字', en: 'BaZi' },
+                        'ziwei': { zh: '紫微', en: 'ZiWei' },
+                        'qimen': { zh: '奇門', en: 'QiMen' },
+                        'meihua': { zh: '梅花', en: 'MeiHua' },
+                        'iching': { zh: '易經', en: 'I Ching' },
+                        'liuyao': { zh: '六爻', en: 'LiuYao' },
+                        'fengshui': { zh: '風水', en: 'FengShui' },
+                      }
+                      let sourceText = log.source
+                      if (sourceLabels[log.source]) {
+                        sourceText = T(lang, sourceLabels[log.source].zh, sourceLabels[log.source].en)
+                      } else if (log.source.startsWith('divination:')) {
+                        const dtype = log.source.replace('divination:', '')
+                        const dl = divTypeLabels[dtype]
+                        sourceText = dl ? T(lang, dl.zh + '排盤', dl.en + ' Reading') : dtype
+                      } else if (log.source.startsWith('gift:')) {
+                        sourceText = T(lang, '禮品連結', 'Gift Link')
+                      } else if (log.source.startsWith('stripe:')) {
+                        sourceText = T(lang, '線上購買', 'Online Purchase')
+                      } else if (log.source.startsWith('share:')) {
+                        sourceText = T(lang, '分享推薦', 'Referral')
+                      } else if (log.source.startsWith('compensation:')) {
+                        sourceText = T(lang, '客服補償', 'Compensation')
+                      }
+                      return (
+                        <div key={log.id} className="rounded-lg px-4 py-3 border border-gold/5 bg-navy-900/50 flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-medium ${info.color}`}>{T(lang, info.zh, info.en)}</span>
+                              <span className="text-white/30 text-xs">·</span>
+                              <span className="text-white/50 text-xs truncate">{sourceText}</span>
+                            </div>
+                            <div className="text-white/25 text-xs mt-0.5">
+                              {new Date(log.createdAt).toLocaleString(lang === 'en' ? 'en-US' : 'zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              {log.note && <span className="ml-2 text-white/20">({log.note})</span>}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className={`text-sm font-mono font-bold ${log.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {log.amount > 0 ? '+' : ''}{log.amount}
+                            </span>
+                            <div className="text-white/20 text-xs">{T(lang, '餘', 'bal')} {log.balance}</div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {creditLogPages > 1 && (
+                    <div className="flex justify-center gap-2 mt-4">
+                      <button disabled={creditLogPage <= 1 || creditLogLoading}
+                        onClick={() => {
+                          const p = creditLogPage - 1
+                          setCreditLogPage(p)
+                          setCreditLogLoading(true)
+                          fetch(`/api/credits/history?page=${p}`).then(r => r.json()).then(data => {
+                            setCreditLogs(data.logs || []); setCreditLogPages(data.pages || 1)
+                          }).finally(() => setCreditLogLoading(false))
+                        }}
+                        className="px-3 py-1 rounded-lg text-xs bg-white/5 border border-white/10 text-white/60 hover:text-white disabled:opacity-30">
+                        ←
+                      </button>
+                      <span className="text-white/40 text-xs py-1">{creditLogPage} / {creditLogPages}</span>
+                      <button disabled={creditLogPage >= creditLogPages || creditLogLoading}
+                        onClick={() => {
+                          const p = creditLogPage + 1
+                          setCreditLogPage(p)
+                          setCreditLogLoading(true)
+                          fetch(`/api/credits/history?page=${p}`).then(r => r.json()).then(data => {
+                            setCreditLogs(data.logs || []); setCreditLogPages(data.pages || 1)
+                          }).finally(() => setCreditLogLoading(false))
+                        }}
+                        className="px-3 py-1 rounded-lg text-xs bg-white/5 border border-white/10 text-white/60 hover:text-white disabled:opacity-30">
+                        →
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
 
           {/* Feedback Card */}
           <div className="glass-card rounded-2xl">
