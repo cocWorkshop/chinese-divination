@@ -1207,7 +1207,7 @@ export default function DivinationFormPage() {
                 {paipanOnly
                   ? T(lang, '排盤 →', 'Calculate →')
                   : (session && !isAdmin
-                    ? `${T(lang, '解卦', 'Consult Oracle')} (${remaining} ${T(lang, '點', 'pts')}) →`
+                    ? `${T(lang, '解卦', 'Consult Oracle')} (${cost} ${T(lang, '點', 'pts')}) →`
                     : T(lang, '解卦 →', 'Consult Oracle →'))
                 }
               </button>
