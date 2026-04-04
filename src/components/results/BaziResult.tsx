@@ -425,13 +425,13 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           className="glass-card rounded-xl p-3 border border-gold/20">
           <div className="flex flex-wrap gap-4 text-xs">
             {d.luckyInfo.numbers?.length > 0 && (
-              <div><span className="text-[var(--text-muted)]">{T(lang, '幸運數:', 'Lucky #:')}</span> <span className="text-gold">{d.luckyInfo.numbers.join(', ')}</span></div>
+              <div><span className="text-[var(--text-muted)]">{T(lang, '幸運數:', 'Lucky Numbers:')}</span> <span className="text-gold">{d.luckyInfo.numbers.join(', ')}</span></div>
             )}
             {d.luckyInfo.colors?.length > 0 && (
-              <div><span className="text-[var(--text-muted)]">{T(lang, '幸運色:', 'Colors:')}</span> <span className="text-gold">{d.luckyInfo.colors.join(', ')}</span></div>
+              <div><span className="text-[var(--text-muted)]">{T(lang, '幸運色:', 'Lucky Colors:')}</span> <span className="text-gold">{d.luckyInfo.colors.join(', ')}</span></div>
             )}
             {d.luckyInfo.directions?.length > 0 && (
-              <div><span className="text-[var(--text-muted)]">{T(lang, '吉方位:', 'Directions:')}</span> <span className="text-gold">{d.luckyInfo.directions.join(', ')}</span></div>
+              <div><span className="text-[var(--text-muted)]">{T(lang, '吉方位:', 'Auspicious Directions:')}</span> <span className="text-gold">{d.luckyInfo.directions.join(', ')}</span></div>
             )}
           </div>
         </motion.div>
