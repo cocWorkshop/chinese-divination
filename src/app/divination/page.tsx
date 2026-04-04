@@ -201,7 +201,7 @@ export default function DivinationPage() {
                     style={{ borderColor: 'var(--card-border)', background: categoryColors[svc.id] || undefined }}
                   >
                     {svc.id === "bazi" && (
-                      <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "var(--gold)", color: "#1a1a2e" }}>
+                      <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-medium dark:text-[#1a1a2e] light:text-white" style={{ background: "var(--gold)" }}>
                         {lang === "en" ? "Popular" : "推薦"}
                       </span>
                     )}
