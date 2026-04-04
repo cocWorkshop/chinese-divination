@@ -2,6 +2,8 @@
 import YinYangIcon from '@/components/YinYangIcon'
 import XuanjiChatCard from './XuanjiChatCard'
 import { motion } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 
 import type { DivinationResultProps, IChingData } from '@/types/divination'
@@ -37,7 +39,7 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
       {/* Interpretation */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-card rounded-xl p-5 border border-gold/20">
         <h4 className="text-gold font-serif mb-2">{T(lang, '卦象解读', 'Interpretation')}</h4>
-        <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.interpretation}</p>
+        <div className="text-white/80 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.interpretation}</ReactMarkdown></div>
       </motion.div>
 
       {/* Changing Lines */}
@@ -72,7 +74,7 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
       {d.advice && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="rounded-xl p-5 border border-gold/40 bg-gold/10">
           <h4 className="text-gold font-serif mb-2">{T(lang, '指导建议', 'Guidance')}</h4>
-          <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.advice}</p>
+          <div className="text-white/80 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.advice}</ReactMarkdown></div>
         </motion.div>
       )}
 

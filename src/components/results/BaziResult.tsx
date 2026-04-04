@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import type { DivinationResultProps, BaziData, ShenShaEntry, DaYunEntry, QiYunInfo } from '@/types/divination'
@@ -394,8 +396,10 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
           >
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-[var(--text-secondary)] text-sm leading-relaxed whitespace-pre-wrap">
-              {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
+            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
+              </ReactMarkdown>
             </div>
           </motion.div>
         </AnimatePresence>

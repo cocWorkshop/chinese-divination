@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import YinYangIcon from '@/components/YinYangIcon'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
@@ -226,8 +228,10 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
             <AnimatePresence>
               {openSection === s.key && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                  <div className="px-5 pb-4 text-white/70 text-sm leading-relaxed border-t border-gold/10 pt-3 whitespace-pre-wrap">
-                    {d.sections?.[s.key as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
+                  <div className="px-5 pb-4 text-white/70 text-sm leading-relaxed border-t border-gold/10 pt-3 ziwei-markdown">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {d.sections?.[s.key as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
+                    </ReactMarkdown>
                   </div>
                 </motion.div>
               )}

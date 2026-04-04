@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import type { DivinationResultProps, LiuYaoData, HexagramData } from '@/types/divination'
@@ -131,12 +133,15 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
           >
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
-              {activeTab === 'interpretation' && (d.interpretation || T(lang, '暫無內容', 'No content'))}
-              {activeTab === 'sixRelative' && (d.sixRelativeAnalysis || T(lang, '暫無內容', 'No content'))}
-              {activeTab === 'shiYing' && (d.shiYingAnalysis || T(lang, '暫無內容', 'No content'))}
-              {activeTab === 'changing' && (d.changingAnalysis || T(lang, '暫無內容', 'No content'))}
-              {activeTab === 'advice' && (d.advice || T(lang, '暫無內容', 'No content'))}
+            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-white/80 text-sm leading-relaxed ziwei-markdown">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {(activeTab === 'interpretation' ? d.interpretation
+                  : activeTab === 'sixRelative' ? d.sixRelativeAnalysis
+                  : activeTab === 'shiYing' ? d.shiYingAnalysis
+                  : activeTab === 'changing' ? d.changingAnalysis
+                  : activeTab === 'advice' ? d.advice
+                  : '') || T(lang, '暫無內容', 'No content')}
+              </ReactMarkdown>
             </div>
           </motion.div>
         </AnimatePresence>
@@ -149,13 +154,13 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
           {d.guaCi && (
             <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
               <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '卦辭', 'Hexagram Text')}</h4>
-              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{d.guaCi}</p>
+              <div className="text-white/70 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.guaCi}</ReactMarkdown></div>
             </div>
           )}
           {d.yaoCi && (
             <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
               <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '爻辭', 'Line Text')}</h4>
-              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{d.yaoCi}</p>
+              <div className="text-white/70 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.yaoCi}</ReactMarkdown></div>
             </div>
           )}
         </motion.div>
@@ -166,7 +171,7 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="glass-card rounded-xl p-4 sm:p-5 border border-amber-500/30 bg-amber-500/5">
           <h4 className="text-amber-400 font-serif text-sm mb-2">⏳ {T(lang, '應期', 'Timing')}</h4>
-          <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.timing}</p>
+          <div className="text-white/80 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.timing}</ReactMarkdown></div>
         </motion.div>
       )}
 
