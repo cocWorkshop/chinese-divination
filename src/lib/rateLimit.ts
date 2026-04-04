@@ -134,19 +134,29 @@ export async function grantDailyBonus(userId: string): Promise<{ granted: boolea
   const setting = await prisma.adminSetting.findUnique({ where: { key: 'dailyBonusCredits' } })
   const bonus = parseInt(setting?.value ?? '2', 10) || 2
 
-  const updated = await prisma.user.update({
+  // Atomic update: only grant if lastDailyBonus is not today (prevents race condition)
+  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  const rowsUpdated = await prisma.$executeRaw`
+    UPDATE "User"
+    SET credits = credits + ${bonus},
+        "lastDailyBonus" = ${now}
+    WHERE id = ${userId}
+      AND ("lastDailyBonus" IS NULL OR "lastDailyBonus" < ${todayStart})
+  `
+
+  if (rowsUpdated === 0) {
+    return { granted: false, credits: 0 }
+  }
+
+  const updated = await prisma.user.findUnique({
     where: { id: userId },
-    data: {
-      credits: { increment: bonus },
-      lastDailyBonus: now,
-    },
     select: { credits: true },
   })
   logCreditChange({
     userId,
     action: 'grant_daily',
     amount: bonus,
-    balance: updated.credits,
+    balance: updated?.credits ?? 0,
     source: 'daily_bonus',
   })
   return { granted: true, credits: bonus }
