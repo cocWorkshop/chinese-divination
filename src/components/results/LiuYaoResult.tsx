@@ -154,13 +154,13 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
           {d.guaCi && (
             <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
               <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '卦辭', 'Hexagram Text')}</h4>
-              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{d.guaCi}</p>
+              <div className="text-white/70 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.guaCi}</ReactMarkdown></div>
             </div>
           )}
           {d.yaoCi && (
             <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
               <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '爻辭', 'Line Text')}</h4>
-              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{d.yaoCi}</p>
+              <div className="text-white/70 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.yaoCi}</ReactMarkdown></div>
             </div>
           )}
         </motion.div>
@@ -171,7 +171,7 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="glass-card rounded-xl p-4 sm:p-5 border border-amber-500/30 bg-amber-500/5">
           <h4 className="text-amber-400 font-serif text-sm mb-2">⏳ {T(lang, '應期', 'Timing')}</h4>
-          <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{d.timing}</p>
+          <div className="text-white/80 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.timing}</ReactMarkdown></div>
         </motion.div>
       )}
 
