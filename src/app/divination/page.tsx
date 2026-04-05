@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import MasterEntry from '@/components/MasterEntry'
 import MasterChat from '@/components/MasterChat'
+import StarField from '@/components/StarField'
 
 const T = (lang: string, zhTW: string, en: string) =>
   lang === 'en' ? en : zhTW
@@ -119,7 +120,9 @@ export default function DivinationPage() {
   }
 
   return (
-    <div className="py-8 sm:py-12 px-3 sm:px-4 max-w-6xl mx-auto">
+    <div className="relative flex-1 bg-navy-950">
+      <StarField />
+      <div className="relative z-10 py-8 sm:py-12 px-3 sm:px-4 max-w-6xl mx-auto">
       <AnimatePresence mode="wait">
         {masterMode ? (
           <motion.div
@@ -228,6 +231,7 @@ export default function DivinationPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   )
 }
