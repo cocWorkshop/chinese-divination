@@ -807,9 +807,12 @@ export function calculateBazi(
   }
 
   // Apply day adjustment if needed (late zi hour)
-  const finalYear = addOneDay ? (() => { const d = new Date(year, month - 1, day + 1); return d.getFullYear() })() : year
-  const finalMonth = addOneDay ? (() => { const d = new Date(year, month - 1, day + 1); return d.getMonth() + 1 })() : month
-  const finalDay = addOneDay ? (() => { const d = new Date(year, month - 1, day + 1); return d.getDate() })() : day
+  const adjustedDate = addOneDay
+    ? new Date(year, month - 1, day + 1)
+    : new Date(year, month - 1, day)
+  const finalYear = adjustedDate.getFullYear()
+  const finalMonth = adjustedDate.getMonth() + 1
+  const finalDay = adjustedDate.getDate()
 
   // Use lunar-typescript for accurate Gan-Zhi calculation
   const solar = Solar.fromYmdHms(finalYear, finalMonth, finalDay, solarHour, 0, 0)

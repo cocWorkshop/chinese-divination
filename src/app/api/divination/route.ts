@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     const shouldSaveHistory = saveHistory !== false
-    const shouldSaveProfile = saveProfile === true
+    const shouldSaveProfile = saveProfile !== false
 
     // readingId from /init means credit/maintenance already validated → only fetch LLM config keys.
     const adminSettings = await prisma.adminSetting.findMany({
