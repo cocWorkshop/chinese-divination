@@ -2,10 +2,9 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 600
 
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { logLlmCall } from '@/lib/llmLogger'
+import { completeLLM } from '@/lib/llm'
 import { checkCredits, deductCredits } from '@/lib/rateLimit'
 
 export async function POST(req: NextRequest) {
@@ -239,26 +238,9 @@ ${readingData || '（无预测数据）'}
 5. 问题要像用户自然会想问的那样
 ${familyRefZh}`
 
-    // Read configurable timeout and chat model
-    const [timeoutSetting, chatModelSetting, model1Setting, maxTurnsSetting] = await Promise.all([
-      prisma.adminSetting.findUnique({ where: { key: 'llmTimeoutSeconds' } }),
-      prisma.adminSetting.findUnique({ where: { key: 'chatModelName' } }),
-      prisma.adminSetting.findUnique({ where: { key: 'model1Name' } }),
-      prisma.adminSetting.findUnique({ where: { key: 'chatMaxTurns' } }),
-    ])
-    const llmTimeoutMs = (parseInt(timeoutSetting?.value || '240', 10) || 240) * 1000
-    const chatModel = chatModelSetting?.value || model1Setting?.value || 'anthropic/claude-3-5-haiku'
+    // Read max turns (model/timeout/tokens resolved inside completeLLM).
+    const maxTurnsSetting = await prisma.adminSetting.findUnique({ where: { key: 'chatMaxTurns' } })
     const maxTurns = parseInt(maxTurnsSetting?.value || '100', 10) || 100
-
-    const client = new OpenAI({
-      baseURL: 'https://openrouter.ai/api/v1',
-      apiKey: process.env.OPENROUTER_API_KEY,
-      timeout: llmTimeoutMs,
-      defaultHeaders: {
-        'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:8094',
-        'X-Title': 'Xuanji Chat',
-      },
-    })
 
     // Build conversation messages
     const conversationHistory = ((history || []) as { role: 'user' | 'assistant'; content: string }[]).slice(-maxTurns * 2)
@@ -377,39 +359,16 @@ ${familyRefZh}`
       }
     }
 
-    const chatStart = Date.now()
-    const completion = await client.chat.completions.create({
-      model: chatModel,
-      max_tokens: 4096,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages,
-      ],
+    const { content: reply } = await completeLLM({
+      endpoint: 'chat',
+      userId: session.user.id,
+      systemPrompt,
+      messages,
     })
 
-    const reply = completion.choices[0]?.message?.content
     if (!reply) {
-      await logLlmCall({
-        userId: session.user.id, endpoint: 'chat', model: chatModel,
-        promptTokens: completion.usage?.prompt_tokens, completionTokens: completion.usage?.completion_tokens,
-        totalTokens: completion.usage?.total_tokens, latencyMs: Date.now() - chatStart,
-        status: 'error', inputPreview: message, outputPreview: 'Empty reply from LLM',
-      })
       return NextResponse.json({ error: '🔧 玄機暫時出了點小故障，您的機緣未扣除。請稍後再試，若持續異常請聯繫管理員重啟玄機。\n🔧 The oracle encountered a hiccup — your Karma was not deducted. Please try again later, or contact admin if the issue persists.' }, { status: 502 })
     }
-
-    await logLlmCall({
-      userId: session.user.id,
-      endpoint: 'chat',
-      model: chatModel,
-      promptTokens: completion.usage?.prompt_tokens,
-      completionTokens: completion.usage?.completion_tokens,
-      totalTokens: completion.usage?.total_tokens,
-      latencyMs: Date.now() - chatStart,
-      status: 'success',
-      inputPreview: message,
-      outputPreview: reply,
-    })
 
     // Deduct chat credit
     await deductCredits(session.user.id, 'chat')
@@ -440,17 +399,7 @@ ${familyRefZh}`
   } catch (e: unknown) {
     const err = e as Error
     console.error('Chat route error:', err?.message, err?.stack)
-    // Log error to LlmLog if we have user context
-    try {
-      const session = await auth()
-      if (session?.user?.id) {
-        await logLlmCall({
-          userId: session.user.id, endpoint: 'chat', model: 'unknown',
-          latencyMs: 0, status: 'error',
-          inputPreview: 'Chat request failed', outputPreview: err?.message || 'Unknown error',
-        })
-      }
-    } catch { /* ignore logging errors */ }
+    // Note: LLM call failures are already logged by completeLLM() into LlmLog.
     return NextResponse.json({ error: '🔧 玄機暫時無法運轉，請稍後再試。若持續異常，請聯繫管理員重啟玄機。\n🔧 The oracle is temporarily unavailable. Please try again later, or contact admin to restart.' }, { status: 500 })
   }
 }

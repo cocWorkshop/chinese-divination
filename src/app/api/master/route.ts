@@ -2,11 +2,12 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 600
 
 import { NextRequest } from 'next/server'
-import OpenAI from 'openai'
+import type OpenAI from 'openai'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkCredits, deductCredits } from '@/lib/rateLimit'
-import { logLlmCall } from '@/lib/llmLogger'
+import { streamLLM, completeLLM, resolveLLMConfig } from '@/lib/llm'
+import type { Message, Tool } from '@/lib/llm'
 import { calculateBazi } from '@/lib/baziCalculator'
 import { calculateZiwei } from '@/lib/ziweiCalculator'
 import { calculateQimen } from '@/lib/qimenCalculator'
@@ -273,7 +274,7 @@ async function executeTool(
 // Conversation summarisation (when history exceeds 50 messages)
 // ---------------------------------------------------------------------------
 async function summariseOldMessages(
-  openai: OpenAI,
+  userId: string,
   messages: MasterMessage[],
   model: string,
 ): Promise<{ summary: string; trimmed: MasterMessage[] }> {
@@ -281,27 +282,15 @@ async function summariseOldMessages(
   const old = messages.slice(0, messages.length - keep)
   const recent = messages.slice(messages.length - keep)
 
-  const sumStart = Date.now()
-  const summaryResp = await openai.chat.completions.create({
+  const { content: summary } = await completeLLM({
+    endpoint: 'master',
+    userId,
+    systemPrompt: '请将以下对话总结为简洁的中文摘要，保留关键信息（用户生辰、问题、结论、重要决策）。不超过500字。',
+    messages: [{ role: 'user', content: old.map(m => `[${m.role}] ${m.content}`).join('\n') }],
     model,
-    messages: [
-      { role: 'system', content: '请将以下对话总结为简洁的中文摘要，保留关键信息（用户生辰、问题、结论、重要决策）。不超过500字。' },
-      { role: 'user', content: old.map(m => `[${m.role}] ${m.content}`).join('\n') },
-    ],
-    max_tokens: 600,
+    maxTokens: 600,
   })
 
-  const summary = summaryResp.choices[0]?.message?.content || ''
-  // Log as internal call (no user credit cost)
-  logLlmCall({
-    endpoint: 'master-summary',
-    model,
-    promptTokens: summaryResp.usage?.prompt_tokens,
-    completionTokens: summaryResp.usage?.completion_tokens,
-    totalTokens: summaryResp.usage?.total_tokens,
-    latencyMs: Date.now() - sumStart,
-    status: 'success',
-  })
   // Prepend summary as a system message
   const summaryMsg: MasterMessage = {
     role: 'system',
@@ -362,18 +351,14 @@ export async function POST(req: NextRequest) {
     const userMsg: MasterMessage = { role: 'user', content: message, timestamp: new Date().toISOString() }
     history.push(userMsg)
 
-    // Build OpenAI messages
-    const openai = new OpenAI({
-      apiKey: process.env.OPENROUTER_API_KEY,
-      baseURL: 'https://openrouter.ai/api/v1',
-    })
-    const model = process.env.MASTER_MODEL || process.env.OPENROUTER_MODEL || 'openai/gpt-4o'
+    // Resolve master model via the unified settings chain.
+    const { model } = await resolveLLMConfig({ endpoint: 'master' })
 
     const systemPrompt = buildSystemPrompt(portrait)
-    const openaiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt },
-      ...history.map(m => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content })),
-    ]
+    const initialMessages: Message[] = history.map(m => ({
+      role: m.role as 'user' | 'assistant' | 'system',
+      content: m.content,
+    }))
 
     // Deduct credits
     const deducted = await deductCredits(userId, 'master')
@@ -389,9 +374,8 @@ export async function POST(req: NextRequest) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
         }
 
-        const llmStartTime = Date.now()
         try {
-          let currentMessages = [...openaiMessages]
+          const currentMessages: Message[] = [...initialMessages]
           let assistantContent = ''
           const allToolCalls: MasterMessage['toolCalls'] = []
           let loopCount = 0
@@ -399,40 +383,32 @@ export async function POST(req: NextRequest) {
 
           while (loopCount < maxLoops) {
             loopCount++
-            const completion = await openai.chat.completions.create({
-              model,
-              messages: currentMessages,
-              tools: masterTools,
-              stream: true,
-            })
-
-            let finishReason = ''
             const pendingToolCalls: { id: string; name: string; arguments: string }[] = []
             let contentChunk = ''
+            let finishReason = ''
 
-            for await (const chunk of completion) {
-              const delta = chunk.choices[0]?.delta
-              finishReason = chunk.choices[0]?.finish_reason || finishReason
-
-              // Content streaming
-              if (delta?.content) {
-                contentChunk += delta.content
-                assistantContent += delta.content
-                send({ type: 'content', text: delta.content })
-              }
-
-              // Tool call accumulation
-              if (delta?.tool_calls) {
-                for (const tc of delta.tool_calls) {
-                  if (tc.index !== undefined) {
-                    if (!pendingToolCalls[tc.index]) {
-                      pendingToolCalls[tc.index] = { id: tc.id || '', name: tc.function?.name || '', arguments: '' }
-                    }
-                    if (tc.id) pendingToolCalls[tc.index].id = tc.id
-                    if (tc.function?.name) pendingToolCalls[tc.index].name = tc.function.name
-                    if (tc.function?.arguments) pendingToolCalls[tc.index].arguments += tc.function.arguments
-                  }
+            for await (const chunk of streamLLM({
+              endpoint: 'master',
+              userId,
+              systemPrompt,
+              messages: currentMessages,
+              tools: masterTools as unknown as Tool[],
+              model,
+            })) {
+              if (chunk.type === 'content') {
+                contentChunk += chunk.text
+                assistantContent += chunk.text
+                send({ type: 'content', text: chunk.text })
+              } else if (chunk.type === 'tool_call_delta') {
+                const idx = chunk.index
+                if (!pendingToolCalls[idx]) {
+                  pendingToolCalls[idx] = { id: chunk.id || '', name: chunk.name || '', arguments: '' }
                 }
+                if (chunk.id) pendingToolCalls[idx].id = chunk.id
+                if (chunk.name) pendingToolCalls[idx].name = chunk.name
+                if (chunk.argumentsDelta) pendingToolCalls[idx].arguments += chunk.argumentsDelta
+              } else if (chunk.type === 'done') {
+                finishReason = chunk.finishReason
               }
             }
 
@@ -441,9 +417,8 @@ export async function POST(req: NextRequest) {
               break
             }
 
-            // Execute tool calls
-            // Add assistant message with tool_calls to conversation
-            const assistantMsg: OpenAI.Chat.Completions.ChatCompletionMessageParam = {
+            // Execute tool calls — append assistant msg with tool_calls, then each tool result.
+            currentMessages.push({
               role: 'assistant',
               content: contentChunk || null,
               tool_calls: pendingToolCalls.map(tc => ({
@@ -451,8 +426,7 @@ export async function POST(req: NextRequest) {
                 type: 'function' as const,
                 function: { name: tc.name, arguments: tc.arguments },
               })),
-            }
-            currentMessages.push(assistantMsg)
+            })
 
             for (const tc of pendingToolCalls) {
               send({ type: 'tool_start', tool: tc.name })
@@ -469,23 +443,9 @@ export async function POST(req: NextRequest) {
                 role: 'tool',
                 tool_call_id: tc.id,
                 content: JSON.stringify(result),
-              } as OpenAI.Chat.Completions.ChatCompletionMessageParam)
+              })
             }
-
-            // Reset for next iteration — LLM will process tool results
-            contentChunk = ''
           }
-
-          // Log LLM call
-          logLlmCall({
-            userId,
-            endpoint: 'master',
-            model,
-            latencyMs: Date.now() - llmStartTime,
-            status: 'success',
-            inputPreview: message,
-            outputPreview: assistantContent.slice(0, 500),
-          })
 
           // Save assistant message to history
           const assistantHistoryMsg: MasterMessage = {
@@ -498,7 +458,7 @@ export async function POST(req: NextRequest) {
 
           // Summarise if history too long
           if (history.length > 50) {
-            const { summary, trimmed } = await summariseOldMessages(openai, history, model)
+            const { summary, trimmed } = await summariseOldMessages(userId, history, model)
             history = trimmed
             // Update portrait with summary
             if (portrait) {
@@ -519,15 +479,8 @@ export async function POST(req: NextRequest) {
 
           send({ type: 'done' })
         } catch (err) {
-          logLlmCall({
-            userId,
-            endpoint: 'master',
-            model,
-            latencyMs: Date.now() - llmStartTime,
-            status: 'error',
-            errorMessage: err instanceof Error ? err.message : 'Unknown error',
-            inputPreview: message,
-          })
+          // streamLLM / completeLLM already logged the underlying LLM failure.
+          console.error('[master] stream error:', err)
           send({ type: 'error', error: err instanceof Error ? err.message : 'Unknown error' })
         } finally {
           controller.close()
