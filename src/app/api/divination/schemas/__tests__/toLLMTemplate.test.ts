@@ -6,7 +6,7 @@ import { fengshuiSchema } from '../fengshui.schema'
 import { qimenSchema } from '../qimen.schema'
 import { liuyaoSchema } from '../liuyao.schema'
 import { meihuaSchema } from '../meihua.schema'
-import { baziSchema } from '../bazi.schema'
+import { baziSchema, baziSchemaV2 } from '../bazi.schema'
 import { ziweiSchema } from '../ziwei.schema'
 
 describe('schemaToLLMTemplate', () => {
@@ -142,6 +142,33 @@ describe('schemaToLLMTemplate', () => {
       luckyInfo: { numbers: [1, 2], colors: ['颜色'], directions: ['方位'] },
     }
     expect(schemaToLLMTemplate(baziSchema)).toEqual(original)
+  })
+
+  it('baziSchemaV2 template has formation, daYunAnalysis, no daYunDetail', () => {
+    const template = schemaToLLMTemplate(baziSchemaV2) as Record<string, unknown>
+    // V2 should have formation
+    expect(template).toHaveProperty('formation')
+    const formation = template.formation as Record<string, unknown>
+    expect(formation).toHaveProperty('name')
+    expect(formation).toHaveProperty('analysis')
+    // V2 should have daYunAnalysis array
+    expect(template).toHaveProperty('daYunAnalysis')
+    expect(Array.isArray(template.daYunAnalysis)).toBe(true)
+    const daYunEntry = (template.daYunAnalysis as unknown[])[0] as Record<string, unknown>
+    expect(daYunEntry).toHaveProperty('theme')
+    expect(daYunEntry).toHaveProperty('interactions')
+    expect(daYunEntry).toHaveProperty('keyYears')
+    expect(daYunEntry).toHaveProperty('advice')
+    // V2 should NOT have sections.daYunDetail
+    const sections = template.sections as Record<string, unknown>
+    expect(sections).not.toHaveProperty('daYunDetail')
+    expect(sections).toHaveProperty('overview')
+    // V2 should have version
+    expect(template.version).toBe(2)
+    // V2 luckyInfo should not have numbers
+    const luckyInfo = template.luckyInfo as Record<string, unknown>
+    expect(luckyInfo).not.toHaveProperty('numbers')
+    expect(luckyInfo).toHaveProperty('colors')
   })
 
   it('ziwei schema matches original', () => {

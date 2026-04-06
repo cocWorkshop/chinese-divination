@@ -2,8 +2,7 @@
  * BaZi (八字) handler — personal birth-profile type.
  *
  * Requires: solarBirthDate + (birthTime || exactTime).
- * The bazi calculator does its own true-solar-time correction (via birthLng/birthLat),
- * so no DST preprocessing is needed here.
+ * Uses V2 schema with structured da yun analysis, formation, seasonal note.
  */
 
 import { calculateBazi, type BaziChart } from '@/lib/baziCalculator'
@@ -11,12 +10,12 @@ import type { DivinationHandler, DivinationContext, CalculationResult } from '..
 import { extractBirthInputs, hasBirthDateTime } from '../_birthProfile'
 import { buildGenericUserMessage } from '../_fallback'
 import { getSuggestedQuestionsPrompt } from '../_suggestedQuestions'
-import { baziSchema } from '../../schemas/bazi.schema'
+import { baziSchemaV2 } from '../../schemas/bazi.schema'
 import { schemaToLLMTemplate } from '../../schemas/_toLLMTemplate'
 
 export const baziHandler: DivinationHandler<BaziChart> = {
   chartKey: 'bazi',
-  schema: baziSchema,
+  schema: baziSchemaV2,
 
   canHandle(ctx) {
     const birth = extractBirthInputs(ctx.inputData)
@@ -38,9 +37,26 @@ export const baziHandler: DivinationHandler<BaziChart> = {
         birth.birthLng,
         birth.birthLat
       )
-      const userMessage = `请为我进行八字命理精批。
+      // Select relevant 流年: current year ±10
+      const currentYear = new Date().getFullYear()
+      const relevantLiuNian = chart.liuNian?.filter(ln =>
+        ln.year >= currentYear - 5 && ln.year <= currentYear + 15
+      ) || []
+
+      // Build structured da yun data for LLM to fill theme/interactions/keyYears/advice
+      const daYunForPrompt = chart.daYun.map(dy => ({
+        stem: dy.stem,
+        branch: dy.branch,
+        nayin: dy.nayin,
+        startAge: dy.startAge,
+        endAge: dy.endAge,
+        startYear: dy.startYear,
+        endYear: dy.endYear,
+      }))
+
+      const userMessage = `请为我进行八字命理精批。请按照系统指南中的六步推理框架（定格局→判旺衰→论调候→析十神→查关系→排大运）进行分析。
 ${ctx.targetPersonInfo ? `\n${ctx.targetPersonInfo}\n` : ''}
-## 程序预计算的四柱命盘与大运（已验证准确，请直接使用）
+## 命盘数据（程序预计算，直接使用）
 ${JSON.stringify({
   fourPillars: { year: chart.yearPillar, month: chart.monthPillar, day: chart.dayPillar, hour: chart.hourPillar },
   dayMaster: chart.dayMaster,
@@ -50,27 +66,28 @@ ${JSON.stringify({
   luckyElements: chart.luckyElements,
   avoidElements: chart.avoidElements,
   qiYun: chart.qiYun,
-  daYun: chart.daYun,
+  daYun: daYunForPrompt,
+  branchRelationships: chart.branchRelationships,
+  liuNian: relevantLiuNian,
+  hideHeavenStemDay: chart.hideHeavenStemDay,
+  fetalOrigin: chart.fetalOrigin,
+  ownSign: chart.ownSign,
+  bodySign: chart.bodySign,
 }, null, 2)}
 
-## 用户输入
-- 出生日期：${birth.solarBirthDate}（公历）${birth.lunarOriginal ? `（用户输入农历 ${birth.lunarOriginal}）` : ''}
-- 出生时辰：${birth.timeMode === 'precise' ? birth.exactTime : birth.birthTime}${birth.timeMode === 'precise' ? '（精确时间，已真太阳时校正）' : '（模糊时辰）'}
-- 出生地：${birth.birthPlace || '未提供'}
-- 性别：${birth.gender}
-${birth.birthEnvironment ? `- 出生地环境：${birth.birthEnvironment}` : ''}
+## 用户信息
+- 出生：${birth.solarBirthDate}（公历）${birth.lunarOriginal ? `/ 农历 ${birth.lunarOriginal}` : ''} ${birth.timeMode === 'precise' ? birth.exactTime + '（真太阳时校正）' : birth.birthTime + '（模糊时辰）'}
+- 出生地：${birth.birthPlace || '未提供'} | 性别：${birth.gender}
+${birth.birthEnvironment ? `- 出生环境：${birth.birthEnvironment}` : ''}
 ${ctx.question ? `- 特别关注：${ctx.question}` : ''}
 
-## 解盘要求
-你是资深命理师，请基于以上命盘进行精批。数据中每柱包含：十神(tenGods)、十二长生(changSheng)、空亡(kongWang)、神煞(shenSha)，请充分利用。
-1. **overview**：命主性格、出身家庭、六亲关系（150字以上）
-2. **career**：事业方向、适合行业、贵人运（150字以上）
-3. **marriage**：配偶特征、婚姻质量、感情运势（150字以上）
-4. **wealth**：正财偏财分析、理财建议（150字以上）
-5. **health**：易患疾病、养生注意（100字以上）
-6. **daYunDetail**：逐步精批每个10年大运（共${chart.daYun.length}步），标注每步大运起止年份，点出重点领域和需要注意的流年（300字以上）
-
-四柱和大运数据以程序计算结果为准，你只负责解盘分析。`
+## 输出要求
+- **formation**: 格局名称 + 50+字分析（参照《子平真诠》，用 hideHeavenStemDay 确定月令司令）
+- **seasonalNote**: 调候分析（参照《穷通宝鉴》）
+- **sections**: overview(200+字) career(150+字) marriage(150+字) wealth(150+字) health(100+字)
+- **daYunAnalysis**: 8步大运数组，每步含 theme/interactions/keyYears(2-3个)/advice，结合 liuNian 数据
+- **branchAnalysis**: 原局地支关系解读（引用 branchRelationships 数据）
+- **keyAdvice**: 3-5条具体建议 | **luckyInfo**: colors + directions`
 
       return { chart, userMessage }
     } catch (e) {
@@ -80,6 +97,10 @@ ${ctx.question ? `- 特别关注：${ctx.question}` : ''}
   },
 
   merge(llmResult, chart) {
+    // Version tag
+    llmResult.version = 2
+
+    // Merge pillar data from calculator
     llmResult.pillars = {
       year: chart.yearPillar,
       month: chart.monthPillar,
@@ -107,11 +128,32 @@ ${ctx.question ? `- 特别关注：${ctx.question}` : ''}
     if (!llmResult.avoidElements || (llmResult.avoidElements as string[]).length === 0) {
       llmResult.avoidElements = chart.avoidElements
     }
+
+    // Merge da yun stem/branch/age/year into daYunAnalysis if LLM provided it
+    if (Array.isArray(llmResult.daYunAnalysis)) {
+      const daYunAnalysis = llmResult.daYunAnalysis as Record<string, unknown>[]
+      for (let i = 0; i < daYunAnalysis.length && i < chart.daYun.length; i++) {
+        daYunAnalysis[i].stem = chart.daYun[i].stem
+        daYunAnalysis[i].branch = chart.daYun[i].branch
+        daYunAnalysis[i].startAge = chart.daYun[i].startAge
+        daYunAnalysis[i].endAge = chart.daYun[i].endAge
+        daYunAnalysis[i].startYear = chart.daYun[i].startYear
+        daYunAnalysis[i].endYear = chart.daYun[i].endYear
+      }
+    }
+
+    // V2 fields
+    if (chart.liuNian) llmResult.liuNian = chart.liuNian
+    if (chart.branchRelationships) llmResult.branchRelationships = chart.branchRelationships
+    if (chart.hideHeavenStemDay) llmResult.hideHeavenStemDay = chart.hideHeavenStemDay
+    if (chart.fetalOrigin) llmResult.fetalOrigin = chart.fetalOrigin
+    if (chart.ownSign) llmResult.ownSign = chart.ownSign
+    if (chart.bodySign) llmResult.bodySign = chart.bodySign
   },
 
   buildSchema(ctx) {
     return {
-      ...(schemaToLLMTemplate(baziSchema) as Record<string, unknown>),
+      ...(schemaToLLMTemplate(baziSchemaV2) as Record<string, unknown>),
       suggestedQuestions: getSuggestedQuestionsPrompt('bazi', ctx.language, { age: ctx.userAge, gender: ctx.userGender }),
     }
   },

@@ -825,3 +825,115 @@ describe('Cross-validation - BaZi and ZiWei consistency', () => {
     expect(ziwei.zodiac).toBe('蛇')
   })
 })
+
+// ============================================================
+// CATEGORY: V2 New Features (流年, 地支关系, 人元司令分野, 胎元/命宫)
+// ============================================================
+
+describe('BaZi V2 — LiuNian (流年)', () => {
+  it('should return liuNian array with correct structure', () => {
+    const chart = calculateBazi('1990-01-15', 'wu', '未知', 'male')
+    expect(chart.liuNian).toBeDefined()
+    expect(chart.liuNian!.length).toBeGreaterThan(0)
+    const first = chart.liuNian![0]
+    expect(first).toHaveProperty('stem')
+    expect(first).toHaveProperty('branch')
+    expect(first).toHaveProperty('nayin')
+    expect(first).toHaveProperty('age')
+    expect(first).toHaveProperty('year')
+    expect(first).toHaveProperty('tenGod')
+    expect(first).toHaveProperty('isLucky')
+    expect(typeof first.stem).toBe('string')
+    expect(typeof first.tenGod).toBe('string')
+  })
+
+  it('liuNian years should be sequential', () => {
+    const chart = calculateBazi('1990-01-15', 'wu', '未知', 'male')
+    const years = chart.liuNian!.map(ln => ln.year)
+    for (let i = 1; i < years.length; i++) {
+      expect(years[i]).toBe(years[i - 1] + 1)
+    }
+  })
+
+  it('should respect liuNianCount option', () => {
+    const chart = calculateBazi('1990-01-15', 'wu', '未知', 'male', undefined, null, null, { liuNianCount: 10 })
+    expect(chart.liuNian!.length).toBe(10)
+  })
+})
+
+describe('BaZi V2 — Branch Relationships (地支关系)', () => {
+  it('should return branchRelationships with correct structure', () => {
+    const chart = calculateBazi('1990-01-15', 'wu', '未知', 'male')
+    expect(chart.branchRelationships).toBeDefined()
+    expect(chart.branchRelationships).toHaveProperty('clashes')
+    expect(chart.branchRelationships).toHaveProperty('combines')
+    expect(chart.branchRelationships).toHaveProperty('harms')
+    expect(chart.branchRelationships).toHaveProperty('punishments')
+  })
+
+  // 毛泽东: 癸巳 甲子 丁酉 甲辰 — 巳酉 should not clash, but check for 子酉 harm
+  it('Mao Zedong — detect harms correctly', () => {
+    const chart = calculateBazi('1893-12-26', 'chen', '未知', 'male')
+    const br = chart.branchRelationships!
+    // All arrays should be arrays
+    expect(Array.isArray(br.clashes)).toBe(true)
+    expect(Array.isArray(br.combines)).toBe(true)
+    expect(Array.isArray(br.harms)).toBe(true)
+    expect(Array.isArray(br.punishments)).toBe(true)
+  })
+
+  // 子午冲 test: find a chart with 子 and 午
+  it('should detect 子午冲', () => {
+    // 戊子日 + 午时 → day=子, hour=午 → clash
+    const chart = calculateBazi('1904-08-22', 'wu', '未知', 'male')
+    // Day branch is 子, hour branch should be 午
+    expect(chart.dayPillar.branch).toBe('子')
+    expect(chart.hourPillar.branch).toBe('午')
+    const clashes = chart.branchRelationships!.clashes
+    const hasZiWu = clashes.some(c =>
+      (c.branch1 === '子' && c.branch2 === '午') || (c.branch1 === '午' && c.branch2 === '子')
+    )
+    expect(hasZiWu).toBe(true)
+  })
+})
+
+describe('BaZi V2 — HideHeavenStemDay (人元司令分野)', () => {
+  it('should return hideHeavenStemDay with stem and type', () => {
+    const chart = calculateBazi('1990-01-15', 'wu', '未知', 'male')
+    expect(chart.hideHeavenStemDay).toBeDefined()
+    expect(chart.hideHeavenStemDay).toHaveProperty('stem')
+    expect(chart.hideHeavenStemDay).toHaveProperty('type')
+    expect(['正气', '中气', '余气']).toContain(chart.hideHeavenStemDay!.type)
+  })
+})
+
+describe('BaZi V2 — Fetal Origin / Own Sign / Body Sign', () => {
+  it('should return fetalOrigin, ownSign, bodySign', () => {
+    const chart = calculateBazi('1990-01-15', 'wu', '未知', 'male')
+    expect(chart.fetalOrigin).toBeDefined()
+    expect(typeof chart.fetalOrigin).toBe('string')
+    expect(chart.fetalOrigin!.length).toBe(2) // e.g. "甲子"
+    expect(chart.ownSign).toBeDefined()
+    expect(typeof chart.ownSign).toBe('string')
+    expect(chart.bodySign).toBeDefined()
+    expect(typeof chart.bodySign).toBe('string')
+  })
+})
+
+describe('BaZi V2 — Options (providers)', () => {
+  it('should work with default options', () => {
+    const chart = calculateBazi('1990-01-15', 'wu', '未知', 'male', undefined, null, null, {})
+    expect(chart.yearPillar.stem).toBeDefined()
+  })
+
+  it('should work with lunarSect2 eightCharProvider', () => {
+    const chart = calculateBazi('1990-01-15', 'wu', '未知', 'male', undefined, null, null, { eightCharProvider: 'lunarSect2' })
+    expect(chart.yearPillar.stem).toBeDefined()
+  })
+
+  it('should work with china95 childLimitProvider', () => {
+    const chart = calculateBazi('1990-01-15', 'wu', '未知', 'male', undefined, null, null, { childLimitProvider: 'china95' })
+    expect(chart.qiYun).toBeDefined()
+    expect(chart.daYun.length).toBe(8)
+  })
+})

@@ -66,6 +66,62 @@ export interface BaziData {
   paipanOnly?: boolean
 }
 
+// ─── BaziResult V2 Types ───
+
+export interface DaYunKeyYear {
+  year: number
+  ganZhi: string
+  event: string
+}
+
+export interface DaYunAnalysisEntry {
+  stem: string; branch: string
+  startAge: number; endAge: number; startYear: number; endYear: number
+  theme: string
+  interactions: string
+  keyYears: DaYunKeyYear[]
+  advice: string
+}
+
+export interface BaziDataV2 {
+  version: 2
+  pillars: { year: Pillar; month: Pillar; day: Pillar; hour: Pillar }
+  dayMaster: { stem: string; element: string; yinYang?: string; strength: string; strengthLabel: string }
+  fiveElements: { metal: number; wood: number; water: number; fire: number; earth: number }
+  luckyElements: string[]
+  avoidElements: string[]
+  formation?: { name: string; analysis: string }
+  seasonalNote?: string
+  sections: { overview: string; career: string; marriage: string; wealth: string; health: string }
+  daYunAnalysis?: DaYunAnalysisEntry[]
+  branchAnalysis?: string
+  keyAdvice: string[]
+  luckyInfo: { colors: string[]; directions: string[] }
+  shenSha?: ShenShaEntry[]
+  trueSolarTime?: TrueSolarTimeInfo
+  daYun?: DaYunEntry[]
+  xiaoYun?: XiaoYunEntry[]
+  qiYun?: QiYunInfo
+  paipanOnly?: boolean
+  branchRelationships?: {
+    clashes: { branch1: string; pillar1: string; branch2: string; pillar2: string }[]
+    combines: { branch1: string; pillar1: string; branch2: string; pillar2: string; result: string }[]
+    harms: { branch1: string; pillar1: string; branch2: string; pillar2: string }[]
+    punishments: { branches: string[]; pillars: string[]; type: string }[]
+  }
+  liuNian?: LiuNianEntry[]
+  hideHeavenStemDay?: { stem: string; type: string }
+  fetalOrigin?: string
+  ownSign?: string
+  bodySign?: string
+}
+
+export interface LiuNianEntry {
+  stem: string; branch: string; nayin: string
+  age: number; year: number
+  tenGod: string; isLucky: boolean | null
+}
+
 // ─── ZiweiResult Types ───
 
 export interface ZiweiStar {

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+// ─── V1 Schema (kept for old readings compatibility) ────────────────────────
+
 const pillarSchema = z.object({
   stem: z.string().describe('天干'),
   branch: z.string().describe('地支'),
@@ -62,3 +64,84 @@ export const baziSchema = z.object({
 })
 
 export type BaziResult = z.infer<typeof baziSchema>
+
+// ─── V2 Schema ──────────────────────────────────────────────────────────────
+
+const pillarSchemaV2 = z.object({
+  stem: z.string().describe('天干'),
+  branch: z.string().describe('地支'),
+  element: z.string().describe('五行属性(金/木/水/火/土)'),
+  nayin: z.string().describe('纳音'),
+})
+
+const daYunEntrySchema = z.object({
+  stem: z.string().describe('大运天干'),
+  branch: z.string().describe('大运地支'),
+  startAge: z.number().describe('起始年龄'),
+  endAge: z.number().describe('结束年龄'),
+  startYear: z.number().describe('起始公历年'),
+  endYear: z.number().describe('结束公历年'),
+  theme: z.string().describe('该步大运核心主题(30+字)：十神定性+对命局影响'),
+  interactions: z.string().describe('与原局互动(30+字)：合/冲/刑影响哪柱哪领域'),
+  keyYears: z.array(z.object({
+    year: z.number().describe('公历年'),
+    ganZhi: z.string().describe('流年干支，如"乙巳"'),
+    event: z.string().describe('为什么这年重要(20+字)'),
+  })).describe('该步大运中最关键的2-3个流年'),
+  advice: z.string().describe('行动建议(20+字)：具体适合/避免什么'),
+})
+
+export const baziSchemaV2 = z.object({
+  type: z.literal('bazi'),
+  version: z.literal(2),
+
+  // merge-injected fields (not from LLM, but included for schema completeness)
+  pillars: z.object({
+    year: pillarSchemaV2,
+    month: pillarSchemaV2,
+    day: pillarSchemaV2,
+    hour: pillarSchemaV2,
+  }),
+  dayMaster: z.object({
+    stem: z.string().describe('日主天干'),
+    element: z.string().describe('五行属性'),
+    strength: z.string().describe('strong/weak/neutral'),
+    strengthLabel: z.string().describe('身强/身弱/中和'),
+  }),
+  fiveElements: z.object({
+    metal: z.number().default(0),
+    wood: z.number().default(0),
+    water: z.number().default(0),
+    fire: z.number().default(0),
+    earth: z.number().default(0),
+  }),
+  luckyElements: z.array(z.string()).default(['喜用五行']),
+  avoidElements: z.array(z.string()).default(['忌神五行']),
+
+  // LLM-generated fields
+  formation: z.object({
+    name: z.string().describe('格局名称，如"正官格"、"食神制杀格"、"官印相生格"'),
+    analysis: z.string().describe('格局简析(50+字)：为什么是此格局，格局成败，对命主的核心影响'),
+  }),
+  seasonalNote: z.string().describe('调候分析(30+字)：出生季节寒暖对命局的影响，是否有调候用神').optional(),
+
+  sections: z.object({
+    overview: z.string().describe('命主性格与出身(200+字)：格局定性、性格、家庭、六亲'),
+    career: z.string().describe('事业官运(150+字)：适合行业、贵人运、发展路线'),
+    marriage: z.string().describe('婚姻感情(150+字)：配偶特征、婚期提示、感情风险'),
+    wealth: z.string().describe('财运分析(150+字)：正偏财、理财、财运高峰期'),
+    health: z.string().describe('健康分析(100+字)：具体器官、高风险时段、养生方向'),
+  }),
+
+  daYunAnalysis: z.array(daYunEntrySchema).describe('逐步大运精批（共8步），每步含主题、互动、关键流年、建议'),
+
+  branchAnalysis: z.string().describe('原局地支关系解读(50+字)：基于预计算冲/合/害/刑数据的影响分析').optional(),
+
+  keyAdvice: z.array(z.string()).default(['建议一', '建议二', '建议三']),
+  luckyInfo: z.object({
+    colors: z.array(z.string()).default(['颜色']),
+    directions: z.array(z.string()).default(['方位']),
+  }),
+})
+
+export type BaziResultV2 = z.infer<typeof baziSchemaV2>

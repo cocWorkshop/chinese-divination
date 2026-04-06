@@ -70,7 +70,7 @@ describe('baziHandler.calculate', () => {
       birthDate: '1988-08-07', lunarToggle: 'lunar', birthTime: 'wu', gender: 'male',
     })
     const { userMessage } = baziHandler.calculate(ctx)
-    expect(userMessage).toMatch(/用户输入农历/)
+    expect(userMessage).toMatch(/农历/)
   })
 
   it('falls back to generic message when solarBirthDate is missing post-extract', () => {
@@ -124,7 +124,23 @@ describe('baziHandler.merge', () => {
 
 describe('baziHandler.schema (Zod validation)', () => {
   it('accepts sections with ≥3 keys', () => {
-    const result = baziHandler.schema.passthrough().safeParse({ type: 'bazi', sections: { overview: 'x', career: 'y', marriage: 'z', wealth: 'w', health: 'h', daYunDetail: 'd' }, pillars: { year: { stem: '甲', branch: '子', element: '木', nayin: '海中金' }, month: { stem: '甲', branch: '子', element: '木', nayin: '海中金' }, day: { stem: '甲', branch: '子', element: '木', nayin: '海中金' }, hour: { stem: '甲', branch: '子', element: '木', nayin: '海中金' } }, dayMaster: { stem: '甲', element: '木', strength: 'strong', strengthLabel: '身强' }, fiveElements: { metal: 1, wood: 2, water: 1, fire: 1, earth: 1 }, keyAdvice: ['a'], luckyInfo: { numbers: [1], colors: ['红'], directions: ['南'] } })
+    const result = baziHandler.schema.passthrough().safeParse({
+      type: 'bazi',
+      version: 2,
+      formation: { name: '正官格', analysis: '月令正官透出' },
+      sections: { overview: 'x', career: 'y', marriage: 'z', wealth: 'w', health: 'h' },
+      daYunAnalysis: [],
+      pillars: {
+        year: { stem: '甲', branch: '子', element: '木', nayin: '海中金' },
+        month: { stem: '甲', branch: '子', element: '木', nayin: '海中金' },
+        day: { stem: '甲', branch: '子', element: '木', nayin: '海中金' },
+        hour: { stem: '甲', branch: '子', element: '木', nayin: '海中金' },
+      },
+      dayMaster: { stem: '甲', element: '木', strength: 'strong', strengthLabel: '身强' },
+      fiveElements: { metal: 1, wood: 2, water: 1, fire: 1, earth: 1 },
+      keyAdvice: ['a'],
+      luckyInfo: { colors: ['红'], directions: ['南'] },
+    })
     expect(result.success).toBe(true)
   })
   it('rejects missing sections', () => {

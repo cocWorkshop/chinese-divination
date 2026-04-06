@@ -2,6 +2,7 @@
 
 import ReadingResult from '@/components/ReadingResult'
 import BaziResult from './BaziResult'
+import BaziResultV2 from './BaziResultV2'
 import IChingResult from './IChingResult'
 import ZiweiResult from './ZiweiResult'
 import QimenResult from './QimenResult'
@@ -29,7 +30,7 @@ export default function ResultRenderer({ result, type, isShared, readingId, chat
 
   const renderResult = () => {
     switch (effectiveType) {
-      case 'bazi': return <BaziResult {...props} />
+      case 'bazi': return parsed.version === 2 ? <BaziResultV2 {...props} /> : <BaziResult {...props} />
       case 'iching': return <IChingResult {...props} />
       case 'liuyao': return <LiuYaoResult {...props} />
       case 'ziwei': return <ZiweiResult {...props} />

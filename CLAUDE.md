@@ -119,6 +119,76 @@ Handlers are split into two groups:
 
 Route orchestration flow: auth → credits → `selectHandler()` → `calculate()` → LLM call → parse → `merge()` → Zod validate → save.
 
+### BaZi Calculator (`src/lib/baziCalculator.ts`)
+
+Core deterministic calculator for BaZi (八字 / Four Pillars of Destiny). V2 uses `tyme4ts` (successor to `lunar-typescript`). V1 preserved as `baziCalculator.v1.ts` (deprecated).
+
+**`calculateBazi(birthDate, birthTime, birthPlace, gender, exactTime?, birthLng?, birthLat?, options?): BaziChart`**
+
+Input:
+```typescript
+birthDate: string              // "YYYY-MM-DD"
+birthTime: string              // shichen name ("zi_early"|"zi_late"|"chou"|...) for fuzzy mode
+birthPlace: string             // city name for longitude lookup
+gender: 'male' | 'female'
+exactTime?: string             // "HH:MM" for precise mode (enables true solar time correction)
+birthLng?: number | null       // explicit longitude from geocoder (overrides city lookup)
+birthLat?: number | null       // explicit latitude for DST detection
+options?: BaziOptions          // optional advanced configuration
+```
+
+`BaziOptions`:
+```typescript
+{
+  eightCharProvider?: 'default' | 'lunarSect2'       // 子时 convention (default: 'default')
+  childLimitProvider?: 'default' | 'china95' | 'lunarSect1' | 'lunarSect2'  // 起运 algorithm (default: 'default')
+  liuNianCount?: number                               // number of 流年 to compute (default: 80)
+}
+```
+
+Output (`BaziChart`):
+```typescript
+{
+  yearPillar: PillarData       // 年柱
+  monthPillar: PillarData      // 月柱
+  dayPillar: PillarData        // 日柱
+  hourPillar: PillarData       // 时柱
+  dayMaster: { stem, element, yinYang }  // 日主
+  fiveElements: { metal, wood, water, fire, earth }  // 五行 weighted counts
+  strength: 'strong'|'weak'|'neutral'    // 身强/身弱/中和
+  strengthLabel: string                   // "身强"|"身弱"|"中和"
+  luckyElements: string[]                 // 喜用神
+  avoidElements: string[]                 // 忌神
+  trueSolarTime?: { ... }                 // only in precise mode
+  daYun: DaYunPillar[]         // 大运 (8 ten-year periods)
+  xiaoYun: XiaoYunPillar[]     // 小运 (annual, before qi yun starts)
+  qiYun: QiYunInfo             // 起运 (when luck cycles begin)
+  liuNian?: LiuNianPillar[]    // 流年 (annual fortune with ten god + lucky flag)
+  branchRelationships?: BranchRelationships  // 六冲/六合/六害/三刑
+  hideHeavenStemDay?: { stem, type }    // 人元司令分野
+  fetalOrigin?: string         // 胎元
+  ownSign?: string             // 命宫
+  bodySign?: string            // 身宫
+}
+
+// LiuNianPillar — annual fortune
+{ stem, branch, nayin, age, year, tenGod: string, isLucky: boolean|null }
+
+// BranchRelationships — natal chart branch interactions
+{ clashes: [...], combines: [...], harms: [...], punishments: [...] }
+```
+
+#### LLM Output Schema V2 (`baziSchemaV2`)
+
+The handler uses `baziSchemaV2` (V1 `baziSchema` kept for old readings). Key V2 additions:
+- `version: 2` — enables UI version dispatch (`BaziResultV2` vs `BaziResult`)
+- `formation: { name, analysis }` — 格局 name and 50+ char analysis
+- `seasonalNote` — 调候 analysis (optional)
+- `daYunAnalysis: [{ stem, branch, startAge, endAge, startYear, endYear, theme, interactions, keyYears: [{ year, ganZhi, event }], advice }]` — structured per-decade analysis (replaces V1's monolithic `daYunDetail` string)
+- `branchAnalysis` — LLM interpretation of pre-computed 冲/合/害/刑
+- `sections` no longer includes `daYunDetail` (moved to `daYunAnalysis`)
+- `luckyInfo` no longer includes `numbers` (low value)
+
 ### Zod Schema System (`src/app/api/divination/schemas/`)
 
 Each handler's LLM output schema is defined once in Zod, serving as single source of truth for:
