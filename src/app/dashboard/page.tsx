@@ -139,7 +139,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex-1 py-8 sm:py-12 px-3 sm:px-4 max-w-4xl mx-auto">
+    <div className="flex-1 py-8 sm:py-12 px-3 sm:px-4 max-w-4xl mx-auto w-full overflow-x-hidden">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-10">
         <h1 className="text-3xl font-serif text-gold mb-2">
           {lang === 'zh-TW' ? '占卜歷史' : 'Reading History'}
@@ -162,7 +162,7 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="glass-card rounded-2xl overflow-hidden"
+              className="glass-card rounded-2xl overflow-hidden w-full min-w-0"
             >
               <div
                 className={`p-5 cursor-pointer hover:bg-white/5 transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''}`}
@@ -240,7 +240,7 @@ export default function DashboardPage() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="border-t border-gold/10 px-5 pb-5 pt-4"
+                    className="border-t border-gold/10 px-2 sm:px-5 pb-4 sm:pb-5 pt-3 sm:pt-4 overflow-hidden w-full min-w-0"
                   >
                     {r.status === 'pending' ? (
                       <LoadingOracle divinationType={r.type} startTime={new Date(r.createdAt).getTime()} />
@@ -261,7 +261,9 @@ export default function DashboardPage() {
                       </div>
                     ) : (
                       <>
-                        <ResultRenderer result={r.result} type={r.type} readingId={r.id} />
+                        <div className="w-full max-w-full overflow-x-hidden">
+                          <ResultRenderer result={r.result} type={r.type} readingId={r.id} />
+                        </div>
                         <div className="mt-4">
                           <ReadingFeedback
                             readingId={r.id}

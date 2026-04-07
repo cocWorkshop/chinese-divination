@@ -201,16 +201,17 @@ function detect府相朝垣(chart: ZiweiChart): DetectedPattern | null {
   const soul = getSoulPalace(chart)
   if (!soul) return null
 
-  const sfszStars = getMajorStarsInSFSZ(chart.palaces, soul.earthlyBranch)
-  if (sfszStars.includes('天府') && sfszStars.includes('天相')) {
-    const fuPalace = findStarPalace(chart.palaces, '天府')
-    const xiangPalace = findStarPalace(chart.palaces, '天相')
+  // 府相朝垣: 天府和天相都在命宫三方四正会照（不要求同宫）
+  const sfszPalaces = getSanFangSiZheng(chart.palaces, soul.earthlyBranch)
+  const fuPalace = sfszPalaces.find(p => majorStarNames(p).includes('天府'))
+  const xiangPalace = sfszPalaces.find(p => majorStarNames(p).includes('天相'))
+  if (fuPalace && xiangPalace) {
     return {
       name: '府相朝垣',
       level: '上格',
       description: '天府天相在命宫三方四正会照，财库印星拱命，富贵可期',
       involvedStars: ['天府', '天相'],
-      involvedPalaces: [fuPalace?.name || '', xiangPalace?.name || ''].filter(Boolean),
+      involvedPalaces: [fuPalace.name, xiangPalace.name],
     }
   }
   return null
@@ -251,11 +252,22 @@ function detect三奇嘉会(chart: ZiweiChart): DetectedPattern | null {
   }
 
   if (hasLu && hasQuan && hasKe) {
+    // Build involvedStars from actual 三方四正 palaces, not global siHua
+    const starsInSFSZ: string[] = []
+    for (const p of sfszPalaces) {
+      for (const list of [p.majorStars, p.minorStars, p.adjectiveStars]) {
+        for (const s of list) {
+          if (s.mutagen && ['禄', '权', '科'].includes(s.mutagen)) {
+            starsInSFSZ.push(s.name)
+          }
+        }
+      }
+    }
     return {
       name: '三奇嘉会',
       level: '上格',
       description: '化禄、化权、化科三化齐聚命宫三方四正，大贵之格',
-      involvedStars: chart.siHua.filter(s => ['禄', '权', '科'].includes(s.type)).map(s => s.star),
+      involvedStars: starsInSFSZ,
       involvedPalaces,
     }
   }
@@ -270,7 +282,8 @@ function detect机月同梁(chart: ZiweiChart): DetectedPattern | null {
   const targets = ['天机', '太阴', '天同', '天梁']
   const found = targets.filter(t => sfszStars.includes(t))
 
-  // 至少3颗在三方四正（经典定义是4颗，但3颗也算弱化版）
+  // 经典定义要求4颗（天机太阴天同天梁）全在三方四正。
+  // 放宽为3颗：实际星盘中4颗齐聚较少见，3颗已有此格特征。
   if (found.length >= 3) {
     return {
       name: '机月同梁',
@@ -295,6 +308,8 @@ function detect杀破狼(chart: ZiweiChart): DetectedPattern | null {
   const sfszStars = getMajorStarsInSFSZ(chart.palaces, soul.earthlyBranch)
   const allThree = ['七杀', '破军', '贪狼'].filter(s => sfszStars.includes(s))
 
+  // 经典定义要求七杀破军贪狼全在三方四正。实际上其中一颗必在命宫（已检查），
+  // 放宽为2颗（含命宫那颗）：因三星必然相隔4位，命宫有1颗则三方四正至少有2颗。
   if (allThree.length >= 2) {
     return {
       name: '杀破狼格',
@@ -342,8 +357,11 @@ function detect火贪格(chart: ZiweiChart): DetectedPattern | null {
     getPalace(chart.palaces, '官禄'),
   ].filter((p): p is ZiweiPalace => !!p)
   for (const p of targetPalaces) {
-
     const stars = allStarNames(p)
+    // 贪狼化禄时不构成火贪/铃贪格（化禄改变了贪狼的性质）
+    const tanLangHasLu = p.majorStars.some(s => s.name === '贪狼' && s.mutagen === '禄')
+    if (tanLangHasLu) continue
+
     if (stars.includes('贪狼') && stars.includes('火星')) {
       return {
         name: '火贪格',
@@ -633,11 +651,11 @@ function detect日月反背(chart: ZiweiChart): DetectedPattern | null {
   const moonPalace = findStarPalace(chart.palaces, '太阴')
   if (!sunPalace || !moonPalace) return null
 
-  // 太阳在戌亥子（夜晚位置）且太阴在辰巳午（白天位置）
-  const sunDark = ['戌', '亥', '子'].includes(sunPalace.earthlyBranch)
-  const moonDark = ['辰', '巳', '午'].includes(moonPalace.earthlyBranch)
+  // 太阳在夜间位（戌亥子，太阳失辉），太阴在日间位（辰巳午，太阴失辉）
+  const sunInNight = ['戌', '亥', '子'].includes(sunPalace.earthlyBranch)
+  const moonInDay = ['辰', '巳', '午'].includes(moonPalace.earthlyBranch)
 
-  if (sunDark && moonDark) {
+  if (sunInNight && moonInDay) {
     return {
       name: '日月反背',
       level: '下格',

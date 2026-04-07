@@ -86,7 +86,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
   const allPillarShenSha = pillars.some(p => (p.data?.shenSha?.length || 0) > 0)
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3 sm:space-y-4 overflow-hidden">
       {/* ═══ CHART DATA (Collapsible, default collapsed) ═══ */}
       <button onClick={() => setShowChart(!showChart)}
         className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
@@ -102,7 +102,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="space-y-3 overflow-hidden max-w-[calc(100vw-2rem)]"
+          className="space-y-3 overflow-hidden"
         >
 
       {/* ═══ COMPACT FOUR PILLARS TABLE ═══ */}

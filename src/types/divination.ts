@@ -148,7 +148,7 @@ export interface ZiweiPalaceData {
 export interface ZiweiChartInfo {
   solarDate?: string
   lunarDate?: string
-  chineseDate?: string
+  chineseDate?: string  // removed in V2, kept for old readings backward compat
   time?: string
   timeRange?: string
   sign?: string

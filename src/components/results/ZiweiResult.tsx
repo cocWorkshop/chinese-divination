@@ -22,6 +22,7 @@ const brightnessColor: Record<string, string> = {
   '利': 'text-cyan-300',
   '平': 'text-white/60',
   '不': 'text-white/40',
+  '不得地': 'text-white/30',
   '闲': 'text-white/40',
   '陷': 'text-red-300',
 }
@@ -170,7 +171,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
   const selectedPalaceData = selectedPalace ? findPalace(palaces, selectedPalace) || palaces[selectedPalace] : null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-hidden">
       {/* ═══ CHART DATA (Collapsible, default collapsed) ═══ */}
       <button onClick={() => setShowChart(!showChart)}
         className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
@@ -201,10 +202,12 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
               <span className="text-white/40">{T(lang, '農曆：', 'Lunar: ')}</span>
               <span className="text-white/80">{chart.lunarDate}</span>
             </div>
+            {chart.chineseDate && (
             <div>
               <span className="text-white/40">{T(lang, '干支：', 'Stems: ')}</span>
               <span className="text-white/80">{chart.chineseDate}</span>
             </div>
+            )}
             <div>
               <span className="text-white/40">{T(lang, '時辰：', 'Hour: ')}</span>
               <span className="text-white/80">{chart.time} ({chart.timeRange})</span>
@@ -446,12 +449,12 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
           {d.patterns.map((p, i) => (
             <span key={i} className="px-3 py-1 rounded-full text-xs font-medium"
               style={{
-                backgroundColor: p.level?.includes('上') ? 'rgba(234,179,8,0.2)' : p.level?.includes('下') ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)',
-                color: p.level?.includes('上') ? '#eab308' : p.level?.includes('下') ? '#ef4444' : '#3b82f6',
-                border: `1px solid ${p.level?.includes('上') ? 'rgba(234,179,8,0.3)' : p.level?.includes('下') ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'}`,
+                backgroundColor: p.level?.includes('上') ? 'rgba(234,179,8,0.2)' : (p.level?.includes('下') || p.level?.includes('凶')) ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)',
+                color: p.level?.includes('上') ? '#eab308' : (p.level?.includes('下') || p.level?.includes('凶')) ? '#ef4444' : '#3b82f6',
+                border: `1px solid ${p.level?.includes('上') ? 'rgba(234,179,8,0.3)' : (p.level?.includes('下') || p.level?.includes('凶')) ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'}`,
               }}
               title={p.description}>
-              {p.level?.includes('上') ? '🏆' : p.level?.includes('下') ? '⚠️' : '⭐'} {p.name}（{p.level}）
+              {p.level?.includes('上') ? '🏆' : (p.level?.includes('下') || p.level?.includes('凶')) ? '⚠️' : '⭐'} {p.name}（{p.level}）
             </span>
           ))}
         </div>

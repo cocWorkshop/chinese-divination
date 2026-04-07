@@ -3,6 +3,7 @@
 import ReadingResult from '@/components/ReadingResult'
 import BaziResult from './BaziResult'
 import BaziResultV2 from './BaziResultV2'
+import ZiweiResultV2 from './ZiweiResultV2'
 import IChingResult from './IChingResult'
 import ZiweiResult from './ZiweiResult'
 import QimenResult from './QimenResult'
@@ -33,7 +34,7 @@ export default function ResultRenderer({ result, type, isShared, readingId, chat
       case 'bazi': return parsed.version === 2 ? <BaziResultV2 {...props} /> : <BaziResult {...props} />
       case 'iching': return <IChingResult {...props} />
       case 'liuyao': return <LiuYaoResult {...props} />
-      case 'ziwei': return <ZiweiResult {...props} />
+      case 'ziwei': return parsed.version === 2 ? <ZiweiResultV2 {...props} /> : <ZiweiResult {...props} />
       case 'qimen': return <QimenResult {...props} />
       case 'fengshui': return <FengshuiResult {...props} />
       case 'meihua': return <OtherResult {...props} readingType="meihua" />

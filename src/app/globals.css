@@ -267,7 +267,7 @@ body {
   margin: 0.5em 0;
   color: rgba(255,255,255,0.6);
 }
-.ziwei-markdown table { width: 100%; border-collapse: collapse; margin: 0.5em 0; font-size: 0.85em; }
+.ziwei-markdown table { width: 100%; border-collapse: collapse; margin: 0.5em 0; font-size: 0.85em; display: block; overflow-x: auto; }
 .ziwei-markdown th, .ziwei-markdown td { border: 1px solid rgba(255,255,255,0.15); padding: 0.3em 0.5em; }
 .ziwei-markdown th { background: rgba(255,255,255,0.05); color: var(--gold, #d4a853); }
 .ziwei-markdown hr { border-color: rgba(255,255,255,0.1); margin: 0.8em 0; }

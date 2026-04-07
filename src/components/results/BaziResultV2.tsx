@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
+import { useDragScroll } from '@/hooks/useDragScroll'
 import type { DivinationResultProps, BaziDataV2, ShenShaEntry, LiuNianEntry } from '@/types/divination'
 
 const STEM_ELEMENT_MAP: Record<string, string> = {
@@ -42,6 +43,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
   const [activeSection, setActiveSection] = useState('overview')
   const [showChart, setShowChart] = useState(false)
   const [showExtra, setShowExtra] = useState(false)
+  const liuNianScroll = useDragScroll<HTMLDivElement>()
 
   const pillars = [
     { label: '年柱', en: 'Year', data: d.pillars?.year },
@@ -60,7 +62,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
   const br = d.branchRelationships
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3 sm:space-y-4 overflow-hidden">
 
       {/* ═══ FORMATION BADGE + DAY MASTER ═══ */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -188,7 +190,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="space-y-3 overflow-hidden max-w-[calc(100vw-2rem)]"
+          className="space-y-3 overflow-hidden"
         >
           {/* Four Pillars Table */}
           <motion.div className="glass-card rounded-xl p-2 sm:p-4 border border-gold/20">
@@ -349,7 +351,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
         </div>
         <AnimatePresence mode="wait">
           <motion.div key={activeSection} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown">
+            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown overflow-x-auto break-words">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
               </ReactMarkdown>
@@ -423,7 +425,8 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}>
           <h3 className="text-gold font-serif text-sm mb-2">{T(lang, '流年一覽', 'Annual Fortune')}</h3>
           <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
-            <div className="overflow-x-auto scrollbar-hide">
+            <div ref={liuNianScroll.ref} onMouseDown={liuNianScroll.onMouseDown}
+              className="overflow-x-auto scrollbar-hide cursor-grab">
               <div className="flex gap-0.5 min-w-max">
                 {d.liuNian.map((ln: LiuNianEntry, i: number) => {
                   const currentYear = new Date().getFullYear()
@@ -431,7 +434,8 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                   const dotColor = ln.isLucky === true ? 'bg-emerald-400' : ln.isLucky === false ? 'bg-rose-400' : 'bg-gray-500'
                   const borderStyle = isCurrent ? 'border-gold ring-1 ring-gold/50' : 'border-transparent'
                   return (
-                    <div key={i} className={`group relative flex flex-col items-center px-1 py-1 rounded ${isCurrent ? 'bg-gold/10' : ''}`}>
+                    <div key={i} {...(isCurrent ? { 'data-scroll-target': true } : {})}
+                      className={`group relative flex flex-col items-center px-1 py-1 rounded ${isCurrent ? 'bg-gold/10' : ''}`}>
                       {/* Dot */}
                       <div className={`w-2.5 h-2.5 rounded-full ${dotColor} border ${borderStyle}`} />
                       {/* Year label (show every 5 years + current) */}
@@ -460,7 +464,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
               </div>
             </div>
             {/* Legend */}
-            <div className="flex items-center gap-3 mt-2 pt-2 border-t border-gold/10">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 pt-2 border-t border-gold/10">
               <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /><span className="text-[9px] text-[var(--text-muted)]">{T(lang, '喜用年', 'Lucky')}</span></div>
               <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-rose-400" /><span className="text-[9px] text-[var(--text-muted)]">{T(lang, '忌神年', 'Avoid')}</span></div>
               <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-gray-500" /><span className="text-[9px] text-[var(--text-muted)]">{T(lang, '中性', 'Neutral')}</span></div>

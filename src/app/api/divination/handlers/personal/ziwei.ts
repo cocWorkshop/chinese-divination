@@ -1,9 +1,8 @@
 /**
  * ZiWei Dou Shu (紫微斗數) handler — personal birth-profile type.
  *
- * Unlike bazi, ziwei needs explicit true-solar-time correction (plus DST
- * adjustment and zi_late handling) before calling calculateZiwei. That logic
- * stays here — it's only used by this handler.
+ * Uses V2 schema with structured da yun analysis, formation, 流年 data.
+ * Applies true-solar-time + DST correction before calling calculateZiwei.
  */
 
 import { calculateZiwei, type ZiweiChart } from '@/lib/ziweiCalculator'
@@ -14,7 +13,7 @@ import type { DivinationHandler, DivinationContext, CalculationResult } from '..
 import { extractBirthInputs, hasBirthDateTime, type BirthInputs } from '../_birthProfile'
 import { buildGenericUserMessage } from '../_fallback'
 import { getSuggestedQuestionsPrompt } from '../_suggestedQuestions'
-import { ziweiSchema } from '../../schemas/ziwei.schema'
+import { ziweiSchemaV2 } from '../../schemas/ziwei.schema'
 import { schemaToLLMTemplate } from '../../schemas/_toLLMTemplate'
 
 interface ZiweiChartWithPatterns {
@@ -24,8 +23,6 @@ interface ZiweiChartWithPatterns {
 
 /**
  * Apply true-solar-time + DST correction to a precise birth time.
- * Returns the shichen to use, the (possibly day-shifted) adjusted date, and
- * a human-readable info string for the LLM prompt.
  */
 function applyTrueSolarCorrection(birth: BirthInputs): {
   shichen: string
@@ -73,14 +70,13 @@ function applyTrueSolarCorrection(birth: BirthInputs): {
     const formatT = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
     ziweiTrueSolarInfo = `（精确时间，已真太阳时校正：${formatT(originalDate)} → ${formatT(correctedDate)}，校正${Math.round(correctionMinutes * 10) / 10}分钟${shichenChanged ? '，时辰已变更' : ''}${tzResult.isDST ? '，已扣除夏令时' : ''}）`
   } else {
-    // Fuzzy mode: use shichen as-is.
     shichen = birth.birthTime || 'zi'
   }
 
-  // zi_late → push date forward by one day.
+  // zi_late → push date forward by one day (with proper padding)
   if (shichen === 'zi_late') {
     const nextDay = new Date(zy, zm - 1, zd + 1)
-    adjustedDate = `${nextDay.getFullYear()}-${nextDay.getMonth() + 1}-${nextDay.getDate()}`
+    adjustedDate = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`
   }
 
   return { shichen, adjustedDate, ziweiTrueSolarInfo }
@@ -88,7 +84,7 @@ function applyTrueSolarCorrection(birth: BirthInputs): {
 
 export const ziweiHandler: DivinationHandler<ZiweiChartWithPatterns> = {
   chartKey: 'ziwei',
-  schema: ziweiSchema,
+  schema: ziweiSchemaV2,
 
   canHandle(ctx) {
     const birth = extractBirthInputs(ctx.inputData)
@@ -124,10 +120,11 @@ export const ziweiHandler: DivinationHandler<ZiweiChartWithPatterns> = {
       const currentYear = new Date().getFullYear()
       const currentAge = currentYear - birthYear
 
+      // Dayun timeline for prompt
       const dayunSorted = chart.palaces
-        .filter(p => p.decadal && p.decadal.range.length === 2)
+        .filter(p => p.decadal && p.decadal.range.length === 2 && (p.decadal.range[0] > 0 || p.decadal.range[1] > 0))
         .map(p => ({
-          range: `${p.decadal.range[0]}-${p.decadal.range[1]}岁`,
+          range: `${p.decadal.range[0]}-${p.decadal.range[1]}`,
           palace: p.name,
           heavenlyStem: p.decadal.heavenlyStem,
           earthlyBranch: p.decadal.earthlyBranch,
@@ -136,94 +133,49 @@ export const ziweiHandler: DivinationHandler<ZiweiChartWithPatterns> = {
         }))
         .sort((a, b) => parseInt(a.range) - parseInt(b.range))
 
-      const userMessage = `请为我进行紫微斗数命盘精批。
+      // Select relevant 流年: current year ±10
+      const relevantLiuNian = chart.liuNian?.filter(ln =>
+        ln.year >= currentYear - 5 && ln.year <= currentYear + 15
+      ) || []
+
+      const userMessage = `请为我进行紫微斗数命盘精批。请按照系统指南中的六步推理框架（定格局→看四化→析三方四正→断六亲→排大运→综合预测）进行分析。
 ${ctx.targetPersonInfo ? `\n${ctx.targetPersonInfo}\n` : ''}
-## 程序预计算的紫微斗数命盘（已验证准确，请直接使用）
+## 命盘数据（程序预计算，直接使用）
 ${JSON.stringify({
   basicInfo: {
     solarDate: chart.solarDate,
     lunarDate: chart.lunarDate,
-    chineseDate: chart.chineseDate,
     time: chart.time,
     zodiac: chart.zodiac,
     gender: chart.gender,
     fiveElementsClass: chart.fiveElementsClass,
     soul: chart.soul,
     body: chart.body,
+    earthlyBranchOfSoulPalace: chart.earthlyBranchOfSoulPalace,
+    earthlyBranchOfBodyPalace: chart.earthlyBranchOfBodyPalace,
   },
   siHua: chart.siHua,
+  decadalSiHua: chart.decadalSiHua,
   detectedPatterns: patterns.map(p => ({ name: p.name, level: p.level, description: p.description, stars: p.involvedStars, palaces: p.involvedPalaces })),
   dayunTimeline: dayunSorted,
+  liuNian: relevantLiuNian,
   palaces: palaceSummary,
 }, null, 2)}
 
 ## 用户信息
-- 出生日期：${birth.solarBirthDate}（公历）${birth.lunarOriginal ? `（用户输入农历 ${birth.lunarOriginal}）` : ''}
-- 出生时辰：${birth.timeMode === 'precise' ? birth.exactTime : birth.birthTime}${ziweiTrueSolarInfo || (birth.timeMode === 'precise' ? '' : '（模糊时辰）')}
-- 出生地：${birth.birthPlace || '未提供'}
-- 性别：${birth.gender}
-- 当前年龄：约${currentAge}岁（${currentYear}年）
-${birth.birthEnvironment ? `- 出生地环境：${birth.birthEnvironment}` : ''}
+- 出生：${birth.solarBirthDate}（公历）${birth.lunarOriginal ? `/ 农历 ${birth.lunarOriginal}` : ''} ${birth.timeMode === 'precise' ? birth.exactTime + ziweiTrueSolarInfo : birth.birthTime + '（模糊时辰）'}
+- 出生地：${birth.birthPlace || '未提供'} | 性别：${birth.gender} | 当前约${currentAge}岁（${currentYear}年）
+${birth.birthEnvironment ? `- 出生环境：${birth.birthEnvironment}` : ''}
 ${ctx.question ? `- 特别关注：${ctx.question}` : ''}
 
-## 解盘身份与风格
-你是一位执业三十年的紫微斗数命理师，师承中州派，擅长断具体事件和六亲关系。
-风格：先给结论再解释原因；敢于给出具体断语，不说模棱两可的废话。
+## 输出要求
+- **formation**: 格局名称 + level(上格/中格/下格/凶格/普通) + 50+字分析
+- **sections**: overview(200+字) personality(100+字) career(150+字) marriage(150+字) wealth(150+字) health(100+字) family(100+字)
+- **daYunAnalysis**: 按大限逐步分析数组，每步含 ageRange/heavenlyStem/earthlyBranch/theme(30+字)/siHuaOverlay(30+字，引用decadalSiHua数据)/keyEvents(2-3个)/advice
+- **keyPredictions**: 3-5个具体可验证的人生事件预测（含 age/event/basis）
+- **keyAdvice**: 3-5条 | **luckyInfo**: colors + directions
 
-## 分析方法论（按此顺序思考）
-
-### 第一步：定格局
-1. 程序已自动检测格局，结果在 detectedPatterns 数组中（每次一致）
-2. 你的任务：将 detectedPatterns 直接输出到 patterns 数组，并在 overview 中解释格局含义
-3. 如果你发现程序未检测到但确实存在的格局，可以补充（标注"补充检测"）
-4. **不要遗漏或修改程序检测到的格局**
-
-### 第二步：看四化飞星
-1. 本命四化（年干决定）已在 siHua 中列出
-2. 分析：化禄落宫=一生最顺领域，化忌落宫=最需注意领域
-3. 注意双化叠加和三方四正会照的升降格效果
-
-### 第三步：看大运走势
-大运已按年龄预排序在 dayunTimeline 数组中（isCurrent=true 为当前大运）。逐个分析：
-- 该大运宫位里的星曜组合（已列出）
-- 大运天干产生的四化，叠加本命四化
-- 用"▶"标记 isCurrent=true 的大运（命主当前约${currentAge}岁）
-- **每个大运必须给出关键事件预测**
-
-### 第四步：看六亲
-- 父母宫 → 推断父亲/母亲特征（职业类型、性格）
-- 夫妻宫 → 推断配偶特征（年龄差、职业、外貌、性格）
-- 子女宫 → 推断子女数量倾向、与子女关系
-
-### 第五步：综合硬核预测
-基于以上分析，给出3-5个最具体的可验证预测，输出到 keyPredictions 数组。
-示例格式：{ age: "28岁", event: "重大工作变动或搬迁", basis: "大运走迁移宫，流年太岁冲命宫" }
-
-## sections 各字段要求
-
-- **overview**：格局判定 + 命宫主星组合含义 + 身宫解读 + 五行局 + 一句话定性此命
-- **personality**：命宫(别人眼中的你) vs 福德宫(内心真实的你) 对比分析，指出外在与内在的反差
-- **career**：官禄宫主星 + 三方四正联合分析 + 具体适合的子行业 + 当前大运对事业的影响
-- **marriage**：配偶具体特征推断(职业类型/性格/年龄差/外貌特点) + 婚姻模式 + 最佳婚期 + 桃花星分析
-- **wealth**：正财偏财格局 + 最佳理财方式 + 财运高峰/低谷年龄段 + 田宅宫联合分析
-- **health**：根据参考资料中的"健康对应"表，分析疾厄宫主星对应的身体系统 + 煞星加重的风险 + 需注意的年龄段
-- **family**：父亲特征(父母宫太阳系分析) + 母亲特征(父母宫太阴系) + 兄弟姐妹关系 + 子女缘分
-- **dayun**：逐个大运分析，每步标注起止年龄+所在宫位+核心主题+关键预测。用▶标记当前大运。
-
-## 宫位分析要求（palaces 中每个宫的 analysis）
-每个宫位分析必须包含：
-1. 主星组合核心含义（一句话）
-2. 辅星/煞星的修正作用
-3. 与三方四正的关联（至少提一个相关宫位）
-4. 对所管事项的具体影响
-
-## 禁止事项
-- 不要重复排盘数据（已提供，你只解读）
-- 不要说"建议结合实际情况"等废话
-- 不要用巴纳姆式描述（"你有时外向有时内向"）
-- 每个断语必须基于具体星曜组合
-
-四化飞星和星耀数据以程序计算结果为准，你只负责解盘分析。`
+数据以程序计算结果为准。请引用 decadalSiHua 中的大限四化做叠加分析。请使用 liuNian 中的 isLucky 标记辅助识别关键流年。`
 
       return { chart: { chart, patterns }, userMessage }
     } catch (e) {
@@ -233,10 +185,12 @@ ${ctx.question ? `- 特别关注：${ctx.question}` : ''}
   },
 
   merge(llmResult, { chart, patterns }) {
+    // Version tag
+    llmResult.version = 2
+
     llmResult.ziweiChart = {
       solarDate: chart.solarDate,
       lunarDate: chart.lunarDate,
-      chineseDate: chart.chineseDate,
       time: chart.time,
       timeRange: chart.timeRange,
       zodiac: chart.zodiac,
@@ -281,11 +235,25 @@ ${ctx.question ? `- 特别关注：${ctx.question}` : ''}
       }
     }
     llmResult.mainStars = mainStars
+
+    // V2 fields
+    if (chart.liuNian) llmResult.liuNian = chart.liuNian
+    if (chart.decadalSiHua) llmResult.decadalSiHua = chart.decadalSiHua
+
+    // Merge da yun stem/branch into daYunAnalysis if LLM provided it
+    if (Array.isArray(llmResult.daYunAnalysis) && chart.decadalSiHua) {
+      const analysis = llmResult.daYunAnalysis as Record<string, unknown>[]
+      for (let i = 0; i < analysis.length && i < chart.decadalSiHua.length; i++) {
+        analysis[i].heavenlyStem = chart.decadalSiHua[i].heavenlyStem
+        analysis[i].earthlyBranch = chart.decadalSiHua[i].earthlyBranch
+        analysis[i].ageRange = `${chart.decadalSiHua[i].range[0]}-${chart.decadalSiHua[i].range[1]}`
+      }
+    }
   },
 
   buildSchema(ctx) {
     return {
-      ...(schemaToLLMTemplate(ziweiSchema) as Record<string, unknown>),
+      ...(schemaToLLMTemplate(ziweiSchemaV2) as Record<string, unknown>),
       suggestedQuestions: getSuggestedQuestionsPrompt('ziwei', ctx.language, { age: ctx.userAge, gender: ctx.userGender }),
     }
   },
