@@ -546,7 +546,10 @@ export default function AdminSystemLogs() {
           {readingDetail ? (
             /* Detail View */
             <div>
-              <button onClick={() => setReadingDetail(null)} className="text-gold/60 hover:text-gold text-sm mb-4">← 返回列表</button>
+              <div className="flex items-center justify-between mb-4 gap-3">
+                <button onClick={() => setReadingDetail(null)} className="text-gold/60 hover:text-gold text-sm">← 返回列表</button>
+                <span className="text-white/40 text-xs font-mono truncate" title={readingDetail.id}>ID: {readingDetail.id}</span>
+              </div>
               <div className="glass-card rounded-xl p-4 border border-gold/20 mb-4">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                   <div>
@@ -612,7 +615,7 @@ export default function AdminSystemLogs() {
                   <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{readingDetail.llmPrompt}</pre>
                 )}
                 {readingDetailTab === 'llmOutput' && readingDetail.llmRawOutput && (
-                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{readingDetail.llmRawOutput}</pre>
+                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed">{readingDetail.llmRawOutput}</pre>
                 )}
                 {readingDetailTab === 'chat' && readingDetail.chatMessages && (() => {
                   try {

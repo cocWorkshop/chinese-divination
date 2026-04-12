@@ -36,6 +36,7 @@ interface Reading {
   familyMember?: { relation: string; name: string | null } | null
   rating?: number | null
   shareToken?: string | null
+  inputData?: Record<string, unknown>
 }
 
 const typeLabels: Record<string, { 'zh-TW': string; en: string }> = {
@@ -49,6 +50,17 @@ const typeLabels: Record<string, { 'zh-TW': string; en: string }> = {
   other: { 'zh-TW': '其他', en: 'Others' },
 }
 
+const typeIcons: Record<string, string> = {
+  bazi: '🏛️',
+  ziwei: '⭐',
+  iching: '☯',
+  qimen: '🧭',
+  liuyao: '🪙',
+  meihua: '🌸',
+  fengshui: '🏯',
+  other: '📖',
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const { lang } = useLang()
@@ -56,6 +68,8 @@ export default function DashboardPage() {
   const [readings, setReadings] = useState<Reading[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [activeTypeFilter, setActiveTypeFilter] = useState<string | null>(null)
+  const [visibleCount, setVisibleCount] = useState(15)
 
 
 
@@ -130,6 +144,13 @@ export default function DashboardPage() {
     setReadings(r => r.filter(x => x.id !== id))
   }
 
+  // C1: filter + paginate
+  const filteredReadings = activeTypeFilter
+    ? readings.filter(r => r.type === activeTypeFilter)
+    : readings
+  const visibleReadings = filteredReadings.slice(0, visibleCount)
+  const hasMoreReadings = filteredReadings.length > visibleCount
+
   if (status === 'loading' || loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -140,13 +161,60 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 py-8 sm:py-12 px-3 sm:px-4 max-w-4xl mx-auto w-full overflow-x-hidden">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-10">
-        <h1 className="text-3xl font-serif text-gold mb-2">
-          {lang === 'zh-TW' ? '占卜歷史' : 'Reading History'}
-        </h1>
-        <p className="text-white/50">
-          {lang === 'zh-TW' ? `共 ${readings.length} 條記錄` : `${readings.length} readings`}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-serif text-gold">
+            {lang === 'zh-TW' ? '占卜歷史' : 'Reading History'}
+          </h1>
+          <a
+            href="/divination"
+            className="px-4 py-2 rounded-lg text-xs font-medium transition-all hover:shadow-[0_0_12px_rgba(212,175,55,0.3)]"
+            style={{ background: 'var(--gold)', color: '#000' }}
+          >
+            {lang === 'zh-TW' ? '+ 新占卜' : '+ New Reading'}
+          </a>
+        </div>
+        <p className="text-white/50 text-sm mb-4">
+          {lang === 'zh-TW'
+            ? `共 ${readings.length} 條記錄${activeTypeFilter ? ` · 篩選：${typeLabels[activeTypeFilter]?.['zh-TW'] ?? activeTypeFilter}` : ''}`
+            : `${readings.length} readings${activeTypeFilter ? ` · Filter: ${typeLabels[activeTypeFilter]?.en ?? activeTypeFilter}` : ''}`}
         </p>
+        {/* Type filter chips */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => { setActiveTypeFilter(null); setVisibleCount(15) }}
+            className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+            style={{
+              background: !activeTypeFilter ? 'var(--gold)' : 'transparent',
+              color: !activeTypeFilter ? '#000' : 'var(--text-muted)',
+              border: `1px solid ${!activeTypeFilter ? 'var(--gold)' : 'var(--card-border)'}`,
+            }}
+          >
+            {lang === 'zh-TW' ? '全部' : 'All'}
+          </button>
+          {Object.entries(typeLabels)
+            .filter(([key]) => key !== 'other' && readings.some(r => r.type === key))
+            .map(([key, label]) => {
+              const count = readings.filter(r => r.type === key).length
+              const active = activeTypeFilter === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => { setActiveTypeFilter(active ? null : key); setVisibleCount(15) }}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5"
+                  style={{
+                    background: active ? 'var(--gold)' : 'transparent',
+                    color: active ? '#000' : 'var(--text-muted)',
+                    border: `1px solid ${active ? 'var(--gold)' : 'var(--card-border)'}`,
+                  }}
+                >
+                  <span>{typeIcons[key] ?? '📖'}</span>
+                  <span>{lang === 'zh-TW' ? label['zh-TW'] : label.en}</span>
+                  <span style={{ opacity: 0.6 }}>({count})</span>
+                </button>
+              )
+            })}
+        </div>
       </motion.div>
 
       {readings.length === 0 ? (
@@ -156,7 +224,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {readings.map((r, i) => (
+          {visibleReadings.map((r, i) => (
             <motion.div
               key={r.id}
               initial={{ opacity: 0, y: 20 }}
@@ -170,7 +238,8 @@ export default function DashboardPage() {
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="px-2 py-0.5 bg-gold/20 text-gold text-xs rounded-full mr-2">
+                    <span className="px-2 py-0.5 bg-gold/20 text-gold text-xs rounded-full mr-2 inline-flex items-center gap-1">
+                      <span>{typeIcons[r.type] ?? '📖'}</span>
                       {typeLabels[r.type]?.[lang === 'en' ? 'en' : 'zh-TW'] || r.type}
                     </span>
                     {r.status === 'pending' && (
@@ -262,7 +331,25 @@ export default function DashboardPage() {
                     ) : (
                       <>
                         <div className="w-full max-w-full overflow-x-hidden">
-                          <ResultRenderer result={r.result} type={r.type} readingId={r.id} />
+                          <ResultRenderer
+                            result={r.result}
+                            type={r.type}
+                            readingId={r.id}
+                            subjectName={
+                              r.targetType === 'family' && r.familyMember
+                                ? r.familyMember.name || r.familyMember.relation
+                                : session?.user?.name || null
+                            }
+                            birthInfo={r.inputData ? {
+                              birthDate: r.inputData.birthDate as string | undefined,
+                              birthTime: r.inputData.birthTime as string | undefined,
+                              gender: r.inputData.gender as string | undefined,
+                              calendarType: r.inputData.lunarToggle as string | undefined,
+                              birthPlace: r.inputData.birthPlace as string | undefined,
+                              exactTime: r.inputData.timeMode === 'precise' ? (r.inputData.exactTime as string | undefined) : undefined,
+                            } : null}
+                            createdAt={r.createdAt}
+                          />
                         </div>
                         <div className="mt-4">
                           <ReadingFeedback
@@ -278,6 +365,22 @@ export default function DashboardPage() {
               </AnimatePresence>
             </motion.div>
           ))}
+          {hasMoreReadings && (
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setVisibleCount(c => c + 15)}
+                className="px-6 py-2.5 rounded-xl text-sm font-medium transition-all hover:shadow-[0_0_12px_rgba(212,175,55,0.2)]"
+                style={{
+                  color: 'var(--gold)',
+                  border: '1px solid var(--border-gold, rgba(212,175,55,0.3))',
+                }}
+              >
+                {lang === 'zh-TW'
+                  ? `載入更多（還有 ${filteredReadings.length - visibleCount} 條）`
+                  : `Load more (${filteredReadings.length - visibleCount} remaining)`}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

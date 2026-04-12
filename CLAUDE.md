@@ -60,11 +60,25 @@ src/
     layout.tsx  page.tsx  globals.css
   components/              # React components
     results/               # per-system result views
+    master/                # global Xuanji Master chat widget
+      MasterChatContext.tsx  # React Context + SSE streaming + reading-complete event listener
+      MasterChatWidget.tsx   # two-shape (collapsed bar / expanded fullscreen) chat UI
     Navbar.tsx  Footer.tsx  ThemeProvider.tsx  LanguageContext.tsx
   lib/                     # core logic
     llm/                   # unified LLM abstraction layer
-      types.ts  settings.ts  prompts.ts  complete.ts  stream.ts  index.ts
+      types.ts  settings.ts  prompts.ts  complete.ts  stream.ts  reasoning.ts  index.ts
       providers/           # claudeProxy.ts (blocking), openrouter.ts (OpenAI SDK)
+      __tests__/
+    master/                # Xuanji Master agent module (tool registry + slicers + prompt)
+      index.ts             # public API surface
+      slicers/             # progressive-disclosure: bazi.ts, ziwei.ts, _identity.ts, index.ts
+      tools/               # six tools: getUserProfile, listFamilyMembers, listReadings,
+                           #   getReading, getReadingDetail, prefillDivinationForm
+                           #   + _types.ts _errors.ts _registry.ts _zodToToolSchema.ts
+      systemPrompt/        # persona.ts (loads master.md) + capabilityCatalog.ts (from registry)
+                           #   + buildSystemPrompt.ts (persona + catalog + skills + context)
+      skills/              # composite workflow definitions: baziHepan, guaMingHuCan
+                           #   + _types.ts + buildSkillsCatalog() for prompt injection
       __tests__/
     baziCalculator.ts  ziweiCalculator.ts  ziweiPatterns.ts
     fengshuiCalculator.ts  liuyaoCalculator.ts  qimenCalculator.ts  meihuaCalculator.ts
@@ -76,7 +90,7 @@ src/
 prisma/
   schema.prisma            # 30+ tables (User, Reading, Notification, credits, Stripe)
   migrations/
-divination-refs/           # LLM prompt reference docs (bazi, iching, ziwei, qimen, fengshui, others)
+divination-refs/           # LLM prompt reference docs (bazi, iching, ziwei, qimen, fengshui, others, master)
 android/                   # Capacitor Android project
 public/  docs/  scripts/  tests/
 next.config.js  tsconfig.json  tailwind.config.js  vitest.config.ts
@@ -98,9 +112,34 @@ Unified abstraction over LLM providers. All API routes use this instead of raw S
 
 - `completeLLM()` — blocking completion (supports both OpenRouter and Claude proxy).
 - `streamLLM()` — streaming completion with tool-calling support (OpenRouter only).
-- `resolveLLMConfig()` — resolves model/tokens/timeout per endpoint (`divination`/`chat`/`master`) via fallback chain: AdminSetting → env var → hardcoded default.
+- `resolveLLMConfig()` — resolves model/tokens/timeout/reasoningEffort per endpoint (`divination`/`chat`/`master`) via fallback chain: caller override → AdminSetting → env var → default. Served through a 60s process-wide cache (`clearLLMSettingsCache()` for tests).
+- **Reasoning / extended thinking**: every call carries a `reasoningEffort` (`'low'|'medium'|'high'|'off'`). Per-endpoint defaults: **divination = medium, chat/master = low**. Per-endpoint AdminSetting keys: `divinationReasoningEffort`, `chatReasoningEffort`; global fallback `llmReasoningEffort`. Env equivalents: `DIVINATION_REASONING_EFFORT`, `CHAT_REASONING_EFFORT`, `LLM_REASONING_EFFORT`. Reasoning text is captured in `CompletionResult.reasoning` and logged, never mixed into user-visible `content`.
 - `loadDivinationPrompt()` — lazy-loads divination reference markdown from `divination-refs/` with in-memory cache.
-- Providers: `providers/openrouter.ts` (OpenAI SDK wrapper), `providers/claudeProxy.ts` (local Claude CLI, blocking only).
+- Providers: `providers/openrouter.ts` (OpenAI SDK wrapper), `providers/claudeProxy.ts` (local Claude CLI, blocking only; reasoning param silently skipped on this branch).
+
+### Xuanji Master Module (`src/lib/master/`)
+
+Global chat agent that reads the user's divination state and redirects to the UI form when a new reading is needed. **Never computes readings itself; never deducts credits via calculators; never writes profile/family state** — all writes flow through the validated divination + family-member UI pipeline.
+
+**Six tools** (read-only, registered via `masterToolRegistry`):
+- `get_user_profile` — user's birth profile + `isComplete` flag.
+- `list_family_members` — all FamilyMember rows with `isComplete` and `relationDetail`.
+- `list_readings` — metadata-only reading listing filtered by type/target.
+- `get_reading` — slim header + overview + fetchable-sections TOC (per slicer).
+- `get_reading_detail` — one named section by key (progressive disclosure).
+- `prefill_divination_form` — pure URL builder returning a CTA card payload that navigates the user to a pre-filled `/divination/[type]` page.
+
+**Slicers** (`slicers/`): pure functions that split a stored `Reading.result` into a compact header + enumerable section keys. `bazi.ts` keeps pillars/dayMaster/fiveElements/formation in header; bulky fields (daYun, liuNian, branchRelationships, shenSha) become fetchable sections. `ziwei.ts` keeps chart metadata + formation + 12-palace preview + 命宫 in header; full palaces + daYunAnalysis + keyPredictions are sections. Smaller types (iching/qimen/meihua/fengshui/liuyao) use an identity slicer (whole result in header).
+
+**System prompt composer** (`systemPrompt/`): `buildMasterSystemPrompt()` assembles persona (loaded once from `divination-refs/master.md`) + capability catalog (generated from the tool registry, so it can't drift) + skills catalog (language-aware) + dynamic context (lang, current datetime, optional legacy portrait). The stable prefix benefits from Anthropic's 5-min prompt cache across turns.
+
+**Skills** (`skills/`): composite workflows the master follows as recipes. Each skill is a typed `SkillDef` with id, zh/en names, description, prerequisites, and a prose recipe that explicitly lists the tool calls in order. Current skills: `bazi_hepan` (八字合盘 compatibility), `gua_ming_hu_can` (卦命互参 oracle×destiny cross-reference). **Adding a skill is one new file + one registry entry**, zero changes to tools or routes.
+
+**Master UI** (`src/components/master/`): global persistent chat widget mounted at the root layout. Two shapes:
+- **Collapsed** — bottom input bar on every page; shows a "waiting for your reading..." status when `pendingReading` is set.
+- **Expanded** — fullscreen overlay with transcript, markdown rendering, CTA cards, and tool-status animation.
+
+CTA card rendering: when the master calls `prefill_divination_form`, the route emits an SSE `cta_card` event whose payload the widget renders as a clickable card. Clicking navigates to the divination page with form fields hydrated from query params. On save, the divination page dispatches `window.dispatchEvent('xuanji:readingComplete', { detail: { readingId, type } })` which the provider catches, auto-expands the widget, and injects a synthetic user turn so the master pulls the new reading into context.
 
 ### Divination Handler System (`src/app/api/divination/handlers/`)
 

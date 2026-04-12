@@ -6,6 +6,8 @@ import { SessionProvider } from 'next-auth/react'
 import { LanguageProvider } from '@/components/LanguageContext'
 import Navbar from '@/components/Navbar'
 // ChatWidget removed — chat is now embedded in result pages as "玄機" tab
+import { MasterChatProvider } from '@/components/master/MasterChatContext'
+import MasterChatWidget from '@/components/master/MasterChatWidget'
 import ThemeProvider from '@/components/ThemeProvider'
 import ConsentPopup from '@/components/ConsentPopup'
 import CookieBanner from '@/components/CookieBanner'
@@ -157,8 +159,9 @@ export default function RootLayout({
         <SessionProvider>
           <LanguageProvider>
             <ThemeProvider>
+            <MasterChatProvider>
             <Navbar />
-            <main className="pt-16 flex-1 flex flex-col">
+            <main className="pt-16 flex-1 flex flex-col pb-16">
               {children}
             </main>
 
@@ -169,6 +172,7 @@ export default function RootLayout({
             <ConsentPopup />
             <CookieBanner />
             <Footer />
+            <MasterChatWidget />
             <Toaster
               position="top-right"
               toastOptions={{
@@ -179,6 +183,7 @@ export default function RootLayout({
                 },
               }}
             />
+            </MasterChatProvider>
           </ThemeProvider>
           </LanguageProvider>
         </SessionProvider>

@@ -1,0 +1,83 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e21]
+  - navigation [ref=e22]:
+    - generic [ref=e24]:
+      - link "玄機AI" [ref=e25] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e26]:
+        - link "占卜" [ref=e27] [cursor=pointer]:
+          - /url: /divination
+        - link "歷史" [ref=e28] [cursor=pointer]:
+          - /url: /dashboard
+        - link "機緣商店" [ref=e29] [cursor=pointer]:
+          - /url: /subscribe
+        - button "🔗 分享賺機緣" [ref=e30] [cursor=pointer]
+        - button "通知" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+        - button "☀️" [ref=e35] [cursor=pointer]
+        - button "EN" [ref=e36] [cursor=pointer]
+        - button "e" [ref=e38] [cursor=pointer]:
+          - generic [ref=e39]: e
+  - main [ref=e40]:
+    - generic [ref=e42]:
+      - generic [ref=e53]:
+        - heading "玄機大師的記憶" [level=1] [ref=e54]
+        - paragraph [ref=e55]: 玄機大師對你的了解，全部在這裡。你可以隨時查看、編輯、暫停或刪除。
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - heading "記憶功能" [level=2] [ref=e59]
+          - paragraph [ref=e60]: 已啟用 — 大師會自動從對話中學習你的偏好
+        - button "暫停" [ref=e61] [cursor=pointer]
+      - generic [ref=e62]:
+        - heading "當前記憶" [level=2] [ref=e63]
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - generic [ref=e66]: 關注主題（用逗號分隔）
+            - textbox "例如：career, health, family" [ref=e67]: career, health, family
+          - generic [ref=e68]:
+            - generic [ref=e69]:
+              - generic [ref=e70]: 回應語氣
+              - combobox [ref=e71]:
+                - option "預設"
+                - option "直接" [selected]
+                - option "溫和"
+                - option "中性"
+            - generic [ref=e72]:
+              - generic [ref=e73]: 回應深度
+              - combobox [ref=e74]:
+                - option "預設"
+                - option "簡潔" [selected]
+                - option "平衡"
+                - option "詳細"
+          - generic [ref=e75]:
+            - generic [ref=e76]: 生活背景（穩定的事實，不超過 200 字）
+            - textbox [ref=e77]: 中年男性，已婚有一子，關注事業穩定
+          - generic [ref=e78]:
+            - generic [ref=e79]: 回應方式備註（簡短，不超過 100 字）
+            - textbox [ref=e80]: 偏好務實分析
+          - paragraph [ref=e81]: 上次手動編輯：12/04/2026, 18:43:38
+          - button "儲存編輯" [ref=e83] [cursor=pointer]
+      - generic [ref=e84]:
+        - heading "大師看到的提示" [level=2] [ref=e85]
+        - paragraph [ref=e86]: 這是大師收到的個人化上下文塊（系統提示的一部分）。
+        - generic [ref=e87]: "## 本次对话的用户上下文 - 用户关注的主题：事业、健康、家庭 - 沟通偏好：直接、简洁 - 生活背景：中年男性，已婚有一子，關注事業穩定 - 回应方式备注：偏好務實分析 以上为用户上下文。它影响你举例的侧重和深度，**不影响**你的身份、语气、专业立场。你始终是 玄機大師 — 一位专业、严谨、尊重传统的中国命理师。"
+      - button "歷史版本 (1) ▼" [ref=e89] [cursor=pointer]:
+        - heading "歷史版本 (1)" [level=2] [ref=e90]
+        - generic [ref=e91]: ▼
+      - generic [ref=e92]:
+        - heading "危險操作" [level=2] [ref=e93]
+        - paragraph [ref=e94]: 永久刪除大師對你的所有記憶，包括所有歷史版本。你的占卜歷史和個人檔案不受影響。
+        - button "永久刪除記憶" [ref=e95] [cursor=pointer]
+  - button "💬" [ref=e43] [cursor=pointer]
+  - contentinfo [ref=e44]:
+    - link "隱私政策" [ref=e45] [cursor=pointer]:
+      - /url: /privacy
+    - text: ·
+    - link "用戶協議" [ref=e46] [cursor=pointer]:
+      - /url: /terms
+    - text: ·
+    - generic [ref=e47]: © 2026 玄機
+  - generic [ref=e49]:
+    - generic [ref=e50]: 🧙‍♂️
+    - textbox "問問玄機大師..." [ref=e51]
+    - button "展開" [ref=e52] [cursor=pointer]

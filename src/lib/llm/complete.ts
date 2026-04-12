@@ -15,6 +15,7 @@ import { logLlmCall } from '../llmLogger'
 import { resolveLLMConfig } from './settings'
 import { createOpenRouterClient } from './providers/openrouter'
 import { callClaudeProxy } from './providers/claudeProxy'
+import { buildReasoningParam, extractReasoningText } from './reasoning'
 import type {
   CompletionRequest,
   CompletionResult,
@@ -24,6 +25,7 @@ import type {
 
 const PREVIEW_LIMIT = 500
 const SYSTEM_PROMPT_LOG_LIMIT = 2000
+const REASONING_LOG_LIMIT = 1000
 
 function toOpenAIMessages(
   systemPrompt: string,
@@ -68,6 +70,7 @@ export async function completeLLM(
       model: req.model,
       maxTokens: req.maxTokens,
       timeoutMs: req.timeoutMs,
+      reasoningEffort: req.reasoningEffort,
     },
   })
 
@@ -77,9 +80,13 @@ export async function completeLLM(
 
   try {
     let content = ''
+    let reasoningText: string | undefined
     let usage: Usage | undefined
 
     if (cfg.isLocalProxy) {
+      // Local Claude CLI proxy does not understand the OpenRouter `reasoning`
+      // parameter — the proxy just shells out to the Claude CLI with a plain
+      // messages payload. Silently skip passing it here.
       const result = await callClaudeProxy({
         systemPrompt: req.systemPrompt,
         messages: req.messages,
@@ -102,15 +109,30 @@ export async function completeLLM(
         else req.signal.addEventListener('abort', onExternalAbort, { once: true })
       }
       try {
+        // OpenAI SDK types don't know about OpenRouter's `reasoning` param;
+        // spread it in and cast the whole body.
+        // The OpenAI SDK types don't know about OpenRouter's `reasoning`
+        // param; we build the well-typed body, then spread `reasoning` via a
+        // cast on the whole create() call so we don't lose the non-stream
+        // return-type narrowing.
+        const baseBody: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
+          model: cfg.model,
+          max_tokens: cfg.maxTokens,
+          messages: toOpenAIMessages(req.systemPrompt, req.messages),
+        }
+        const body = {
+          ...baseBody,
+          ...buildReasoningParam(cfg.reasoningEffort),
+        } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming
         const completion = await client.chat.completions.create(
-          {
-            model: cfg.model,
-            max_tokens: cfg.maxTokens,
-            messages: toOpenAIMessages(req.systemPrompt, req.messages),
-          },
+          body,
           { signal: controller.signal as AbortSignal }
         )
-        content = completion.choices[0]?.message?.content || ''
+        const msg = completion.choices[0]?.message
+        content = msg?.content || ''
+        // Reasoning tokens come back in a separate `message.reasoning` field
+        // on OpenRouter — capture for logging, do NOT merge into content.
+        reasoningText = extractReasoningText(msg)
         usage = completion.usage
           ? {
               promptTokens: completion.usage.prompt_tokens,
@@ -124,6 +146,10 @@ export async function completeLLM(
       }
     }
 
+    const outputPreview = reasoningText
+      ? `[reasoning:${cfg.reasoningEffort}] ${reasoningText.slice(0, REASONING_LOG_LIMIT)}\n---\n${content.slice(0, PREVIEW_LIMIT)}`
+      : content.slice(0, PREVIEW_LIMIT)
+
     await logLlmCall({
       userId: req.userId ?? null,
       endpoint: req.endpoint,
@@ -135,11 +161,11 @@ export async function completeLLM(
       latencyMs: Date.now() - started,
       status: 'success',
       inputPreview,
-      outputPreview: content.slice(0, PREVIEW_LIMIT),
+      outputPreview,
       systemPrompt: systemPromptPreview,
     })
 
-    return { content, model: cfg.model, usage }
+    return { content, model: cfg.model, usage, reasoning: reasoningText }
   } catch (err) {
     const e = err as { message?: string; status?: number }
     await logLlmCall({

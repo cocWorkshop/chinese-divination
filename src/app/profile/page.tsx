@@ -24,6 +24,7 @@ const relationPresets = [
 interface FamilyMember {
   id: string
   relation: string
+  relationDetail: string | null
   name: string | null
   birthDate: string | null
   birthTime: string | null
@@ -87,7 +88,7 @@ export default function ProfilePage() {
   const [editingMember, setEditingMember] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<FamilyMember>>({})
   const [addingMember, setAddingMember] = useState(false)
-  const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', calendarType: 'solar', timeMode: 'fuzzy', exactTime: '', birthLat: null, birthLng: null, birthEnvironment: '' })
+  const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', relationDetail: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', calendarType: 'solar', timeMode: 'fuzzy', exactTime: '', birthLat: null, birthLng: null, birthEnvironment: '' })
   const [credits, setCredits] = useState<{ credits: number } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
@@ -169,6 +170,7 @@ export default function ProfilePage() {
       const searchable = [
         m.name,
         m.relation,
+        m.relationDetail,
         relationLabel?.zh,
         relationLabel?.en,
       ].filter(Boolean).join(' ').toLowerCase()
@@ -183,23 +185,37 @@ export default function ProfilePage() {
 
   const addFamilyMember = async () => {
     if (!newMember.relation) { toast.error(T(lang, '請選擇關係', 'Please select relationship')); return }
+    if (newMember.relation === 'other' && !newMember.relationDetail?.trim()) {
+      toast.error(T(lang, '「其他」關係必須填寫具體關係', "Please specify 'other' relationship"))
+      return
+    }
     const res = await fetch('/api/family-members', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newMember) })
     if (res.ok) {
       const { member } = await res.json()
       setFamilyMembers(prev => [...prev, member])
-      setNewMember({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '' })
+      setNewMember({ relation: '', relationDetail: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '' })
       setAddingMember(false)
       toast.success(T(lang, '已新增', 'Added'))
+    } else {
+      const err = await res.json().catch(() => ({ error: 'Error' }))
+      toast.error(err.error || 'Error')
     }
   }
 
   const updateFamilyMember = async (id: string) => {
+    if (editForm.relation === 'other' && !editForm.relationDetail?.trim()) {
+      toast.error(T(lang, '「其他」關係必須填寫具體關係', "Please specify 'other' relationship"))
+      return
+    }
     const res = await fetch('/api/family-members', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...editForm }) })
     if (res.ok) {
       const { member } = await res.json()
       setFamilyMembers(prev => prev.map(m => m.id === id ? member : m))
       setEditingMember(null)
       toast.success(T(lang, '已更新', 'Updated'))
+    } else {
+      const err = await res.json().catch(() => ({ error: 'Error' }))
+      toast.error(err.error || 'Error')
     }
   }
 
@@ -254,6 +270,23 @@ export default function ProfilePage() {
           <p className="text-white/40 text-sm mt-1">{session.user.email}</p>
         )}
       </div>
+
+      {/* C2: Master memory quick-access card — links to /profile/portrait */}
+      <a
+        href="/profile/portrait"
+        className="glass-card rounded-xl p-4 mb-6 flex items-center gap-4 border border-gold/20 hover:border-gold/40 transition-all group cursor-pointer block"
+      >
+        <span className="text-2xl flex-shrink-0">🧙‍♂️</span>
+        <div className="flex-1 min-w-0">
+          <div className="font-serif text-sm text-gold group-hover:text-gold/90 transition-colors">
+            {T(lang, '玄機大師記憶', 'Master Xuanji Memory')}
+          </div>
+          <div className="text-xs text-white/40 mt-0.5">
+            {T(lang, '查看、編輯大師對你的了解', 'View and edit what the Master remembers about you')}
+          </div>
+        </div>
+        <span className="text-white/30 group-hover:text-gold/60 transition-colors text-sm">→</span>
+      </a>
 
       {/* Tab Navigation */}
       <div className="flex rounded-xl overflow-hidden mb-6 border border-gold/20">
@@ -448,6 +481,22 @@ export default function ProfilePage() {
                         <input type="text" className={inputCls} value={editForm.name || ''} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
                       </div>
                     </div>
+                    {editForm.relation === 'other' && (
+                      <div>
+                        <label className={labelCls}>
+                          {T(lang, '具體關係', 'Specific Relationship')}
+                          <span className="text-red-400 ml-1">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className={inputCls}
+                          value={editForm.relationDetail || ''}
+                          onChange={e => setEditForm(f => ({ ...f, relationDetail: e.target.value }))}
+                          placeholder={T(lang, '例：岳父、合作夥伴', 'e.g. father-in-law, business partner')}
+                          required
+                        />
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
@@ -532,7 +581,9 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <p className="font-medium text-sm text-gold">
-                          {relationPresets.find(r => r.value === member.relation)?.[lang === 'en' ? 'en' : 'zh'] || member.relation}
+                          {member.relation === 'other' && member.relationDetail
+                            ? member.relationDetail
+                            : relationPresets.find(r => r.value === member.relation)?.[lang === 'en' ? 'en' : 'zh'] || member.relation}
                           {member.name ? ` — ${member.name}` : ''}
                         </p>
                         <p className="text-white/40 text-xs mt-0.5">
@@ -541,7 +592,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '', calendarType: member.calendarType || 'solar', timeMode: member.timeMode || 'fuzzy', exactTime: member.exactTime || '', birthLat: member.birthLat ?? null, birthLng: member.birthLng ?? null, birthEnvironment: member.birthEnvironment || '' }) }}
+                      <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, relationDetail: member.relationDetail || '', name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '', calendarType: member.calendarType || 'solar', timeMode: member.timeMode || 'fuzzy', exactTime: member.exactTime || '', birthLat: member.birthLat ?? null, birthLng: member.birthLng ?? null, birthEnvironment: member.birthEnvironment || '' }) }}
                         className="text-white/30 hover:text-gold text-sm transition-colors">✏️</button>
                       <button type="button" onClick={() => deleteFamilyMember(member.id)}
                         className="text-white/30 hover:text-red-400 text-sm transition-colors">✕</button>
@@ -589,6 +640,22 @@ export default function ProfilePage() {
                     <input type="text" className={inputCls} value={newMember.name || ''} onChange={e => setNewMember(f => ({ ...f, name: e.target.value }))} />
                   </div>
                 </div>
+                {newMember.relation === 'other' && (
+                  <div>
+                    <label className={labelCls}>
+                      {T(lang, '具體關係', 'Specific Relationship')}
+                      <span className="text-red-400 ml-1">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={inputCls}
+                      value={newMember.relationDetail || ''}
+                      onChange={e => setNewMember(f => ({ ...f, relationDetail: e.target.value }))}
+                      placeholder={T(lang, '例：岳父、合作夥伴', 'e.g. father-in-law, business partner')}
+                      required
+                    />
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>

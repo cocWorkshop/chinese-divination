@@ -63,10 +63,20 @@ export async function POST(req: NextRequest) {
     let resolvedFamilyMemberId: string | null = null
     if (targetType === 'family') {
       if (newFamilyMember?.relation) {
+        if (newFamilyMember.relation === 'other') {
+          const rd = typeof newFamilyMember.relationDetail === 'string' ? newFamilyMember.relationDetail.trim() : ''
+          if (!rd) {
+            return NextResponse.json(
+              { error: language !== 'en' ? '請填寫具體關係（「其他」類型必填）' : "Please specify the relationship ('other' requires a detail)" },
+              { status: 400 },
+            )
+          }
+        }
         const created = await prisma.familyMember.create({
           data: {
             userId: session.user.id,
             relation: newFamilyMember.relation,
+            relationDetail: typeof newFamilyMember.relationDetail === 'string' && newFamilyMember.relationDetail.trim() ? newFamilyMember.relationDetail.trim() : null,
             name: newFamilyMember.name || null,
             birthDate: inputData.birthDate || null,
             birthTime: inputData.birthTime || null,

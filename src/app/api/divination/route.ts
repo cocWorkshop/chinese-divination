@@ -42,10 +42,19 @@ export async function POST(req: NextRequest) {
     const shouldSaveProfile = saveProfile !== false
 
     // readingId from /init means credit/maintenance already validated → only fetch LLM config keys.
+    // Must keep in sync with LLM_SETTING_KEYS: any LLM key the llm/ module reads
+    // has to appear here so the override path works when the route pre-fetches.
+    const llmKeys = [
+      'model1Name',
+      'llmTimeoutSeconds',
+      'llmMaxTokens',
+      'divinationReasoningEffort',
+      'llmReasoningEffort',
+    ]
     const adminSettings = await prisma.adminSetting.findMany({
       where: { key: { in: preCreatedReadingId
-        ? ['model1Name', 'llmTimeoutSeconds', 'llmMaxTokens']
-        : ['maintenanceMode', 'divinationEnabled', 'model1Name', 'llmTimeoutSeconds', 'llmMaxTokens'] } },
+        ? llmKeys
+        : ['maintenanceMode', 'divinationEnabled', ...llmKeys] } },
     })
     const settingsMap = Object.fromEntries(adminSettings.map(s => [s.key, s.value]))
 
@@ -78,10 +87,21 @@ export async function POST(req: NextRequest) {
     let targetPersonInfo = ''
     if (targetType === 'family') {
       if (newFamilyMember?.relation) {
+        // Enforce relationDetail when relation === 'other'.
+        if (newFamilyMember.relation === 'other') {
+          const rd = typeof newFamilyMember.relationDetail === 'string' ? newFamilyMember.relationDetail.trim() : ''
+          if (!rd) {
+            return NextResponse.json(
+              { error: language !== 'en' ? '請填寫具體關係（「其他」類型必填）' : "Please specify the relationship ('other' requires a detail)" },
+              { status: 400 },
+            )
+          }
+        }
         const created = await prisma.familyMember.create({
           data: {
             userId: session.user.id,
             relation: newFamilyMember.relation,
+            relationDetail: typeof newFamilyMember.relationDetail === 'string' && newFamilyMember.relationDetail.trim() ? newFamilyMember.relationDetail.trim() : null,
             name: newFamilyMember.name || null,
             birthDate: inputData.birthDate || null,
             birthTime: inputData.birthTime || null,

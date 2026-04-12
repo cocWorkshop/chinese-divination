@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -50,6 +51,11 @@ model User {
   bonusChat    Int         @default(0)
   consentAt    DateTime?
   consentVersion String?   // version of privacy/terms the user agreed to
+  // Master memory (Phase 1+):
+  // - portraitEnabled: gates portrait extraction + personalized prompt block
+  // - masterMemoryDisclosureSeenAt: tracks first-use disclosure modal
+  portraitEnabled              Boolean   @default(true)
+  masterMemoryDisclosureSeenAt DateTime?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   readings      Reading[]
@@ -59,6 +65,12 @@ model User {
   masterSession MasterSession?
   deviceTokens  DeviceToken[]
   notificationReads NotificationRead[]
+  // Master memory relations
+  masterMessages          MasterChatMessage[]
+  portrait                UserPortrait?
+  portraitHistory         UserPortraitHistory[]
+  adminAccessLogsAsAdmin  AdminAccessLog[] @relation("AdminAccessLog_admin")
+  adminAccessLogsAsTarget AdminAccessLog[] @relation("AdminAccessLog_target")
 }
 
 model Reading {
@@ -111,6 +123,7 @@ model FamilyMember {
   userId           String
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   relation         String
+  relationDetail   String?   // Required (enforced in app layer) when relation === 'other'
   name             String?
   birthDate        String?
   birthTime        String?
@@ -374,11 +387,93 @@ model MasterSession {
   id               String   @id @default(cuid())
   userId           String   @unique
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages         String   @db.Text // JSON array of {role, content, timestamp, toolCalls?}
-  portrait         String?  @db.Text // JSON: user portrait
+  messages         String   @db.Text // JSON array of {role, content, timestamp, toolCalls?} — DEPRECATED, see MasterChatMessage
+  portrait         String?  @db.Text // JSON: user portrait — DEPRECATED, see UserPortrait
   totalCreditsUsed Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   @@index([userId])
+}
+
+// ─── Master memory tables (Phase 1+) ──────────────────────────────────────
+// See docs/master-portrait-system-plan.md for the full design.
+
+/// Raw chat message store. Replaces MasterSession.messages JSON blob with
+/// per-message rows so compression can operate as queries instead of array
+/// slicing. Each row records the original turn — synthetic system messages
+/// (e.g. compressed summary stubs) get a metadata.synthetic flag in toolCallsJson.
+model MasterChatMessage {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId     String   // groups messages between hard-clears / new-session resets
+  turnIndex     Int      // monotonic per session, even = user, odd = assistant
+  role          String   // 'user' | 'assistant' | 'system' | 'tool'
+  content       String?  @db.Text
+  toolCallsJson String?  @db.Text // assistant tool_calls or tool result payload
+  toolCallId    String?  // for role='tool' messages, links to assistant call
+  tokenCount    Int?     // estimated, for compression decisions
+  archivedAt    DateTime? // soft-archive flag for "Start new session" reset
+  createdAt     DateTime @default(now())
+
+  @@index([userId, sessionId, turnIndex])
+  @@index([userId, sessionId, archivedAt])
+  @@index([userId, createdAt])
+}
+
+/// Long-term user portrait — one row per user. Captures stable preferences
+/// and topics extracted from conversation history. Updated incrementally:
+/// the extractor only sees new messages since lastTurnIndexCovered.
+model UserPortrait {
+  userId               String   @id
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  version              Int      @default(1)
+  topics               String   @db.Text // JSON array
+  preferences          String   @db.Text // JSON object: {tone, depth, language}
+  lifeContext          String?  @db.Text
+  toneNotes            String?  @db.Text
+  generatedPrompt      String?  @db.Text // rendered personalized prompt block (cached)
+  lastExtractedAt      DateTime @default(now())
+  lastTurnIndexCovered Int      @default(0)
+  lastManualEditAt     DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+/// Append-only audit trail for portrait updates. Lets users see their own
+/// portrait history (manual edits + auto-extraction events) and admins debug
+/// extraction quality. Trigger: 'auto' | 'manual' | 'admin' | 'restore'.
+model UserPortraitHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  version     Int
+  topics      String   @db.Text
+  preferences String   @db.Text
+  lifeContext String?  @db.Text
+  toneNotes   String?  @db.Text
+  trigger     String
+  createdAt   DateTime @default(now())
+
+  @@index([userId, version])
+  @@index([userId, createdAt])
+}
+
+/// Admin access log. Every admin action against another user's master data
+/// is logged here. Used by the admin debug page (Phase 7) and surfaced in
+/// the page itself for peer-policing.
+model AdminAccessLog {
+  id           String   @id @default(cuid())
+  adminUserId  String
+  adminUser    User     @relation("AdminAccessLog_admin", fields: [adminUserId], references: [id])
+  targetUserId String
+  targetUser   User     @relation("AdminAccessLog_target", fields: [targetUserId], references: [id], onDelete: Cascade)
+  action       String   // 'view_master_debug' | 'force_extract_portrait' | 'reset_portrait' | 'clear_chat' | 'toggle_enabled'
+  reason       String?  @db.Text
+  metadata     String?  @db.Text // JSON: action-specific context
+  createdAt    DateTime @default(now())
+
+  @@index([adminUserId, createdAt])
+  @@index([targetUserId, createdAt])
 }

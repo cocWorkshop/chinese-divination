@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -10,6 +10,7 @@ import LoadingOracle from '@/components/LoadingOracle'
 import ResultRenderer from '@/components/results/ResultRenderer'
 import ReadingFeedback from '@/components/ReadingFeedback'
 import BirthplaceInput from '@/components/BirthplaceInput'
+import { POPULAR_CITIES } from '@/lib/cities'
 import YinYangIcon from '@/components/YinYangIcon'
 import { reportError, catchAndReport } from '@/lib/errorReporter'
 
@@ -88,6 +89,7 @@ export default function DivinationFormPage() {
   const { data: session } = useSession()
   const { lang } = useLang()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [form, setForm] = useState<Record<string, string>>({
     birthDate: '',
@@ -117,6 +119,10 @@ export default function DivinationFormPage() {
   const [saveHistory, setSaveHistory] = useState(true)
   const [profileLoaded, setProfileLoaded] = useState(false)
   const selfProfileRef = useRef<{ birthDate: string; birthTime: string; birthPlace: string; gender: string; lunarToggle: string; timeMode: string; exactTime: string; birthEnvironment: string; birthLat: number | null; birthLng: number | null } | null>(null)
+  // True once the query-param hydration effect has seeded the form from
+  // the master's CTA card. Used to prevent /api/init's profile auto-fill
+  // from clobbering hydrated values (especially when target=family).
+  const paramsHydratedRef = useRef(false)
   // modelTier removed — single model now
   // Bazi cache dialog
   const [showCacheDialog, setShowCacheDialog] = useState(false)
@@ -129,6 +135,7 @@ export default function DivinationFormPage() {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
   const [selectedMemberId, setSelectedMemberId] = useState<string>('')
   const [newMemberRelation, setNewMemberRelation] = useState('')
+  const [newMemberRelationDetail, setNewMemberRelationDetail] = useState('')
   const [newMemberName, setNewMemberName] = useState('')
   const [birthLat, setBirthLat] = useState<number | null>(null)
   const [birthLng, setBirthLng] = useState<number | null>(null)
@@ -168,8 +175,11 @@ export default function DivinationFormPage() {
         // Family members
         if (data.familyMembers) setFamilyMembers(data.familyMembers)
 
-        // Profile auto-fill (bazi & ziwei only)
-        if (!profileLoaded && ['bazi', 'ziwei'].includes(type) && data.profile) {
+        // Profile auto-fill (bazi & ziwei only). Skipped when the form has
+        // already been hydrated from CTA query params — otherwise we would
+        // overwrite prefilled values (e.g. a father's birth info) with the
+        // authenticated user's own profile.
+        if (!profileLoaded && ['bazi', 'ziwei'].includes(type) && data.profile && !paramsHydratedRef.current) {
           const p = data.profile
           setForm(f => ({
             ...f,
@@ -204,6 +214,70 @@ export default function DivinationFormPage() {
       })
       .catch(catchAndReport('/api/init'))
   }, [session, type, profileLoaded, lang])
+
+  // Query-param hydration — runs once on mount. Used by the master's
+  // prefill_divination_form tool to seed the form when the user is
+  // redirected here from a CTA card in the Xuanji Master chat.
+  useEffect(() => {
+    if (paramsHydratedRef.current) return
+    if (!searchParams || searchParams.toString() === '') return
+    paramsHydratedRef.current = true
+
+    const updates: Record<string, string> = {}
+    const formKeys = [
+      'birthDate', 'birthTime', 'exactTime', 'timeMode', 'birthPlace',
+      'gender', 'question',
+    ] as const
+    for (const k of formKeys) {
+      const v = searchParams.get(k)
+      if (v) updates[k] = v
+    }
+    // calendarType → lunarToggle field
+    const ct = searchParams.get('calendarType')
+    if (ct) updates.lunarToggle = ct
+    if (Object.keys(updates).length > 0) {
+      setForm(f => ({ ...f, ...updates }))
+    }
+
+    // Resolve birthPlace to lat/lng from the POPULAR_CITIES preset list.
+    // Without this, submission with timeMode=precise fails the birthLat
+    // null-check because BirthplaceInput only sets lat/lng when a user
+    // manually picks from the search dropdown. For cities not in presets,
+    // the user can still edit the birthplace field to pick from search.
+    const bp = updates.birthPlace
+    if (bp) {
+      const q = bp.trim().toLowerCase()
+      const match =
+        POPULAR_CITIES.find((c) => c.name_zh === bp.trim() || c.name_en.toLowerCase() === q) ??
+        POPULAR_CITIES.find((c) => bp.includes(c.name_zh) || q.includes(c.name_en.toLowerCase()))
+      if (match) {
+        setBirthLat(match.lat)
+        setBirthLng(match.lon)
+      }
+    }
+
+    // Target (self / family) and family member selection
+    const target = searchParams.get('target')
+    if (target === 'family') {
+      setTargetType('family')
+      const fid = searchParams.get('familyMemberId')
+      if (fid) setSelectedMemberId(fid)
+      if (fid === '__new__') {
+        const rel = searchParams.get('relation')
+        if (rel) setNewMemberRelation(rel)
+        const relDetail = searchParams.get('relationDetail')
+        if (relDetail) setNewMemberRelationDetail(relDetail)
+        const nm = searchParams.get('memberName')
+        if (nm) setNewMemberName(nm)
+      }
+    } else if (target === 'self') {
+      setTargetType('self')
+    }
+
+    if (Object.keys(updates).length > 0 || target) {
+      toast(T(lang, '已從玄機大師對話中自動填入資訊', 'Fields pre-filled from Master Xuanji'), { icon: '✨', duration: 3000 })
+    }
+  }, [searchParams, lang])
 
   const setField = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
@@ -305,7 +379,7 @@ export default function DivinationFormPage() {
           saveHistory,
           targetType,
           familyMemberId: targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__' ? selectedMemberId : undefined,
-          newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, name: newMemberName || undefined } : undefined,
+          newFamilyMember: targetType === 'family' && selectedMemberId === '__new__' ? { relation: newMemberRelation, relationDetail: newMemberRelationDetail || undefined, name: newMemberName || undefined } : undefined,
           clientTime: new Date().toISOString(),
           ...(paipanOnly ? { paipanOnly: true } : {}),
         }),
@@ -380,7 +454,15 @@ export default function DivinationFormPage() {
       if (res.ok) {
         setResult(data.reading.result)
         setResultType(type)
-        setReadingId(data.reading.id || pendingReadingId || null)
+        const savedId = data.reading.id || pendingReadingId || null
+        setReadingId(savedId)
+        // Notify the global Xuanji Master widget that a new reading is
+        // available so it can resume a paused conversation in context.
+        if (savedId && typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('xuanji:readingComplete', {
+            detail: { readingId: savedId, type },
+          }))
+        }
         if (data.cached) {
           toast.success(T(lang, '已使用之前的八字分析結果', 'Using cached BaZi analysis'), { icon: '📦' })
         }
@@ -433,8 +515,8 @@ export default function DivinationFormPage() {
       toast.error(T(lang, '請從搜索結果中選擇出生地，以確保時間校正準確', 'Please select birthplace from search results for accurate time correction'))
       return
     }
-    // For bazi: check if existing readings exist before proceeding
-    if (type === 'bazi') {
+    // For bazi/ziwei: check if existing readings exist before proceeding
+    if (type === 'bazi' || type === 'ziwei') {
       try {
         const checkRes = await fetch('/api/divination/check', {
           method: 'POST',
@@ -463,7 +545,10 @@ export default function DivinationFormPage() {
       setResultType(type)
       setReadingId(cachedReading.id)
       setShowCacheDialog(false)
-      toast.success(T(lang, '已載入歷史八字分析', 'Loaded previous BaZi reading'), { icon: '📦' })
+      toast.success(T(lang,
+        type === 'ziwei' ? '已載入歷史紫微分析' : '已載入歷史八字分析',
+        type === 'ziwei' ? 'Loaded previous Zi Wei reading' : 'Loaded previous BaZi reading'
+      ), { icon: '📦' })
     }
   }
 
@@ -489,11 +574,14 @@ export default function DivinationFormPage() {
           >
             <div className="text-4xl mb-2">📦</div>
             <h3 className="text-xl font-serif text-gold">
-              {T(lang, '發現歷史八字分析', 'Existing BaZi Reading Found')}
+              {T(lang,
+                type === 'ziwei' ? '發現歷史紫微分析' : '發現歷史八字分析',
+                type === 'ziwei' ? 'Existing Zi Wei Reading Found' : 'Existing BaZi Reading Found'
+              )}
             </h3>
             <p className="text-white/70 text-sm">
               {T(lang,
-                `已有 ${cachedReading.count} 筆相同生辰的八字分析記錄。最近一次：${new Date(cachedReading.createdAt).toLocaleDateString('zh-TW')}`,
+                `已有 ${cachedReading.count} 筆相同生辰的${type === 'ziwei' ? '紫微' : '八字'}分析記錄。最近一次：${new Date(cachedReading.createdAt).toLocaleDateString('zh-TW')}`,
                 `Found ${cachedReading.count} existing reading(s) with the same birth data. Latest: ${new Date(cachedReading.createdAt).toLocaleDateString('en-US')}`
               )}
             </p>
@@ -620,6 +708,22 @@ export default function DivinationFormPage() {
                           ))}
                         </select>
                       </div>
+                      {newMemberRelation === 'other' && (
+                        <div>
+                          <label className={labelCls}>
+                            {T(lang, '具體關係', 'Specific Relationship')}
+                            <span className="text-red-400 ml-1">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            className={inputCls}
+                            value={newMemberRelationDetail}
+                            onChange={e => setNewMemberRelationDetail(e.target.value)}
+                            placeholder={T(lang, '例：岳父、合作夥伴', 'e.g. father-in-law, business partner')}
+                            required
+                          />
+                        </div>
+                      )}
                       <div>
                         <label className={labelCls}>{T(lang, '姓名（可選）', 'Name (optional)')}</label>
                         <input
@@ -1255,7 +1359,28 @@ export default function DivinationFormPage() {
               {T(lang, '重新占卜', 'New Reading')}
             </button>
           </div>
-          <ResultRenderer result={result} type={resultType || type} readingId={readingId} />
+          <ResultRenderer
+            result={result}
+            type={resultType || type}
+            readingId={readingId}
+            subjectName={
+              targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__'
+                ? (() => {
+                    const m = familyMembers.find(m => m.id === selectedMemberId)
+                    return m?.name || m?.relation || null
+                  })()
+                : session?.user?.name || null
+            }
+            birthInfo={{
+              birthDate: form.birthDate,
+              birthTime: form.birthTime,
+              gender: form.gender,
+              calendarType: form.lunarToggle,
+              birthPlace: form.birthPlace,
+              exactTime: form.timeMode === 'precise' ? form.exactTime : undefined,
+            }}
+            createdAt={new Date().toISOString()}
+          />
 
           {/* Feedback widget */}
           {readingId && (

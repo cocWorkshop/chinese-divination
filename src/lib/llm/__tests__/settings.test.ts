@@ -6,15 +6,19 @@ vi.mock('../../prisma', () => ({
   prisma: { adminSetting: { findMany: findManyMock } },
 }))
 
-import { resolveLLMConfig, LLM_DEFAULTS } from '../settings'
+import { resolveLLMConfig, LLM_DEFAULTS, clearLLMSettingsCache } from '../settings'
 
 const originalEnv = { ...process.env }
 
 beforeEach(() => {
   findManyMock.mockReset()
+  clearLLMSettingsCache()
   // Start each test from a clean env slice — tests set only what they need.
   delete process.env.MASTER_MODEL
   delete process.env.OPENROUTER_MODEL
+  delete process.env.LLM_REASONING_EFFORT
+  delete process.env.DIVINATION_REASONING_EFFORT
+  delete process.env.CHAT_REASONING_EFFORT
 })
 
 afterEach(() => {
@@ -132,6 +136,108 @@ describe('resolveLLMConfig — timeout and maxTokens resolution', () => {
   })
 })
 
+describe('resolveLLMConfig — reasoningEffort resolution', () => {
+  it("divination defaults to 'medium' when nothing is set", async () => {
+    const cfg = await resolveLLMConfig({ endpoint: 'divination', settingsMap: {} })
+    expect(cfg.reasoningEffort).toBe('medium')
+  })
+
+  it("chat defaults to 'low' when nothing is set", async () => {
+    const cfg = await resolveLLMConfig({ endpoint: 'chat', settingsMap: {} })
+    expect(cfg.reasoningEffort).toBe('low')
+  })
+
+  it("master defaults to 'low' when nothing is set", async () => {
+    const cfg = await resolveLLMConfig({ endpoint: 'master', settingsMap: {} })
+    expect(cfg.reasoningEffort).toBe('low')
+  })
+
+  it('divinationReasoningEffort setting beats global llmReasoningEffort', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'divination',
+      settingsMap: { divinationReasoningEffort: 'high', llmReasoningEffort: 'low' },
+    })
+    expect(cfg.reasoningEffort).toBe('high')
+  })
+
+  it('chatReasoningEffort setting beats global llmReasoningEffort for chat', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'chat',
+      settingsMap: { chatReasoningEffort: 'off', llmReasoningEffort: 'high' },
+    })
+    expect(cfg.reasoningEffort).toBe('off')
+  })
+
+  it('chatReasoningEffort also applies to master endpoint', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'master',
+      settingsMap: { chatReasoningEffort: 'medium' },
+    })
+    expect(cfg.reasoningEffort).toBe('medium')
+  })
+
+  it('divinationReasoningEffort does NOT leak to chat endpoint', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'chat',
+      settingsMap: { divinationReasoningEffort: 'high' },
+    })
+    expect(cfg.reasoningEffort).toBe('low') // chat default
+  })
+
+  it('DIVINATION_REASONING_EFFORT env used when no AdminSetting', async () => {
+    process.env.DIVINATION_REASONING_EFFORT = 'high'
+    const cfg = await resolveLLMConfig({ endpoint: 'divination', settingsMap: {} })
+    expect(cfg.reasoningEffort).toBe('high')
+  })
+
+  it('CHAT_REASONING_EFFORT env used when no AdminSetting for chat', async () => {
+    process.env.CHAT_REASONING_EFFORT = 'high'
+    const cfg = await resolveLLMConfig({ endpoint: 'chat', settingsMap: {} })
+    expect(cfg.reasoningEffort).toBe('high')
+  })
+
+  it('AdminSetting llmReasoningEffort beats env + default', async () => {
+    process.env.LLM_REASONING_EFFORT = 'low'
+    const cfg = await resolveLLMConfig({
+      endpoint: 'divination',
+      settingsMap: { llmReasoningEffort: 'high' },
+    })
+    expect(cfg.reasoningEffort).toBe('high')
+  })
+
+  it('LLM_REASONING_EFFORT env used when no AdminSetting', async () => {
+    process.env.LLM_REASONING_EFFORT = 'low'
+    const cfg = await resolveLLMConfig({ endpoint: 'divination', settingsMap: {} })
+    expect(cfg.reasoningEffort).toBe('low')
+  })
+
+  it('bogus values fall back to default', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'divination',
+      settingsMap: { llmReasoningEffort: 'banana' },
+    })
+    expect(cfg.reasoningEffort).toBe('medium')
+  })
+
+  it("accepts 'off' to disable reasoning", async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'divination',
+      settingsMap: { llmReasoningEffort: 'off' },
+    })
+    expect(cfg.reasoningEffort).toBe('off')
+  })
+
+  it('caller override takes precedence over everything', async () => {
+    process.env.LLM_REASONING_EFFORT = 'low'
+    const cfg = await resolveLLMConfig({
+      endpoint: 'divination',
+      settingsMap: { llmReasoningEffort: 'medium' },
+      overrides: { reasoningEffort: 'high' },
+    })
+    expect(cfg.reasoningEffort).toBe('high')
+  })
+})
+
 describe('resolveLLMConfig — DB fallback', () => {
   it('loads settings via prisma when settingsMap not provided', async () => {
     findManyMock.mockResolvedValueOnce([
@@ -147,5 +253,32 @@ describe('resolveLLMConfig — DB fallback', () => {
   it('does not query DB when settingsMap provided', async () => {
     await resolveLLMConfig({ endpoint: 'divination', settingsMap: {} })
     expect(findManyMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('loadLLMSettings — TTL cache', () => {
+  it('serves subsequent calls from cache within TTL', async () => {
+    findManyMock.mockResolvedValue([
+      { key: 'model1Name', value: 'cached/model' },
+    ])
+    const cfg1 = await resolveLLMConfig({ endpoint: 'divination' })
+    const cfg2 = await resolveLLMConfig({ endpoint: 'divination' })
+    const cfg3 = await resolveLLMConfig({ endpoint: 'chat' })
+    expect(findManyMock).toHaveBeenCalledOnce() // exactly one DB hit
+    expect(cfg1.model).toBe('cached/model')
+    expect(cfg2.model).toBe('cached/model')
+    expect(cfg3.model).toBe('cached/model')
+  })
+
+  it('clearLLMSettingsCache forces a fresh DB read', async () => {
+    findManyMock.mockResolvedValueOnce([{ key: 'model1Name', value: 'first/model' }])
+    await resolveLLMConfig({ endpoint: 'divination' })
+    expect(findManyMock).toHaveBeenCalledOnce()
+
+    clearLLMSettingsCache()
+    findManyMock.mockResolvedValueOnce([{ key: 'model1Name', value: 'second/model' }])
+    const cfg = await resolveLLMConfig({ endpoint: 'divination' })
+    expect(findManyMock).toHaveBeenCalledTimes(2)
+    expect(cfg.model).toBe('second/model')
   })
 })

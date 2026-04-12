@@ -1,0 +1,97 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - navigation [ref=e3]:
+    - generic [ref=e5]:
+      - link "玄機AI" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e7]:
+        - link "占卜" [ref=e8] [cursor=pointer]:
+          - /url: /divination
+        - link "歷史" [ref=e25] [cursor=pointer]:
+          - /url: /dashboard
+        - link "機緣商店" [ref=e9] [cursor=pointer]:
+          - /url: /subscribe
+        - button "🔗 分享賺機緣" [ref=e26] [cursor=pointer]
+        - button "通知" [ref=e28] [cursor=pointer]:
+          - img [ref=e29]
+        - button "☀️" [ref=e10] [cursor=pointer]
+        - button "EN" [ref=e11] [cursor=pointer]
+        - button "e" [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]: e
+  - main [ref=e15]:
+    - generic [ref=e18]:
+      - heading "選擇占卜" [level=1] [ref=e20]
+      - generic [ref=e33]:
+        - generic [ref=e107]: ⭐ 週末閒暇，正適合看星盤！紫微斗數源自陳摶老祖，以108顆星曜排列人生12宮位。來，讓玄機為你解讀命運星圖！
+        - generic [ref=e35]:
+          - button [ref=e36] [cursor=pointer]
+          - button [ref=e37] [cursor=pointer]
+          - button [ref=e38] [cursor=pointer]
+      - generic [ref=e39]:
+        - generic [ref=e41] [cursor=pointer]:
+          - generic [ref=e42]: 推薦
+          - generic [ref=e43]: 🏛️
+          - heading "八字命理" [level=2] [ref=e44]
+          - paragraph [ref=e45]: 以生辰八字為基礎，分析命主的命運走向、性格特點、事業財運與婚姻
+        - generic [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: ⭐
+          - heading "紫微斗數" [level=2] [ref=e49]
+          - paragraph [ref=e50]: 以出生時間排列星盤，分析十二宮位，全面揭示人生各方面的吉凶
+        - generic [ref=e52] [cursor=pointer]:
+          - generic [ref=e53]: 🪙
+          - heading "六爻占卜" [level=2] [ref=e54]
+          - paragraph [ref=e55]: 以銅錢搖卦起六爻，配合六親、世應、用神，精準斷事吉凶
+        - generic [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: 🧭
+          - heading "奇門遁甲" [level=2] [ref=e59]
+          - paragraph [ref=e60]: 古代最高級預測術，用於擇時、選地、謀事，把握最佳時機
+        - generic [ref=e62] [cursor=pointer]:
+          - generic [ref=e63]: 🏯
+          - heading "風水佈局" [level=2] [ref=e64]
+          - paragraph [ref=e65]: 分析居所風水格局，優化環境氣場，助旺家宅運勢與健康財運
+        - generic [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]: 🌸
+          - heading "梅花易數" [level=2] [ref=e69]
+          - paragraph [ref=e70]: 以數起卦，體用生克，精準預測具體事項
+  - button "💬" [ref=e71] [cursor=pointer]
+  - contentinfo [ref=e21]:
+    - link "隱私政策" [ref=e22] [cursor=pointer]:
+      - /url: /privacy
+    - text: ·
+    - link "用戶協議" [ref=e23] [cursor=pointer]:
+      - /url: /terms
+    - text: ·
+    - generic [ref=e24]: © 2026 玄機
+  - generic [ref=e74]:
+    - generic [ref=e76]:
+      - generic [ref=e78]: 玄機大師
+      - button "Collapse" [ref=e79] [cursor=pointer]: ✕
+    - generic [ref=e80]:
+      - generic [ref=e97]:
+        - paragraph [ref=e98]: 帮我分析一下我的八字
+        - paragraph [ref=e99]: 11:39
+      - button "八字命盤 2026年4月11日 这张是你最新的八字命盘，可点开看完整排盘与详细解读。 點擊查看 →" [ref=e109] [cursor=pointer]:
+        - generic [ref=e110]:
+          - generic [ref=e111]: 📜
+          - generic [ref=e112]:
+            - generic [ref=e113]: 八字命盤
+            - generic [ref=e114]: 2026年4月11日
+            - generic [ref=e115]: 这张是你最新的八字命盘，可点开看完整排盘与详细解读。
+            - generic [ref=e116]: 點擊查看 →
+      - generic [ref=e118]:
+        - generic [ref=e119]:
+          - paragraph [ref=e120]:
+            - text: 你这个命格的核心很清楚：
+            - strong [ref=e121]: 乙木日主生于酉月，身弱而七杀旺，但有食神制杀、亥水暗印相扶。
+            - text: 直白说，你不是轻松型命局，人生多半是
+            - strong [ref=e122]: 压力先来，能力后成
+            - text: ；但也正因为这样，你很适合走靠专业、规则、责任感立身的路，越到中年越能见分量。
+          - paragraph [ref=e123]:
+            - text: 我给你放了最新的命盘卡片，点开就能看完整排盘。
+            - text: 你现在最值得细看的，不是“命好不好”，而是
+            - strong [ref=e124]: 事业、财运、感情，还是哪一段大运
+            - text: 。你想先看哪一面？
+        - paragraph [ref=e125]: 11:39
+    - generic [ref=e90]:
+      - textbox "請問大師..." [ref=e91]
+      - button "發送" [disabled] [ref=e92]

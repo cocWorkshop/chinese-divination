@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
+import PersonInfoHeader from './PersonInfoHeader'
 import { useDragScroll } from '@/hooks/useDragScroll'
 import type { DivinationResultProps } from '@/types/divination'
 
@@ -45,7 +46,7 @@ const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyData = Record<string, any>
 
-export default function ZiweiResultV2({ data, isShared, rawResult, readingId, chatMessages }: DivinationResultProps) {
+export default function ZiweiResultV2({ data, isShared, rawResult, readingId, chatMessages, subjectName, birthInfo, createdAt }: DivinationResultProps) {
   const d = data as AnyData
   const { lang } = useLang()
   const [activeSection, setActiveSection] = useState('overview')
@@ -66,6 +67,8 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
 
   return (
     <div className="space-y-3 sm:space-y-4 overflow-hidden">
+
+      <PersonInfoHeader subjectName={subjectName} birthInfo={birthInfo} createdAt={createdAt} />
 
       {/* ═══ FORMATION + BASIC INFO ═══ */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -224,12 +227,14 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                       <span className={`text-base font-serif font-bold ${elClr[stemEl] || ''}`}>{dy.heavenlyStem}{dy.earthlyBranch}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[var(--text-secondary)] text-xs truncate">{dy.theme}</div>
                       <div className="text-[var(--text-muted)] text-[10px]">{dy.ageRange}{T(lang, '歲', '')}</div>
                     </div>
                     <motion.span className="text-gold text-xs flex-shrink-0 group-open:rotate-180 transition-transform">▼</motion.span>
                   </summary>
                   <div className="px-3 pb-3 space-y-2 border-t border-gold/10 pt-2">
+                    {dy.theme && (
+                      <p className="text-[var(--text-secondary)] text-xs leading-relaxed font-serif">{dy.theme}</p>
+                    )}
                     {dy.siHuaOverlay && (
                       <p className="text-[var(--text-muted)] text-[10px] leading-relaxed">
                         <span className="text-gold">四化疊加：</span>{dy.siHuaOverlay}

@@ -36,6 +36,19 @@ export interface Usage {
   totalTokens?: number
 }
 
+/**
+ * Reasoning / extended-thinking strength for OpenRouter.
+ *
+ *   - 'low' | 'medium' | 'high'  → maps to OpenRouter's `reasoning.effort` field
+ *     (OpenRouter normalizes this into a reasoning-token budget for both OpenAI
+ *     reasoning models and Anthropic extended-thinking models).
+ *   - 'off'                       → reasoning is disabled; we omit the parameter
+ *     entirely so the model runs in its regular non-reasoning mode.
+ *
+ * Default throughout the stack is 'medium'.
+ */
+export type ReasoningEffort = 'low' | 'medium' | 'high' | 'off'
+
 export interface CompletionRequest {
   endpoint: Endpoint
   systemPrompt: string
@@ -47,6 +60,12 @@ export interface CompletionRequest {
   maxTokens?: number
   /** Override timeout in ms; otherwise resolved from AdminSetting. */
   timeoutMs?: number
+  /**
+   * Override extended-thinking / reasoning strength for this call.
+   * Falls back through AdminSetting → env → default ('medium').
+   * Pass 'off' to fully disable reasoning for this single call.
+   */
+  reasoningEffort?: ReasoningEffort
   /** External abort signal merged with the internal timeout signal. */
   signal?: AbortSignal
 }
@@ -55,6 +74,8 @@ export interface CompletionResult {
   content: string
   model: string
   usage?: Usage
+  /** Raw reasoning / extended-thinking text returned by the model, if any. */
+  reasoning?: string
 }
 
 export type StreamChunk =

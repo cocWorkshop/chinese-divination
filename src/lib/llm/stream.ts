@@ -21,6 +21,7 @@ import OpenAI from 'openai'
 import { logLlmCall } from '../llmLogger'
 import { resolveLLMConfig } from './settings'
 import { createOpenRouterClient } from './providers/openrouter'
+import { buildReasoningParam } from './reasoning'
 import type {
   CompletionRequest,
   Message,
@@ -79,6 +80,7 @@ export async function* streamLLM(
       model: req.model,
       maxTokens: req.maxTokens,
       timeoutMs: req.timeoutMs,
+      reasoningEffort: req.reasoningEffort,
     },
   })
 
@@ -105,30 +107,51 @@ export async function* streamLLM(
   const inputPreview = firstUserPreview(req.messages)
   const systemPromptPreview = req.systemPrompt.slice(0, SYSTEM_PROMPT_LOG_LIMIT)
   let accumulatedContent = ''
+  let accumulatedReasoning = ''
   let finishReason = ''
   let usage: Usage | undefined
 
   try {
+    // The OpenAI SDK types don't know about OpenRouter's `reasoning` param;
+    // build a well-typed streaming body, then spread `reasoning` via a cast
+    // so we keep the streaming return-type narrowing.
+    const baseBody: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming = {
+      model: cfg.model,
+      max_tokens: cfg.maxTokens,
+      messages: toOpenAIMessages(req.systemPrompt, req.messages),
+      ...(req.tools ? { tools: req.tools as unknown as OpenAI.Chat.Completions.ChatCompletionTool[] } : {}),
+      stream: true,
+    }
+    const body = {
+      ...baseBody,
+      ...buildReasoningParam(cfg.reasoningEffort),
+    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming
     const completion = await client.chat.completions.create(
-      {
-        model: cfg.model,
-        max_tokens: cfg.maxTokens,
-        messages: toOpenAIMessages(req.systemPrompt, req.messages),
-        ...(req.tools ? { tools: req.tools as unknown as OpenAI.Chat.Completions.ChatCompletionTool[] } : {}),
-        stream: true,
-      },
+      body,
       { signal: controller.signal as AbortSignal }
     )
 
     for await (const chunk of completion) {
       const choice = chunk.choices[0]
       if (!choice) continue
-      const delta = choice.delta
+      const delta = choice.delta as
+        | (OpenAI.Chat.Completions.ChatCompletionChunk.Choice.Delta & {
+            reasoning?: string | null
+          })
+        | undefined
       if (choice.finish_reason) finishReason = choice.finish_reason
 
       if (delta?.content) {
         accumulatedContent += delta.content
         yield { type: 'content', text: delta.content }
+      }
+
+      // OpenRouter streams reasoning tokens in a separate `delta.reasoning`
+      // field (parallel to `delta.content`). Capture for logging but do NOT
+      // yield to callers as content — callers expect `content` chunks to be
+      // the visible-to-user text.
+      if (typeof delta?.reasoning === 'string' && delta.reasoning.length > 0) {
+        accumulatedReasoning += delta.reasoning
       }
 
       if (delta?.tool_calls) {
@@ -158,6 +181,10 @@ export async function* streamLLM(
 
     yield { type: 'done', finishReason, usage }
 
+    const outputPreview = accumulatedReasoning
+      ? `[reasoning:${cfg.reasoningEffort}] ${accumulatedReasoning.slice(0, 1000)}\n---\n${accumulatedContent.slice(0, PREVIEW_LIMIT)}`
+      : accumulatedContent.slice(0, PREVIEW_LIMIT)
+
     await logLlmCall({
       userId: req.userId ?? null,
       endpoint: req.endpoint,
@@ -169,11 +196,29 @@ export async function* streamLLM(
       latencyMs: Date.now() - started,
       status: 'success',
       inputPreview,
-      outputPreview: accumulatedContent.slice(0, PREVIEW_LIMIT),
+      outputPreview,
       systemPrompt: systemPromptPreview,
     })
   } catch (err) {
-    const e = err as { message?: string }
+    // OpenAI SDK wraps provider errors in APIError: .status, .error (body object),
+    // .message (preformatted "<status> <short>"). The provider-specific cause
+    // (OpenRouter's upstream detail, tool-schema validation, etc.) lives in
+    // .error.message and/or .error.metadata — stringify it so we can diagnose
+    // from the LlmLog table rather than reproducing the whole request.
+    const e = err as {
+      message?: string
+      status?: number
+      error?: unknown
+    }
+    let detail = ''
+    if (e?.error) {
+      try {
+        detail = ' | body=' + JSON.stringify(e.error).slice(0, 2000)
+      } catch {
+        /* ignore */
+      }
+    }
+    const errorMessage = (e?.message || 'Unknown LLM stream error') + detail
     await logLlmCall({
       userId: req.userId ?? null,
       endpoint: req.endpoint,
@@ -181,7 +226,7 @@ export async function* streamLLM(
       modelTier: 'model1',
       latencyMs: Date.now() - started,
       status: 'error',
-      errorMessage: e?.message || 'Unknown LLM stream error',
+      errorMessage,
       inputPreview,
       systemPrompt: systemPromptPreview,
     })

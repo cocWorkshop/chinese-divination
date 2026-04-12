@@ -9,6 +9,16 @@ export interface DivinationResultProps {
   readingId?: string | null
   readingType?: string
   chatMessages?: ChatMsg[]
+  subjectName?: string | null
+  birthInfo?: {
+    birthDate?: string
+    birthTime?: string
+    gender?: string
+    calendarType?: string
+    birthPlace?: string
+    exactTime?: string
+  } | null
+  createdAt?: string
 }
 
 export interface ChatMsg {

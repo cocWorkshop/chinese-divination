@@ -1,14 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { DivinationIcon } from '@/components/DivinationIcons'
-import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
-import MasterEntry from '@/components/MasterEntry'
-import MasterChat from '@/components/MasterChat'
 import StarField from '@/components/StarField'
 
 const T = (lang: string, zhTW: string, en: string) =>
@@ -52,30 +47,10 @@ interface WelcomeItem {
 
 export default function DivinationPage() {
   const { lang } = useLang()
-  const { data: session } = useSession()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
-  const [masterMode, setMasterMode] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [welcomeMessages, setWelcomeMessages] = useState<WelcomeItem[]>([])
   const [welcomeIndex, setWelcomeIndex] = useState(0)
-  const langShort = lang === 'en' ? 'en' : 'zh'
-
-  useEffect(() => {
-    if (session?.user) {
-      fetch('/api/profile')
-        .then(r => r.json())
-        .then(data => { if (data.isAdmin) setIsAdmin(true) })
-        .catch(() => {})
-    }
-  }, [session])
-
-  useEffect(() => {
-    if (searchParams.get('master') === 'true' && isAdmin) {
-      setMasterMode(true)
-    }
-  }, [searchParams, isAdmin])
 
   useEffect(() => {
     fetch('/api/welcome')
@@ -124,17 +99,7 @@ export default function DivinationPage() {
       <StarField />
       <div className="relative z-10 py-8 sm:py-12 px-3 sm:px-4 max-w-6xl mx-auto">
       <AnimatePresence mode="wait">
-        {masterMode ? (
-          <motion.div
-            key="master-chat"
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-          >
-            <MasterChat onClose={() => setMasterMode(false)} lang={langShort} />
-          </motion.div>
-        ) : (
+        {(
           <motion.div
             key="services-grid"
             initial={{ opacity: 0 }}
@@ -223,11 +188,6 @@ export default function DivinationPage() {
               ))}
             </div>
 
-            <MasterEntry
-              isAdmin={isAdmin}
-              onEnter={() => setMasterMode(true)}
-              lang={langShort}
-            />
           </motion.div>
         )}
       </AnimatePresence>

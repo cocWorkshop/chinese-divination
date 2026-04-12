@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
+import PersonInfoHeader from './PersonInfoHeader'
 import { useDragScroll } from '@/hooks/useDragScroll'
 import type { DivinationResultProps, BaziDataV2, ShenShaEntry, LiuNianEntry } from '@/types/divination'
 
@@ -37,7 +38,7 @@ const sectionsList = [
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
-export default function BaziResultV2({ data, isShared, rawResult, readingId, chatMessages }: DivinationResultProps) {
+export default function BaziResultV2({ data, isShared, rawResult, readingId, chatMessages, subjectName, birthInfo, createdAt }: DivinationResultProps) {
   const d = data as unknown as BaziDataV2
   const { lang } = useLang()
   const [activeSection, setActiveSection] = useState('overview')
@@ -63,6 +64,8 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
 
   return (
     <div className="space-y-3 sm:space-y-4 overflow-hidden">
+
+      <PersonInfoHeader subjectName={subjectName} birthInfo={birthInfo} createdAt={createdAt} />
 
       {/* ═══ FORMATION BADGE + DAY MASTER ═══ */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -383,7 +386,6 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                       <span className={`text-base font-serif font-bold ${elClr[branchEl]}`}>{dy.branch}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[var(--text-secondary)] text-xs truncate">{dy.theme}</div>
                       <div className="text-[var(--text-muted)] text-[10px]">
                         {dy.startAge}-{dy.endAge}{T(lang, '歲', '')} ({dy.startYear}-{dy.endYear})
                       </div>
@@ -391,6 +393,9 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                     <motion.span className="text-gold text-xs flex-shrink-0 group-open:rotate-180 transition-transform">▼</motion.span>
                   </summary>
                   <div className="px-3 pb-3 space-y-2 border-t border-gold/10 pt-2">
+                    {dy.theme && (
+                      <p className="text-[var(--text-secondary)] text-xs leading-relaxed font-serif">{dy.theme}</p>
+                    )}
                     {dy.interactions && (
                       <p className="text-[var(--text-muted)] text-[10px] leading-relaxed">{dy.interactions}</p>
                     )}

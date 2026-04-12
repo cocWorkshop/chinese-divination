@@ -13,8 +13,18 @@ import LiuYaoResult from './LiuYaoResult'
 import ResultErrorBoundary from '@/components/ResultErrorBoundary'
 import type { ChatMsg } from '@/types/divination'
 
-export default function ResultRenderer({ result, type, isShared, readingId, chatMessages }: {
+export default function ResultRenderer({ result, type, isShared, readingId, chatMessages, subjectName, birthInfo, createdAt }: {
   result: string; type: string; isShared?: boolean; readingId?: string | null; chatMessages?: ChatMsg[]
+  subjectName?: string | null
+  birthInfo?: {
+    birthDate?: string
+    birthTime?: string
+    gender?: string
+    calendarType?: string
+    birthPlace?: string
+    exactTime?: string
+  } | null
+  createdAt?: string
 }) {
   let parsed: Record<string, unknown>
   try {
@@ -27,7 +37,7 @@ export default function ResultRenderer({ result, type, isShared, readingId, chat
   // Determine effective type (paipanOnly results may carry their own type)
   const effectiveType = (parsed.paipanOnly ? (parsed.type as string) : null) || type
 
-  const props = { data: parsed, isShared, rawResult: result, readingId, chatMessages }
+  const props = { data: parsed, isShared, rawResult: result, readingId, chatMessages, subjectName, birthInfo, createdAt }
 
   const renderResult = () => {
     switch (effectiveType) {

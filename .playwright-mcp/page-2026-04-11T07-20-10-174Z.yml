@@ -1,0 +1,133 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e19]
+  - navigation [ref=e20]:
+    - generic [ref=e22]:
+      - link "玄機AI" [ref=e23] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e24]:
+        - link "Divination" [ref=e25] [cursor=pointer]:
+          - /url: /divination
+        - link "History" [ref=e26] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Karma Shop" [ref=e27] [cursor=pointer]:
+          - /url: /subscribe
+        - button "🔗 Share for Karma" [ref=e28] [cursor=pointer]
+        - button "Notifications" [ref=e30] [cursor=pointer]:
+          - img [ref=e31]
+        - button "☀️" [ref=e33] [cursor=pointer]
+        - button "繁" [ref=e34] [cursor=pointer]
+        - button "e" [ref=e36] [cursor=pointer]:
+          - generic [ref=e37]: e
+  - main [ref=e38]:
+    - generic [ref=e39]:
+      - generic [ref=e40]:
+        - generic [ref=e41]: 🏛️
+        - heading "BaZi Analysis" [level=1] [ref=e42]
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - paragraph [ref=e45]: 👤 Reading For
+          - generic [ref=e46]:
+            - button "For Myself" [ref=e47] [cursor=pointer]
+            - button "For Someone Else" [ref=e48] [cursor=pointer]
+          - generic [ref=e49]:
+            - generic [ref=e50]:
+              - generic [ref=e51]: Select Family Member
+              - combobox [ref=e52]:
+                - option "Select"
+                - option "Friend - liz"
+                - option "Other - 崔"
+                - option "Sister - 利民"
+                - option "Son - 张习之"
+                - option "Other - example1"
+                - option "Spouse - 张迪"
+                - option "➕ Add New Member" [selected]
+            - generic [ref=e53]:
+              - generic [ref=e54]:
+                - generic [ref=e55]: Relationship
+                - combobox [ref=e56]:
+                  - option "Select"
+                  - option "Spouse"
+                  - option "Father" [selected]
+                  - option "Mother"
+                  - option "Son"
+                  - option "Daughter"
+                  - option "Brother"
+                  - option "Sister"
+                  - option "Friend"
+                  - option "Other"
+              - generic [ref=e57]:
+                - generic [ref=e58]: Name (optional)
+                - textbox "e.g. John" [ref=e59]: 爸爸
+        - generic [ref=e60]:
+          - paragraph [ref=e61]: 📅 Birth Information
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - generic [ref=e64]: Calendar
+              - generic [ref=e65]:
+                - button "Solar" [ref=e66] [cursor=pointer]: Solar
+                - button "Lunar" [ref=e68] [cursor=pointer]
+            - generic [ref=e69]:
+              - generic [ref=e70]: Birth Date
+              - textbox [ref=e71]: 1955-04-12
+          - generic [ref=e72]:
+            - generic [ref=e73]: Birth Time
+            - generic [ref=e74]:
+              - button "Fuzzy (Shichen)" [ref=e75] [cursor=pointer]
+              - button "Precise (HH:MM)" [ref=e76] [cursor=pointer]: Precise (HH:MM)
+            - generic [ref=e78]:
+              - textbox [ref=e79]: 08:00
+              - paragraph [ref=e80]: True solar time correction based on birthplace longitude
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - generic [ref=e83]: Gender
+              - combobox [ref=e84]:
+                - option "Select"
+                - option "Male" [selected]
+                - option "Female"
+            - generic [ref=e85]:
+              - generic [ref=e86]: Birthplace*
+              - textbox "Search city..." [ref=e89]: 上海
+          - generic [ref=e90]:
+            - generic [ref=e91]: Birth Environment (optional)
+            - textbox "e.g. rural, urban, mountainous..." [ref=e92]
+        - generic [ref=e93]:
+          - generic [ref=e94]: Focus Area (optional)
+          - textbox "e.g. career, marriage, wealth..." [ref=e95]: 帮我爸爸算一个八字，看看整体命势如何。
+        - generic [ref=e97]:
+          - generic [ref=e98]: ✨ Karma
+          - generic [ref=e99]:
+            - text: ∞
+            - generic [ref=e100]: (costs 5 pts)
+        - generic [ref=e101]:
+          - paragraph [ref=e102]: 🔒 Privacy Settings
+          - generic [ref=e103] [cursor=pointer]:
+            - generic [ref=e104]:
+              - checkbox "Save to reading history Store this reading in your history for future reference" [checked] [ref=e105]
+              - img [ref=e107]
+            - generic [ref=e109]:
+              - paragraph [ref=e110]: Save to reading history
+              - paragraph [ref=e111]: Store this reading in your history for future reference
+          - generic [ref=e112] [cursor=pointer]:
+            - generic [ref=e113]:
+              - checkbox "Save birth info to my profile Store birth date, hour, place & gender in your profile for auto-fill next time" [checked] [ref=e114]
+              - img [ref=e116]
+            - generic [ref=e118]:
+              - paragraph [ref=e119]: Save birth info to my profile
+              - paragraph [ref=e120]: Store birth date, hour, place & gender in your profile for auto-fill next time
+        - generic [ref=e121] [cursor=pointer]:
+          - checkbox "Paipan only (no AI interpretation, no Karma cost)" [ref=e122]
+          - generic [ref=e123]: Paipan only (no AI interpretation, no Karma cost)
+        - button "Consult Oracle →" [ref=e124] [cursor=pointer]
+  - button "💬" [ref=e125] [cursor=pointer]
+  - contentinfo [ref=e126]:
+    - link "Privacy Policy" [ref=e127] [cursor=pointer]:
+      - /url: /privacy
+    - text: ·
+    - link "Terms of Service" [ref=e128] [cursor=pointer]:
+      - /url: /terms
+    - text: ·
+    - generic [ref=e129]: © 2026 Chinese-divination
+  - generic [ref=e131]:
+    - generic [ref=e132]: 🧙‍♂️
+    - textbox "Ask Master Xuanji..." [ref=e133]
+    - button "Open" [ref=e134] [cursor=pointer]
