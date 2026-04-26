@@ -94,6 +94,8 @@ export default function ProfilePage() {
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteEmailSent, setDeleteEmailSent] = useState(false)
+  const [showDeleteMemoryConfirm, setShowDeleteMemoryConfirm] = useState(false)
+  const [deleteMemoryLoading, setDeleteMemoryLoading] = useState(false)
   const [familySearch, setFamilySearch] = useState('')
   const [familyPage, setFamilyPage] = useState(0)
   const [creditLogs, setCreditLogs] = useState<{ id: string; action: string; amount: number; balance: number; source: string; note: string | null; createdAt: string }[]>([])
@@ -128,6 +130,23 @@ export default function ProfilePage() {
       setDeleteLoading(false)
     }
   }, [deletePassword, lang])
+
+  const handleDeleteMemory = useCallback(async () => {
+    setDeleteMemoryLoading(true)
+    try {
+      const res = await fetch('/api/profile/portrait', { method: 'DELETE' })
+      if (res.ok) {
+        toast.success(T(lang, '大師記憶已刪除', 'Master memory deleted'))
+        setShowDeleteMemoryConfirm(false)
+      } else {
+        toast.error(T(lang, '刪除失敗', 'Delete failed'))
+      }
+    } catch {
+      toast.error(T(lang, '操作失敗', 'Operation failed'))
+    } finally {
+      setDeleteMemoryLoading(false)
+    }
+  }, [lang])
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -966,6 +985,64 @@ export default function ProfilePage() {
                   {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '更新密碼', 'Update Password')}
                 </button>
               </form>
+            </div>
+          </div>
+
+          {/* Master Memory Card */}
+          <div className="glass-card rounded-2xl">
+            <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+              <span className="text-lg">🧙</span>
+              <h2 className="text-lg font-serif text-gold">{T(lang, '大師記憶', 'Master Memory')}</h2>
+            </div>
+            <div className="p-4 sm:p-6">
+              <p className="text-sm text-white/50 mb-4">
+                {T(lang,
+                  '玄機大師在對話中記下的主題與偏好。您可前往記憶設定頁面查看、編輯或暫停，也可在此永久刪除。刪除後不影響您的占卜歷史與個人檔案。',
+                  "Topics and preferences Master Xuanji has noted from your conversations. You can view, edit, or pause them on the memory settings page, or permanently delete them here. Deletion does not affect your reading history or profile."
+                )}
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="/profile/portrait"
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 border border-gold/15 text-white/70"
+                >
+                  📝 {T(lang, '記憶設定', 'Memory Settings')}
+                </a>
+                <button
+                  onClick={() => setShowDeleteMemoryConfirm(true)}
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-red-500/10"
+                  style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
+                >
+                  🗑️ {T(lang, '刪除所有記憶', 'Delete All Memory')}
+                </button>
+              </div>
+
+              {showDeleteMemoryConfirm && (
+                <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  <p className="text-sm mb-3" style={{ color: '#fca5a5' }}>
+                    ⚠️ {T(lang,
+                      '這將永久刪除大師對您的所有記憶與歷史版本。無法復原。',
+                      'This will permanently delete all memory the Master has of you, including all history versions. Cannot be undone.'
+                    )}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDeleteMemory}
+                      disabled={deleteMemoryLoading}
+                      className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors"
+                      style={{ backgroundColor: '#dc2626' }}
+                    >
+                      {deleteMemoryLoading ? '...' : T(lang, '確認刪除', 'Confirm delete')}
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteMemoryConfirm(false)}
+                      className="px-3 py-2 rounded-lg text-sm text-white/40 hover:text-white/60 transition-colors"
+                    >
+                      {T(lang, '取消', 'Cancel')}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

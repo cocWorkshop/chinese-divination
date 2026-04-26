@@ -107,11 +107,12 @@ export default function DivinationPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Title — always at the top */}
+            {/* Title — hidden on mobile (the divination grid is self-explanatory
+                at small widths and the heading just eats vertical space). */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-6"
+              className="hidden sm:block text-center mb-6"
             >
               <h1 className="text-2xl sm:text-3xl font-serif" style={{ color: 'var(--gold)' }}>
                 {lang === 'zh-TW' ? '選擇占卜' : 'Choose Your Oracle'}

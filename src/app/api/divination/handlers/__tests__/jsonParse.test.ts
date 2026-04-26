@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseJsonFromLLMOutput } from '../_jsonParse'
+import { parseJsonFromLLMOutput, PARSE_FAILED_KEY } from '../_jsonParse'
 
 describe('parseJsonFromLLMOutput', () => {
   it('parses plain JSON', () => {
@@ -32,12 +32,17 @@ describe('parseJsonFromLLMOutput', () => {
     expect(out.a).toBe(1)
   })
 
-  it('falls back to {raw, sections} on invalid JSON', () => {
+  it('marks unparseable input with PARSE_FAILED_KEY and does NOT inject raw text into sections', () => {
+    // Regression: previously the fallback shoved rawText into
+    // `sections.overview`, which fooled the route's hard-reject check
+    // and let raw JSON-shaped LLM output land on the result page.
     const out = parseJsonFromLLMOutput('not json at all', 'bazi')
+    expect(out[PARSE_FAILED_KEY]).toBe(true)
     expect(out.type).toBe('bazi')
-    expect(out.raw).toBe('not json at all')
-    expect((out.sections as { overview: string }).overview).toBe('not json at all')
-    expect(out.keyAdvice).toEqual([])
+    expect(out.rawText).toBe('not json at all')
+    // The crucial guarantee: nothing renderable is fabricated.
+    expect(out.sections).toBeUndefined()
+    expect(out.interpretation).toBeUndefined()
   })
 
   it('parses fenced JSON with leading prose', () => {

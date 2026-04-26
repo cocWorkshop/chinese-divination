@@ -24,13 +24,35 @@
 import type { ReasoningEffort } from './types'
 
 export interface OpenRouterReasoningParam {
-  reasoning: { effort: 'low' | 'medium' | 'high' }
+  reasoning: { effort?: 'low' | 'medium' | 'high'; max_tokens?: number }
+}
+
+/**
+ * Effort → fraction of max_tokens reserved for reasoning.
+ * The remainder is guaranteed for content output.
+ *
+ * OpenRouter does NOT allow both `effort` and `max_tokens` in the same
+ * reasoning object. When `maxTokens` is provided we use `max_tokens` only
+ * (gives us a hard cap); otherwise we fall back to `effort` (OpenRouter
+ * decides the budget).
+ */
+const REASONING_FRACTION: Record<'low' | 'medium' | 'high', number> = {
+  low: 0.2,
+  medium: 0.4,
+  high: 0.6,
 }
 
 export function buildReasoningParam(
-  effort: ReasoningEffort
+  effort: ReasoningEffort,
+  maxTokens?: number,
 ): OpenRouterReasoningParam | Record<string, never> {
   if (effort === 'off') return {}
+  if (maxTokens) {
+    // Explicitly cap reasoning tokens so the model can't exhaust max_tokens
+    // on thinking alone, leaving zero tokens for the actual content output.
+    const cap = Math.max(1024, Math.floor(maxTokens * REASONING_FRACTION[effort]))
+    return { reasoning: { max_tokens: cap } }
+  }
   return { reasoning: { effort } }
 }
 

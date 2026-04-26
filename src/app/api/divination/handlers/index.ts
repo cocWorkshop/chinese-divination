@@ -46,6 +46,18 @@ export function selectHandler(ctx: DivinationContext): DivinationHandler {
 }
 
 /**
+ * Look up the registered handler for a divination type, ignoring
+ * `canHandle()`. Returns the fallback handler for unknown types so callers
+ * always get a schema to validate against. Used by admin debug surfaces
+ * that need to validate a saved reading against the type's expected schema
+ * without rebuilding a full DivinationContext.
+ */
+export function getHandlerByType(type: string): DivinationHandler {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (registry[type] as DivinationHandler | undefined) ?? fallbackHandler
+}
+
+/**
  * Build the JSON template for the LLM system prompt.
  * Uses handler.buildSchema() if provided, otherwise derives from Zod schema.
  */

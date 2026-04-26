@@ -11,7 +11,11 @@ datasource db {
 model User {
   id           String      @id @default(cuid())
   email        String      @unique
-  password     String
+  // Nullable for tentative users created mid-funnel — they have an email
+  // but haven't set a password yet. Funnel completion (/start/unlock) sets
+  // this and flips `tentative=false`. All compare(password, user.password)
+  // call sites must null-guard before bcrypt.compare.
+  password     String?
   name         String?
   language     String      @default("zh")
   birthDate    String?
@@ -56,6 +60,17 @@ model User {
   // - masterMemoryDisclosureSeenAt: tracks first-use disclosure modal
   portraitEnabled              Boolean   @default(true)
   masterMemoryDisclosureSeenAt DateTime?
+  // Funnel / tentative-user fields (ad landing flow):
+  // - tentative=true means the row was created by /api/start/init from an
+  //   email entered mid-funnel; password is null until /start/unlock completes.
+  // - signupCompletedAt is set when the funnel finishes (real registration).
+  // - trialCreditsGranted prevents the same email from claiming the small
+  //   trial Karma allotment more than once across funnel attempts.
+  // - funnelSource stores utm_* + entry timestamp for attribution.
+  tentative           Boolean   @default(false)
+  signupCompletedAt   DateTime?
+  trialCreditsGranted Boolean   @default(false)
+  funnelSource        Json?
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   readings      Reading[]
@@ -383,12 +398,13 @@ model WelcomeRule {
   updatedAt     DateTime @updatedAt
 }
 
+/// Per-user master usage tracker. Chat history lives in MasterChatMessage;
+/// portrait lives in UserPortrait. This row exists solely to count credits
+/// spent on the master endpoint via totalCreditsUsed.
 model MasterSession {
   id               String   @id @default(cuid())
   userId           String   @unique
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages         String   @db.Text // JSON array of {role, content, timestamp, toolCalls?} — DEPRECATED, see MasterChatMessage
-  portrait         String?  @db.Text // JSON: user portrait — DEPRECATED, see UserPortrait
   totalCreditsUsed Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

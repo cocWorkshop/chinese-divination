@@ -14,7 +14,6 @@ import CookieBanner from '@/components/CookieBanner'
 import Footer from '@/components/Footer'
 import NotificationPopup from '@/components/NotificationPopup'
 import NativeInitializer from '@/components/NativeInitializer'
-import FeedbackButton from '@/components/FeedbackButton'
 import InstallPrompt from '@/components/InstallPrompt'
 import './globals.css'
 
@@ -28,8 +27,8 @@ const notoSerifSC = Noto_Serif_SC({
 export const metadata: Metadata = {
   metadataBase: new URL('https://chinese-divination.com'),
   title: {
-    default: '玄機AI XuanJi - Free AI Chinese Divination | BaZi, I Ching, Zi Wei Dou Shu',
-    template: '%s | 玄機AI XuanJi',
+    default: '玄機 XuanJi - Free AI Chinese Divination | BaZi, I Ching, Zi Wei Dou Shu',
+    template: '%s | 玄機 XuanJi',
   },
   description:
     'Free AI-powered Chinese divination platform. Get personalized BaZi (Four Pillars), I Ching, Zi Wei Dou Shu, Qi Men Dun Jia, Feng Shui, Liu Yao, and Mei Hua readings with expert AI interpretation.',
@@ -59,8 +58,8 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://chinese-divination.com',
-    siteName: '玄機AI XuanJi',
-    title: '玄機AI XuanJi - Free AI Chinese Divination',
+    siteName: '玄機 XuanJi',
+    title: '玄機 XuanJi - Free AI Chinese Divination',
     description:
       'Free AI-powered Chinese divination: BaZi, I Ching, Zi Wei Dou Shu, Qi Men Dun Jia, Feng Shui, and more. Ancient wisdom meets modern AI.',
     images: [
@@ -68,13 +67,13 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: '玄機AI XuanJi - AI Chinese Divination Platform',
+        alt: '玄機 XuanJi - AI Chinese Divination Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '玄機AI XuanJi - Free AI Chinese Divination',
+    title: '玄機 XuanJi - Free AI Chinese Divination',
     description:
       'Free AI-powered Chinese divination: BaZi, I Ching, Zi Wei Dou Shu, Qi Men Dun Jia, Feng Shui, and more.',
     images: ['/og-image.png'],
@@ -124,7 +123,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'WebApplication',
-              name: '玄機AI XuanJi',
+              name: '玄機 XuanJi',
               url: 'https://chinese-divination.com',
               description:
                 'Free AI-powered Chinese divination platform offering BaZi, I Ching, Zi Wei Dou Shu, Qi Men Dun Jia, Feng Shui, Liu Yao, and Mei Hua readings.',
@@ -167,7 +166,6 @@ export default function RootLayout({
 
             <NativeInitializer />
             <NotificationPopup />
-            <FeedbackButton />
             <InstallPrompt />
             <ConsentPopup />
             <CookieBanner />

@@ -106,14 +106,14 @@ export const ziweiHandler: DivinationHandler<ZiweiChartWithPatterns> = {
       const patterns = detectPatterns(chart)
 
       const palaceSummary = chart.palaces.map(p => ({
-        name: p.name,
-        heavenlyStem: p.heavenlyStem,
-        earthlyBranch: p.earthlyBranch,
-        majorStars: p.majorStars.map(s => ({ name: s.name, brightness: s.brightness, mutagen: s.mutagen })),
-        minorStars: p.minorStars.map(s => ({ name: s.name, brightness: s.brightness, mutagen: s.mutagen })),
-        isBodyPalace: p.isBodyPalace,
-        decadal: p.decadal,
-        changsheng12: p.changsheng12,
+        宫名: p.name,
+        天干: p.heavenlyStem,
+        地支: p.earthlyBranch,
+        主星: p.majorStars.map(s => ({ 星名: s.name, 亮度: s.brightness, 四化: s.mutagen })),
+        辅星: p.minorStars.map(s => ({ 星名: s.name, 亮度: s.brightness, 四化: s.mutagen })),
+        是否身宫: p.isBodyPalace,
+        大限: p.decadal,
+        长生十二宫: p.changsheng12,
       }))
 
       const birthYear = parseInt(birth.solarBirthDate.split('-')[0])
@@ -124,58 +124,86 @@ export const ziweiHandler: DivinationHandler<ZiweiChartWithPatterns> = {
       const dayunSorted = chart.palaces
         .filter(p => p.decadal && p.decadal.range.length === 2 && (p.decadal.range[0] > 0 || p.decadal.range[1] > 0))
         .map(p => ({
-          range: `${p.decadal.range[0]}-${p.decadal.range[1]}`,
-          palace: p.name,
-          heavenlyStem: p.decadal.heavenlyStem,
-          earthlyBranch: p.decadal.earthlyBranch,
-          majorStars: p.majorStars.map(s => s.name + (s.brightness ? `(${s.brightness})` : '') + (s.mutagen ? `[${s.mutagen}]` : '')).join('、') || '无正曜',
-          isCurrent: currentAge >= p.decadal.range[0] && currentAge <= p.decadal.range[1],
+          年龄范围: `${p.decadal.range[0]}-${p.decadal.range[1]}`,
+          宫位: p.name,
+          天干: p.decadal.heavenlyStem,
+          地支: p.decadal.earthlyBranch,
+          主星: p.majorStars.map(s => s.name + (s.brightness ? `(${s.brightness})` : '') + (s.mutagen ? `[${s.mutagen}]` : '')).join('、') || '无正曜',
+          当前大限: currentAge >= p.decadal.range[0] && currentAge <= p.decadal.range[1],
         }))
-        .sort((a, b) => parseInt(a.range) - parseInt(b.range))
+        .sort((a, b) => parseInt(a.年龄范围) - parseInt(b.年龄范围))
 
-      // Select relevant 流年: current year ±10
-      const relevantLiuNian = chart.liuNian?.filter(ln =>
-        ln.year >= currentYear - 5 && ln.year <= currentYear + 15
-      ) || []
+      // Pass the FULL 流年 timeline (not a windowed slice). The previous
+      // ±10y window prevented long-arc and retrospective analysis — for
+      // ziwei the master should see early-life palaces' liu nian to
+      // explain personality formation, and late-life liu nian to project
+      // long-term trajectories. Full timeline is small enough (~80 entries
+      // of compact records) to fit comfortably in the prompt budget.
+      const fullLiuNian = chart.liuNian || []
 
       const userMessage = `请为我进行紫微斗数命盘精批。请按照系统指南中的六步推理框架（定格局→看四化→析三方四正→断六亲→排大运→综合预测）进行分析。
 ${ctx.targetPersonInfo ? `\n${ctx.targetPersonInfo}\n` : ''}
 ## 命盘数据（程序预计算，直接使用）
 ${JSON.stringify({
-  basicInfo: {
-    solarDate: chart.solarDate,
-    lunarDate: chart.lunarDate,
-    time: chart.time,
-    zodiac: chart.zodiac,
-    gender: chart.gender,
-    fiveElementsClass: chart.fiveElementsClass,
-    soul: chart.soul,
-    body: chart.body,
-    earthlyBranchOfSoulPalace: chart.earthlyBranchOfSoulPalace,
-    earthlyBranchOfBodyPalace: chart.earthlyBranchOfBodyPalace,
+  基本信息: {
+    公历: chart.solarDate,
+    农历: chart.lunarDate,
+    时辰: chart.time,
+    生肖: chart.zodiac,
+    性别: chart.gender,
+    五行局: chart.fiveElementsClass,
+    命主: chart.soul,
+    身主: chart.body,
+    命宫地支: chart.earthlyBranchOfSoulPalace,
+    身宫地支: chart.earthlyBranchOfBodyPalace,
   },
-  siHua: chart.siHua,
-  decadalSiHua: chart.decadalSiHua,
-  detectedPatterns: patterns.map(p => ({ name: p.name, level: p.level, description: p.description, stars: p.involvedStars, palaces: p.involvedPalaces })),
-  dayunTimeline: dayunSorted,
-  liuNian: relevantLiuNian,
-  palaces: palaceSummary,
+  本命四化: (chart.siHua || []).map((s: Record<string, string>) => `${s.star}化${s.type}入${s.palace}`),
+  大限四化: (chart.decadalSiHua || []).map((d: { heavenlyStem: string; earthlyBranch: string; range: number[]; mutagen: string[] }) =>
+    `${d.range[0]}-${d.range[1]}歲 ${d.heavenlyStem}${d.earthlyBranch} 四化:${d.mutagen.join('/')}`
+  ),
+  已识别格局: patterns.map(p => ({ 格局名: p.name, 等级: p.level, 描述: p.description, 涉及星曜: p.involvedStars, 涉及宫位: p.involvedPalaces })),
+  大限时间线: dayunSorted,
+  流年: fullLiuNian.map(ln => ({
+    年份: ln.year, 年龄: ln.age, 地支: ln.earthlyBranch,
+    流年四化: ln.yearlyMutagen, 化禄宫: ln.huaLuPalace, 化忌宫: ln.huaJiPalace,
+    吉凶: ln.isLucky === true ? '吉' : ln.isLucky === false ? '凶' : '中性',
+  })),
+  十二宫: palaceSummary,
 }, null, 2)}
 
 ## 用户信息
 - 出生：${birth.solarBirthDate}（公历）${birth.lunarOriginal ? `/ 农历 ${birth.lunarOriginal}` : ''} ${birth.timeMode === 'precise' ? birth.exactTime + ziweiTrueSolarInfo : birth.birthTime + '（模糊时辰）'}
 - 出生地：${birth.birthPlace || '未提供'} | 性别：${birth.gender} | 当前约${currentAge}岁（${currentYear}年）
 ${birth.birthEnvironment ? `- 出生环境：${birth.birthEnvironment}` : ''}
-${ctx.question ? `- 特别关注：${ctx.question}` : ''}
+
+## 引用规则（每段分析至少引用 2 条结构性证据）
+> **不要**只用"命宫紫微好"这种笼统结论。每条结论必须附上**具体出处**（哪一宫、哪颗星、哪个四化、哪个已识别格局）。
+> **输出中不要出现英文字段名**，全部用中文命理术语。
+
+- **十二宫星曜**：每宫的星曜组合是核心论据。每颗星都带亮度（庙旺/平和/落陷）和四化（化禄/化权/化科/化忌）。
+  - **六煞星必查**（擎羊、陀羅、火星、鈴星、地空、地劫）：落入哪宫即影响该宫主题，不可忽略
+  - **桃花星组**（紅鸞、天喜、咸池、沐浴）：婚姻段必引
+  - **吉星**（左輔、右弼、文昌、文曲、天魁、天鉞、化祿、化權、化科）：注意是否成对出现（左右、昌曲、魁鉞）
+- **本命四化** + **大限四化**：四化是紫微的灵魂。大限四化叠加本命四化形成的"双化"现象务必点出（例如：本命武曲化忌+大限武曲化禄＝财运由凶转吉的关键节点）。
+- **已识别格局**：程序已识别的格局（如紫府同宫、机月同梁、杀破狼、火铃贪格、刑忌夹印等），按等级影响整体格局判断。
+- **身宫所在**：身宫主中年后人生重点，必须在总覽或性格段说明。
+- **三方四正**：每宫看本宫 + 对宫（迁移/夫妻/财帛/官禄）+ 三合宫位的星曜叠加。论命时引用三方四正的关键星曜。
 
 ## 输出要求
-- **formation**: 格局名称 + level(上格/中格/下格/凶格/普通) + 50+字分析
-- **sections**: overview(200+字) personality(100+字) career(150+字) marriage(150+字) wealth(150+字) health(100+字) family(100+字)
-- **daYunAnalysis**: 按大限逐步分析数组，每步含 ageRange/heavenlyStem/earthlyBranch/theme(30+字)/siHuaOverlay(30+字，引用decadalSiHua数据)/keyEvents(2-3个)/advice
-- **keyPredictions**: 3-5个具体可验证的人生事件预测（含 age/event/basis）
-- **keyAdvice**: 3-5条 | **luckyInfo**: colors + directions
+- **formation**: 格局名称 + level(上格/中格/下格/凶格/普通) + 50+字分析（**必须引用**已识别格局中至少 1 个程序识别的格局作为支撑）
+- **sections**：
+  - **overview**(200+字)：紫微整体气象 + 命宫主星组合 + 身宫位置，**必须引用**命宫主星 + 亮度 + 本命四化中落入命宫的星曜
+  - **personality**(100+字)：**必须引用**命宫主星性格特征 + 命宫六煞星（如有）影响 + 三方四正的辅助星
+  - **career**(150+字)：**必须引用**官禄宫的主星 + 亮度 + 四化 + 该宫六煞星情况
+  - **marriage**(150+字)：**必须引用**夫妻宫主星 + 亮度 + 桃花星组 + 化忌/化禄 + 该宫六煞星
+  - **wealth**(150+字)：**必须引用**财帛宫主星 + 化禄/化忌的位置 + 武曲/天府/太阴等财星状态
+  - **health**(100+字)：**必须引用**疾厄宫主星 + 该宫六煞星 + 三方四正不利组合
+  - **family**(100+字)：**必须引用**父母宫 / 兄弟宫 / 子女宫的主星 + 该宫是否被六煞星占据或被四化忌冲击
+- **daYunAnalysis**: 按大限逐步分析数组，每步含年龄范围、天干、地支、主题(30+字)、四化叠加(30+字，**必须引用大限四化中该大限的四化叠加本命四化的具体结果**)、关键事件(2-3个)、建议
+- **keyPredictions**: 3-5个具体可验证的人生事件预测（含年龄、事件、命理依据），依据必须引用具体宫位主星 + 大限四化叠加结果
+- **keyAdvice**: 3-5条 | **luckyInfo**: 开运颜色 + 方位
 
-数据以程序计算结果为准。请引用 decadalSiHua 中的大限四化做叠加分析。请使用 liuNian 中的 isLucky 标记辅助识别关键流年。`
+数据以程序计算结果为准。请使用流年数据中的吉凶标记辅助识别关键流年。**禁止**笼统说"命宫好/不好"，必须落到具体星曜与四化。`
 
       return { chart: { chart, patterns }, userMessage }
     } catch (e) {

@@ -26,6 +26,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user) return null
 
+        // Tentative users (created mid-funnel) have no password set yet.
+        // They cannot authenticate via credentials; they must complete
+        // /start/unlock first to set a password.
+        if (!user.password) return null
+
         const isValid = await compare(credentials.password as string, user.password)
         if (!isValid) return null
 

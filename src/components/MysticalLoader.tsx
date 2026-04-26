@@ -148,14 +148,19 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
 
   return (
     <motion.div
-      className="flex flex-col items-center justify-center py-8 gap-6"
+      className="flex flex-col items-center justify-center py-6 sm:py-8 gap-5 sm:gap-6 min-h-[60vh]"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1.2, ease: 'easeOut' }}
     >
-      {/* Rotating Bagua / Yin-Yang */}
+      {/* Rotating Bagua / Yin-Yang — adaptive size.
+          `vmin` scales with the smaller of viewport width/height so it
+          looks generous in both portrait and landscape. Lower bound
+          keeps it usable on tiny screens; upper bound prevents it from
+          dwarfing the rest of the content on big monitors. */}
       <motion.div
-        className="relative w-32 h-32"
+        className="relative aspect-square"
+        style={{ width: 'clamp(220px, 60vmin, 480px)' }}
         initial={{ opacity: 0, scale: 0.3 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
@@ -174,11 +179,12 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
           {['☰', '☱', '☲', '☳', '☴', '☵', '☶', '☷'].map((trigram, i) => (
             <motion.span
               key={i}
-              className="absolute text-gold/60 text-lg"
+              className="absolute text-gold/60"
               style={{
                 left: `${50 + 45 * Math.cos((i * Math.PI) / 4 - Math.PI / 2)}%`,
                 top: `${50 + 45 * Math.sin((i * Math.PI) / 4 - Math.PI / 2)}%`,
                 transform: 'translate(-50%, -50%)',
+                fontSize: 'clamp(1rem, 4vmin, 2rem)',
               }}
               initial={{ opacity: 0 }}
               animate={{ opacity: [0.3, 0.8, 0.3] }}
@@ -189,9 +195,10 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
           ))}
         </motion.div>
 
-        {/* Inner yin-yang */}
+        {/* Inner yin-yang — fills the inset region; SVG scales with
+            container via w-full / h-full overriding the size attribute. */}
         <motion.div
-          className="absolute inset-6 flex items-center justify-center"
+          className="absolute inset-[18%] flex items-center justify-center"
           initial={{ opacity: 0, scale: 0 }}
           animate={{ opacity: 1, scale: 1, rotate: 360 }}
           transition={{
@@ -200,7 +207,7 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
             rotate: { duration: 8, repeat: Infinity, ease: 'linear' },
           }}
         >
-          <YinYangIcon size={48} className="drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]" />
+          <YinYangIcon size={200} className="w-full h-full drop-shadow-[0_0_24px_rgba(212,168,83,0.5)]" />
         </motion.div>
 
         {/* Pulsing glow */}

@@ -31,35 +31,38 @@ describe('buildMasterSystemPrompt', () => {
     expect(prompt).toContain('prefill_divination_form')
   })
 
-  it('includes the user portrait when provided', () => {
+  it('includes the personalized prompt block when provided', () => {
     const prompt = buildMasterSystemPrompt({
       lang: 'zh-TW',
       currentDateTime: '2026-04-11T00:00:00Z',
-      portrait: 'User is a software engineer, bazi day master 戊土, focused on career Q1 2026.',
+      personalizedPrompt: 'User focuses on career in Q1 2026; prefers concise replies.',
     })
-    expect(prompt).toContain('User portrait')
-    expect(prompt).toContain('戊土')
+    expect(prompt).toContain('focuses on career')
   })
 
-  it('omits portrait section when portrait is empty or null', () => {
-    const prompt = buildMasterSystemPrompt({
+  it('omits the personalized block when it is empty or null', () => {
+    const a = buildMasterSystemPrompt({
       lang: 'zh-TW',
       currentDateTime: '2026-04-11T00:00:00Z',
-      portrait: '',
+      personalizedPrompt: '',
     })
-    expect(prompt).not.toContain('User portrait')
+    const b = buildMasterSystemPrompt({
+      lang: 'zh-TW',
+      currentDateTime: '2026-04-11T00:00:00Z',
+    })
+    expect(a).toBe(b)
   })
 
   it('renders skills catalog in English when lang=en', () => {
     const prompt = buildMasterSystemPrompt({ lang: 'en', currentDateTime: '2026-04-11T00:00:00Z' })
     expect(prompt).toContain('BaZi Compatibility')
-    expect(prompt).toContain('Hexagram × Destiny')
+    expect(prompt).toContain('Oracle anchored to destiny chart')
   })
 
   it('renders skills catalog in Chinese when lang=zh-TW', () => {
     const prompt = buildMasterSystemPrompt({ lang: 'zh-TW', currentDateTime: '2026-04-11T00:00:00Z' })
     expect(prompt).toContain('八字合盘')
-    expect(prompt).toContain('卦命互参')
+    expect(prompt).toContain('卦命互參')
   })
 })
 

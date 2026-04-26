@@ -46,15 +46,20 @@ describe('buildMasterSystemPrompt — persona integrity', () => {
 })
 
 describe('buildMasterSystemPrompt — voice rules', () => {
-  it('contains the five voice rules', () => {
+  it('contains the six voice rules', () => {
     const prompt = buildMasterSystemPrompt(baseInput)
-    expect(prompt).toContain('Voice — five rules')
-    // Each of the five rule headlines
+    expect(prompt).toContain('Voice — six rules')
     expect(prompt).toMatch(/Brief/)
     expect(prompt).toMatch(/Grounded/)
     expect(prompt).toMatch(/Direct/)
     expect(prompt).toMatch(/Opinionated/)
     expect(prompt).toMatch(/Inviting/)
+  })
+
+  it('includes the bubble-pacing marker guidance', () => {
+    const prompt = buildMasterSystemPrompt(baseInput)
+    expect(prompt).toContain('[NEXT]')
+    expect(prompt).toMatch(/Bubble pacing/)
   })
 
   it('contains the anti-patterns block', () => {
@@ -144,10 +149,10 @@ describe('buildMasterSystemPrompt — scope boundaries', () => {
 })
 
 describe('buildMasterSystemPrompt — composer integrity', () => {
-  it('cold-start path (no portrait) is identical regardless of empty portrait variants', () => {
+  it('cold-start path (no personalized prompt) is identical regardless of empty variants', () => {
     const a = buildMasterSystemPrompt({ ...baseInput })
-    const b = buildMasterSystemPrompt({ ...baseInput, portrait: null })
-    const c = buildMasterSystemPrompt({ ...baseInput, portrait: '' })
+    const b = buildMasterSystemPrompt({ ...baseInput, personalizedPrompt: null })
+    const c = buildMasterSystemPrompt({ ...baseInput, personalizedPrompt: '' })
     expect(a).toBe(b)
     expect(a).toBe(c)
   })

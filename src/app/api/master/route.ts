@@ -5,18 +5,9 @@ import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkCredits, deductCredits } from '@/lib/rateLimit'
-import { streamLLM, resolveLLMConfig } from '@/lib/llm'
+import { resolveLLMConfig } from '@/lib/llm'
 import type { Message } from '@/lib/llm'
-import type { MasterMessage } from '@/types/master'
-
-/**
- * Local alias for the assistant tool-call list shape we collect during the
- * stream loop. Mirrors what MasterMessage.toolCalls used to hold in the
- * legacy storage format. Phase 6 dropped the legacy MasterMessage[] history
- * array entirely; this alias is the only reason we still import the type.
- */
-type ToolCallEntry = NonNullable<MasterMessage['toolCalls']>[number]
-import { masterToolRegistry, buildMasterSystemPrompt } from '@/lib/master'
+import { buildMasterSystemPrompt } from '@/lib/master'
 import type { ToolContext } from '@/lib/master'
 import {
   appendMasterChatMessage,
@@ -25,29 +16,117 @@ import {
   getActiveSessionId,
   generateSessionId,
   deleteAllMasterChatMessages,
+  archiveStaleActiveSession,
 } from '@/lib/master/chatMessageStore'
 import { compressHistory } from '@/lib/master/compression'
 import { loadPortrait, deletePortrait } from '@/lib/master/portraitStore'
 import { renderPersonalizedPrompt } from '@/lib/master/personalizedPrompt'
-import { maybeExtractPortrait } from '@/lib/master/portraitExtractor'
+import { runMasterTurn, type EngineEvent } from '@/lib/master/turnEngine'
+import { SolarDay, SolarTime } from 'tyme4ts'
+import { FUNNEL_COOKIE_NAME, verifyFunnelToken } from '@/lib/funnelSession'
+
+/**
+ * Resolve the inactivity threshold (hours) after which an active master chat
+ * session is silently archived on the next read. Default 24h. Set to 0 (or
+ * any non-positive value) via env to disable the auto-archive behavior.
+ */
+const DEFAULT_STALE_HOURS = 24
+function resolveStaleHours(): number {
+  const raw = process.env.MASTER_SESSION_STALE_HOURS
+  if (!raw) return DEFAULT_STALE_HOURS
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : DEFAULT_STALE_HOURS
+}
+
+/**
+ * Compute today's working-master temporal context: day ganzhi, current 節氣,
+ * and 流年 (annual ganzhi that rolls over at 立春, not Jan 1). Used by the
+ * greeting dashboard so the opening status-block reflects the Master's actual
+ * timing reference.
+ */
+function getTemporalContext(): { dayGanZhi: string; jieQi: string; yearGanZhi: string } {
+  const now = new Date()
+  const solarTime = SolarTime.fromYmdHms(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    now.getDate(),
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+  )
+  const eightChar = solarTime.getLunarHour().getEightChar()
+  const solarDay = SolarDay.fromYmd(now.getFullYear(), now.getMonth() + 1, now.getDate())
+  return {
+    dayGanZhi: eightChar.getDay().getName(),
+    jieQi: solarDay.getTerm().getName(),
+    yearGanZhi: eightChar.getYear().getName(),
+  }
+}
 
 // ---------------------------------------------------------------------------
 // POST — main master chat turn.
-// Flow: auth → credit check → load session → build system prompt from registry
-// → stream LLM → dispatch tool calls through masterToolRegistry.execute()
-// → save session → return SSE stream.
+// Flow: auth → credit check → prepare turn (history, system prompt, etc.)
+// → delegate the streaming loop to runMasterTurn() → forward each engine
+// event to the SSE response.
 // ---------------------------------------------------------------------------
 export async function POST(req: NextRequest) {
   try {
+    // Auth: prefer NextAuth session, fall back to funnel cookie for
+    // tentative users walking through View 4 (master demo) of the /start
+    // ad funnel before they've set a password.
     const session = await auth()
-    if (!session?.user?.id) {
+    let userId: string | null = session?.user?.id ?? null
+    if (!userId) {
+      const funnel = verifyFunnelToken(req.cookies.get(FUNNEL_COOKIE_NAME)?.value)
+      if (funnel) userId = funnel.userId
+    }
+    if (!userId) {
       return jsonError('Unauthorized', 401)
     }
-    const userId = session.user.id
 
-    const { message } = await req.json()
-    if (!message || typeof message !== 'string') return jsonError('Missing message', 400)
-    if (message.length > 2000) return jsonError('Message too long (max 2000)', 400)
+    // Body shape:
+    //   - { message: string }                  legacy single-message form
+    //   - { messages: string[] }               debounced burst send (each
+    //                                          element becomes its own user
+    //                                          row, rendered as a separate
+    //                                          chat bubble — feels like
+    //                                          WeChat where users send 2-3
+    //                                          short messages in a row before
+    //                                          the master responds)
+    //   - { checkin: true }                    proactive open: master speaks
+    //                                          first, no user message
+    //                                          appended this turn
+    //   - { reflection: true }                 idle reflection: user has been
+    //                                          silent in the expanded chat
+    //                                          for ~90s; master scans the
+    //                                          recent transcript and either
+    //                                          adds a "对了…" supplementary
+    //                                          bubble or quietly closes the
+    //                                          beat. Fires at most once per
+    //                                          silent stretch (frontend gates).
+    const body = (await req.json()) as {
+      message?: unknown
+      messages?: unknown
+      checkin?: unknown
+      reflection?: unknown
+    }
+    const isCheckin = body.checkin === true
+    const isReflection = body.reflection === true
+    let userMessages: string[] = []
+    if (Array.isArray(body.messages)) {
+      userMessages = (body.messages as unknown[])
+        .filter((m): m is string => typeof m === 'string')
+        .map((m) => m.trim())
+        .filter((m) => m.length > 0)
+    } else if (typeof body.message === 'string' && body.message.trim().length > 0) {
+      userMessages = [body.message.trim()]
+    }
+    if (!isCheckin && !isReflection && userMessages.length === 0) {
+      return jsonError('Missing message', 400)
+    }
+    for (const m of userMessages) {
+      if (m.length > 2000) return jsonError('Message too long (max 2000)', 400)
+    }
 
     // Credit check (not yet deducted)
     const creditCheck = await checkCredits(userId, 'master')
@@ -65,53 +144,55 @@ export async function POST(req: NextRequest) {
       return jsonError('🔧 玄機尚未啟動，請聯繫管理員。', 503)
     }
 
-    // Resolve user language preference + current date/time. Uses raw SQL
-    // because the new columns (portraitEnabled, masterMemoryDisclosureSeenAt)
-    // aren't in the generated client until the dev server is restarted.
-    const userRows = await prisma.$queryRawUnsafe<
-      Array<{ language: string | null }>
-    >(`SELECT "language" FROM "User" WHERE "id" = $1`, userId)
-    const lang: 'zh-TW' | 'en' = userRows[0]?.language === 'en' ? 'en' : 'zh-TW'
+    // Resolve user language preference + current date/time.
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { language: true },
+    })
+    const lang: 'zh-TW' | 'en' = user?.language === 'en' ? 'en' : 'zh-TW'
     const currentDateTime = new Date().toISOString()
 
-    // Load or create MasterSession (messages only — portrait is no longer
-    // mutated by tools; any legacy portrait row is left untouched).
+    // Ensure a MasterSession row exists for this user — it tracks the
+    // per-user master usage counter (totalCreditsUsed). Chat history and
+    // portrait live in dedicated tables (MasterChatMessage / UserPortrait).
     let masterSession = await prisma.masterSession.findUnique({ where: { userId } })
     if (!masterSession) {
-      masterSession = await prisma.masterSession.create({
-        data: { userId, messages: '[]', portrait: null },
-      })
+      masterSession = await prisma.masterSession.create({ data: { userId } })
     }
 
-    // Phase 6: legacy history JSON read removed entirely. Canonical source
-    // is MasterChatMessage. The deprecated MasterSession.portrait field is
-    // still consulted as a back-compat fallback for users whose UserPortrait
-    // row doesn't exist yet (the row will be populated by the next extraction).
-    const legacyPortrait = masterSession.portrait
-      ? safeExtractPortraitSummary(masterSession.portrait)
-      : null
+    // Silently archive the active session if it has been idle past the stale
+    // threshold (default 24h). After this, getActiveSessionId returns null and
+    // the new turn starts a fresh sessionId — same effect as if the user had
+    // hit "Start new chat", but no UI surface.
+    await archiveStaleActiveSession(userId, resolveStaleHours())
 
-    // Phase 5: derive sessionId from the latest active row, or generate
-    // a fresh one if there are no active rows (brand new user OR just
-    // soft-reset via "Start new session"). The first interaction in a
-    // new session begins a fresh sessionId — old archived rows stay put
-    // for the audit trail / GDPR export but are never re-read.
+    // Derive sessionId from the latest active row, or generate a fresh one if
+    // there are no active rows (brand new user OR just soft-reset via
+    // "New chat"). The first interaction in a new session begins a fresh
+    // sessionId — archived rows stay put for the audit trail / GDPR export
+    // but are never re-read.
     let sessionId = await getActiveSessionId(userId)
     if (!sessionId) sessionId = generateSessionId()
 
-    // Append the user turn to MasterChatMessage. Best-effort.
-    await appendMasterChatMessage({
-      userId,
-      sessionId,
-      role: 'user',
-      content: message,
-      tokenCount: estimateTokens(message),
-    })
+    // Append each user message as its own row. A debounced burst from the
+    // client arrives as `messages: [a, b, c]`; each becomes a separate user
+    // bubble in history (and the LLM sees them as 3 consecutive user
+    // messages, which both OpenAI and Anthropic handle natively). Skipped
+    // for proactive checkins — the master speaks first, no user input.
+    for (const m of userMessages) {
+      await appendMasterChatMessage({
+        userId,
+        sessionId,
+        role: 'user',
+        content: m,
+        tokenCount: estimateTokens(m),
+      })
+    }
 
-    // ─── Phase 4: load portrait + render personalized prompt block ──────
-    // Loaded once per turn. If portraitEnabled is false or the portrait is
-    // missing/empty, personalizedPrompt is null and the system prompt
-    // composer omits the block entirely (cold-start path).
+    // Load portrait + render personalized prompt block. If portraitEnabled
+    // is false or the portrait is missing/empty, personalizedPrompt stays
+    // null and the system prompt composer omits the block entirely
+    // (cold-start path).
     const portraitRow = await loadPortrait(userId)
     let personalizedPrompt: string | null = null
     if (portraitRow) {
@@ -130,20 +211,36 @@ export async function POST(req: NextRequest) {
 
     // Compose system prompt from persona + registry catalogs + personalized
     // block + dynamic ctx.
-    const systemPrompt = buildMasterSystemPrompt({
+    let systemPrompt = buildMasterSystemPrompt({
       lang,
       currentDateTime,
-      portrait: legacyPortrait,
       personalizedPrompt,
     })
 
-    // Resolve model once, reused across tool-call loop iterations.
-    const { model } = await resolveLLMConfig({ endpoint: 'master' })
+    // Proactive checkin appendix — when the master is the one initiating the
+    // turn (no user message), nudge it to open with one short, contextual
+    // bubble instead of waiting for the user. We gather concrete anchors
+    // (gap, today's 節氣/流年, last reading) so the master can pick a
+    // natural opener instead of generic small talk. Falls through silently
+    // if not a checkin (the model never sees the appendix).
+    if (isCheckin) {
+      const checkinAppendix = await buildCheckinAppendix(userId, sessionId, lang)
+      systemPrompt += `\n\n---\n\n${checkinAppendix}`
+    }
 
-    // ─── Phase 3: build initial messages from MasterChatMessage + compress ───
-    // Read all non-archived rows for this session (includes the user turn we
-    // just wrote above), then run compressHistory which converts rows to LLM
-    // messages and applies token-budget compression if needed.
+    // Reflection appendix — fires when the user has been silent inside an
+    // expanded chat for ~90s. The frontend rate-gates this (at most one
+    // reflection per silent stretch — see master-interaction-features.md).
+    // The appendix tells the master: scan the last few turns, find ONE
+    // worthwhile follow-up, OR if nothing genuine to add, just emit a
+    // short closing line. The persona's "Reflection" section in
+    // master.md handles the quality bar.
+    if (isReflection) {
+      systemPrompt += `\n\n---\n\n${buildReflectionAppendix(lang)}`
+    }
+
+    // Resolve model + initial messages (history compressed if needed).
+    const { model } = await resolveLLMConfig({ endpoint: 'master' })
     const storedRows = await loadMasterChatMessages(userId, sessionId)
     const compressed = await compressHistory(storedRows, {
       userId,
@@ -161,221 +258,30 @@ export async function POST(req: NextRequest) {
 
     const toolCtx: ToolContext = { userId, lang, prisma }
 
+    // Pipe the engine's event stream to SSE. The engine handles errors by
+    // yielding `{ type: 'error' }` — the route never sees a thrown exception
+    // from the streaming loop.
     const encoder = new TextEncoder()
     const stream = new ReadableStream({
       async start(controller) {
-        const send = (data: unknown) => {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+        const send = (event: EngineEvent) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`))
         }
-
         try {
-          const currentMessages: Message[] = [...initialMessages]
-          let assistantContent = ''
-          const allToolCalls: ToolCallEntry[] = []
-          let loopCount = 0
-          // 12 iterations is a runaway guard, not the primary work bound. The
-          // dedupe cache below is what actually limits work — identical
-          // (name, args) calls within a turn return the cached result without
-          // re-invoking the handler.
-          const maxLoops = 12
-          let hitLoopCap = false
-
-          // ─── Phase 3: per-turn tool dedupe cache ─────────────────────────
-          // Prevents stuck loops where the model repeatedly calls the same
-          // tool with the same args. The cache key is `name + JSON args`.
-          // Cache hits skip the handler entirely and reuse the cached result.
-          const turnToolCache = new Map<string, Awaited<ReturnType<typeof masterToolRegistry.execute>>>()
-
-          while (loopCount < maxLoops) {
-            loopCount++
-            const pendingToolCalls: { id: string; name: string; arguments: string }[] = []
-            let contentChunk = ''
-            let finishReason = ''
-
-            for await (const chunk of streamLLM({
-              endpoint: 'master',
-              userId,
-              systemPrompt,
-              messages: currentMessages,
-              tools: masterToolRegistry.toolDefs(),
-              model,
-            })) {
-              if (chunk.type === 'content') {
-                contentChunk += chunk.text
-                assistantContent += chunk.text
-                send({ type: 'content', text: chunk.text })
-              } else if (chunk.type === 'tool_call_delta') {
-                const idx = chunk.index
-                if (!pendingToolCalls[idx]) {
-                  pendingToolCalls[idx] = { id: chunk.id || '', name: chunk.name || '', arguments: '' }
-                }
-                if (chunk.id) pendingToolCalls[idx].id = chunk.id
-                if (chunk.name) pendingToolCalls[idx].name = chunk.name
-                if (chunk.argumentsDelta) pendingToolCalls[idx].arguments += chunk.argumentsDelta
-              } else if (chunk.type === 'done') {
-                finishReason = chunk.finishReason
-              }
-            }
-
-            // If no tool calls in this stream pass, we're done.
-            if (finishReason !== 'tool_calls' || pendingToolCalls.length === 0) {
-              break
-            }
-
-            // If this was the last allowed iteration and the model still wants
-            // tools, remember to synthesize below so we don't end with empty
-            // content.
-            if (loopCount >= maxLoops) {
-              hitLoopCap = true
-              // Still need to append the assistant's tool-call request + execute
-              // the tools so we don't lose the work — fall through to the push
-              // logic below, then break out of the while.
-            }
-
-            // Emit the assistant's tool-call request message, then execute
-            // each call through the registry and feed results back.
-            currentMessages.push({
-              role: 'assistant',
-              content: contentChunk || null,
-              tool_calls: pendingToolCalls.map((tc) => ({
-                id: tc.id,
-                type: 'function' as const,
-                function: { name: tc.name, arguments: tc.arguments },
-              })),
-            })
-
-            for (const tc of pendingToolCalls) {
-              send({ type: 'tool_start', tool: tc.name })
-
-              let args: unknown = {}
-              try {
-                args = JSON.parse(tc.arguments || '{}')
-              } catch {
-                /* leave as {} — registry will return INVALID_INPUT */
-              }
-
-              // Phase 3 tool dedupe: identical (name, args) within this turn
-              // returns the cached result without re-invoking the handler.
-              const cacheKey = `${tc.name}::${tc.arguments || '{}'}`
-              let result = turnToolCache.get(cacheKey)
-              if (!result) {
-                result = await masterToolRegistry.execute(tc.name, args, toolCtx)
-                turnToolCache.set(cacheKey, result)
-              }
-
-              // Surface navigation intent to the UI: when prefill_divination_form
-              // succeeds, emit a cta_card event so the chat widget can render it.
-              if (
-                tc.name === 'prefill_divination_form' &&
-                result.ok &&
-                result.data &&
-                typeof result.data === 'object'
-              ) {
-                send({ type: 'cta_card', payload: result.data })
-              }
-
-              // Surface reference cards: when show_reading_card succeeds, emit
-              // a reading_card event so the chat widget can render a clickable
-              // card linking to the existing reading page. The master uses this
-              // instead of restating chart contents in prose.
-              if (
-                tc.name === 'show_reading_card' &&
-                result.ok &&
-                result.data &&
-                typeof result.data === 'object'
-              ) {
-                send({ type: 'reading_card', payload: result.data })
-              }
-
-              allToolCalls.push({ name: tc.name, args: (typeof args === 'object' && args) ? (args as Record<string, unknown>) : {}, result })
-
-              send({ type: 'tool_end', tool: tc.name })
-
-              // Feed the tool result back to the model as a 'tool' role message.
-              currentMessages.push({
-                role: 'tool',
-                tool_call_id: tc.id,
-                content: JSON.stringify(result),
-              })
-            }
-
-            // Loop cap reached after executing this iteration's tools —
-            // fall through to the synthesis pass below.
-            if (hitLoopCap) break
-          }
-
-          // Forced final synthesis: if we ran out of loop budget OR produced
-          // zero visible content so far, do one more streamLLM pass WITHOUT
-          // tools so the model is obligated to respond in prose. Without this,
-          // a long tool-calling chain ends with an empty assistant bubble.
-          if (assistantContent.trim().length === 0) {
-            for await (const chunk of streamLLM({
-              endpoint: 'master',
-              userId,
-              systemPrompt,
-              messages: currentMessages,
-              model,
-              // No `tools` — forces the model to answer in prose.
-            })) {
-              if (chunk.type === 'content') {
-                assistantContent += chunk.text
-                send({ type: 'content', text: chunk.text })
-              }
-            }
-          }
-
-          // Append the assistant turn to MasterChatMessage. The legacy
-          // count-based summariseOldMessages is gone — Phase 3 compression
-          // (compressHistory) runs upstream of streamLLM on the next turn,
-          // operating on rows from MasterChatMessage with token-budget logic.
-          await appendMasterChatMessage({
+          for await (const event of runMasterTurn({
             userId,
-            sessionId,
-            role: 'assistant',
-            content: assistantContent,
-            toolCallsJson:
-              allToolCalls.length > 0 ? JSON.stringify(allToolCalls) : null,
-            tokenCount: estimateTokens(assistantContent),
-          })
-
-          // Phase 6: legacy MasterSession.messages JSON write dropped.
-          // Canonical source has been MasterChatMessage since Phase 3 reads.
-          // We still bump totalCreditsUsed on the existing row.
-          await prisma.masterSession.update({
-            where: { id: masterSession!.id },
-            data: {
-              totalCreditsUsed: { increment: 1 },
-            },
-          })
-
-          // Notify the client first; extraction below runs after `done` and
-          // the client has stopped reading, so it doesn't add visible latency.
-          send({ type: 'done' })
-
-          // ─── Phase 4: maybe extract portrait ─────────────────────────
-          // Fires when (currentTurnIndex - lastTurnIndexCovered) >= 30.
-          // The trigger is checked inside the function. Best-effort —
-          // never throws; failures are logged.
-          //
-          // Computed currentTurnIndex from message count (we just wrote the
-          // assistant turn so count is the next turn's expected index).
-          try {
-            const allRowsAfter = await loadMasterChatMessages(userId, sessionId)
-            const latestTurnIndex = allRowsAfter.length > 0
-              ? Math.max(...allRowsAfter.map((r) => r.turnIndex))
-              : 0
-            await maybeExtractPortrait({
-              userId,
-              sessionId,
-              currentTurnIndex: latestTurnIndex,
-              lang,
-            })
-          } catch (extractErr) {
-            console.error('[master] portrait extraction failed:', extractErr)
+            sessionId: sessionId!,
+            isCheckin,
+            isReflection,
+            systemPrompt,
+            initialMessages,
+            model,
+            toolCtx,
+            masterSessionPk: masterSession!.id,
+            lang,
+          })) {
+            send(event)
           }
-        } catch (err) {
-          console.error('[master] stream error:', err)
-          send({ type: 'error', error: err instanceof Error ? err.message : 'Unknown error' })
         } finally {
           controller.close()
         }
@@ -396,13 +302,12 @@ export async function POST(req: NextRequest) {
 }
 
 // ---------------------------------------------------------------------------
-// GET — load session history + reading-state hints + disclosure flag.
-// Phase 5: messages are now read from MasterChatMessage (canonical source),
-// not the legacy MasterSession.messages JSON blob.
+// GET — load session history + greeting state + user flags.
 // Returns:
 //   - messages: chat transcript from the active (non-archived) session
-//   - hasReadings / lastReading / readingTypeCounts: greeting state (Phase 0)
-//   - disclosureSeen: whether the user has seen the first-use disclosure modal
+//   - hasReadings / lastReading / readingTypeCounts: greeting state
+//   - temporalContext: today's day ganzhi / 節氣 / 流年 for the greeting
+//   - disclosureSeen: whether the user has seen the memory disclosure modal
 //   - portraitEnabled: gates the personalized prompt block
 // ---------------------------------------------------------------------------
 export async function GET() {
@@ -411,41 +316,65 @@ export async function GET() {
     if (!session?.user?.id) return jsonError('Unauthorized', 401)
     const userId = session.user.id
 
-    // Load reading-state hints + user flags in parallel. Uses raw SQL
-    // for new User columns (portraitEnabled, masterMemoryDisclosureSeenAt)
-    // because the generated client hasn't been regenerated yet.
+    // Load reading-state hints + user flags in parallel.
     const [userFlags, lastReading, typeCounts] = await Promise.all([
-      prisma.$queryRawUnsafe<
-        Array<{ masterMemoryDisclosureSeenAt: Date | null; portraitEnabled: boolean }>
-      >(
-        `SELECT "masterMemoryDisclosureSeenAt", "portraitEnabled" FROM "User" WHERE "id" = $1`,
-        userId,
-      ).then((rows) => rows[0] ?? null),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { masterMemoryDisclosureSeenAt: true, portraitEnabled: true },
+      }),
       prisma.reading.findFirst({
         where: { userId, deletedAt: null },
         orderBy: { createdAt: 'desc' },
         select: { type: true, createdAt: true },
       }),
+      // `targetType: 'self'` is required — the 命盤 bullet in the greeting
+      // represents the user's OWN charts. Family-member readings (mom's
+      // bazi, spouse's ziwei) have targetType='family' and must not count
+      // here; otherwise the greeting shows 命盤 types the user thought they
+      // deleted but actually still have under a family member.
       prisma.reading.groupBy({
         by: ['type'],
-        where: { userId, deletedAt: null },
+        where: { userId, targetType: 'self', deletedAt: null },
         _count: { _all: true },
       }),
     ])
 
+    // Silently auto-archive a stale active session (idle > MASTER_SESSION_STALE_HOURS,
+    // default 24h). Done before the active-session lookup so the widget receives
+    // an empty transcript and renders its templated greeting — no modal, no prompt.
+    await archiveStaleActiveSession(userId, resolveStaleHours())
+
     // Load active session messages from MasterChatMessage. If no active
-    // session, return empty (widget will render greeting).
+    // session, return empty (widget will render greeting). For each
+    // assistant row, materialize any CTA / reading-card messages from the
+    // persisted `toolCallsJson` so they survive a page refresh — without
+    // this they vanish (cards aren't separate rows; they live inside the
+    // assistant turn's tool-call payload).
     const activeSessionId = await getActiveSessionId(userId)
-    let messages: Array<{ role: string; content: string; timestamp: string }> = []
+    type LoadedMsg = {
+      role: string
+      content: string
+      timestamp: string
+      kind?: 'text' | 'cta_card' | 'reading_card'
+      ctaPayload?: unknown
+      readingCardPayload?: unknown
+    }
+    let messages: LoadedMsg[] = []
     if (activeSessionId) {
       const rows = await loadMasterChatMessages(userId, activeSessionId)
       messages = rows
         .filter((r) => r.role === 'user' || r.role === 'assistant')
-        .map((r) => ({
-          role: r.role,
-          content: r.content ?? '',
-          timestamp: r.createdAt.toISOString(),
-        }))
+        .flatMap((r) => {
+          const base: LoadedMsg = {
+            role: r.role,
+            content: r.content ?? '',
+            timestamp: r.createdAt.toISOString(),
+            kind: 'text',
+          }
+          if (r.role !== 'assistant' || !r.toolCallsJson) return [base]
+          const cards = extractCardsFromToolCalls(r.toolCallsJson, r.createdAt)
+          return cards.length > 0 ? [base, ...cards] : [base]
+        })
     }
 
     const readingTypeCounts: Record<string, number> = {}
@@ -460,6 +389,7 @@ export async function GET() {
         ? { type: lastReading.type, createdAt: lastReading.createdAt.toISOString() }
         : null,
       readingTypeCounts,
+      temporalContext: getTemporalContext(),
       disclosureSeen: userFlags?.masterMemoryDisclosureSeenAt != null,
       portraitEnabled: userFlags?.portraitEnabled ?? true,
     })
@@ -470,13 +400,13 @@ export async function GET() {
 }
 
 // ---------------------------------------------------------------------------
-// DELETE — "Forget everything about me". Hard-clears all master state:
+// DELETE — clear all master state for the current user:
 //   - all MasterChatMessage rows (chat history, both active and archived)
 //   - UserPortrait + all UserPortraitHistory rows
-//   - MasterSession.messages JSON (legacy blob)
+//   - MasterSession usage-counter row
 //   - Resets masterMemoryDisclosureSeenAt so the disclosure shows again
-// Used by the widget's "Forget everything" button. Phase 6 will route this
-// through the GDPR profile-delete cascade as well.
+// Called by the profile page's "Delete all memory" action. The user's
+// divination readings and profile are NOT touched.
 // ---------------------------------------------------------------------------
 export async function DELETE() {
   try {
@@ -492,10 +422,10 @@ export async function DELETE() {
 
     // Reset the disclosure flag so the user sees the modal next time
     // (they may want to opt-out after a clean slate).
-    await prisma.$executeRawUnsafe(
-      `UPDATE "User" SET "masterMemoryDisclosureSeenAt" = NULL WHERE "id" = $1`,
-      userId,
-    )
+    await prisma.user.update({
+      where: { id: userId },
+      data: { masterMemoryDisclosureSeenAt: null },
+    })
 
     return jsonResponse({ success: true })
   } catch (err) {
@@ -514,32 +444,255 @@ function jsonError(error: string, status: number): Response {
   })
 }
 
-function jsonResponse(body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    headers: { 'Content-Type': 'application/json' },
-  })
-}
-
-function safeParseJson<T>(raw: string | null | undefined, fallback: T): T {
-  if (!raw) return fallback
+/**
+ * Walk a persisted `toolCallsJson` payload and return any card messages it
+ * implies — `prefill_divination_form` → `cta_card`, `show_reading_card` →
+ * `reading_card`. Failed tool calls are skipped. Used by GET to rehydrate
+ * cards that wouldn't otherwise survive a page refresh.
+ */
+function extractCardsFromToolCalls(
+  toolCallsJson: string,
+  rowCreatedAt: Date,
+): Array<{
+  role: string
+  content: string
+  timestamp: string
+  kind: 'cta_card' | 'reading_card'
+  ctaPayload?: unknown
+  readingCardPayload?: unknown
+}> {
   try {
-    return JSON.parse(raw) as T
+    const calls = JSON.parse(toolCallsJson) as Array<{
+      name: string
+      result?: { ok?: boolean; data?: unknown }
+    }>
+    if (!Array.isArray(calls)) return []
+    const out: Array<{
+      role: string
+      content: string
+      timestamp: string
+      kind: 'cta_card' | 'reading_card'
+      ctaPayload?: unknown
+      readingCardPayload?: unknown
+    }> = []
+    for (const c of calls) {
+      if (!c?.result?.ok || !c.result.data || typeof c.result.data !== 'object') continue
+      if (c.name === 'prefill_divination_form') {
+        out.push({
+          role: 'assistant',
+          content: '',
+          timestamp: rowCreatedAt.toISOString(),
+          kind: 'cta_card',
+          ctaPayload: c.result.data,
+        })
+      } else if (c.name === 'show_reading_card') {
+        out.push({
+          role: 'assistant',
+          content: '',
+          timestamp: rowCreatedAt.toISOString(),
+          kind: 'reading_card',
+          readingCardPayload: c.result.data,
+        })
+      }
+    }
+    return out
   } catch {
-    return fallback
+    return []
   }
 }
 
 /**
- * Best-effort extraction of a short portrait summary from a legacy session
- * row. New sessions don't write portrait; this only serves back-compat so
- * long-running users keep their accumulated summary until it naturally
- * fades out of the 50-message rolling window.
+ * Format a millisecond duration as a coarse zh-TW phrase ("3 小時"、"2 天").
  */
-function safeExtractPortraitSummary(raw: string): string | null {
-  try {
-    const parsed = JSON.parse(raw) as { summaryNotes?: string }
-    return parsed.summaryNotes?.trim() || null
-  } catch {
-    return null
+function formatHumanGap(ms: number): string {
+  const hours = ms / (60 * 60 * 1000)
+  if (hours < 1) return '不到一小時'
+  if (hours < 24) return `${Math.round(hours)} 小時`
+  const days = Math.round(hours / 24)
+  return `${days} 天`
+}
+
+const READING_TYPE_ZH: Record<string, string> = {
+  bazi: '八字',
+  ziwei: '紫微',
+  iching: '易經',
+  qimen: '奇門',
+  liuyao: '六爻',
+  meihua: '梅花易數',
+  fengshui: '風水',
+}
+const READING_TYPE_EN: Record<string, string> = {
+  bazi: 'BaZi',
+  ziwei: 'Zi Wei',
+  iching: 'I Ching',
+  qimen: 'Qi Men',
+  liuyao: 'Liu Yao',
+  meihua: 'Mei Hua',
+  fengshui: 'Feng Shui',
+}
+
+/**
+ * Build the proactive-checkin appendix that gets glued to the system prompt
+ * when `checkin: true`. Pulls together every signal the master might want
+ * to use as an opener anchor:
+ *   - gap since the last assistant turn (this session)
+ *   - today's day ganzhi / 節氣 / 流年
+ *   - the user's most recent saved reading (type + age)
+ *
+ * The master gets the data — what to USE is left to the model. The
+ * directive at the top tells it to pick ONE anchor and open with 1-2
+ * short bubbles, not lecture.
+ */
+/**
+ * Build the reflection appendix glued to the system prompt when
+ * `reflection: true`. Pure synchronous — the persona section in
+ * master.md does the heavy lifting (quality bar, output shape, "skip
+ * if nothing to add" rule). The appendix's job is just to inject the
+ * `[reflection_trigger]` framing at the right place.
+ *
+ * Why no DB calls (unlike checkin): reflection happens within an
+ * already-active session. The master can read the chat history that's
+ * already being passed in `currentMessages` — no extra anchors needed.
+ */
+function buildReflectionAppendix(lang: 'zh-TW' | 'en'): string {
+  if (lang === 'en') {
+    return [
+      '## Reflection moment',
+      "The user has gone quiet in the expanded chat. They haven't left — they're still looking at the screen — but something stopped them from typing.",
+      '',
+      'Scan the last 3-5 turns. Find ONE specific thing worth a short follow-up:',
+      '- A thread you opened but didn\'t close',
+      '- A chart element you cited but didn\'t fully connect',
+      '- An indirect question they asked that you answered around, not at',
+      '',
+      "If you find one → open with `对了` or its English equivalent (\"One more thing —\"), 1-2 short bubbles, end with a soft invitation OR a quiet stop. NEVER ask a generic open-ended question.",
+      '',
+      "If you find NOTHING genuinely worth saying → emit a single short closing line (\"I'll wait — let me know if anything comes up.\") and stop. Do NOT manufacture a topic to fill silence.",
+      '',
+      '**Hard rules**: Max 2 bubbles. No greeting. No summary of what you\'ve said. Treat this as your only shot — if the user doesn\'t reply, no further reflection comes.',
+    ].join('\n')
   }
+  return [
+    '## 反思時刻',
+    '用戶在展開的對話裡停了下來。他沒走 — 螢幕還在 — 但有什麼讓他暫時不想打字。',
+    '',
+    '掃一眼最近的 3-5 輪對話，找一個**具體**值得補的東西：',
+    '- 你開了個話頭沒收尾',
+    '- 你引用了某個命盤元素但沒完全把意思講透',
+    '- 用戶其實在問 X，但你答的是 X 旁邊的東西',
+    '',
+    '找到了 → 開頭用「對了」或「我再想了一下」，**1-2 個短氣泡**，結尾留個軟邀請或安靜停住。**不要**問「還有什麼想問的嗎」這種泛問。',
+    '',
+    '**找不到值得補的東西** → 就一句短結尾（「先這樣，你想到什麼再說。」）打住。不要硬擠話題填靜默。',
+    '',
+    '**硬規則**：最多 2 個氣泡。不要打招呼，不要總結你已經說過的，不要羅列工具名。當作這是你唯一一次機會 — 用戶若不回覆，後續不會再反思。',
+  ].join('\n')
+}
+
+async function buildCheckinAppendix(
+  userId: string,
+  sessionId: string,
+  lang: 'zh-TW' | 'en',
+): Promise<string> {
+  // 1) Gap since last assistant turn in this session.
+  let gapStr: string | null = null
+  try {
+    const rows = await loadMasterChatMessages(userId, sessionId)
+    const lastAssistant = [...rows]
+      .reverse()
+      .find((r) => r.role === 'assistant')
+    if (lastAssistant) {
+      gapStr = formatHumanGap(Date.now() - lastAssistant.createdAt.getTime())
+    }
+  } catch {
+    /* best-effort */
+  }
+
+  // 2) Today's temporal context (day ganzhi, 節氣, 流年).
+  const temporal = (() => {
+    try {
+      return getTemporalContext()
+    } catch {
+      return null
+    }
+  })()
+
+  // 3) Most recent saved reading (any type, target self OR family).
+  let lastReadingLine: string | null = null
+  try {
+    const last = await prisma.reading.findFirst({
+      where: { userId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      select: { type: true, createdAt: true, targetType: true },
+    })
+    if (last) {
+      const ageStr = formatHumanGap(Date.now() - last.createdAt.getTime())
+      const typeName =
+        lang === 'en'
+          ? READING_TYPE_EN[last.type] ?? last.type
+          : READING_TYPE_ZH[last.type] ?? last.type
+      const target = last.targetType === 'family' ? '（家人）' : ''
+      lastReadingLine = `${typeName}${target}・${ageStr}前`
+    }
+  } catch {
+    /* best-effort */
+  }
+
+  if (lang === 'en') {
+    const lines: string[] = ['## Proactive open']
+    lines.push(
+      `User just opened the chat window without typing${gapStr ? ` (last reply ~${gapStr} ago)` : ''}.`,
+    )
+    lines.push('Open with ONE anchor + 1-2 short bubbles. Pick whichever fits naturally:')
+    if (gapStr && gapStr !== '不到一小時') {
+      lines.push('- Resume an unfinished thread from earlier — ask how it turned out.')
+    }
+    if (lastReadingLine) {
+      lines.push(`- Their most recent reading: **${lastReadingLine}** — touch on it if relevant.`)
+    }
+    if (temporal) {
+      lines.push(
+        `- Today: day ${temporal.dayGanZhi}, 節氣 ${temporal.jieQi}, 流年 ${temporal.yearGanZhi} — use only if it actually relates to them.`,
+      )
+    }
+    lines.push('- Otherwise: short greeting + one focused question.')
+    lines.push(
+      '\n**Hard rules**: 1-2 bubbles MAX. Never list tool names. Never restate chart contents in prose. Pick ONE anchor; do not enumerate the bullet list above to the user.',
+    )
+    return lines.join('\n')
+  }
+
+  const lines: string[] = ['## 主動開場']
+  lines.push(
+    `用戶剛打開對話視窗，還沒打字${gapStr ? `（距上次對話約 ${gapStr}）` : ''}。`,
+  )
+  lines.push('挑一個錨點，發 1-2 個短氣泡開場。從下面選一條最自然的：')
+  if (gapStr && gapStr !== '不到一小時') {
+    lines.push('- 接住之前沒收尾的話題 — 問問結果。')
+  }
+  if (lastReadingLine) {
+    lines.push(`- 用戶最近一次占卜：**${lastReadingLine}** — 有合適切入點就用。`)
+  }
+  if (temporal) {
+    lines.push(
+      `- 今天：日柱 ${temporal.dayGanZhi}、節氣 ${temporal.jieQi}、流年 ${temporal.yearGanZhi} — 只有真的跟他相關才用，別生硬硬貼。`,
+    )
+  }
+  lines.push('- 都沒合適的 → 短打招呼 + 一個聚焦的問題。')
+  lines.push(
+    '\n**硬規則**：最多 1-2 個氣泡。不要羅列工具名。不要把命盤內容寫進對話。**只挑一個錨點**，不要把上面的選項列給用戶看。',
+  )
+  return lines.join('\n')
+}
+
+function jsonResponse(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    headers: {
+      'Content-Type': 'application/json',
+      // Greeting data (reading counts, temporalContext) must never be cached
+      // — stale counts leave the widget showing 命盤 types the user already
+      // deleted.
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+    },
+  })
 }

@@ -119,7 +119,12 @@ export const showReadingCardTool = defineTool<z.infer<typeof InputSchema>, z.inf
       divinationType: reading.type,
       title,
       subtitle,
-      url: `/dashboard/reading/${reading.id}`,
+      // /dashboard?reading={id} — there is no dedicated reading-detail
+      // route; the dashboard renders readings inline and auto-expands the
+      // one named in the query param. Lands on /dashboard which has no
+      // loading.tsx of its own → falls back to the global src/app/loading.tsx
+      // (a plain spinner), which is what we want for "open a saved reading".
+      url: `/dashboard?reading=${reading.id}`,
       ...(input.note ? { note: input.note } : {}),
     })
   },

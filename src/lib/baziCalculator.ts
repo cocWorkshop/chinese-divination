@@ -73,6 +73,58 @@ export interface BranchRelationships {
   combines: { branch1: string; pillar1: string; branch2: string; pillar2: string; result: string }[]
   harms: { branch1: string; pillar1: string; branch2: string; pillar2: string }[]
   punishments: { branches: string[]; pillars: string[]; type: string }[]
+  /**
+   * 三合局 — three-branch alliances by element. e.g. 申子辰 → 水局.
+   * `kind` distinguishes:
+   *   - 'full'  全三合: all three branches present
+   *   - 'half'  半三合: two of three including the cardinal (子/午/卯/酉)
+   *   - 'gong'  拱合: two non-cardinal branches (e.g. 申辰), weakest form
+   */
+  triCombines: {
+    branches: string[]
+    pillars: string[]
+    element: string
+    kind: 'full' | 'half' | 'gong'
+  }[]
+  /**
+   * 三會 (方局) — three-branch directional gatherings.
+   * e.g. 寅卯辰 → 東方木. `kind` is 'full' (all three) or 'half' (two of three).
+   */
+  threeWayMeets: {
+    branches: string[]
+    pillars: string[]
+    element: string
+    direction: '東方' | '南方' | '西方' | '北方'
+    kind: 'full' | 'half'
+  }[]
+}
+
+/**
+ * 截路空亡 — by day stem, certain hour branches are "blocked".
+ * Affects the hour pillar's expression of timing-related signals.
+ */
+export interface JieLuInfo {
+  jieLuBranches: string[]
+  affectedPillars: string[]
+  description: string
+}
+
+/**
+ * Per-ten-god structural strength signals. The chart's overall day-master
+ * `strength` is global (强/弱); these signals tell the LLM which specific
+ * 十神 are well-rooted, transparent (透干), and in-season (月令), so it can
+ * cite "正官有根透出且月令司令" instead of generic strong/weak claims.
+ */
+export interface TenGodStrength {
+  god: string
+  /** Appears as a main stem in any of the four pillars. */
+  transparent: boolean
+  /** Appears in any earthly branch's hidden stems → has 通根. */
+  rooted: boolean
+  /** This god is the 月令司令 (current human-element of month branch). */
+  inSeason: boolean
+  /** Total occurrences (main + hidden) across all four pillars. */
+  count: number
 }
 
 export interface BaziChart {
@@ -105,6 +157,10 @@ export interface BaziChart {
   fetalOrigin?: string
   ownSign?: string
   bodySign?: string
+  /** 截路空亡 — day-stem-driven hour-branch block; absent when not triggered. */
+  jieLu?: JieLuInfo
+  /** Per-ten-god structural-strength signals. Always populated. */
+  tenGodStrength?: TenGodStrength[]
 }
 
 export interface BaziOptions {
@@ -530,8 +586,15 @@ export function calculateBazi(
     })
   }
 
-  // ─── Branch relationships (六冲/六合/六害/三刑) ───────────────────────
+  // ─── Branch relationships (六冲/六合/六害/三刑/三合/三會) ───────────
   const branchRelationships = calculateBranchRelationships(yBranch, mBranch, dBranch, hBranch)
+
+  // ─── 截路空亡 ─────────────────────────────────────────────────────────
+  const jieLu = calculateJieLu(
+    dStem,
+    [yBranch, mBranch, dBranch, hBranch],
+    ['year', 'month', 'day', 'hour'],
+  )
 
   // ─── 人元司令分野 ─────────────────────────────────────────────────────
   let hideHeavenStemDay: BaziChart['hideHeavenStemDay'] | undefined
@@ -547,6 +610,18 @@ export function calculateBazi(
   } catch {
     // fallback: leave undefined
   }
+
+  // ─── 十神結構強度（透干 / 通根 / 月令司令）──────────────────────────
+  const tenGodStrength = calculateTenGodStrength(
+    dStem,
+    [
+      { stem: yStem, branch: yBranch },
+      { stem: mStem, branch: mBranch },
+      { stem: dStem, branch: dBranch },
+      { stem: hStem, branch: hBranch },
+    ],
+    hideHeavenStemDay?.stem ?? null,
+  )
 
   // ─── 胎元 / 命宫 / 身宫 ──────────────────────────────────────────────
   let fetalOrigin: string | undefined
@@ -588,6 +663,8 @@ export function calculateBazi(
     fetalOrigin,
     ownSign,
     bodySign,
+    jieLu,
+    tenGodStrength,
   }
 }
 
@@ -670,7 +747,125 @@ function calculateBranchRelationships(
     }
   }
 
-  return { clashes, combines, harms, punishments }
+  // ─── 三合局 (san he) ──────────────────────────────────────────────
+  // Each formation centers on a cardinal branch (子/午/卯/酉). When all
+  // three present → 全三合; cardinal + one non-cardinal → 半三合; both
+  // non-cardinals only → 拱合 (weakest).
+  const SAN_HE: { branches: string[]; cardinal: string; element: string }[] = [
+    { branches: ['申', '子', '辰'], cardinal: '子', element: '水' },
+    { branches: ['亥', '卯', '未'], cardinal: '卯', element: '木' },
+    { branches: ['寅', '午', '戌'], cardinal: '午', element: '火' },
+    { branches: ['巳', '酉', '丑'], cardinal: '酉', element: '金' },
+  ]
+  const triCombines: BranchRelationships['triCombines'] = []
+  for (const sh of SAN_HE) {
+    const matched = sh.branches.filter((b) => branchSet.has(b))
+    if (matched.length === 0) continue
+    const pillars = matched.map((b) => pillarKeys[branches.indexOf(b)])
+    if (matched.length === 3) {
+      triCombines.push({ branches: matched, pillars, element: sh.element, kind: 'full' })
+    } else if (matched.length === 2) {
+      const hasCardinal = matched.includes(sh.cardinal)
+      triCombines.push({
+        branches: matched,
+        pillars,
+        element: sh.element,
+        kind: hasCardinal ? 'half' : 'gong',
+      })
+    }
+  }
+
+  // ─── 三會 (方局) ──────────────────────────────────────────────────
+  const SAN_HUI: {
+    branches: string[]
+    direction: '東方' | '南方' | '西方' | '北方'
+    element: string
+  }[] = [
+    { branches: ['寅', '卯', '辰'], direction: '東方', element: '木' },
+    { branches: ['巳', '午', '未'], direction: '南方', element: '火' },
+    { branches: ['申', '酉', '戌'], direction: '西方', element: '金' },
+    { branches: ['亥', '子', '丑'], direction: '北方', element: '水' },
+  ]
+  const threeWayMeets: BranchRelationships['threeWayMeets'] = []
+  for (const dir of SAN_HUI) {
+    const matched = dir.branches.filter((b) => branchSet.has(b))
+    if (matched.length < 2) continue
+    const pillars = matched.map((b) => pillarKeys[branches.indexOf(b)])
+    threeWayMeets.push({
+      branches: matched,
+      pillars,
+      element: dir.element,
+      direction: dir.direction,
+      kind: matched.length === 3 ? 'full' : 'half',
+    })
+  }
+
+  return { clashes, combines, harms, punishments, triCombines, threeWayMeets }
+}
+
+// ─── 截路空亡 by day stem ─────────────────────────────────────────────
+// Classical pairing — day stem determines two hour branches that are blocked.
+const JIE_LU_BY_DAY_STEM: Record<string, string[]> = {
+  '甲': ['申', '酉'], '己': ['申', '酉'],
+  '乙': ['午', '未'], '庚': ['午', '未'],
+  '丙': ['辰', '巳'], '辛': ['辰', '巳'],
+  '丁': ['寅', '卯'], '壬': ['寅', '卯'],
+  '戊': ['子', '丑'], '癸': ['子', '丑'],
+}
+
+function calculateJieLu(
+  dStem: string,
+  branches: string[],
+  pillarKeys: ('year' | 'month' | 'day' | 'hour')[],
+): JieLuInfo | undefined {
+  const blocked = JIE_LU_BY_DAY_STEM[dStem]
+  if (!blocked) return undefined
+  const affectedPillars: string[] = []
+  for (let i = 0; i < branches.length; i++) {
+    if (blocked.includes(branches[i])) affectedPillars.push(pillarKeys[i])
+  }
+  if (affectedPillars.length === 0) return undefined
+  return {
+    jieLuBranches: blocked,
+    affectedPillars,
+    description: `日干${dStem}見${blocked.join('、')}為截路空亡，相關柱位的時機表達受阻`,
+  }
+}
+
+// ─── 十神結構強度（透干 / 通根 / 月令司令）──────────────────────────
+const ALL_TEN_GODS = ['比肩', '劫财', '食神', '伤官', '正财', '偏财', '正官', '七杀', '正印', '偏印']
+
+function calculateTenGodStrength(
+  dStem: string,
+  pillars: { stem: string; branch: string }[],
+  monthHumanElementStem: string | null,
+): TenGodStrength[] {
+  // Count main + hidden occurrences of each ten god.
+  const counts = new Map<string, number>()
+  const transparentSet = new Set<string>()
+  const rootedSet = new Set<string>()
+
+  for (const p of pillars) {
+    const mainGod = tenGod(dStem, p.stem)
+    counts.set(mainGod, (counts.get(mainGod) ?? 0) + 1)
+    transparentSet.add(mainGod)
+    const hidden = HIDDEN_STEMS[p.branch] || []
+    for (const hs of hidden) {
+      const g = tenGod(dStem, hs)
+      counts.set(g, (counts.get(g) ?? 0) + 1)
+      rootedSet.add(g)
+    }
+  }
+
+  const inSeasonGod = monthHumanElementStem ? tenGod(dStem, monthHumanElementStem) : null
+
+  return ALL_TEN_GODS.map((god) => ({
+    god,
+    transparent: transparentSet.has(god),
+    rooted: rootedSet.has(god),
+    inSeason: god === inSeasonGod,
+    count: counts.get(god) ?? 0,
+  })).filter((s) => s.count > 0 || s.inSeason)
 }
 
 // ─── Shen Sha (kept from v1) ────────────────────────────────────────────────

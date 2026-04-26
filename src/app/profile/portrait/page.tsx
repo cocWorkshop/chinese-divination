@@ -1,18 +1,15 @@
 'use client'
 
 /**
- * /profile/portrait — User-facing portrait management page.
+ * /profile/portrait — User-facing memory settings page.
  *
  * Sections:
  *   1. Toggle (enable/disable master memory)
  *   2. Current portrait fields (editable)
- *   3. Generated prompt preview (read-only — what the LLM actually sees)
- *   4. History (collapsible)
- *   5. Action buttons: Save / Pause / Delete (visually distinct)
+ *   3. Portrait history (collapsible — version history of extracted portraits)
+ *   4. Chat sessions (collapsible — view transcripts, delete archived sessions)
  *
- * Privacy posture: this page lets users see EXACTLY what the master remembers
- * about them. No hidden state. They can edit any field, pause extraction
- * without losing data, or hard-delete the portrait + history entirely.
+ * The hard-delete action for all memory lives under /profile (Account tab).
  */
 
 import { useEffect, useState, useCallback } from 'react'
@@ -51,6 +48,23 @@ interface HistoryEntry {
   createdAt: string
 }
 
+interface ChatSessionSummary {
+  sessionId: string
+  startedAt: string
+  endedAt: string
+  totalTurns: number
+  userTurns: number
+  isActive: boolean
+  firstUserMessage: string | null
+}
+
+interface TranscriptTurn {
+  role: 'user' | 'assistant'
+  content: string
+  createdAt: string
+  turnIndex: number
+}
+
 const TRIGGER_LABELS: Record<string, { zh: string; en: string; color: string }> = {
   auto: { zh: '自動更新', en: 'Auto', color: '#888' },
   manual: { zh: '手動編輯', en: 'Manual edit', color: '#4a9eff' },
@@ -70,7 +84,15 @@ export default function PortraitPage() {
   const [portrait, setPortrait] = useState<PortraitData | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [showHistory, setShowHistory] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  // Chat-session management state
+  const [sessions, setSessions] = useState<ChatSessionSummary[]>([])
+  const [showSessions, setShowSessions] = useState(false)
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null)
+  const [transcripts, setTranscripts] = useState<Record<string, TranscriptTurn[]>>({})
+  const [transcriptLoadingId, setTranscriptLoadingId] = useState<string | null>(null)
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null)
 
   // Editable form state
   const [topicsInput, setTopicsInput] = useState('')
@@ -79,13 +101,25 @@ export default function PortraitPage() {
   const [lifeContext, setLifeContext] = useState('')
   const [toneNotes, setToneNotes] = useState('')
 
+  const loadSessions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/master/sessions', { cache: 'no-store' })
+      if (!res.ok) return
+      const data = (await res.json()) as { sessions?: ChatSessionSummary[] }
+      setSessions(data.sessions ?? [])
+    } catch {
+      /* non-fatal — the section renders empty */
+    }
+  }, [])
+
   const loadAll = useCallback(async () => {
     setLoading(true)
     try {
-      // Load both portrait and the user's portraitEnabled flag in parallel
+      // Load portrait, master flags, and chat sessions in parallel
       const [portraitRes, masterRes] = await Promise.all([
         fetch('/api/profile/portrait'),
         fetch('/api/master'),
+        loadSessions(),
       ])
       if (portraitRes.ok) {
         const data = await portraitRes.json()
@@ -106,7 +140,7 @@ export default function PortraitPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [loadSessions])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -115,6 +149,20 @@ export default function PortraitPage() {
     }
     if (status === 'authenticated') loadAll()
   }, [status, router, loadAll])
+
+  // Keep the 暫停／啟用 button in sync when memory is toggled elsewhere (the
+  // master chat's memory gate also writes User.portraitEnabled). Without this,
+  // accepting/declining the gate would leave this page's button stale until a
+  // reload. Listens to the same event the page's own toggle dispatches.
+  useEffect(() => {
+    const handler = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ enabled: boolean }>).detail
+      if (!detail || typeof detail.enabled !== 'boolean') return
+      setPortraitEnabled(detail.enabled)
+    }
+    window.addEventListener('xuanji:portraitEnabledChanged', handler as EventListener)
+    return () => window.removeEventListener('xuanji:portraitEnabledChanged', handler as EventListener)
+  }, [])
 
   const handleSave = async () => {
     setSaving(true)
@@ -156,6 +204,12 @@ export default function PortraitPage() {
       setPortraitEnabled(!next)
       toast.error(T(lang, '切換失敗', 'Toggle failed'))
     } else {
+      // Notify the master chat widget so its memory-gate state refreshes without
+      // waiting for the next page load. Without this, pausing memory here would
+      // not block the master widget until the user reloads.
+      window.dispatchEvent(
+        new CustomEvent('xuanji:portraitEnabledChanged', { detail: { enabled: next } }),
+      )
       toast.success(
         next
           ? T(lang, '記憶功能已啟用', 'Memory enabled')
@@ -164,20 +218,56 @@ export default function PortraitPage() {
     }
   }
 
-  const handleDelete = async () => {
-    setConfirmDelete(false)
-    const res = await fetch('/api/profile/portrait', { method: 'DELETE' })
-    if (res.ok) {
-      toast.success(T(lang, '記憶已刪除', 'Memory deleted'))
-      setPortrait(null)
-      setHistory([])
-      setTopicsInput('')
-      setTone('')
-      setDepth('')
-      setLifeContext('')
-      setToneNotes('')
-    } else {
+  const toggleTranscript = async (sessionId: string) => {
+    if (expandedSessionId === sessionId) {
+      setExpandedSessionId(null)
+      return
+    }
+    setExpandedSessionId(sessionId)
+    // Fetch transcript if not already cached.
+    if (!transcripts[sessionId]) {
+      setTranscriptLoadingId(sessionId)
+      try {
+        const res = await fetch(`/api/master/sessions/${sessionId}`, { cache: 'no-store' })
+        if (res.ok) {
+          const data = (await res.json()) as { messages: TranscriptTurn[] }
+          setTranscripts((prev) => ({ ...prev, [sessionId]: data.messages }))
+        } else {
+          toast.error(T(lang, '載入失敗', 'Load failed'))
+          setExpandedSessionId(null)
+        }
+      } catch {
+        toast.error(T(lang, '載入失敗', 'Load failed'))
+        setExpandedSessionId(null)
+      } finally {
+        setTranscriptLoadingId(null)
+      }
+    }
+  }
+
+  const handleDeleteSession = async (sessionId: string) => {
+    setDeletingSessionId(sessionId)
+    try {
+      const res = await fetch(`/api/master/sessions/${sessionId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId))
+      setTranscripts((prev) => {
+        const next = { ...prev }
+        delete next[sessionId]
+        return next
+      })
+      if (expandedSessionId === sessionId) setExpandedSessionId(null)
+      toast.success(T(lang, '已刪除', 'Deleted'))
+      // Notify the master widget — if the deleted session happened to be
+      // the active one, its in-memory transcript / greeting state needs to
+      // refresh. Reuses the readings-change event since both trigger
+      // loadHistory() in MasterChatContext.
+      window.dispatchEvent(new CustomEvent('xuanji:readingsChanged'))
+    } catch {
       toast.error(T(lang, '刪除失敗', 'Delete failed'))
+    } finally {
+      setDeletingSessionId(null)
+      setConfirmingDeleteId(null)
     }
   }
 
@@ -192,26 +282,10 @@ export default function PortraitPage() {
   return (
     <div className="flex-1 px-4 py-12" style={{ background: 'var(--bg-primary)' }}>
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
-              {T(lang, '玄機大師的記憶', 'Master Xuanji Memory')}
-            </h1>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {T(
-                lang,
-                '玄機大師對你的了解，全部在這裡。你可以隨時查看、編輯、暫停或刪除。',
-                "Everything Master Xuanji remembers about you, in one place. View, edit, pause, or delete anytime.",
-              )}
-            </p>
-          </div>
-          <a
-            href="/divination"
-            className="flex-shrink-0 px-4 py-2 rounded-lg text-xs font-medium transition-all hover:shadow-[0_0_12px_rgba(212,175,55,0.3)]"
-            style={{ background: 'var(--gold)', color: '#000' }}
-          >
-            {T(lang, '💬 試試大師', '💬 Try the Master')}
-          </a>
+        <div>
+          <h1 className="text-3xl font-serif" style={{ color: 'var(--gold)' }}>
+            {T(lang, '記憶設定', 'Memory Settings')}
+          </h1>
         </div>
 
         {/* Toggle */}
@@ -228,13 +302,13 @@ export default function PortraitPage() {
                 {portraitEnabled
                   ? T(
                       lang,
-                      '已啟用 — 大師會自動從對話中學習你的偏好',
-                      'Enabled — the Master learns your preferences from conversations',
+                      '已啟用 — 您在對話中提到的主題與偏好會記錄於下方，您可隨時查看、編輯或暫停。',
+                      'Enabled — topics and preferences you mention are noted below. You can view, edit, or pause at any time.',
                     )
                   : T(
                       lang,
-                      '已暫停 — 已存的記憶會保留，但不會更新',
-                      'Paused — existing memory is kept but not updated',
+                      '已暫停 — 已保存的內容保留不變，不會新增記錄。',
+                      'Paused — existing memory is kept unchanged; no new notes will be added.',
                     )}
               </p>
             </div>
@@ -389,35 +463,6 @@ export default function PortraitPage() {
           </div>
         </section>
 
-        {/* Generated prompt preview */}
-        {portrait?.generatedPrompt && (
-          <section
-            className="glass-card rounded-xl p-5"
-            style={{ border: '1px solid var(--card-border)' }}
-          >
-            <h2 className="font-serif text-lg mb-2" style={{ color: 'var(--gold)' }}>
-              {T(lang, '大師看到的提示', 'What the Master sees')}
-            </h2>
-            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-              {T(
-                lang,
-                '這是大師收到的個人化上下文塊（系統提示的一部分）。',
-                "This is the personalized context block injected into the master's system prompt.",
-              )}
-            </p>
-            <div
-              className="text-xs leading-relaxed whitespace-pre-line p-4 rounded-lg font-serif"
-              style={{
-                background: 'linear-gradient(135deg, rgba(212,168,83,0.05), rgba(212,168,83,0.02))',
-                color: 'var(--text-secondary, #d0d0d0)',
-                border: '1px solid var(--border-gold, rgba(212,175,55,0.2))',
-              }}
-            >
-              {portrait.generatedPrompt}
-            </div>
-          </section>
-        )}
-
         {/* History */}
         <section
           className="glass-card rounded-xl p-5"
@@ -483,76 +528,170 @@ export default function PortraitPage() {
           )}
         </section>
 
-        {/* Danger zone */}
+        {/* Chat sessions */}
         <section
           className="glass-card rounded-xl p-5"
-          style={{ border: '1px solid #dc2626' }}
+          style={{ border: '1px solid var(--card-border)' }}
         >
-          <h2 className="font-serif text-lg mb-2" style={{ color: '#ff8a8a' }}>
-            {T(lang, '危險操作', 'Danger zone')}
-          </h2>
-          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-            {T(
-              lang,
-              '永久刪除大師對你的所有記憶，包括所有歷史版本。你的占卜歷史和個人檔案不受影響。',
-              "Permanently delete all memory the Master has of you, including all history versions. Your reading history and profile are not affected.",
-            )}
-          </p>
           <button
-            onClick={() => setConfirmDelete(true)}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
-            style={{ background: '#dc2626', color: '#fff' }}
+            onClick={() => setShowSessions((s) => !s)}
+            className="w-full flex items-center justify-between"
           >
-            {T(lang, '永久刪除記憶', 'Permanently delete memory')}
+            <h2 className="font-serif text-lg" style={{ color: 'var(--gold)' }}>
+              {T(lang, '對話歷史', 'Chat sessions')} ({sessions.length})
+            </h2>
+            <span style={{ color: 'var(--text-muted)' }}>{showSessions ? '▲' : '▼'}</span>
           </button>
-        </section>
-      </div>
-
-      {/* Delete confirmation modal */}
-      {confirmDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
-          style={{ background: 'rgba(0,0,0,0.7)' }}
-        >
-          <div
-            className="max-w-md rounded-xl p-6"
-            style={{
-              background: 'var(--card-bg, #1a1a2e)',
-              border: '1px solid #dc2626',
-            }}
-          >
-            <h3 className="font-serif text-lg mb-3" style={{ color: '#ff8a8a' }}>
-              {T(lang, '確定要刪除？', 'Are you sure?')}
-            </h3>
-            <p className="text-sm mb-5" style={{ color: 'var(--text-secondary, #d0d0d0)' }}>
-              {T(
-                lang,
-                '這將永久刪除大師對你的所有記憶（{count} 個歷史版本）。無法復原。',
-                "This will permanently delete all memory the Master has of you ({count} history versions). Cannot be undone.",
-              ).replace('{count}', String(history.length))}
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setConfirmDelete(false)}
-                className="px-4 py-2 rounded-lg text-sm"
-                style={{
-                  color: 'var(--text-muted)',
-                  border: '1px solid var(--card-border)',
-                }}
-              >
-                {T(lang, '取消', 'Cancel')}
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 rounded-lg text-sm font-medium"
-                style={{ background: '#dc2626', color: '#fff' }}
-              >
-                {T(lang, '確認刪除', 'Delete')}
-              </button>
+          {showSessions && (
+            <div className="mt-4 space-y-3">
+              {sessions.length === 0 && (
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  {T(lang, '尚無對話', 'No chat sessions yet')}
+                </p>
+              )}
+              {sessions.map((s) => {
+                const isExpanded = expandedSessionId === s.sessionId
+                const isDeleting = deletingSessionId === s.sessionId
+                const isConfirming = confirmingDeleteId === s.sessionId
+                const loadingTranscript = transcriptLoadingId === s.sessionId
+                const transcript = transcripts[s.sessionId]
+                return (
+                  <div
+                    key={s.sessionId}
+                    className="rounded-lg text-xs relative overflow-hidden"
+                    style={{
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--card-border)',
+                      opacity: isDeleting ? 0.5 : 1,
+                    }}
+                  >
+                    {isDeleting && (
+                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-10 pointer-events-none">
+                        <span className="flex items-center gap-2 text-xs text-red-300">
+                          <span className="inline-block w-3.5 h-3.5 border-2 border-red-300 border-t-transparent rounded-full animate-spin" />
+                          {T(lang, '刪除中…', 'Deleting…')}
+                        </span>
+                      </div>
+                    )}
+                    <div className="p-3">
+                      <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          {s.isActive ? (
+                            <span
+                              className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                              style={{ background: 'rgba(212,175,55,0.2)', color: 'var(--gold)' }}
+                            >
+                              {T(lang, '進行中', 'Active')}
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)' }}>
+                              {new Date(s.endedAt).toLocaleString()}
+                            </span>
+                          )}
+                          <span style={{ color: 'var(--text-muted)' }}>
+                            {s.userTurns} {T(lang, '問', 'Q')} · {s.totalTurns} {T(lang, '則', 'turns')}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleTranscript(s.sessionId)}
+                            disabled={isDeleting}
+                            className="text-[11px] px-2 py-1 rounded transition-colors hover:bg-white/5"
+                            style={{ color: 'var(--text-secondary, #d0d0d0)', border: '1px solid var(--card-border)' }}
+                          >
+                            {isExpanded ? T(lang, '收合', 'Collapse') : T(lang, '查看內容', 'View')}
+                          </button>
+                          {!s.isActive && (
+                            isConfirming ? (
+                              <>
+                                <button
+                                  onClick={() => handleDeleteSession(s.sessionId)}
+                                  disabled={isDeleting}
+                                  className="text-[11px] px-2 py-1 rounded font-medium transition-colors"
+                                  style={{ background: '#dc2626', color: '#fff' }}
+                                >
+                                  {T(lang, '確認刪除', 'Confirm')}
+                                </button>
+                                <button
+                                  onClick={() => setConfirmingDeleteId(null)}
+                                  disabled={isDeleting}
+                                  className="text-[11px] px-2 py-1 rounded transition-colors"
+                                  style={{ color: 'var(--text-muted)' }}
+                                >
+                                  {T(lang, '取消', 'Cancel')}
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmingDeleteId(s.sessionId)}
+                                className="text-[11px] px-2 py-1 rounded transition-colors hover:bg-red-500/10"
+                                style={{ color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                              >
+                                {T(lang, '刪除', 'Delete')}
+                              </button>
+                            )
+                          )}
+                        </div>
+                      </div>
+                      {s.firstUserMessage && (
+                        <div
+                          className="leading-relaxed"
+                          style={{ color: 'var(--text-secondary, #d0d0d0)' }}
+                        >
+                          {s.firstUserMessage.length > 100
+                            ? s.firstUserMessage.slice(0, 100) + '…'
+                            : s.firstUserMessage}
+                        </div>
+                      )}
+                      {isExpanded && (
+                        <div
+                          className="mt-3 pt-3 space-y-2 max-h-[360px] overflow-y-auto"
+                          style={{ borderTop: '1px solid var(--card-border)' }}
+                        >
+                          {loadingTranscript && (
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                              {T(lang, '載入中…', 'Loading…')}
+                            </p>
+                          )}
+                          {!loadingTranscript && transcript && transcript.length === 0 && (
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                              {T(lang, '此對話無可顯示內容', 'No visible turns')}
+                            </p>
+                          )}
+                          {!loadingTranscript && transcript && transcript.map((t) => (
+                            <div
+                              key={t.turnIndex}
+                              className="text-[11px] leading-relaxed"
+                            >
+                              <div
+                                className="font-medium mb-0.5"
+                                style={{
+                                  color: t.role === 'user' ? 'var(--gold)' : 'var(--text-secondary, #d0d0d0)',
+                                }}
+                              >
+                                {t.role === 'user'
+                                  ? T(lang, '我', 'You')
+                                  : T(lang, '玄機大師', 'Master')}
+                              </div>
+                              <div
+                                className="whitespace-pre-wrap"
+                                style={{ color: 'var(--text-primary, #e0e0e0)' }}
+                              >
+                                {t.content}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </section>
+
+      </div>
     </div>
   )
 }

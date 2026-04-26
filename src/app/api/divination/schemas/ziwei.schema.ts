@@ -139,7 +139,7 @@ export const ziweiSchemaV2 = z.object({
   daYunAnalysis: z.array(daYunEntrySchemaZiwei).describe('逐步大限精批，每步含主题、四化叠加、关键事件、建议'),
 
   keyPredictions: z.array(z.object({
-    age: z.string().describe('具体年龄如"28-30岁"'),
+    age: z.string().describe('格式："36歲（2024年）" 或 "46-50歲（2034-2038年）"，如果覆盖当前年份加"當前"如"38歲（2026年，當前）"'),
     event: z.string().describe('具体事件描述'),
     basis: z.string().describe('命理依据（星曜+宫位+四化）'),
   })).describe('3-5个关键人生事件预测'),

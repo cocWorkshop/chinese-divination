@@ -7,9 +7,16 @@
  * JSON.parses.  When the first parse fails it tries brace-rebalancing before
  * giving up.
  *
- * On any parse failure, returns a fallback shape that ResultRenderer can
- * still display (raw content + a single overview section).
+ * On hard parse failure (cleaning + repair both failed), returns a marker
+ * shape `{ __parseFailed: true, ... }` that the route hard-rejects. We
+ * deliberately do NOT inject the raw text into `sections.overview` here —
+ * doing so used to fool the route's permissive hard-reject check into
+ * saving the bad payload, which then surfaced as raw JSON on the result
+ * page. The route looks for `__parseFailed` and bails before saving.
  */
+
+/** Marker exported so the route + tests can recognize a failed-parse fallback. */
+export const PARSE_FAILED_KEY = '__parseFailed'
 
 export function parseJsonFromLLMOutput(
   rawText: string,
@@ -42,7 +49,10 @@ export function parseJsonFromLLMOutput(
         return JSON.parse(fixed) as Record<string, unknown>
       }
     } catch { /* fall through */ }
-    return { type, raw: rawText, sections: { overview: rawText }, keyAdvice: [] }
+    // Repair also failed — emit the explicit parseFailed marker. The raw
+    // text is still attached for log forensics / DB llmRawOutput, but is
+    // intentionally NOT placed under any field the renderer would display.
+    return { [PARSE_FAILED_KEY]: true, type, rawText }
   }
 }
 

@@ -34,6 +34,8 @@ export async function GET(req: NextRequest) {
         language: true,
         targetType: true,
         rating: true,
+        status: true,
+        shareToken: true,
         createdAt: true,
         user: { select: { id: true, name: true, email: true } },
         familyMember: { select: { name: true, relation: true } },

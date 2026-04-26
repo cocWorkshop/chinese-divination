@@ -25,21 +25,31 @@ describe('schemaToLLMTemplate', () => {
   })
 
   it('iching schema matches original', () => {
+    const trigramTemplate = {
+      name: '卦名（乾/坤/震/巽/坎/離/艮/兌）',
+      symbol: '☰/☷/...',
+      element: '五行/自然象',
+    }
+    const hexTemplate = {
+      number: 1,
+      name: '卦名(单字)',
+      chineseName: '卦全名如风雷益',
+      upperTrigram: trigramTemplate,
+      lowerTrigram: trigramTemplate,
+      lines: [1, 0, 1, 1, 0, 1],
+    }
     const original = {
       type: 'iching',
-      hexagram: {
-        number: 1,
-        name: '卦名(单字)',
-        chineseName: '卦全名如风雷益',
-        upperTrigram: { name: '上卦名', symbol: '☰', element: '风/雷/水/火/山/泽/天/地' },
-        lowerTrigram: { name: '下卦名', symbol: '☷', element: '五行' },
-        lines: [1, 0, 1, 1, 0, 1],
-      },
-      judgment: '卦辞原文',
-      image: '象辞解析',
-      interpretation: '针对问题的解读(100+字)',
-      changingLines: [{ position: 3, text: '变爻说明' }],
-      advice: '具体建议(100+字)',
+      hexagram: hexTemplate,
+      variant: hexTemplate,
+      lineValues: [0],
+      changingLineNumbers: [0],
+      judgment: '卦辞原文（直接引用程序提供的本卦卦辞）',
+      image: '象辞解析（结合大象传与问题展开）',
+      interpretation: '针对问题的解读(150+字，须先引用本卦卦辞，再点出关键意象)',
+      changingLines: [],
+      variantInsight: '',
+      advice: '具体建议(150+字，紧贴卦象，避免空泛口号)',
       outcome: '吉/凶/中/大吉/小凶',
       keyPoints: ['要点一', '要点二', '要点三'],
     }

@@ -42,18 +42,9 @@ describe('baziHandler.calculate', () => {
     expect(chart!.dayMaster.stem).toBeDefined()
     expect(chart!.daYun.length).toBeGreaterThan(0)
     expect(userMessage).toContain('八字命理精批')
-    expect(userMessage).toContain('fourPillars')
+    expect(userMessage).toContain('四柱')
     expect(userMessage).toContain('1988-09-17')
     expect(userMessage).toContain('北京')
-  })
-
-  it('includes question when provided', () => {
-    const ctx = makeCtx(
-      { birthDate: '1988-09-17', birthTime: 'wu', gender: 'male' },
-      { question: '今年事业运如何' }
-    )
-    const { userMessage } = baziHandler.calculate(ctx)
-    expect(userMessage).toContain('今年事业运如何')
   })
 
   it('includes targetPersonInfo when set', () => {

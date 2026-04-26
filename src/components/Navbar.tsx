@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { useLang } from './LanguageContext'
 import { useTheme } from './ThemeProvider'
 import toast from 'react-hot-toast'
 import NotificationBell from './NotificationBell'
+import FeedbackModal from './FeedbackModal'
 
 export default function Navbar() {
   const { data: session } = useSession()
@@ -18,9 +19,16 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [sharing, setSharing] = useState(false)
   const [showWiki, setShowWiki] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
   const mobileToggleRef = useRef<HTMLButtonElement>(null)
   const userMenuRef = useRef<HTMLDivElement>(null)
+
+  // Hide the navbar entirely on the /start ad funnel. Tentative users
+  // walking through it should see a clean self-contained UX without
+  // competing CTAs (Login / Register / Karma Shop) in the top bar.
+  const pathname = usePathname()
+  const isFunnel = pathname?.startsWith('/start') ?? false
 
   useEffect(() => {
     fetch('/api/config/nav').then(r => r.json()).then(data => {
@@ -61,7 +69,7 @@ export default function Navbar() {
   }, [menuOpen, userMenuOpen])
 
   useEffect(() => {
-    document.title = lang === 'en' ? 'XuanJi AI - Ancient Wisdom, Modern Heritage' : '玄機AI - 古法智慧，現代傳承'
+    document.title = lang === 'en' ? 'XuanJi - Ancient Wisdom, Modern Heritage' : '玄機 - 古法智慧，現代傳承'
   }, [lang])
 
   const handleShare = async () => {
@@ -81,13 +89,15 @@ export default function Navbar() {
     setSharing(false)
   }
 
+  if (isFunnel) return null
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b" style={{ backgroundColor: 'var(--nav-bg)', borderColor: 'var(--border-color)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="text-2xl font-serif text-gold hover:text-gold-light transition-colors">
-            玄機AI
+            玄機
           </Link>
 
           {/* Desktop nav */}
@@ -124,7 +134,9 @@ export default function Navbar() {
             <button
               onClick={toggleTheme}
               className="px-2 py-1 rounded border border-gold/40 text-gold/80 hover:border-gold hover:text-gold text-sm transition-colors"
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={theme === 'dark'
+                ? (lang === 'zh-TW' ? '切換為淺色模式' : 'Switch to light mode')
+                : (lang === 'zh-TW' ? '切換為深色模式' : 'Switch to dark mode')}
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
@@ -157,6 +169,13 @@ export default function Navbar() {
                     >
                       {lang === 'zh-TW' ? '個人資料' : 'Profile'}
                     </Link>
+                    <button
+                      onClick={() => { setFeedbackOpen(true); setUserMenuOpen(false) }}
+                      className="w-full text-left px-4 py-2 hover:opacity-80 transition-colors"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      {lang === 'zh-TW' ? '意見反饋' : 'Feedback'}
+                    </button>
                     <button
                       onClick={() => { fetch('/api/auth/logout', { method: 'POST' }).finally(() => signOut({ redirect: false }).then(() => window.location.href = '/')); setUserMenuOpen(false) }}
                       className="w-full text-left px-4 py-2 hover:opacity-80 transition-colors"
@@ -230,7 +249,9 @@ export default function Navbar() {
             onClick={() => { toggleTheme(); setMenuOpen(false) }}
             className="text-left text-gold/80 hover:text-gold"
           >
-            {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
+            {theme === 'dark'
+              ? (lang === 'zh-TW' ? '☀️ 淺色模式' : '☀️ Light Mode')
+              : (lang === 'zh-TW' ? '🌙 深色模式' : '🌙 Dark Mode')}
           </button>
           <button
             onClick={() => setLang(lang === 'zh-TW' ? 'en' : 'zh-TW')}
@@ -242,6 +263,11 @@ export default function Navbar() {
             <Link href="/profile" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
               {lang === 'zh-TW' ? '個人資料' : 'Profile'}
             </Link>
+          )}
+          {session && (
+            <button onClick={() => { setFeedbackOpen(true); setMenuOpen(false) }} className="text-left text-white/80 hover:text-gold">
+              {lang === 'zh-TW' ? '意見反饋' : 'Feedback'}
+            </button>
           )}
           {session ? (
             <button onClick={() => fetch('/api/auth/logout', { method: 'POST' }).finally(() => signOut({ redirect: false }).then(() => window.location.href = '/'))} className="text-left text-white/80 hover:text-gold">
@@ -259,6 +285,8 @@ export default function Navbar() {
           )}
         </div>
       )}
+
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </nav>
   )
 }

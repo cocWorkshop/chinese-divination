@@ -32,8 +32,8 @@ describe('ziweiHandler.calculate (fuzzy mode)', () => {
     expect(chart).not.toBeNull()
     expect(chart!.chart.palaces.length).toBeGreaterThan(0)
     expect(userMessage).toContain('紫微斗数命盘精批')
-    expect(userMessage).toContain('dayunTimeline')
-    expect(userMessage).toContain('detectedPatterns')
+    expect(userMessage).toContain('大限时间线')
+    expect(userMessage).toContain('已识别格局')
     // Fuzzy mode should NOT mention true-solar-time correction.
     expect(userMessage).not.toMatch(/真太阳时校正/)
   })

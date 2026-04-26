@@ -36,7 +36,7 @@ const PrefillSchema = z.object({
   birthPlace: z.string().optional(),
   gender: z.enum(['male', 'female']).optional(),
   calendarType: z.enum(['solar', 'lunar']).optional(),
-  question: z.string().optional().describe('For iching/qimen/meihua/fengshui — the user question.'),
+  question: z.string().optional().describe('Only for iching/qimen/meihua/fengshui/liuyao — the user question. bazi/ziwei have no question field; do NOT set this for those types (the chart analysis is comprehensive, follow-up questions belong in chat or master).'),
 }).optional()
 
 const InputSchema = z.object({
@@ -45,12 +45,22 @@ const InputSchema = z.object({
   prefill: PrefillSchema,
 })
 
+const CtaContextSchema = z.object({
+  target: z.string().optional(),
+  birthDate: z.string().optional(),
+  birthTime: z.string().optional(),
+  gender: z.string().optional(),
+  birthPlace: z.string().optional(),
+  question: z.string().optional(),
+}).optional()
+
 const OutputSchema = z.object({
   url: z.string(),
   ctaLabel: z.string(),
   ctaTitle: z.string(),
   ctaDescription: z.string(),
   divinationType: z.string(),
+  ctaContext: CtaContextSchema,
 })
 
 function buildUrl(input: z.infer<typeof InputSchema>): string {
@@ -78,7 +88,11 @@ function buildUrl(input: z.infer<typeof InputSchema>): string {
     if (prefill.birthPlace) params.set('birthPlace', prefill.birthPlace)
     if (prefill.gender) params.set('gender', prefill.gender)
     if (prefill.calendarType) params.set('calendarType', prefill.calendarType)
-    if (prefill.question) params.set('question', prefill.question)
+    // bazi/ziwei have no user-question field on the form; silently drop the
+    // param so a stray `question` from the model doesn't end up as URL noise.
+    if (prefill.question && input.type !== 'bazi' && input.type !== 'ziwei') {
+      params.set('question', prefill.question)
+    }
   }
 
   return `/divination/${input.type}?${params.toString()}`
@@ -123,14 +137,73 @@ export const prefillDivinationFormTool = defineTool<z.infer<typeof InputSchema>,
     const url = buildUrl(input)
     const label = TYPE_LABELS[input.type] ?? { zh: input.type, en: input.type }
     const lang = ctx.lang
-    const typeName = lang === 'en' ? label.en : label.zh
+    const isEn = lang === 'en'
+    const typeName = isEn ? label.en : label.zh
 
-    const ctaLabel = lang === 'en' ? `Start ${typeName} Reading →` : `開始${typeName} →`
-    const ctaTitle = lang === 'en' ? `${typeName} Reading` : `${typeName}`
-    const ctaDescription =
-      lang === 'en'
-        ? `I need your ${typeName} chart to continue. Click to open the divination form — fields are pre-filled where I had the info.`
-        : `需要你的${typeName}結果來繼續分析。點擊打開占卜表單 — 已知的資訊已自動填入。`
+    const ctaLabel = isEn ? `Start ${typeName} Reading →` : `開始${typeName} →`
+    const ctaTitle = isEn ? `${typeName} Reading` : `${typeName}`
+    const ctaDescription = isEn
+      ? `Click to open the divination form — fields are pre-filled where I had the info.`
+      : `點擊打開占卜表單 — 已知的資訊已自動填入。`
+
+    // Build structured context for richer card display
+    const RELATION_LABELS: Record<string, { zh: string; en: string }> = {
+      spouse: { zh: '配偶', en: 'Spouse' }, father: { zh: '父親', en: 'Father' },
+      mother: { zh: '母親', en: 'Mother' }, son: { zh: '兒子', en: 'Son' },
+      daughter: { zh: '女兒', en: 'Daughter' }, brother: { zh: '兄弟', en: 'Brother' },
+      sister: { zh: '姐妹', en: 'Sister' }, friend: { zh: '朋友', en: 'Friend' },
+      other: { zh: '其他', en: 'Other' },
+    }
+    const SHICHEN_LABELS: Record<string, string> = {
+      zi: '子時', zi_early: '早子時', zi_late: '晚子時',
+      chou: '丑時', yin: '寅時', mao: '卯時', chen: '辰時',
+      si: '巳時', wu: '午時', wei: '未時', shen: '申時',
+      you: '酉時', xu: '戌時', hai: '亥時',
+    }
+
+    let targetStr: string | undefined
+    let subjectName: string | undefined
+    let subjectBirthDate: string | undefined
+    let subjectGender: string | undefined
+
+    if (input.target.kind === 'self') {
+      targetStr = isEn ? 'For yourself' : '為自己預測'
+    } else if (input.target.kind === 'family') {
+      // Look up existing family member details from DB
+      try {
+        const member = await ctx.prisma.familyMember.findFirst({
+          where: { id: input.target.familyMemberId, userId: ctx.userId },
+          select: { name: true, relation: true, relationDetail: true, birthDate: true, gender: true },
+        })
+        if (member) {
+          const rel = RELATION_LABELS[member.relation]
+          const relName = member.relationDetail || (rel ? (isEn ? rel.en : rel.zh) : '')
+          subjectName = member.name || undefined
+          targetStr = isEn
+            ? `For ${relName}${subjectName ? ` ${subjectName}` : ''}`
+            : `為${relName}${subjectName ? ` ${subjectName}` : ''}預測`
+          if (member.birthDate) subjectBirthDate = member.birthDate
+          if (member.gender) subjectGender = member.gender === 'male' ? (isEn ? 'Male' : '男') : (isEn ? 'Female' : '女')
+        } else {
+          targetStr = isEn ? 'For family member' : '為家人預測'
+        }
+      } catch {
+        targetStr = isEn ? 'For family member' : '為家人預測'
+      }
+    } else {
+      const rel = RELATION_LABELS[input.target.relation]
+      const relName = input.target.relationDetail || (rel ? (isEn ? rel.en : rel.zh) : '')
+      subjectName = input.target.name || undefined
+      targetStr = isEn
+        ? `For ${relName}${subjectName ? ` ${subjectName}` : ''}`
+        : `為${relName}${subjectName ? ` ${subjectName}` : ''}預測`
+    }
+
+    const pf = input.prefill
+    const timeStr = pf?.exactTime || (pf?.birthTime ? SHICHEN_LABELS[pf.birthTime] || pf.birthTime : undefined)
+    const genderStr = pf?.gender
+      ? (pf.gender === 'male' ? (isEn ? 'Male' : '男') : (isEn ? 'Female' : '女'))
+      : subjectGender || undefined
 
     return ok({
       url,
@@ -138,6 +211,14 @@ export const prefillDivinationFormTool = defineTool<z.infer<typeof InputSchema>,
       ctaTitle,
       ctaDescription,
       divinationType: input.type,
+      ctaContext: {
+        target: targetStr,
+        birthDate: pf?.birthDate || subjectBirthDate || undefined,
+        birthTime: timeStr,
+        gender: genderStr,
+        birthPlace: pf?.birthPlace,
+        question: pf?.question,
+      },
     })
   },
 })

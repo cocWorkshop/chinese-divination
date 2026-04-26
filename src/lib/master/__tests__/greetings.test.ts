@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { renderGreeting } from '../greetings'
 
+const TEMPORAL = {
+  dayGanZhi: '癸亥',
+  jieQi: '清明',
+  yearGanZhi: '丙午',
+}
+
 describe('renderGreeting — State 1 (first-time user)', () => {
   it('returns State 1 when user has no readings (zh-TW)', () => {
     const result = renderGreeting({
@@ -8,10 +14,14 @@ describe('renderGreeting — State 1 (first-time user)', () => {
       hasReadings: false,
     })
     expect(result.state).toBe(1)
-    expect(result.text).toContain('我是 玄機大師')
+    // Hook line draws the user in before the master introduces themselves;
+    // the hook references 玄機 reflexively so it ties to the next line.
+    expect(result.text).toContain('一念既起，玄機已現')
+    expect(result.text).toContain('吾名玄機')
     expect(result.text).toContain('八字或紫微')
     expect(result.text).toContain('起一卦')
-    expect(result.text).toContain('想從哪一個開始')
+    // Two-path closer ends in a question mark
+    expect(result.text.trimEnd().endsWith('？')).toBe(true)
     // Forbidden anti-patterns
     expect(result.text).not.toContain('您好')
     expect(result.text).not.toContain('歡迎')
@@ -28,8 +38,9 @@ describe('renderGreeting — State 1 (first-time user)', () => {
       hasReadings: false,
     })
     expect(result.state).toBe(1)
-    expect(result.text).toContain('I am Master Xuanji')
-    expect(result.text).toContain('bazi or ziwei')
+    expect(result.text).toContain('My name is Xuanji')
+    expect(result.text.toLowerCase()).toContain('thought')
+    expect(result.text).toMatch(/BaZi or Zi Wei/i)
     expect(result.text).toContain('hexagram')
     // Forbidden anti-patterns
     expect(result.text.toLowerCase()).not.toContain('welcome to')
@@ -39,103 +50,110 @@ describe('renderGreeting — State 1 (first-time user)', () => {
 })
 
 describe('renderGreeting — State 2 (returning user)', () => {
-  it('hydrates type summary and last reading date in zh-TW', () => {
+  it('renders the agent-dashboard opener + destiny charts + temporal context (zh-TW)', () => {
     const result = renderGreeting({
       lang: 'zh-TW',
       hasReadings: true,
       lastReading: { type: 'bazi', createdAt: '2026-04-08T10:00:00Z' },
       readingTypeCounts: { bazi: 22, ziwei: 20, qimen: 11 },
+      temporalContext: TEMPORAL,
     })
     expect(result.state).toBe(2)
-    expect(result.text).toContain('又見面了')
-    expect(result.text).toContain('你的命盤我手邊有')
-    // Top 3 types by count, joined with、
+    // Self-introduction opener — one of five randomized variants. All start
+    // with the same self-naming clause.
+    expect(result.text).toMatch(/^吾名玄機/)
+    // Destiny charts shown under 命盤
+    expect(result.text).toContain('· 命盤')
     expect(result.text).toContain('八字')
     expect(result.text).toContain('紫微')
-    expect(result.text).toContain('奇門')
-    // Date hydration
-    expect(result.text).toContain('4月8日')
-    // Last reading type label
-    expect(result.text).toContain('八字')
-    // Closes with focused invitation
-    expect(result.text).toContain('今天想接著哪一段問')
+    // Oracle cast types (奇門) must be filtered OUT — they're events, not state
+    expect(result.text).not.toContain('奇門')
+    // Temporal context bullets
+    expect(result.text).toContain('· 今日')
+    expect(result.text).toContain('癸亥日')
+    expect(result.text).toContain('清明')
+    expect(result.text).toContain('· 流年')
+    expect(result.text).toContain('丙午')
+    // Legacy "last cast" line must be gone
+    expect(result.text).not.toContain('· 最近')
+    expect(result.text).not.toContain('4月8日')
+    // Closing CTA — one of six randomized variants. All end with a Chinese
+    // question mark and either name 命/命理 or 卦. Just check the trailing
+    // punctuation is the question form, not the old fixed text.
+    expect(result.text.trimEnd().endsWith('？')).toBe(true)
   })
 
-  it('hydrates type summary and last reading date in en', () => {
+  it('renders en version with temporal context', () => {
     const result = renderGreeting({
       lang: 'en',
       hasReadings: true,
       lastReading: { type: 'bazi', createdAt: '2026-04-08T10:00:00Z' },
       readingTypeCounts: { bazi: 22, ziwei: 20 },
+      temporalContext: TEMPORAL,
     })
     expect(result.state).toBe(2)
-    expect(result.text).toContain('Welcome back')
+    expect(result.text).toMatch(/^My name is Xuanji/)
+    expect(result.text).toContain('· Charts')
     expect(result.text).toContain('BaZi')
     expect(result.text).toContain('Zi Wei')
     expect(result.text).toContain('and')
-    // Date hydration (locale-formatted)
-    expect(result.text).toMatch(/Apr/)
+    // Temporal context uses hanzi (not pinyin) by design
+    expect(result.text).toContain('· Today')
+    expect(result.text).toContain('癸亥日')
+    expect(result.text).toContain('清明')
+    expect(result.text).toContain('· Annual')
+    expect(result.text).toContain('丙午')
   })
 
-  it('handles single-type readings without "and"', () => {
+  it('omits 命盤 bullet when user has no destiny charts (only oracle casts)', () => {
     const result = renderGreeting({
-      lang: 'en',
+      lang: 'zh-TW',
       hasReadings: true,
-      lastReading: { type: 'bazi', createdAt: '2026-04-08T10:00:00Z' },
-      readingTypeCounts: { bazi: 5 },
+      lastReading: { type: 'iching', createdAt: '2026-04-08T10:00:00Z' },
+      readingTypeCounts: { iching: 3, meihua: 2 },
+      temporalContext: TEMPORAL,
     })
     expect(result.state).toBe(2)
-    expect(result.text).toContain('BaZi')
-    // No conjunction needed for a single type
-    expect(result.text).not.toContain(' and ')
+    expect(result.text).toMatch(/^吾名玄機/)
+    // No 命盤 bullet because user has no destiny charts on file
+    expect(result.text).not.toContain('· 命盤')
+    // Oracle types never leak into the 命盤 line
+    expect(result.text).not.toContain('易經')
+    expect(result.text).not.toContain('梅花')
+    // Temporal block still shows — it's global state, not user-specific
+    expect(result.text).toContain('· 今日')
+    expect(result.text).toContain('· 流年')
   })
 
-  it('falls back to generic phrase when readingTypeCounts is empty', () => {
+  it('falls back to opener + CTA when nothing populates (edge case)', () => {
     const result = renderGreeting({
       lang: 'zh-TW',
       hasReadings: true,
       lastReading: null,
       readingTypeCounts: {},
+      temporalContext: null,
     })
     expect(result.state).toBe(2)
-    expect(result.text).toContain('又見面了')
-    expect(result.text).toContain('你的命盤我手邊有')
+    expect(result.text).toMatch(/^吾名玄機/)
+    expect(result.text.trimEnd().endsWith('？')).toBe(true)
+    // No status bullets when neither charts nor temporal context is available
+    expect(result.text).not.toContain('· 命盤')
+    expect(result.text).not.toContain('· 今日')
+    expect(result.text).not.toContain('· 流年')
   })
 
-  it('orders types by descending count', () => {
+  it('orders destiny types by descending count', () => {
     const result = renderGreeting({
       lang: 'zh-TW',
       hasReadings: true,
       lastReading: null,
-      readingTypeCounts: { meihua: 1, bazi: 50, ziwei: 25 },
+      readingTypeCounts: { ziwei: 5, bazi: 50 },
+      temporalContext: null,
     })
-    // Top type (bazi, 50) should appear before lower-count types in the summary
     const baziIdx = result.text.indexOf('八字')
     const ziweiIdx = result.text.indexOf('紫微')
-    const meihuaIdx = result.text.indexOf('梅花')
     expect(baziIdx).toBeGreaterThanOrEqual(0)
     expect(ziweiIdx).toBeGreaterThan(baziIdx)
-    // Top 3 only — meihua (rank 4 if there were 4 types) would still appear since count = 3
-    expect(meihuaIdx).toBeGreaterThan(ziweiIdx)
-  })
-
-  it('caps the summary at 3 types', () => {
-    const result = renderGreeting({
-      lang: 'zh-TW',
-      hasReadings: true,
-      lastReading: null,
-      readingTypeCounts: {
-        bazi: 22,
-        ziwei: 20,
-        qimen: 11,
-        iching: 3,
-        meihua: 4,
-      },
-    })
-    // Top 3: bazi, ziwei, meihua (4) — iching (3) excluded
-    expect(result.text).toContain('八字')
-    expect(result.text).toContain('紫微')
-    expect(result.text).not.toContain('易經')
   })
 })
 
@@ -148,6 +166,7 @@ describe('renderGreeting — anti-pattern guards', () => {
         hasReadings: true,
         lastReading: { type: 'bazi', createdAt: '2026-04-08T10:00:00Z' },
         readingTypeCounts: { bazi: 5 },
+        temporalContext: TEMPORAL,
       }),
     ]
     for (const s of states) {
@@ -164,6 +183,7 @@ describe('renderGreeting — anti-pattern guards', () => {
       hasReadings: true,
       lastReading: { type: 'bazi', createdAt: '2026-04-08T10:00:00Z' },
       readingTypeCounts: { bazi: 5 },
+      temporalContext: TEMPORAL,
     })
     expect(result.text).not.toContain('get_reading')
     expect(result.text).not.toContain('list_readings')

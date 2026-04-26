@@ -35,6 +35,9 @@ export async function PUT(req: NextRequest) {
     }
     const user = await prisma.user.findUnique({ where: { id: session.user.id } })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    // Tentative users have no current password — they shouldn't reach this
+    // route (no NextAuth session) but guard defensively.
+    if (!user.password) return NextResponse.json({ error: 'Account is tentative — complete signup first' }, { status: 400 })
     const valid = await compare(currentPassword, user.password)
     if (!valid) return NextResponse.json({ error: 'Current password incorrect' }, { status: 400 })
     updateData.password = await hash(newPassword, 12)

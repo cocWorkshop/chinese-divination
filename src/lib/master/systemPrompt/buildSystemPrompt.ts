@@ -5,7 +5,8 @@
  *   1. Persona (from divination-refs/master.md)
  *   2. Capability catalog (generated from tool registry)
  *   3. Skills catalog (generated from skills registry, language-aware)
- *   4. Dynamic per-request context (language, current time, optional user portrait)
+ *   4. Personalized prompt block (optional, rendered from UserPortrait)
+ *   5. Dynamic per-request context (language, current time)
  *
  * Kept deterministic so the first ~90% is stable → benefits from the
  * provider-side prompt cache (Anthropic 5-min TTL) across turns.
@@ -19,15 +20,9 @@ export interface BuildMasterSystemPromptInput {
   lang: 'zh-TW' | 'en'
   currentDateTime: string
   /**
-   * Optional legacy portrait summary — read once from the deprecated
-   * MasterSession.portrait field for backward compatibility during the
-   * Phase 4+ migration window. Phase 6 drops this entirely.
-   */
-  portrait?: string | null
-  /**
-   * Personalized prompt block (Phase 4+). Rendered from UserPortrait by
+   * Personalized prompt block rendered from UserPortrait by
    * renderPersonalizedPrompt(). When null/empty, the block is omitted —
-   * cold-start path is identical to the pre-feature output.
+   * the cold-start path is identical to the pre-feature output.
    *
    * The block must already include the identity guard sentence at the
    * end (renderPersonalizedPrompt always appends it). The composer does
@@ -58,13 +53,9 @@ export function buildMasterSystemPrompt(input: BuildMasterSystemPromptInput): st
 }
 
 function buildContextBlock(input: BuildMasterSystemPromptInput): string {
-  const lines: string[] = ['## Current session']
-  lines.push(`- Language: ${input.lang}`)
-  lines.push(`- Current date/time: ${input.currentDateTime}`)
-  if (input.portrait && input.portrait.trim().length > 0) {
-    lines.push('')
-    lines.push('## User portrait (stable facts accumulated across sessions)')
-    lines.push(input.portrait.trim())
-  }
-  return lines.join('\n')
+  return [
+    '## Current session',
+    `- Language: ${input.lang}`,
+    `- Current date/time: ${input.currentDateTime}`,
+  ].join('\n')
 }

@@ -14,6 +14,9 @@ export async function DELETE(req: NextRequest) {
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } })
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+  // Tentative users (no password set) shouldn't reach this route — they
+  // have no NextAuth session — but guard defensively.
+  if (!user.password) return NextResponse.json({ error: 'Account is tentative' }, { status: 400 })
 
   const isValid = await compare(password, user.password)
   if (!isValid) return NextResponse.json({ error: 'Invalid password' }, { status: 403 })

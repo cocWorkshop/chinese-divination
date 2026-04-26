@@ -24,13 +24,13 @@ export async function PATCH() {
       })
     }
 
-    // Idempotent: only set if currently null
-    await prisma.$executeRawUnsafe(
-      `UPDATE "User"
-       SET "masterMemoryDisclosureSeenAt" = NOW()
-       WHERE "id" = $1 AND "masterMemoryDisclosureSeenAt" IS NULL`,
-      session.user.id,
-    )
+    // Idempotent: only set if currently null. updateMany with a compound
+    // where clause preserves the "don't overwrite an existing timestamp"
+    // behavior without needing a transaction.
+    await prisma.user.updateMany({
+      where: { id: session.user.id, masterMemoryDisclosureSeenAt: null },
+      data: { masterMemoryDisclosureSeenAt: new Date() },
+    })
 
     return new Response(
       JSON.stringify({ success: true }),

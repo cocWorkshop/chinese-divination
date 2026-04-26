@@ -137,6 +137,12 @@ export const baziSchemaV2 = z.object({
 
   branchAnalysis: z.string().describe('原局地支关系解读(50+字)：基于预计算冲/合/害/刑数据的影响分析').optional(),
 
+  keyPredictions: z.array(z.object({
+    age: z.string().describe('格式："36歲（2024年）" 或 "46-50歲（2034-2038年）"，如果覆盖当前年份加"當前"如"38歲（2026年，當前）"'),
+    event: z.string().describe('具体事件描述'),
+    basis: z.string().describe('命理依据（十神+大运+流年干支）'),
+  })).describe('3-5个关键人生节点预测，从大运/流年中提炼最重要的转折点').default([]),
+
   keyAdvice: z.array(z.string()).default(['建议一', '建议二', '建议三']),
   luckyInfo: z.object({
     colors: z.array(z.string()).default(['颜色']),

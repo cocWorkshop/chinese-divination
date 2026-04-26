@@ -436,7 +436,7 @@ describe('show_reading_card tool', () => {
       expect(data.divinationType).toBe('bazi')
       expect(data.title).toBe('八字命盤') // zh-TW default
       expect(data.subtitle).toContain('2026年4月11日')
-      expect(data.url).toBe('/dashboard/reading/r1')
+      expect(data.url).toBe('/dashboard?reading=r1')
     }
     // Ownership: query MUST scope by user id
     expect(findFirst).toHaveBeenCalledWith(

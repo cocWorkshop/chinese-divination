@@ -32,11 +32,10 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Body must include { enabled: boolean }' }, { status: 400 })
   }
 
-  await prisma.$executeRawUnsafe(
-    `UPDATE "User" SET "portraitEnabled" = $2 WHERE "id" = $1`,
-    session.user.id,
-    body.enabled,
-  )
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { portraitEnabled: body.enabled },
+  })
 
   return NextResponse.json({ enabled: body.enabled })
 }

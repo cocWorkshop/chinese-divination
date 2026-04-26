@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import PersonInfoHeader from './PersonInfoHeader'
+import SectionDrawer from './SectionDrawer'
 import { useDragScroll } from '@/hooks/useDragScroll'
 import type { DivinationResultProps } from '@/types/divination'
 
@@ -46,11 +47,9 @@ const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyData = Record<string, any>
 
-export default function ZiweiResultV2({ data, isShared, rawResult, readingId, chatMessages, subjectName, birthInfo, createdAt }: DivinationResultProps) {
+export default function ZiweiResultV2({ data, isShared, rawResult, readingId, chatMessages, subjectName, birthInfo, createdAt, streaming }: DivinationResultProps) {
   const d = data as AnyData
   const { lang } = useLang()
-  const [activeSection, setActiveSection] = useState('overview')
-  const [showChart, setShowChart] = useState(false)
   const liuNianScroll = useDragScroll<HTMLDivElement>()
 
   const chart = d.ziweiChart || {}
@@ -100,7 +99,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                   </span>
                 </div>
                 {formation.analysis && (
-                  <p className="mt-1 text-[var(--text-muted)] text-[10px] leading-relaxed">{formation.analysis}</p>
+                  <p className="mt-1.5 text-[var(--text-secondary)] text-xs leading-relaxed">{formation.analysis}</p>
                 )}
               </div>
             )}
@@ -137,20 +136,15 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
         </div>
       </motion.div>
 
-      {/* ═══ CHART DATA (Collapsible) ═══ */}
-      <button onClick={() => setShowChart(!showChart)}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
-        style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--gold)' }}>
-        <span className="font-serif flex items-center gap-2">☰ {T(lang, '紫微命盤', 'Ziwei Chart')}</span>
-        <motion.span animate={{ rotate: showChart ? 180 : 0 }} transition={{ duration: 0.2 }}>▼</motion.span>
-      </button>
-
-      <AnimatePresence initial={false}>
-      {showChart && d.palaces && (
-        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }}
-          className="overflow-hidden">
-          <div className="glass-card rounded-xl p-2 sm:p-3 border border-gold/20 text-[10px]">
+      {/* ═══ CHART DATA — top-level drawer, defaults open, centered title ═══ */}
+      {d.palaces && (
+      <SectionDrawer
+        icon="⭐"
+        title={T(lang, '紫微命盤', 'Ziwei Chart')}
+        align="center"
+        size="lg"
+      >
+          <div className="text-[10px]">
             <div className="overflow-x-auto">
               <div className="grid grid-cols-4 gap-0.5 min-w-[400px]">
                 {Object.entries(d.palaces as Record<string, AnyData>).map(([name, palace]) => {
@@ -188,35 +182,98 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
               </div>
             </div>
           </div>
-        </motion.div>
+        </SectionDrawer>
       )}
-      </AnimatePresence>
 
-      {/* ═══ SECTIONS TABS ═══ */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <div className="flex flex-wrap gap-1 mb-3">
-          {sectionsList.map(s => (
-            <button key={s.key} onClick={() => setActiveSection(s.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-[var(--text-secondary)] hover:text-gold border border-gold/20'}`}>
-              {s.icon} {lang === 'en' ? s.en : s.label}
-            </button>
-          ))}
-        </div>
-        <AnimatePresence mode="wait">
-          <motion.div key={activeSection} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown overflow-x-auto break-words">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {d.sections?.[activeSection] || T(lang, '暫無內容', 'No content')}
-              </ReactMarkdown>
+      {/* ═══ OVERVIEW — main text, NOT a drawer ═══ */}
+      {(() => {
+        const overview = d.sections?.overview
+        const hasContent = typeof overview === 'string' && overview.trim().length > 0
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04 }}
+            className={`px-1 sm:px-2 transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}
+          >
+            <h3 className="text-gold font-serif text-base mb-3 flex items-center gap-2">
+              <span aria-hidden>☰</span>
+              <span>{T(lang, '總覽', 'Overview')}</span>
+              {streaming && !hasContent && (
+                <span className="inline-flex gap-0.5 ml-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseZW_1.4s_ease_infinite]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseZW_1.4s_ease_0.2s_infinite]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseZW_1.4s_ease_0.4s_infinite]" />
+                </span>
+              )}
+            </h3>
+            <div className="text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown break-words">
+              {hasContent ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{overview}</ReactMarkdown>
+              ) : streaming ? (
+                <p className="text-[var(--text-muted)] leading-relaxed">
+                  {T(lang,
+                    '此段正在由玄機大師撰寫，將根據命盤結構性數據進行深度分析，請稍候片刻…',
+                    'This section is being composed by Master Xuanji based on your chart data…')}
+                </p>
+              ) : (
+                <span className="text-[var(--text-muted)] text-sm">
+                  {T(lang, '暫無內容', 'No content')}
+                </span>
+              )}
             </div>
           </motion.div>
-        </AnimatePresence>
-      </motion.div>
+        )
+      })()}
+
+      {/* ═══ OTHER SECTIONS — drawer style (all default-open) ═══ */}
+      <div className="space-y-2">
+        {sectionsList.filter(s => s.key !== 'overview').map((s) => {
+          const content = d.sections?.[s.key]
+          const hasContent = typeof content === 'string' && content.trim().length > 0
+          return (
+            <SectionDrawer
+              key={s.key}
+              icon={s.icon}
+              title={lang === 'en' ? s.en : s.label}
+              trailing={streaming && !hasContent ? (
+                <span className="inline-flex gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseZW_1.4s_ease_infinite]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseZW_1.4s_ease_0.2s_infinite]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseZW_1.4s_ease_0.4s_infinite]" />
+                </span>
+              ) : undefined}
+            >
+              <div className={`text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown overflow-x-auto break-words transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}>
+                {hasContent ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                ) : streaming ? (
+                  <p className="text-[var(--text-muted)] leading-relaxed">
+                    {T(lang,
+                      '此段正在由玄機大師撰寫，將根據命盤結構性數據進行深度分析，請稍候片刻…',
+                      'This section is being composed by Master Xuanji based on your chart data…')}
+                  </p>
+                ) : (
+                  <span className="text-[var(--text-muted)] text-sm">
+                    {T(lang, '暫無內容', 'No content')}
+                  </span>
+                )}
+              </div>
+            </SectionDrawer>
+          )
+        })}
+      </div>
+      <style jsx global>{`
+        @keyframes dotPulseZW {
+          0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+          40% { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
 
       {/* ═══ STRUCTURED DA YUN ANALYSIS ═══ */}
       {daYunAnalysis && daYunAnalysis.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <h3 className="text-gold font-serif text-sm mb-2">🔮 {T(lang, '大限精批', 'Decade Fortune')}</h3>
+          <h3 className="text-gold font-serif text-base mb-2">🔮 {T(lang, '大限精批', 'Decade Fortune')}</h3>
           <div className="space-y-2">
             {daYunAnalysis.map((dy, i) => {
               const stemEl = charElement(dy.heavenlyStem || '')
@@ -224,38 +281,38 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                 <details key={i} className="glass-card rounded-xl border border-gold/20 group" open={i === 0}>
                   <summary className="flex items-center gap-3 px-3 py-2.5 cursor-pointer list-none">
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <span className={`text-base font-serif font-bold ${elClr[stemEl] || ''}`}>{dy.heavenlyStem}{dy.earthlyBranch}</span>
+                      <span className={`text-lg font-serif font-bold ${elClr[stemEl] || ''}`}>{dy.heavenlyStem}{dy.earthlyBranch}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[var(--text-muted)] text-[10px]">{dy.ageRange}{T(lang, '歲', '')}</div>
+                      <div className="text-[var(--text-muted)] text-[11px]">{dy.ageRange}{T(lang, '歲', '')}</div>
                     </div>
                     <motion.span className="text-gold text-xs flex-shrink-0 group-open:rotate-180 transition-transform">▼</motion.span>
                   </summary>
-                  <div className="px-3 pb-3 space-y-2 border-t border-gold/10 pt-2">
+                  <div className="px-3 pb-3 space-y-2 border-t border-gold/10 pt-2.5">
                     {dy.theme && (
-                      <p className="text-[var(--text-secondary)] text-xs leading-relaxed font-serif">{dy.theme}</p>
+                      <p className="text-[var(--text-secondary)] text-sm leading-relaxed font-serif">{dy.theme}</p>
                     )}
                     {dy.siHuaOverlay && (
-                      <p className="text-[var(--text-muted)] text-[10px] leading-relaxed">
+                      <p className="text-[var(--text-muted)] text-xs leading-relaxed">
                         <span className="text-gold">四化疊加：</span>{dy.siHuaOverlay}
                       </p>
                     )}
                     {dy.keyEvents && dy.keyEvents.length > 0 && (
                       <div className="space-y-1">
-                        <div className="text-[var(--text-muted)] text-[10px] font-medium">{T(lang, '關鍵事件', 'Key Events')}:</div>
+                        <div className="text-[var(--text-muted)] text-xs font-medium">{T(lang, '關鍵事件', 'Key Events')}:</div>
                         {dy.keyEvents.map((ke: AnyData, j: number) => (
                           <div key={j} className="flex gap-2 items-start">
-                            <span className="text-gold text-[10px] font-mono flex-shrink-0">{ke.age}</span>
-                            <span className="text-[var(--text-secondary)] text-[10px]">{ke.event}</span>
-                            <span className="text-[var(--text-muted)] text-[9px] italic">({ke.basis})</span>
+                            <span className="text-gold text-xs font-mono flex-shrink-0">{ke.age}</span>
+                            <span className="text-[var(--text-secondary)] text-xs">{ke.event}</span>
+                            <span className="text-[var(--text-muted)] text-[11px] italic">({ke.basis})</span>
                           </div>
                         ))}
                       </div>
                     )}
                     {dy.advice && (
-                      <div className="mt-1 px-2 py-1.5 rounded-lg bg-gold/5 border border-gold/20">
-                        <span className="text-gold text-[10px]">💡 </span>
-                        <span className="text-[var(--text-secondary)] text-[10px]">{dy.advice}</span>
+                      <div className="mt-1 px-2.5 py-2 rounded-lg bg-gold/5 border border-gold/20">
+                        <span className="text-gold text-xs">💡 </span>
+                        <span className="text-[var(--text-secondary)] text-sm leading-relaxed">{dy.advice}</span>
                       </div>
                     )}
                   </div>
@@ -269,7 +326,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
       {/* ═══ LIU NIAN TIMELINE ═══ */}
       {liuNian && liuNian.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}>
-          <h3 className="text-gold font-serif text-sm mb-2">{T(lang, '流年一覽', 'Annual Fortune')}</h3>
+          <h3 className="text-gold font-serif text-base mb-2">{T(lang, '流年一覽', 'Annual Fortune')}</h3>
           <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
             <div ref={liuNianScroll.ref} onMouseDown={liuNianScroll.onMouseDown}
               className="overflow-x-auto scrollbar-hide cursor-grab">
@@ -315,17 +372,15 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
       {/* ═══ KEY PREDICTIONS ═══ */}
       {keyPredictions && keyPredictions.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <h3 className="text-gold font-serif text-sm mb-2">🎯 {T(lang, '關鍵預測', 'Key Predictions')}</h3>
+          <h3 className="text-gold font-serif text-base mb-2">🎯 {T(lang, '關鍵預測', 'Key Predictions')}</h3>
           <div className="grid gap-2">
             {keyPredictions.map((pred, i) => (
               <div key={i} className="glass-card rounded-xl p-3 border border-gold/20">
-                <div className="flex gap-2 items-start">
-                  <span className="px-2 py-0.5 rounded bg-gold/20 text-gold text-[10px] font-bold flex-shrink-0">{pred.age}</span>
-                  <div>
-                    <p className="text-[var(--text-secondary)] text-xs">{pred.event}</p>
-                    <p className="text-[var(--text-muted)] text-[10px] mt-0.5 italic">{pred.basis}</p>
-                  </div>
+                <div className="mb-1.5">
+                  <span className="px-2 py-0.5 rounded bg-gold/20 text-gold text-[11px] font-bold">{pred.age}</span>
                 </div>
+                <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{pred.event}</p>
+                <p className="text-[var(--text-muted)] text-xs mt-1 italic leading-relaxed">{pred.basis}</p>
               </div>
             ))}
           </div>
@@ -335,7 +390,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
       {/* ═══ KEY ADVICE ═══ */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
-          <h3 className="text-gold font-serif text-sm mb-2">{T(lang, '核心建議', 'Key Advice')}</h3>
+          <h3 className="text-gold font-serif text-base mb-2">{T(lang, '核心建議', 'Key Advice')}</h3>
           <div className="grid gap-2">
             {d.keyAdvice.map((advice: string, i: number) => (
               <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">

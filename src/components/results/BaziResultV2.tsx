@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import PersonInfoHeader from './PersonInfoHeader'
+import SectionDrawer from './SectionDrawer'
 import { useDragScroll } from '@/hooks/useDragScroll'
 import type { DivinationResultProps, BaziDataV2, ShenShaEntry, LiuNianEntry } from '@/types/divination'
 
@@ -19,6 +20,10 @@ const BRANCH_ELEMENT_MAP: Record<string, string> = {
   '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水',
 }
 const charElement = (ch: string): string => STEM_ELEMENT_MAP[ch] || BRANCH_ELEMENT_MAP[ch] || ''
+
+const ELEMENT_ICON: Record<string, string> = {
+  木: '🪵', 火: '🔥', 土: '⛰️', 金: '🪙', 水: '💧',
+}
 
 const elClr: Record<string, string> = {
   金: 'text-amber-200', 木: 'text-emerald-400', 水: 'text-sky-400',
@@ -38,11 +43,9 @@ const sectionsList = [
 
 const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
-export default function BaziResultV2({ data, isShared, rawResult, readingId, chatMessages, subjectName, birthInfo, createdAt }: DivinationResultProps) {
+export default function BaziResultV2({ data, isShared, rawResult, readingId, chatMessages, subjectName, birthInfo, createdAt, streaming }: DivinationResultProps) {
   const d = data as unknown as BaziDataV2
   const { lang } = useLang()
-  const [activeSection, setActiveSection] = useState('overview')
-  const [showChart, setShowChart] = useState(false)
   const [showExtra, setShowExtra] = useState(false)
   const liuNianScroll = useDragScroll<HTMLDivElement>()
 
@@ -67,52 +70,71 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
 
       <PersonInfoHeader subjectName={subjectName} birthInfo={birthInfo} createdAt={createdAt} />
 
-      {/* ═══ FORMATION BADGE + DAY MASTER ═══ */}
+      {/* ═══ FORMATION BADGE + DAY MASTER ═══
+          Mobile-first layout: stacked sections (day master row, formation,
+          five-elements bars, lucky/avoid + extras). On sm+ the day master
+          badge floats left and the rest stacks alongside it. The previous
+          3-column flex squashed badly on phones. */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
-        <div className="flex items-start gap-3 sm:gap-4">
-          {/* Day Master badge */}
-          <div className="text-center flex-shrink-0">
-            <div className={`text-2xl sm:text-3xl font-serif font-bold ${elClr[d.dayMaster?.element || '']}`}>
-              {d.dayMaster?.stem}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4">
+          {/* Day Master badge — full row on mobile, fixed col on sm+ */}
+          <div className="flex sm:flex-col items-center sm:items-center justify-between sm:justify-start gap-3 sm:gap-1 sm:flex-shrink-0 sm:w-16">
+            <div className="flex flex-col items-center">
+              <div className={`text-3xl font-serif font-bold ${elClr[d.dayMaster?.element || '']}`}>
+                {d.dayMaster?.stem}
+              </div>
+              <div className={`text-[10px] ${elClr[d.dayMaster?.element || '']}`}>
+                {d.dayMaster?.yinYang || ''}{d.dayMaster?.element}
+              </div>
+              <div className="mt-1 px-2 py-0.5 rounded-full bg-gold/10 border border-gold/30 text-gold text-[10px] whitespace-nowrap">
+                {d.dayMaster?.strengthLabel || d.dayMaster?.strength}
+              </div>
             </div>
-            <div className={`text-[10px] ${elClr[d.dayMaster?.element || '']}`}>
-              {d.dayMaster?.yinYang || ''}{d.dayMaster?.element}
-            </div>
-            <div className="mt-1 px-2 py-0.5 rounded-full bg-gold/10 border border-gold/30 text-gold text-[10px]">
-              {d.dayMaster?.strengthLabel || d.dayMaster?.strength}
+
+            {/* Mobile-only: Lucky/Avoid inline next to day master */}
+            <div className="sm:hidden flex flex-col items-end text-right space-y-0.5 flex-1 min-w-0">
+              <div>
+                <span className="text-[var(--text-muted)] text-[10px]">{T(lang, '喜', 'Lucky')}: </span>
+                {(d.luckyElements || []).map(el => (
+                  <span key={el} className={`text-xs font-bold ${elClr[el] || ''}`}>{el}</span>
+                ))}
+              </div>
+              <div>
+                <span className="text-[var(--text-muted)] text-[10px]">{T(lang, '忌', 'Avoid')}: </span>
+                {(d.avoidElements || []).map(el => (
+                  <span key={el} className="text-red-400 text-xs font-bold">{el}</span>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Formation + Five Elements */}
-          <div className="flex-1 space-y-2">
-            {/* Formation badge */}
+          <div className="flex-1 space-y-2 min-w-0">
             {d.formation && (
               <div className="group relative">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gold/10 border border-gold/30">
                   <span className="text-gold font-serif text-xs font-bold">{d.formation.name}</span>
                 </div>
                 {d.formation.analysis && (
-                  <div className="mt-1 text-[var(--text-muted)] text-[10px] leading-relaxed">
+                  <div className="mt-1.5 text-[var(--text-secondary)] text-xs leading-relaxed break-words">
                     {d.formation.analysis}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Seasonal note */}
             {d.seasonalNote && (
-              <div className="text-[var(--text-muted)] text-[10px] italic leading-relaxed">
+              <div className="text-[var(--text-muted)] text-xs italic leading-relaxed break-words">
                 {d.seasonalNote}
               </div>
             )}
 
-            {/* Five Elements bars */}
             <div className="space-y-1">
               {feEntries.map(([el, count]) => (
                 <div key={el} className="flex items-center gap-1.5">
                   <span className={`w-4 text-[10px] ${elClr[el]}`}>{el}</span>
-                  <div className="flex-1 bg-navy-900 rounded-full h-1.5">
+                  <div className="flex-1 bg-navy-900 rounded-full h-1.5 min-w-0">
                     <div className={`h-1.5 rounded-full ${elBar[el]}`} style={{ width: `${(count / feMax) * 100}%` }} />
                   </div>
                   <span className="text-[var(--text-muted)] text-[10px] w-4 text-right">{count}</span>
@@ -121,21 +143,20 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
             </div>
           </div>
 
-          {/* Lucky/Avoid */}
-          <div className="flex-shrink-0 text-right space-y-1">
+          {/* Lucky/Avoid + Extras — sm+ only (mobile shows lucky/avoid inline above) */}
+          <div className="hidden sm:block flex-shrink-0 text-right space-y-1">
             <div>
               <span className="text-[var(--text-muted)] text-[10px]">{T(lang, '喜', 'Lucky')}: </span>
               {(d.luckyElements || []).map(el => (
-                <span key={el} className={`text-[10px] sm:text-xs font-bold ${elClr[el] || ''}`}>{el}</span>
+                <span key={el} className={`text-xs font-bold ${elClr[el] || ''}`}>{el}</span>
               ))}
             </div>
             <div>
               <span className="text-[var(--text-muted)] text-[10px]">{T(lang, '忌', 'Avoid')}: </span>
               {(d.avoidElements || []).map(el => (
-                <span key={el} className="text-red-400 text-[10px] sm:text-xs font-bold">{el}</span>
+                <span key={el} className="text-red-400 text-xs font-bold">{el}</span>
               ))}
             </div>
-            {/* Extra info badges */}
             <div className="space-y-0.5 mt-2">
               {d.fetalOrigin && <div className="text-[var(--text-muted)] text-[9px]">{T(lang, '胎元', 'Fetal')}: <span className="text-[var(--text-secondary)]">{d.fetalOrigin}</span></div>}
               {d.ownSign && <div className="text-[var(--text-muted)] text-[9px]">{T(lang, '命宮', 'Life')}: <span className="text-[var(--text-secondary)]">{d.ownSign}</span></div>}
@@ -143,6 +164,15 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
             </div>
           </div>
         </div>
+
+        {/* Mobile-only: extras row at the bottom */}
+        {(d.fetalOrigin || d.ownSign || d.bodySign) && (
+          <div className="sm:hidden mt-2 pt-2 border-t border-gold/10 flex flex-wrap gap-x-3 gap-y-1 text-[9px]">
+            {d.fetalOrigin && <div className="text-[var(--text-muted)]">{T(lang, '胎元', 'Fetal')}: <span className="text-[var(--text-secondary)]">{d.fetalOrigin}</span></div>}
+            {d.ownSign && <div className="text-[var(--text-muted)]">{T(lang, '命宮', 'Life')}: <span className="text-[var(--text-secondary)]">{d.ownSign}</span></div>}
+            {d.bodySign && <div className="text-[var(--text-muted)]">{T(lang, '身宮', 'Body')}: <span className="text-[var(--text-secondary)]">{d.bodySign}</span></div>}
+          </div>
+        )}
       </motion.div>
 
       {/* ═══ BRANCH RELATIONSHIPS (if any) ═══ */}
@@ -173,28 +203,24 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
             ))}
           </div>
           {d.branchAnalysis && (
-            <p className="mt-2 text-[var(--text-muted)] text-[10px] leading-relaxed">{d.branchAnalysis}</p>
+            <p className="mt-2 text-[var(--text-secondary)] text-xs leading-relaxed">{d.branchAnalysis}</p>
           )}
         </motion.div>
       )}
 
-      {/* ═══ CHART DATA (Collapsible) ═══ */}
-      <button onClick={() => setShowChart(!showChart)}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
-        style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--gold)' }}>
-        <span className="font-serif flex items-center gap-2">☰ {T(lang, '八字排盤', 'BaZi Chart')}</span>
-        <motion.span animate={{ rotate: showChart ? 180 : 0 }} transition={{ duration: 0.2 }}>▼</motion.span>
-      </button>
-
-      <AnimatePresence initial={false}>
-      {showChart && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="space-y-3 overflow-hidden"
-        >
+      {/* ═══ CHART DATA — top-level drawer, defaults open, centered title ═══
+          The chart is the centerpiece of a bazi reading; rendering it open
+          on first paint makes the four pillars / shensha / xiao yun
+          immediately visible without an extra tap. The centered title
+          announces this drawer as the chart category, distinct from the
+          left-aligned analysis section drawers below. */}
+      <SectionDrawer
+        icon="🏛️"
+        title={T(lang, '八字命盤', 'BaZi Chart')}
+        align="center"
+        size="lg"
+      >
+        <div className="space-y-3">
           {/* Four Pillars Table */}
           <motion.div className="glass-card rounded-xl p-2 sm:p-4 border border-gold/20">
             {tst && (
@@ -227,19 +253,27 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                 </tr>
                 <tr className="border-t border-[var(--text-muted)]/10">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '天干', 'Stem')}</td>
-                  {pillars.map(({ label, data: p }) => (
-                    <td key={label} className="py-1.5">
-                      <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[charElement(p?.stem || '')]}`}>{p?.stem || '?'}</span>
-                    </td>
-                  ))}
+                  {pillars.map(({ label, data: p }) => {
+                    const el = charElement(p?.stem || '')
+                    return (
+                      <td key={label} className="py-1.5">
+                        <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[el]}`}>{p?.stem || '?'}</span>
+                        {el && <span className="text-[10px] ml-0.5 opacity-70" aria-label={el}>{ELEMENT_ICON[el]}</span>}
+                      </td>
+                    )
+                  })}
                 </tr>
                 <tr className="border-t border-[var(--text-muted)]/10">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '地支', 'Branch')}</td>
-                  {pillars.map(({ label, data: p }) => (
-                    <td key={label} className="py-1.5">
-                      <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[charElement(p?.branch || '')]}`}>{p?.branch || '?'}</span>
-                    </td>
-                  ))}
+                  {pillars.map(({ label, data: p }) => {
+                    const el = charElement(p?.branch || '')
+                    return (
+                      <td key={label} className="py-1.5">
+                        <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[el]}`}>{p?.branch || '?'}</span>
+                        {el && <span className="text-[10px] ml-0.5 opacity-70" aria-label={el}>{ELEMENT_ICON[el]}</span>}
+                      </td>
+                    )
+                  })}
                 </tr>
                 <tr className="border-t border-white/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '藏干', 'Hidden')}</td>
@@ -338,35 +372,107 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
             </motion.div>
           )}
           </AnimatePresence>
-        </motion.div>
-      )}
-      </AnimatePresence>
-
-      {/* ═══ SECTIONS TABS ═══ */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <div className="flex flex-wrap gap-1 mb-3">
-          {sectionsList.map(s => (
-            <button key={s.key} onClick={() => setActiveSection(s.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-[var(--text-secondary)] hover:text-gold border border-gold/20'}`}>
-              {s.icon} {lang === 'en' ? s.en : s.label}
-            </button>
-          ))}
         </div>
-        <AnimatePresence mode="wait">
-          <motion.div key={activeSection} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown overflow-x-auto break-words">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
-              </ReactMarkdown>
+      </SectionDrawer>
+
+      {/* ═══ OVERVIEW — main text, NOT a drawer ═══
+          Overview is the lede of the reading; it's always-visible main
+          prose, not collapsible. Other sections (career/marriage/...) are
+          drawers below. During streaming this block also shows the
+          typing-dot + blur placeholder. */}
+      {(() => {
+        const overview = d.sections?.overview
+        const hasContent = typeof overview === 'string' && overview.trim().length > 0
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04 }}
+            className={`px-1 sm:px-2 transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}
+          >
+            <h3 className="text-gold font-serif text-base mb-3 flex items-center gap-2">
+              <span aria-hidden>☰</span>
+              <span>{T(lang, '總覽', 'Overview')}</span>
+              {streaming && !hasContent && (
+                <span className="inline-flex gap-0.5 ml-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseV2_1.4s_ease_infinite]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseV2_1.4s_ease_0.2s_infinite]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseV2_1.4s_ease_0.4s_infinite]" />
+                </span>
+              )}
+            </h3>
+            <div className="text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown break-words">
+              {hasContent ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{overview}</ReactMarkdown>
+              ) : streaming ? (
+                <p className="text-[var(--text-muted)] leading-relaxed">
+                  {T(lang,
+                    '此段正在由玄機大師撰寫，將根據命盤結構性數據進行深度分析，請稍候片刻…',
+                    'This section is being composed by Master Xuanji based on your chart data…')}
+                </p>
+              ) : (
+                <span className="text-[var(--text-muted)] text-sm">
+                  {T(lang, '暫無內容', 'No content')}
+                </span>
+              )}
             </div>
           </motion.div>
-        </AnimatePresence>
-      </motion.div>
+        )
+      })()}
+
+      {/* ═══ OTHER SECTIONS — drawer style (all default-open) ═══
+          Each remaining section is its own collapsible drawer. Default
+          is open so the full reading is visible top-to-bottom on first
+          paint; users can collapse individually. During streaming the
+          drawer header shows a typing-dot indicator and the body has a
+          gaussian blur placeholder until content starts arriving. */}
+      <div className="space-y-2">
+        {sectionsList.filter(s => s.key !== 'overview').map((s) => {
+          const content = d.sections?.[s.key as keyof typeof d.sections]
+          const hasContent = typeof content === 'string' && content.trim().length > 0
+          return (
+            <SectionDrawer
+              key={s.key}
+              icon={s.icon}
+              title={lang === 'en' ? s.en : s.label}
+              trailing={streaming && !hasContent ? (
+                <span className="inline-flex gap-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseV2_1.4s_ease_infinite]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseV2_1.4s_ease_0.2s_infinite]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseV2_1.4s_ease_0.4s_infinite]" />
+                </span>
+              ) : undefined}
+            >
+              <div className={`text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown overflow-x-auto break-words transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}>
+                {hasContent ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                ) : streaming ? (
+                  <p className="text-[var(--text-muted)] leading-relaxed">
+                    {T(lang,
+                      '此段正在由玄機大師撰寫，將根據命盤結構性數據進行深度分析，請稍候片刻…',
+                      'This section is being composed by Master Xuanji based on your chart data…')}
+                  </p>
+                ) : (
+                  <span className="text-[var(--text-muted)] text-sm">
+                    {T(lang, '暫無內容', 'No content')}
+                  </span>
+                )}
+              </div>
+            </SectionDrawer>
+          )
+        })}
+      </div>
+      <style jsx global>{`
+        @keyframes dotPulseV2 {
+          0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+          40% { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
 
       {/* ═══ STRUCTURED DA YUN ANALYSIS ═══ */}
       {d.daYunAnalysis && d.daYunAnalysis.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <h3 className="text-gold font-serif text-sm mb-2 flex items-center gap-2">
+          <h3 className="text-gold font-serif text-base mb-2 flex items-center gap-2">
             🔮 {T(lang, '大運精批', 'Da Yun Analysis')}
             {d.qiYun && (
               <span className="text-[var(--text-muted)] text-[9px] font-normal">
@@ -379,42 +485,42 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
               const stemEl = charElement(dy.stem)
               const branchEl = charElement(dy.branch)
               return (
-                <details key={i} className="glass-card rounded-xl border border-gold/20 group" open={i === 0}>
+                <details key={i} className="glass-card rounded-xl border border-gold/20 group" open>
                   <summary className="flex items-center gap-3 px-3 py-2.5 cursor-pointer list-none">
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className={`text-base font-serif font-bold ${elClr[stemEl]}`}>{dy.stem}</span>
-                      <span className={`text-base font-serif font-bold ${elClr[branchEl]}`}>{dy.branch}</span>
+                      <span className={`text-lg font-serif font-bold ${elClr[stemEl]}`}>{dy.stem}</span>
+                      <span className={`text-lg font-serif font-bold ${elClr[branchEl]}`}>{dy.branch}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[var(--text-muted)] text-[10px]">
+                      <div className="text-[var(--text-muted)] text-[11px]">
                         {dy.startAge}-{dy.endAge}{T(lang, '歲', '')} ({dy.startYear}-{dy.endYear})
                       </div>
                     </div>
                     <motion.span className="text-gold text-xs flex-shrink-0 group-open:rotate-180 transition-transform">▼</motion.span>
                   </summary>
-                  <div className="px-3 pb-3 space-y-2 border-t border-gold/10 pt-2">
+                  <div className="px-3 pb-3 space-y-2 border-t border-gold/10 pt-2.5">
                     {dy.theme && (
-                      <p className="text-[var(--text-secondary)] text-xs leading-relaxed font-serif">{dy.theme}</p>
+                      <p className="text-[var(--text-secondary)] text-sm leading-relaxed font-serif">{dy.theme}</p>
                     )}
                     {dy.interactions && (
-                      <p className="text-[var(--text-muted)] text-[10px] leading-relaxed">{dy.interactions}</p>
+                      <p className="text-[var(--text-muted)] text-xs leading-relaxed">{dy.interactions}</p>
                     )}
                     {dy.keyYears && dy.keyYears.length > 0 && (
                       <div className="space-y-1">
-                        <div className="text-[var(--text-muted)] text-[10px] font-medium">{T(lang, '關鍵流年', 'Key Years')}:</div>
+                        <div className="text-[var(--text-muted)] text-xs font-medium">{T(lang, '關鍵流年', 'Key Years')}:</div>
                         {dy.keyYears.map((ky, j) => (
                           <div key={j} className="flex gap-2 items-start">
-                            <span className="text-gold text-[10px] font-mono flex-shrink-0">{ky.year}</span>
-                            <span className="text-[var(--text-secondary)] text-[10px] font-serif">{ky.ganZhi}</span>
-                            <span className="text-[var(--text-muted)] text-[10px]">{ky.event}</span>
+                            <span className="text-gold text-xs font-mono flex-shrink-0">{ky.year}</span>
+                            <span className="text-[var(--text-secondary)] text-xs font-serif">{ky.ganZhi}</span>
+                            <span className="text-[var(--text-muted)] text-xs">{ky.event}</span>
                           </div>
                         ))}
                       </div>
                     )}
                     {dy.advice && (
-                      <div className="mt-1 px-2 py-1.5 rounded-lg bg-gold/5 border border-gold/20">
-                        <span className="text-gold text-[10px]">💡 </span>
-                        <span className="text-[var(--text-secondary)] text-[10px]">{dy.advice}</span>
+                      <div className="mt-1 px-2.5 py-2 rounded-lg bg-gold/5 border border-gold/20">
+                        <span className="text-gold text-xs">💡 </span>
+                        <span className="text-[var(--text-secondary)] text-sm leading-relaxed">{dy.advice}</span>
                       </div>
                     )}
                   </div>
@@ -428,7 +534,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
       {/* ═══ LIU NIAN TIMELINE ═══ */}
       {d.liuNian && d.liuNian.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}>
-          <h3 className="text-gold font-serif text-sm mb-2">{T(lang, '流年一覽', 'Annual Fortune')}</h3>
+          <h3 className="text-gold font-serif text-base mb-2">{T(lang, '流年一覽', 'Annual Fortune')}</h3>
           <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
             <div ref={liuNianScroll.ref} onMouseDown={liuNianScroll.onMouseDown}
               className="overflow-x-auto scrollbar-hide cursor-grab">
@@ -479,10 +585,28 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
         </motion.div>
       )}
 
+      {/* ═══ KEY PREDICTIONS ═══ */}
+      {d.keyPredictions && d.keyPredictions.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <h3 className="text-gold font-serif text-base mb-2">🎯 {T(lang, '關鍵預測', 'Key Predictions')}</h3>
+          <div className="grid gap-2">
+            {d.keyPredictions.map((pred: { age: string; event: string; basis: string }, i: number) => (
+              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20">
+                <div className="mb-1.5">
+                  <span className="px-2 py-0.5 rounded bg-gold/20 text-gold text-[11px] font-bold">{pred.age}</span>
+                </div>
+                <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{pred.event}</p>
+                <p className="text-[var(--text-muted)] text-xs mt-1 italic leading-relaxed">{pred.basis}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* ═══ KEY ADVICE ═══ */}
       {d.keyAdvice && d.keyAdvice.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <h3 className="text-gold font-serif text-sm mb-2">{T(lang, '核心建議', 'Key Advice')}</h3>
+          <h3 className="text-gold font-serif text-base mb-2">{T(lang, '核心建議', 'Key Advice')}</h3>
           <div className="grid gap-2">
             {d.keyAdvice.map((advice, i) => (
               <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">

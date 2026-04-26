@@ -84,6 +84,44 @@ const typeInfo: Record<string, { zhName: string; twName: string; enName: string;
 const T = (lang: string, zhTW: string, en: string) =>
   lang === 'en' ? en : zhTW
 
+/**
+ * Mutate-in-place helper for assembling the streaming partial result.
+ * Walks `path`, creating intermediate objects/arrays as needed, then
+ * applies `transform` to the leaf — the transform receives the existing
+ * value (or undefined) and returns the new value. Used both for
+ * appending chars to a partial string (`value_chunk`) and for setting
+ * a final value (`value_done`).
+ *
+ * Mutates `root` directly; callers serialize via `JSON.stringify(root)`
+ * to feed the renderer. We accept the mutation because path-tagged
+ * events arrive at high frequency (1-3 chars per event during a 200-
+ * char section) and shallow-cloning the entire tree per char would
+ * stall the React reconciler.
+ */
+function mutateAtPath(
+  root: Record<string, unknown>,
+  path: (string | number)[],
+  transform: (existing: unknown) => unknown,
+): void {
+  if (path.length === 0) return
+  let cur = root as Record<string | number, unknown>
+  for (let i = 0; i < path.length - 1; i++) {
+    const key = path[i]
+    const nextKey = path[i + 1]
+    const wantArray = typeof nextKey === 'number'
+    const existing = cur[key]
+    if (existing === undefined || existing === null) {
+      const fresh = wantArray ? [] : {}
+      cur[key] = fresh
+      cur = fresh as Record<string | number, unknown>
+    } else {
+      cur = existing as Record<string | number, unknown>
+    }
+  }
+  const lastKey = path[path.length - 1]
+  cur[lastKey] = transform(cur[lastKey])
+}
+
 export default function DivinationFormPage() {
   const { type } = useParams<{ type: string }>()
   const { data: session } = useSession()
@@ -103,6 +141,7 @@ export default function DivinationFormPage() {
     ownerInfo: '',
     readingDateTime: (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) })(),
     liuyaoLines: '', // JSON string of 6 lines, each {coins: [0|1, 0|1, 0|1], value: 6|7|8|9}
+    ichingLines: '', // same shape as liuyaoLines — proper three-coin cast (replaces legacy single-number `hexagram` field)
     subType: 'meihua',
     lunarToggle: 'solar',
     birthEnvironment: '',
@@ -110,6 +149,14 @@ export default function DivinationFormPage() {
     exactTime: '',
   })
   const [loading, setLoading] = useState(false)
+  // True while SSE is actively pushing partial result chunks. Drives the
+  // result panel into "streaming mode" where sections show typing-dot
+  // placeholders for fields not yet arrived.
+  const [streaming, setStreaming] = useState(false)
+  // Flips true on the first value_chunk — until then, LoadingOracle stays
+  // visible so the user doesn't stare at empty "玄機正在書寫…" placeholders
+  // during the (potentially long) LLM reasoning phase.
+  const [hasLLMContent, setHasLLMContent] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [resultType, setResultType] = useState<string>('')
   const [shareUrl, setShareUrl] = useState<string | null>(null)
@@ -319,10 +366,10 @@ export default function DivinationFormPage() {
     }
   }
 
-  const castHexagram = () => {
-    const n = Math.floor(Math.random() * 64) + 1
-    setField('hexagram', String(n))
-    toast.success(T(lang, `得卦：第${n}卦`, `Hexagram #${n}`))
+  // Reset the cast (used by 重新起卦 button on iching panel).
+  const resetIchingCast = () => {
+    setField('ichingLines', '')
+    setField('hexagram', '')
   }
 
   // Poll for a reading by ID until it's completed or failed
@@ -355,6 +402,7 @@ export default function DivinationFormPage() {
     setCachedReading(null)
     setLoading(true)
     setResult(null)
+    setHasLLMContent(false)
     setShareUrl(null)
     // Use instant scroll + setTimeout fallback for mobile browsers
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
@@ -404,13 +452,23 @@ export default function DivinationFormPage() {
       return
     }
 
-    // Step 2: Fire LLM request + poll by ID as fallback
+    // Step 2: Streaming SSE — receive section-by-section LLM output. The
+    // route emits `chart_ready` (deterministic chart from calculator),
+    // `value_chunk` / `value_done` (path-tagged JSON value events while
+    // the LLM types), and a final `done` (full saved reading). The
+    // streaming UX makes 60-120s waits feel continuous instead of blank.
+    //
+    // Polling-by-id fallback retained for cases where SSE truly fails
+    // (Cloudflare 524, network drop) — same recovery as before.
     try {
       const fetchController = new AbortController()
       const fetchTimeout = setTimeout(() => fetchController.abort(), llmTimeoutMs + 10000)
       const res = await fetch('/api/divination', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+        },
         body: JSON.stringify({
           type,
           inputData: formData,
@@ -426,13 +484,31 @@ export default function DivinationFormPage() {
         }),
         signal: fetchController.signal,
       })
-      clearTimeout(fetchTimeout)
-      let data
-      try {
-        data = await res.json()
-      } catch {
-        // Response is not JSON (e.g. Cloudflare 524 HTML) — fall back to polling by ID
-        if (pendingReadingId) {
+
+      const ct = res.headers.get('content-type') || ''
+      if (!res.ok || !ct.includes('text/event-stream')) {
+        // Server fell back to JSON (e.g. local proxy doesn't support
+        // streaming) or returned an error — use the legacy single-shot
+        // path. Try to parse the body either way.
+        clearTimeout(fetchTimeout)
+        let data: { reading?: { id: string; result: string }; error?: string; cached?: boolean } | null = null
+        try { data = await res.json() } catch { /* see polling fallback below */ }
+        if (res.ok && data?.reading) {
+          setResult(data.reading.result)
+          setResultType(type)
+          const savedId = data.reading.id || pendingReadingId || null
+          setReadingId(savedId)
+          if (savedId && typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('xuanji:readingComplete', { detail: { readingId: savedId, type } }))
+          }
+          if (data.cached) {
+            toast.success(T(lang, '已使用之前的八字分析結果', 'Using cached BaZi analysis'), { icon: '📦' })
+          }
+          fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
+        } else if (data?.error) {
+          toast.error(data.error)
+          reportError({ endpoint: '/api/divination', status: res.status, error: data.error, context: `type=${type}` })
+        } else if (pendingReadingId) {
           toast(T(lang, '⏳ 伺服器仍在處理中，等待結果...', '⏳ Server still processing, waiting for result...'), { icon: '🔄', duration: 5000 })
           const found = await pollForReadingById(pendingReadingId)
           if (found && found.status === 'completed') {
@@ -443,7 +519,6 @@ export default function DivinationFormPage() {
             fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
           } else {
             toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
-            reportError({ endpoint: '/api/divination', status: res.status, error: `Polling timeout — readingId=${pendingReadingId}`, context: `type=${type}` })
           }
         } else {
           toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
@@ -451,30 +526,115 @@ export default function DivinationFormPage() {
         setLoading(false)
         return
       }
-      if (res.ok) {
-        setResult(data.reading.result)
-        setResultType(type)
-        const savedId = data.reading.id || pendingReadingId || null
+
+      // SSE happy path. Build the partial result object as path-tagged
+      // events arrive; on `done` the server sends the final structured
+      // result (with merge-injected calculator fields), which replaces the
+      // partial in one shot.
+      const reader = res.body?.getReader()
+      if (!reader) {
+        clearTimeout(fetchTimeout)
+        toast.error(T(lang, '網絡錯誤，請重試', 'Network error, please retry'))
+        setLoading(false)
+        return
+      }
+      const decoder = new TextDecoder()
+      let buffer = ''
+      const partial: Record<string, unknown> = {}
+      let finalReading: { id: string | null; result: string } | null = null
+      let streamError: string | null = null
+      let hasLLMContentRef = false
+
+      // Begin showing the result panel as soon as the first byte arrives —
+      // the renderer reads `result` (which we keep updating with the
+      // serialized partial) and reveals sections progressively.
+      setResult(JSON.stringify(partial))
+      setResultType(type)
+      setStreaming(true)
+
+      // Throttle re-renders to one per animation frame. Without this, a
+      // 200-char section emits ~200 value_chunk events in a few seconds —
+      // setState'ing on every char would cause noticeable jank on mobile.
+      // RAF caps us at ~60 fps regardless of event rate.
+      let rafScheduled = false
+      const scheduleRender = () => {
+        if (rafScheduled) return
+        rafScheduled = true
+        requestAnimationFrame(() => {
+          rafScheduled = false
+          setResult(JSON.stringify(partial))
+        })
+      }
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const payload = line.slice(6).trim()
+          if (!payload) continue
+          let evt: { type: string; path?: (string | number)[]; text?: string; value?: unknown; seed?: Record<string, unknown>; error?: string; reading?: { id: string | null; result: string } } | null = null
+          try { evt = JSON.parse(payload) } catch { continue }
+          if (!evt) continue
+
+          if (evt.type === 'chart_ready' && evt.seed) {
+            // Backend pre-merged the deterministic chart into the same
+            // shape the renderer consumes (pillars / dayMaster / etc. at
+            // root). Spread it into our partial so paipan + structural
+            // chart data are visible at t=0.
+            for (const [k, v] of Object.entries(evt.seed)) {
+              ;(partial as Record<string, unknown>)[k] = v
+            }
+            scheduleRender()
+          } else if (evt.type === 'value_chunk' && evt.path && typeof evt.text === 'string') {
+            if (!hasLLMContentRef) { hasLLMContentRef = true; setHasLLMContent(true) }
+            mutateAtPath(partial, evt.path, (cur) => (typeof cur === 'string' ? cur : '') + evt.text)
+            scheduleRender()
+          } else if (evt.type === 'value_done' && evt.path) {
+            mutateAtPath(partial, evt.path, () => evt.value)
+            scheduleRender()
+          } else if (evt.type === 'done' && evt.reading) {
+            finalReading = evt.reading
+          } else if (evt.type === 'error' && evt.error) {
+            streamError = evt.error
+          }
+        }
+      }
+      clearTimeout(fetchTimeout)
+      setStreaming(false)
+
+      if (streamError) {
+        toast.error(streamError)
+        reportError({ endpoint: '/api/divination', error: streamError, context: `type=${type}, stream` })
+      } else if (finalReading) {
+        // Replace partial with the server-validated final result (Zod-
+        // approved + merge-injected fields like trueSolarTime).
+        setResult(finalReading.result)
+        const savedId = finalReading.id || pendingReadingId || null
         setReadingId(savedId)
-        // Notify the global Xuanji Master widget that a new reading is
-        // available so it can resume a paused conversation in context.
         if (savedId && typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('xuanji:readingComplete', {
-            detail: { readingId: savedId, type },
-          }))
+          window.dispatchEvent(new CustomEvent('xuanji:readingComplete', { detail: { readingId: savedId, type } }))
         }
-        if (data.cached) {
-          toast.success(T(lang, '已使用之前的八字分析結果', 'Using cached BaZi analysis'), { icon: '📦' })
-        }
-        // Refresh credits
         fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
-      } else {
-        toast.error(data.error || 'Error')
-        reportError({ endpoint: '/api/divination', status: res.status, error: data.error || 'Unknown error', context: `type=${type}` })
+      } else if (pendingReadingId) {
+        // Stream ended without `done` event — fall back to polling.
+        const found = await pollForReadingById(pendingReadingId)
+        if (found && found.status === 'completed') {
+          setResult(found.result)
+          setReadingId(found.id)
+          toast.success(T(lang, '結果已就緒', 'Result ready!'))
+          fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
+        } else {
+          toast.error(T(lang, '請求超時，請重試', 'Request timed out, please retry'))
+        }
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Network error'
-      // Network error or abort — poll by ID as fallback
+      setStreaming(false)
       if (pendingReadingId) {
         toast(T(lang, '⏳ 連接中斷，等待伺服器處理結果...', '⏳ Connection lost, waiting for server result...'), { icon: '🔄', duration: 5000 })
         const found = await pollForReadingById(pendingReadingId)
@@ -500,7 +660,7 @@ export default function DivinationFormPage() {
     e.preventDefault()
     if (!session) {
       toast.error(T(lang, '請先登入', 'Please sign in first'))
-      router.push('/login')
+      router.push(`/login?next=${encodeURIComponent(`/divination/${type}`)}`)
       return
     }
     if (isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) {
@@ -625,6 +785,23 @@ export default function DivinationFormPage() {
           onSubmit={handleSubmit}
           className="glass-card rounded-2xl p-4 sm:p-8 space-y-4 sm:space-y-5"
         >
+          {/* Target Person Selection — locked placeholder when signed out so
+              the form's vertical layout matches the signed-in state */}
+          {['bazi', 'ziwei'].includes(type) && !session && (
+            <button
+              type="button"
+              onClick={() => router.push(`/login?next=${encodeURIComponent(`/divination/${type}`)}`)}
+              className="w-full text-left border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-2 opacity-60 hover:opacity-80 hover:border-gold/40 transition-all cursor-pointer"
+            >
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wider">
+                👤 {T(lang, '預測對象', 'Reading For')}
+              </p>
+              <p className="text-white/50 text-sm">
+                🔒 {T(lang, '登入後可為自己或家人起卦', 'Sign in to read for yourself or family members')}
+              </p>
+            </button>
+          )}
+
           {/* Target Person Selection */}
           {['bazi', 'ziwei'].includes(type) && session && (
             <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-3">
@@ -866,19 +1043,102 @@ export default function DivinationFormPage() {
             </div>
           </>}
 
-          {/* I Ching */}
+          {/* I Ching — proper three-coin cast (six tosses, supports changing lines + variant) */}
           {type === 'iching' && <>
             <div>
               <label className={labelCls}>{T(lang, '您的問題', 'Your Question')}</label>
               <textarea className={inputCls + ' h-24 resize-none'} value={form.question} onChange={e => setField('question', e.target.value)} required placeholder={T(lang, '請詳述您想詢問的事情...', 'Describe your question in detail...')} />
             </div>
-            <div className="text-center">
-              <button type="button" onClick={castHexagram} className="px-6 py-3 border border-gold/50 text-gold rounded-xl hover:border-gold hover:bg-gold/10 transition-all">
-                {T(lang, '🎲 起卦', '🎲 Cast Hexagram')}
-              </button>
-              {form.hexagram && <p className="text-gold mt-3 text-xl font-serif">
-                {T(lang, `第 ${form.hexagram} 卦`, `Hexagram #${form.hexagram}`)}
-              </p>}
+            <div className="border border-gold/20 rounded-xl p-3 sm:p-4 bg-navy-900/50 space-y-4">
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+                🪙 {T(lang, '起卦（三枚銅錢法）', 'Cast Hexagram (Three Coin Method)')}
+              </p>
+              <p className="text-white/40 text-xs leading-relaxed">
+                {T(lang,
+                  '靜心默念所問，每次擲三枚銅錢——字面為陰（值2），背面為陽（值3）。三枚合計：6=老陰（變爻）、7=少陽、8=少陰、9=老陽（變爻）。共擲六次，從初爻到上爻。',
+                  'Focus on your question. Toss 3 coins: Heads=2 (Yin), Tails=3 (Yang). Sum: 6=Old Yin (changing), 7=Young Yang, 8=Young Yin, 9=Old Yang (changing). Toss 6 times, from bottom to top.'
+                )}
+              </p>
+              {(() => {
+                const lines: { coins: number[]; value: number }[] = form.ichingLines ? JSON.parse(form.ichingLines) : []
+                const currentLine = lines.length
+                const yaoNames = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻']
+                const yaoNamesEn = ['1st Line', '2nd Line', '3rd Line', '4th Line', '5th Line', '6th Line']
+                const valueLabels: Record<number, { zh: string; en: string; type: string }> = {
+                  6: { zh: '老陰 ⚋✕', en: 'Old Yin ⚋✕', type: 'changing' },
+                  7: { zh: '少陽 ⚊', en: 'Young Yang ⚊', type: 'stable' },
+                  8: { zh: '少陰 ⚋', en: 'Young Yin ⚋', type: 'stable' },
+                  9: { zh: '老陽 ⚊✕', en: 'Old Yang ⚊✕', type: 'changing' },
+                }
+
+                const tossCoins = () => {
+                  const coins: number[] = [0, 0, 0].map(() => Math.random() < 0.5 ? 2 : 3)
+                  const value = coins.reduce((a, b) => a + b, 0)
+                  const newLines = [...lines, { coins, value }]
+                  setField('ichingLines', JSON.stringify(newLines))
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {lines.length > 0 && (
+                      <div className="space-y-1.5">
+                        {[...lines].reverse().map((line, ri) => {
+                          const i = lines.length - 1 - ri
+                          const label = valueLabels[line.value]
+                          const isChanging = line.value === 6 || line.value === 9
+                          return (
+                            <div key={i} className={`flex items-center gap-3 px-3 py-1.5 rounded-lg ${isChanging ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-navy-800/50'}`}>
+                              <span className="text-white/40 text-xs w-10">{T(lang, yaoNames[i], yaoNamesEn[i])}</span>
+                              <div className="flex gap-1">
+                                {line.coins.map((c, ci) => (
+                                  <span key={ci} className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${c === 2 ? 'bg-navy-700 text-white/60 border border-white/20' : 'bg-gold/80 text-navy-900'}`}>
+                                    {c === 2 ? T(lang, '字', 'H') : T(lang, '背', 'T')}
+                                  </span>
+                                ))}
+                              </div>
+                              <span className="text-gold text-xs font-mono">{line.value}</span>
+                              <span className={`text-xs ${isChanging ? 'text-amber-400' : 'text-white/50'}`}>
+                                {T(lang, label.zh, label.en)}
+                              </span>
+                              <div className="ml-auto flex items-center gap-0.5">
+                                {(line.value === 7 || line.value === 9) ? (
+                                  <div className={`w-12 h-1.5 rounded ${isChanging ? 'bg-amber-400' : 'bg-gold/60'}`} />
+                                ) : (
+                                  <>
+                                    <div className={`w-5 h-1.5 rounded ${isChanging ? 'bg-amber-400' : 'bg-gold/40'}`} />
+                                    <div className="w-1.5" />
+                                    <div className={`w-5 h-1.5 rounded ${isChanging ? 'bg-amber-400' : 'bg-gold/40'}`} />
+                                  </>
+                                )}
+                                {isChanging && <span className="text-amber-400 text-xs ml-1">✕</span>}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      {currentLine < 6 ? (
+                        <button type="button" onClick={tossCoins}
+                          className="flex-1 px-5 py-3 border border-gold/50 text-gold rounded-xl hover:border-gold hover:bg-gold/10 transition-all text-center">
+                          🪙 {T(lang, `擲第${currentLine + 1}次 — ${yaoNames[currentLine]}`, `Toss #${currentLine + 1} — ${yaoNamesEn[currentLine]}`)}
+                        </button>
+                      ) : (
+                        <div className="flex-1 px-5 py-3 border border-gold/40 bg-gold/10 text-gold rounded-xl text-center text-sm">
+                          ✓ {T(lang, '六爻已成，可以解卦', 'Six lines cast — ready to consult')}
+                        </div>
+                      )}
+                      {currentLine > 0 && (
+                        <button type="button" onClick={resetIchingCast}
+                          className="px-3 py-3 text-white/40 hover:text-white/70 text-xs">
+                          {T(lang, '重起', 'Reset')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           </>}
 
@@ -1112,8 +1372,12 @@ export default function DivinationFormPage() {
               <textarea className={inputCls + ' h-24 resize-none'} value={form.question} onChange={e => setField('question', e.target.value)} required placeholder={T(lang, '詳述想詢問的事項...', 'Describe your situation...')} />
             </div>
             <div>
-              <label className={labelCls}>{T(lang, '起盤時間', 'Reading Date/Time')}</label>
+              <label className={labelCls}>{T(lang, '占算時間', 'Divination Time')}</label>
               <input type="datetime-local" className={inputCls} value={form.readingDateTime} onChange={e => setField('readingDateTime', e.target.value)} />
+              <p className="text-white/40 text-xs mt-1">{T(lang,
+                '默認為當下（看當前局勢）；若您要擇吉時行動，可改為計劃行動的時刻。',
+                'Defaults to now (read current situation). If choosing an auspicious time to act, set it to your planned action time.'
+              )}</p>
             </div>
           </>}
 
@@ -1164,12 +1428,20 @@ export default function DivinationFormPage() {
             </div>
           </>}
 
-          {/* Common optional question for non-question-first types */}
-          {(type === 'bazi' || type === 'ziwei') && (
-            <div>
-              <label className={labelCls}>{T(lang, '想了解的方面（可選）', 'Focus Area (optional)')}</label>
-              <input type="text" className={inputCls} value={form.question} onChange={e => setField('question', e.target.value)} placeholder={T(lang, '例：事業運、婚姻、財運...', 'e.g. career, marriage, wealth...')} />
-            </div>
+          {/* Credits — locked placeholder when signed out */}
+          {!session && (
+            <button
+              type="button"
+              onClick={() => router.push(`/login?next=${encodeURIComponent(`/divination/${type}`)}`)}
+              className="w-full text-left border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-2 opacity-60 hover:opacity-80 hover:border-gold/40 transition-all cursor-pointer"
+            >
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wider">
+                ✨ {T(lang, '機緣', 'Karma')}
+              </p>
+              <p className="text-white/50 text-sm">
+                🔒 {T(lang, '登入後查看剩餘機緣與本次消耗', 'Sign in to see your Karma balance and cost')}
+              </p>
+            </button>
           )}
 
           {/* Credits display */}
@@ -1189,6 +1461,22 @@ export default function DivinationFormPage() {
                 </span>
               </div>
             </div>
+          )}
+
+          {/* Privacy Controls — locked placeholder when signed out */}
+          {!session && (
+            <button
+              type="button"
+              onClick={() => router.push(`/login?next=${encodeURIComponent(`/divination/${type}`)}`)}
+              className="w-full text-left border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-2 opacity-60 hover:opacity-80 hover:border-gold/40 transition-all cursor-pointer"
+            >
+              <p className="text-white/60 text-xs font-semibold uppercase tracking-wider">
+                🔒 {T(lang, '隱私設置', 'Privacy Settings')}
+              </p>
+              <p className="text-white/50 text-sm">
+                🔒 {T(lang, '登入後可選擇是否儲存歷史記錄與生辰資訊', 'Sign in to choose what to save (history & birth info)')}
+              </p>
+            </button>
           )}
 
           {/* Privacy Controls */}
@@ -1263,6 +1551,27 @@ export default function DivinationFormPage() {
             </div>
           )}
 
+          {/* PaipanOnly — locked placeholder when signed out (only for the
+              types that support it server-side) */}
+          {!session && ['bazi', 'ziwei', 'qimen', 'meihua'].includes(type) && (
+            <label
+              className="flex items-center gap-2 opacity-50 cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault()
+                router.push(`/login?next=${encodeURIComponent(`/divination/${type}`)}`)
+              }}
+            >
+              <input
+                type="checkbox"
+                disabled
+                className="w-4 h-4 rounded border-gold/30 accent-gold cursor-pointer"
+              />
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                🔒 {T(lang, '只排盤模式（登入後可用）', 'Paipan-only mode (sign in to enable)')}
+              </span>
+            </label>
+          )}
+
           {/* paipanOnly checkbox (all logged-in users) */}
           {session && credits && ['bazi', 'ziwei', 'qimen', 'meihua'].includes(type) && (
             <label className="flex items-center gap-2 cursor-pointer">
@@ -1305,44 +1614,37 @@ export default function DivinationFormPage() {
             return (
               <button
                 type="submit"
-                disabled={(isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) || (type === 'liuyao' && (!form.liuyaoLines || (JSON.parse(form.liuyaoLines || '[]')).length < 6))}
+                disabled={(isSouthernHemisphere && ['bazi', 'ziwei'].includes(type)) || (type === 'liuyao' && (!form.liuyaoLines || (JSON.parse(form.liuyaoLines || '[]')).length < 6)) || (type === 'iching' && (!form.ichingLines || (JSON.parse(form.ichingLines || '[]')).length < 6))}
                 className="w-full py-4 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {paipanOnly
-                  ? T(lang, '排盤 →', 'Calculate →')
-                  : (session && !isAdmin
-                    ? `${T(lang, '解卦', 'Consult Oracle')} (${cost} ${T(lang, '點', 'pts')}) →`
-                    : T(lang, '解卦 →', 'Consult Oracle →'))
+                {!session
+                  ? T(lang, '🔒 登入並解卦 →', '🔒 Sign in & Consult →')
+                  : paipanOnly
+                    ? T(lang, '排盤 →', 'Calculate →')
+                    : (!isAdmin
+                      ? `${T(lang, '解卦', 'Consult Oracle')} (${cost} ${T(lang, '點', 'pts')}) →`
+                      : T(lang, '解卦 →', 'Consult Oracle →'))
                 }
               </button>
             )
           })()}
 
-          {!session && (
-            <p className="text-center text-white/50 text-sm">
-              {T(lang, '需要登入才能儲存歷史記錄', 'Sign in to save your readings')}
-            </p>
-          )}
         </motion.form>
       )}
 
-      {loading && (
+      {/* Loading state: shown until the first LLM content token arrives.
+          During the streaming reasoning phase (chart_ready received but no
+          value_chunk yet) the user would otherwise stare at empty "玄機正在
+          書寫…" placeholders for minutes — the loading animation is a better
+          experience. For non-streaming (blocking) calls, this stays until
+          result is set. */}
+      {((loading && !streaming && !result) || (streaming && !hasLLMContent)) && (
         <div className="flex-1 flex flex-col">
           <LoadingOracle divinationType={type} />
-          <div className="mt-auto pt-8">
-            <div className="glass-card rounded-xl p-4 text-center" style={{ borderColor: 'var(--card-border)' }}>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {T(lang,
-                  '🔮 天機推演中，此過程約需數分鐘。您可先行離開，稍後於「歷史記錄」中查閱結果。',
-                  '🔮 The oracle is processing your reading — this may take a few minutes. Feel free to step away; your result will be saved to your reading history.'
-                )}
-              </p>
-            </div>
-          </div>
         </div>
       )}
 
-      {result && (
+      {(hasLLMContent || (!streaming && result)) && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1360,9 +1662,10 @@ export default function DivinationFormPage() {
             </button>
           </div>
           <ResultRenderer
-            result={result}
+            result={result ?? '{}'}
             type={resultType || type}
             readingId={readingId}
+            streaming={streaming}
             subjectName={
               targetType === 'family' && selectedMemberId && selectedMemberId !== '__new__'
                 ? (() => {

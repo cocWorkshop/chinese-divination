@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import YinYangIcon from '@/components/YinYangIcon'
+import { useLang } from '@/components/LanguageContext'
 
 interface Article {
   slug: string; title: string; summary: string | null
@@ -23,6 +24,8 @@ const CATEGORIES = [
 ]
 
 export default function WikiPage() {
+  const { lang } = useLang()
+  const isEn = lang === 'en'
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -61,9 +64,13 @@ export default function WikiPage() {
 
         {/* Articles grid */}
         {loading ? (
-          <div className="text-center text-white/40 py-12 animate-pulse">載入中...</div>
+          <div className="text-center text-white/40 py-12 animate-pulse">
+            {isEn ? 'Loading...' : '載入中...'}
+          </div>
         ) : articles.length === 0 ? (
-          <div className="text-center text-white/40 py-12">暫無文章</div>
+          <div className="text-center text-white/40 py-12">
+            {isEn ? 'No articles yet' : '暫無文章'}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {articles.map((a, i) => (

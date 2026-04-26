@@ -19,6 +19,15 @@ export interface DivinationResultProps {
     exactTime?: string
   } | null
   createdAt?: string
+  /**
+   * True while a partial-result SSE stream is still arriving. Renderers
+   * use it to:
+   *   - show typing-dot placeholders for fields not yet populated
+   *   - keep the result panel mounted so partial sections animate in
+   *   - skip features that need the final saved reading id (sharing, etc.)
+   * Becomes false the moment the server sends `done`.
+   */
+  streaming?: boolean
 }
 
 export interface ChatMsg {
@@ -105,6 +114,7 @@ export interface BaziDataV2 {
   sections: { overview: string; career: string; marriage: string; wealth: string; health: string }
   daYunAnalysis?: DaYunAnalysisEntry[]
   branchAnalysis?: string
+  keyPredictions?: { age: string; event: string; basis: string }[]
   keyAdvice: string[]
   luckyInfo: { colors: string[]; directions: string[] }
   shenSha?: ShenShaEntry[]
@@ -302,15 +312,24 @@ export interface FengshuiData {
 
 // ─── IChingResult Types ───
 
+export interface IChingHexagram {
+  number: number; name: string; chineseName: string
+  upperTrigram: { name: string; symbol: string; element: string }
+  lowerTrigram: { name: string; symbol: string; element: string }
+  lines: number[]
+}
+
 export interface IChingData {
-  hexagram: {
-    number: number; name: string; chineseName: string
-    upperTrigram: { name: string; symbol: string; element: string }
-    lowerTrigram: { name: string; symbol: string; element: string }
-    lines: number[]
-  }
+  hexagram: IChingHexagram
+  /** 之卦 — only present when changing lines exist. */
+  variant?: IChingHexagram
+  /** Raw 6/7/8/9 line values from the cast (bottom-to-top). */
+  lineValues?: number[]
+  /** Position numbers (1-6) of changing lines. */
+  changingLineNumbers?: number[]
   judgment: string; image: string; interpretation: string
   changingLines: { position: number; text: string }[]
+  variantInsight?: string
   advice: string; outcome: string; keyPoints: string[]
 }
 

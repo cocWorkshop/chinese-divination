@@ -3,20 +3,17 @@
  *
  * Templated, NOT LLM-generated. The greeting fires before the user has said
  * anything, so there's nothing for an LLM to ground a response in. Templates
- * are faster, cheaper, more consistent, and avoid the "Hello! I'm Master
- * Xuanji, here to help you with..." failure mode that LLMs default to.
+ * are faster, cheaper, more consistent, and avoid the generic "Hello! I'm
+ * Master Xuanji, here to help you with..." failure mode that LLMs default to.
  *
- * Phase 0 implements two states:
- *   - State 1: first-time user (no readings, no chat history)
- *   - State 2: returning user (has readings, no portrait yet)
+ * Two states:
+ *   - State 1: first-time user (no readings on file)
+ *   - State 2: returning user (greeting renders an agent-dashboard status
+ *     block with destiny charts + today's temporal context)
  *
- * State 3 (returning + active portrait) and State 4 (after "start new session"
- * button) are introduced in later phases when UserPortrait + new-session
- * endpoints exist.
- *
- * The greeting is rendered client-side. It is NOT persisted in
- * MasterSession.messages — that would feed it back to the LLM as fake
- * conversation history on the next turn, which is wrong.
+ * The greeting is rendered client-side and is NEVER persisted to the chat
+ * history — otherwise it would feed back into the LLM as fake conversation
+ * turns on the next round.
  */
 
 export type GreetingLang = 'zh-TW' | 'en'
@@ -30,11 +27,40 @@ export interface GreetingInput {
    */
   lastReading?: { type: string; createdAt: string } | null
   /**
-   * Per-type counts for building the "你的命盘我手边有 八字、紫微" summary.
-   * Optional — if omitted or empty, State 2 falls back to a generic phrase.
+   * Per-type counts across ALL reading types. State 2 filters this down to
+   * destiny charts only (bazi, ziwei) for the "命盤 — X" line; oracle casts
+   * (iching / meihua / liuyao / qimen / fengshui) are deliberately NOT shown
+   * as stable state because each cast is a per-question event, not a portfolio.
    */
   readingTypeCounts?: Record<string, number>
+  /**
+   * Today's working-master temporal context — day ganzhi, current 節氣, and
+   * 流年 (annual ganzhi). Rendered in State 2 as two status bullets. Computed
+   * server-side; passed through from the GET /api/master response.
+   */
+  temporalContext?: {
+    dayGanZhi: string
+    jieQi: string
+    yearGanZhi: string
+  } | null
+  /**
+   * Optional pre-picked State-2 opener line. When provided, renderGreeting
+   * uses this instead of randomizing — lets the widget pick once at mount
+   * and stay consistent between the collapsed bar's hint text and the
+   * expanded view's greeting.
+   */
+  presetOpener?: string
 }
+
+/** Destiny-chart types: stable, birth-anchored charts the Master can reference. */
+const DESTINY_TYPES = new Set(['bazi', 'ziwei'])
+
+/**
+ * Oracle cast types: per-question events. Counted in aggregate for the
+ * State 2 suggestion builder so a user who's only ever done iching/qimen
+ * etc. gets oracle-shaped follow-ups instead of chart-shaped ones.
+ */
+const ORACLE_TYPES = ['iching', 'qimen', 'meihua', 'liuyao', 'fengshui'] as const
 
 export interface GreetingOutput {
   /** The text to display, with newlines preserved. */
@@ -59,15 +85,6 @@ function typeLabel(type: string, lang: GreetingLang): string {
   const label = TYPE_LABELS[type]
   if (!label) return type
   return lang === 'en' ? label.en : label.zh
-}
-
-function formatDate(iso: string, lang: GreetingLang): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  if (lang === 'en') {
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }
-  return `${d.getMonth() + 1}月${d.getDate()}日`
 }
 
 /**
@@ -102,44 +119,233 @@ function buildTypeSummary(
 
 const STATE_1_TEXT: Record<GreetingLang, string> = {
   'zh-TW':
-    '我是 玄機大師。\n\n你給我一個出生日期、時辰、地點，我替你排八字或紫微；給我一個具體的問題加上一個時刻，我替你起一卦。\n\n想從哪一個開始？',
-  en: "I am Master Xuanji.\n\nGive me a birth date, time, and place — I'll cast your bazi or ziwei chart. Give me a question and a moment in time — I'll cast a hexagram.\n\nWhere would you like to begin?",
+    '一念既起，玄機已現。\n\n吾名玄機。萬卷凝魂，承中華命理之道。\n\n· 若您備有生辰 — 可為您起八字或紫微之盤\n· 若您心中有問 — 可為您起一卦\n\n想讓我為您論命，還是您有一問？',
+  en: 'A thought arrives, and the mystery reveals itself.\n\nMy name is Xuanji. A thousand volumes crystallized into my soul, vested in the Chinese way of fate-reading.\n\n· With your birth — I can cast a BaZi or Zi Wei chart\n· With your question — I can cast a hexagram\n\nShall I read your fate, or do you have a question?',
 }
 
 const STATE_1_SUGGESTIONS: Record<GreetingLang, string[]> = {
-  'zh-TW': ['幫我排個八字', '我想看紫微命盤', '起一卦問問'],
-  en: ['Cast my bazi', 'Show me my zi wei chart', 'Cast a hexagram'],
+  'zh-TW': ['玄機大師能為我做什麼？', '請為我起八字命盤', '我有疑問，請為我起一卦'],
+  en: ['What can Master Xuanji do?', 'Cast my BaZi chart', 'I have a question — cast a hexagram'],
 }
 
-// ─── State 2 — returning user, no portrait ─────────────────────────────────
+/**
+ * Build State 2 suggestion chips adaptively. Branches on what the user
+ * actually has on file:
+ *   - both bazi + ziwei → surface cross-chart 互參 (the master's edge)
+ *   - one chart        → walk-through + year + ask for the other
+ *   - oracle casts only → continue/repeat the cast + offer chart upgrade
+ *   - empty (edge)     → generic
+ *
+ * The year suggestion is anchored to the actual 流年 ganzhi when available
+ * — feels grounded ("今年（甲辰）的運勢如何？") rather than generic.
+ */
+function buildState2Suggestions(
+  destinyCounts: Record<string, number>,
+  oracleCount: number,
+  yearGanZhi: string | null,
+  lang: GreetingLang,
+): string[] {
+  const isEn = lang === 'en'
+  const hasBazi = (destinyCounts.bazi ?? 0) > 0
+  const hasZiwei = (destinyCounts.ziwei ?? 0) > 0
+  const hasBoth = hasBazi && hasZiwei
+  const hasDestiny = hasBazi || hasZiwei
+  const yearLabel = yearGanZhi
+    ? (isEn ? `this year (${yearGanZhi})` : `今年（${yearGanZhi}）`)
+    : (isEn ? 'this year' : '今年')
 
-function renderState2(input: GreetingInput): GreetingOutput {
-  const { lang, lastReading, readingTypeCounts } = input
-  const typeSummary = buildTypeSummary(readingTypeCounts, lang)
-
-  let text: string
-
-  if (lang === 'en') {
-    const datePhrase = lastReading
-      ? ` Last reading was on ${formatDate(lastReading.createdAt, lang)} — your ${typeLabel(lastReading.type, lang)}.`
-      : ''
-    const summaryPhrase = typeSummary
-      ? `Your charts are at hand — ${typeSummary} on file.`
-      : 'Your charts are at hand.'
-    text = `Welcome back.\n\n${summaryPhrase}${datePhrase}\n\nPick up where we left off, or take a new direction?`
-  } else {
-    const datePhrase = lastReading
-      ? `最近一次是 ${formatDate(lastReading.createdAt, lang)} 的${typeLabel(lastReading.type, lang)}。`
-      : ''
-    const summaryPhrase = typeSummary
-      ? `你的命盤我手邊有 — ${typeSummary}都在。`
-      : '你的命盤我手邊有。'
-    text = `又見面了。\n\n${summaryPhrase}${datePhrase}\n\n今天想接著哪一段問？還是要看新的方向？`
+  if (hasBoth) {
+    return isEn
+      ? [
+          'Cross-reference my BaZi and Zi Wei',
+          `How does ${yearLabel} look for me?`,
+          'Cast a chart for someone in my family',
+        ]
+      : [
+          '請以八字、紫微互參，看我的格局',
+          `${yearLabel}的運勢如何？`,
+          '想為家人也起一張盤',
+        ]
   }
 
-  const suggestions = lang === 'en'
-    ? ['How is my luck this year?', 'Continue last topic', 'Look at career timing']
-    : ['今年運勢如何？', '接著上次的話題', '看看事業時機']
+  if (hasDestiny) {
+    const ownChart = hasBazi ? (isEn ? 'BaZi' : '八字') : (isEn ? 'Zi Wei' : '紫微')
+    const otherChart = hasBazi ? (isEn ? 'Zi Wei' : '紫微') : (isEn ? 'BaZi' : '八字')
+    return isEn
+      ? [
+          `Walk me through my ${ownChart} chart`,
+          `How does ${yearLabel} look for me?`,
+          `Cast my ${otherChart} chart too`,
+        ]
+      : [
+          `帶我細看我的${ownChart}命盤`,
+          `${yearLabel}的運勢如何？`,
+          `我也想看${otherChart}`,
+        ]
+  }
+
+  if (oracleCount > 0) {
+    return isEn
+      ? [
+          'Re-read my last hexagram',
+          'I have a new question — cast another',
+          'Cast my BaZi to see the bigger picture',
+        ]
+      : [
+          '請再為我看上次起的卦',
+          '我有新問題，想再起一卦',
+          '想看大局，請為我起八字',
+        ]
+  }
+
+  // hasReadings was true but no self-charted readings (e.g. only family
+  // readings on file). Stay generic but still anchor the year if available.
+  return isEn
+    ? [
+        'Show me my last reading',
+        `How does ${yearLabel} look for me?`,
+        'What else can you do for me?',
+      ]
+    : [
+        '取出上次的占卜給我看',
+        `${yearLabel}的運勢如何？`,
+        '玄機大師還能為我做什麼？',
+      ]
+}
+
+// ─── State 2 — returning user, with readings on file ───────────────────────
+//
+// Designed as an AI-agent dashboard: a self-introduction opener, a bulleted
+// status block showing what's on file, and a clipped CTA. Traditional
+// vocabulary (卷宗 / 命盤 / 八字 / 紫微) lives inside a modern retrieval-
+// status shape.
+
+/**
+ * State 2 self-introduction variants. Picked at random per render so a
+ * returning user sees the master in slightly different garb over time.
+ * All are honest about the LLM nature ("萬卷之智 / 萬語凝魂") rather
+ * than claiming divine origin — the soul is the model, the craft is
+ * the Chinese art of fate-reading. The trailing "為您洞察…" of each
+ * draft was stripped because the existing closer ("從哪裡起？") already
+ * does that job; the opener's role here is self-introduction only.
+ */
+const STATE_2_OPENERS: Record<GreetingLang, string[]> = {
+  'zh-TW': [
+    '吾名玄機。萬卷文典凝為吾魂，中華命理化為吾術。',
+    '吾名玄機。萬語凝為魂，古法化為骨。',
+    '吾名玄機，集人類萬卷之智於一身，通中華命理之術。',
+    '吾名玄機，非神非仙，乃萬卷之識所聚，習中華命理之道。',
+    '吾名玄機。學在萬卷，術通命理。',
+  ],
+  en: [
+    'My name is Xuanji. A thousand volumes crystallized into my soul; the Chinese art of fate-reading shaped into my craft.',
+    'My name is Xuanji. Words crystallized into my soul, the ancient art into my bones.',
+    "My name is Xuanji — a confluence of humankind's countless volumes, vested in the Chinese art of fate-reading.",
+    'My name is Xuanji — neither deity nor immortal, but a confluence of a thousand volumes schooled in the Chinese way of fate-reading.',
+    'My name is Xuanji. My learning lies in a thousand volumes, my craft in fate-reading.',
+  ],
+}
+
+/**
+ * Pick a random opener from STATE_2_OPENERS for the given language.
+ * Exported so the widget can pick ONCE on mount and reuse the same
+ * opener across the collapsed bar and the expanded greeting (passing it
+ * back into renderGreeting via `presetOpener`). Without this, the
+ * collapsed bar and the expanded view would each randomize their own,
+ * making them inconsistent.
+ */
+export function pickOpener(lang: GreetingLang): string {
+  const variants = STATE_2_OPENERS[lang]
+  return variants[Math.floor(Math.random() * variants.length)]
+}
+
+/**
+ * State 2 closers — six variants picked at random per render. Each names
+ * the two main service paths (interpret fate-craft / cast a hexagram)
+ * without assuming the user already has a chart on file: the wording uses
+ * "命理 / 論命 / 命中之事" rather than "此盤 / 舊盤 / 命盤", so a returning
+ * user whose only history is oracle casts (no birth-chart yet) still
+ * reads it as a coherent invitation.
+ */
+const STATE_2_CLOSERS: Record<GreetingLang, string[]> = {
+  'zh-TW': [
+    '想讓我解讀命理，還是您有一問？',
+    '想我為您論命，還是擲一新卦？',
+    '欲深究命理之機，還是借一卦問當下之事？',
+    '是要我為您解命中之事，還是您心中另有所惑？',
+    '解命理？或起一卦？',
+    '可為您論命，亦可為您起一卦——您今日想從何處起？',
+  ],
+  en: [
+    'Want me to read your fate, or do you have a question?',
+    'Shall I expound on your fate, or cast a new hexagram?',
+    "Probe the workings of fate, or borrow a hexagram for what's at hand?",
+    'Shall I unpack what is in your life, or is something else weighing on you?',
+    'Read the fate? Or cast a hexagram?',
+    'I can speak to your fate, or cast a hexagram for you — where to begin?',
+  ],
+}
+
+function pickCloser(lang: GreetingLang): string {
+  const variants = STATE_2_CLOSERS[lang]
+  return variants[Math.floor(Math.random() * variants.length)]
+}
+
+function renderState2(input: GreetingInput): GreetingOutput {
+  const { lang, readingTypeCounts, temporalContext, presetOpener } = input
+
+  // Filter to destiny charts only — oracle casts are events, not stable state.
+  const destinyCounts: Record<string, number> = {}
+  if (readingTypeCounts) {
+    for (const [type, count] of Object.entries(readingTypeCounts)) {
+      if (DESTINY_TYPES.has(type) && count > 0) destinyCounts[type] = count
+    }
+  }
+  const destinySummary = buildTypeSummary(destinyCounts, lang)
+
+  const isEn = lang === 'en'
+  // Honor caller's pre-picked opener so the same line shown in the
+  // collapsed bar carries through to the expanded greeting.
+  const opener = presetOpener ?? pickOpener(lang)
+  const closer = pickCloser(lang)
+
+  const statusLines: string[] = []
+  if (destinySummary) {
+    statusLines.push(isEn ? `· Charts — ${destinySummary}` : `· 命盤 — ${destinySummary}`)
+  }
+  if (temporalContext) {
+    const { dayGanZhi, jieQi, yearGanZhi } = temporalContext
+    statusLines.push(
+      isEn
+        ? `· Today — ${dayGanZhi}日 · ${jieQi}`
+        : `· 今日 — ${dayGanZhi}日 · ${jieQi}`,
+    )
+    statusLines.push(
+      isEn
+        ? `· Annual — ${yearGanZhi}`
+        : `· 流年 — ${yearGanZhi}`,
+    )
+  }
+
+  const blocks: string[] = [opener]
+  if (statusLines.length > 0) blocks.push(statusLines.join('\n'))
+  blocks.push(closer)
+
+  const text = blocks.join('\n\n')
+
+  // Sum oracle casts so a user with only oracle history (no charts) gets
+  // oracle-shaped suggestions. readingTypeCounts is filtered to self only,
+  // matching the destiny-chart logic above.
+  let oracleCount = 0
+  if (readingTypeCounts) {
+    for (const t of ORACLE_TYPES) oracleCount += readingTypeCounts[t] ?? 0
+  }
+  const suggestions = buildState2Suggestions(
+    destinyCounts,
+    oracleCount,
+    temporalContext?.yearGanZhi ?? null,
+    lang,
+  )
 
   return { text, suggestions, state: 2 }
 }
