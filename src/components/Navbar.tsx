@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
@@ -18,12 +18,37 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [sharing, setSharing] = useState(false)
   const [showWiki, setShowWiki] = useState(false)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const mobileToggleRef = useRef<HTMLButtonElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch('/api/config/nav').then(r => r.json()).then(data => {
       if (data.showWikiNav) setShowWiki(true)
     }).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!menuOpen && !userMenuOpen) return
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (
+        menuOpen &&
+        mobileMenuRef.current && !mobileMenuRef.current.contains(target) &&
+        mobileToggleRef.current && !mobileToggleRef.current.contains(target)
+      ) {
+        setMenuOpen(false)
+      }
+      if (
+        userMenuOpen &&
+        userMenuRef.current && !userMenuRef.current.contains(target)
+      ) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [menuOpen, userMenuOpen])
 
   useEffect(() => {
     document.title = lang === 'en' ? 'XuanJi AI - Ancient Wisdom, Modern Heritage' : '玄機AI - 古法智慧，現代傳承'
@@ -103,7 +128,7 @@ export default function Navbar() {
             </button>
 
             {session ? (
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2 text-white/80 hover:text-gold transition-colors"
@@ -152,6 +177,7 @@ export default function Navbar() {
 
           {/* Mobile hamburger */}
           <button
+            ref={mobileToggleRef}
             className="md:hidden text-white/80 hover:text-gold"
             onClick={() => setMenuOpen(!menuOpen)}
           >
@@ -168,7 +194,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t px-4 py-4 flex flex-col gap-3" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-gold)' }}>
+        <div ref={mobileMenuRef} className="md:hidden border-t px-4 py-4 flex flex-col gap-3" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-gold)' }}>
           <Link href="/divination" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
             {lang === 'en' ? 'Divination' : '占卜'}
           </Link>
