@@ -30,7 +30,7 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!menuOpen && !userMenuOpen) return
-    const handler = (e: MouseEvent) => {
+    const handlePointer = (e: Event) => {
       const target = e.target as Node
       if (
         menuOpen &&
@@ -46,8 +46,18 @@ export default function Navbar() {
         setUserMenuOpen(false)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    const handleScroll = () => {
+      if (menuOpen) setMenuOpen(false)
+      if (userMenuOpen) setUserMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handlePointer)
+    document.addEventListener('touchstart', handlePointer)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handlePointer)
+      document.removeEventListener('touchstart', handlePointer)
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [menuOpen, userMenuOpen])
 
   useEffect(() => {
