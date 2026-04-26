@@ -48,24 +48,17 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const adminUserId = user!.id
 
   // ─── A. Identity + flags ─────────────────────────────────────────────
-  // Core fields via typed Prisma client, new columns via raw SQL
-  const coreUser = await prisma.user.findUnique({
+  const targetUser = await prisma.user.findUnique({
     where: { id: targetUserId },
     select: {
       id: true, email: true, name: true, language: true,
       createdAt: true, credits: true, usageMaster: true,
+      portraitEnabled: true, masterMemoryDisclosureSeenAt: true,
     },
   })
-  if (!coreUser) {
+  if (!targetUser) {
     return NextResponse.json({ error: 'Target user not found' }, { status: 404 })
   }
-  const extraFlags = await prisma.$queryRawUnsafe<
-    Array<{ portraitEnabled: boolean; masterMemoryDisclosureSeenAt: Date | null }>
-  >(
-    `SELECT "portraitEnabled", "masterMemoryDisclosureSeenAt" FROM "User" WHERE "id" = $1`,
-    targetUserId,
-  ).then((rows) => rows[0] ?? { portraitEnabled: true, masterMemoryDisclosureSeenAt: null })
-  const targetUser = { ...coreUser, ...extraFlags }
 
   // Log the access (best-effort, non-blocking)
   await logAdminAccess({
@@ -82,27 +75,20 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
   // ─── D. Chat stats + recent messages ─────────────────────────────────
   const sessionId = await getActiveSessionId(targetUserId)
-  const allRowsRaw = await prisma.$queryRawUnsafe<Array<{
-    id: string
-    sessionId: string
-    turnIndex: number
-    role: string
-    content: string | null
-    toolCallsJson: string | null
-    tokenCount: number | null
-    archivedAt: Date | null
-    createdAt: Date
-  }>>(
-    `SELECT "id", "sessionId", "turnIndex", "role", "content",
-            "toolCallsJson", "tokenCount", "archivedAt", "createdAt"
-     FROM "MasterChatMessage" WHERE "userId" = $1
-     ORDER BY "createdAt" DESC
-     LIMIT 50`,
-    targetUserId,
-  )
+  const allRowsRaw = await prisma.masterChatMessage.findMany({
+    where: { userId: targetUserId },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+    select: {
+      id: true, sessionId: true, turnIndex: true, role: true, content: true,
+      toolCallsJson: true, tokenCount: true, archivedAt: true, createdAt: true,
+    },
+  })
 
-  // Aggregate stats via raw SQL for accurate counts (recent 50 above is for display)
-  const statsRows = await prisma.$queryRawUnsafe<Array<{
+  // Aggregate stats via raw SQL — Postgres `COUNT(*) FILTER (WHERE ...)` lets
+  // us collapse 4 conditional counts + sum + min/max + distinct into one
+  // round trip. The Prisma typed equivalent would be ~6 separate queries.
+  const statsRows = await prisma.$queryRaw<Array<{
     total_count: bigint
     user_count: bigint
     assistant_count: bigint
@@ -111,19 +97,18 @@ export async function GET(_req: Request, { params }: RouteParams) {
     earliest: Date | null
     latest: Date | null
     distinct_sessions: bigint
-  }>>(
-    `SELECT
-       COUNT(*)::bigint as total_count,
-       COUNT(*) FILTER (WHERE "role" = 'user')::bigint as user_count,
-       COUNT(*) FILTER (WHERE "role" = 'assistant')::bigint as assistant_count,
-       COUNT(*) FILTER (WHERE "archivedAt" IS NOT NULL)::bigint as archived_count,
-       COALESCE(SUM("tokenCount"), 0)::bigint as total_tokens,
-       MIN("createdAt") as earliest,
-       MAX("createdAt") as latest,
-       COUNT(DISTINCT "sessionId")::bigint as distinct_sessions
-     FROM "MasterChatMessage" WHERE "userId" = $1`,
-    targetUserId,
-  )
+  }>>`
+    SELECT
+      COUNT(*)::bigint as total_count,
+      COUNT(*) FILTER (WHERE "role" = 'user')::bigint as user_count,
+      COUNT(*) FILTER (WHERE "role" = 'assistant')::bigint as assistant_count,
+      COUNT(*) FILTER (WHERE "archivedAt" IS NOT NULL)::bigint as archived_count,
+      COALESCE(SUM("tokenCount"), 0)::bigint as total_tokens,
+      MIN("createdAt") as earliest,
+      MAX("createdAt") as latest,
+      COUNT(DISTINCT "sessionId")::bigint as distinct_sessions
+    FROM "MasterChatMessage" WHERE "userId" = ${targetUserId}
+  `
   const zero = BigInt(0)
   const stats = statsRows[0] ?? {
     total_count: zero,

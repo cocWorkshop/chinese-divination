@@ -86,7 +86,16 @@
       "Bash(curl -s -o /dev/null -w \"master_GET=%{http_code}\\\\n\" http://localhost:8088/api/master)",
       "Bash(curl -s -o /dev/null -w \"profile=%{http_code}\\\\n\" http://localhost:8088/profile)",
       "Bash(curl -s -o /dev/null -w \"prefill_url=%{http_code}\\\\n\" \"http://localhost:8088/divination/bazi?target=self&birthDate=1990-01-01&birthTime=wu&gender=male&calendarType=solar\")",
-      "Bash(curl -s -o /dev/null -w \"new_family_prefill=%{http_code}\\\\n\" \"http://localhost:8088/divination/bazi?target=family&familyMemberId=__new__&relation=other&relationDetail=%E5%B2%B3%E7%88%B6&memberName=Test\")"
+      "Bash(curl -s -o /dev/null -w \"new_family_prefill=%{http_code}\\\\n\" \"http://localhost:8088/divination/bazi?target=family&familyMemberId=__new__&relation=other&relationDetail=%E5%B2%B3%E7%88%B6&memberName=Test\")",
+      "Bash(npx next *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(echo \"tsc-exit=$?\")",
+      "Bash(git rm *)",
+      "Bash(tasklist)",
+      "Bash(chmod +x tests/run_funnel_tests.sh)",
+      "Bash(bash -n tests/run_funnel_tests.sh)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

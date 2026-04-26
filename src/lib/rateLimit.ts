@@ -56,28 +56,38 @@ export async function deductCredits(userId: string, type: string): Promise<boole
     }),
     getCost(type),
   ])
-  // Determine which usage counter to increment
-  const usageField = ['bazi','ziwei','qimen','meihua','iching','liuyao','fengshui'].includes(type)
-    ? 'usageDivination'
-    : type === 'chat' ? 'usageChat'
-    : type === 'master' ? 'usageMaster'
-    : 'usageDivination'
+  // Determine which usage counter to increment. Whitelisted to one of the
+  // three known fields — passed through Prisma's typed `data` via computed
+  // property, so the schema is the source of truth (column rename → TS error).
+  const usageField: 'usageDivination' | 'usageChat' | 'usageMaster' =
+    ['bazi', 'ziwei', 'qimen', 'meihua', 'iching', 'liuyao', 'fengshui'].includes(type)
+      ? 'usageDivination'
+      : type === 'chat'
+        ? 'usageChat'
+        : type === 'master'
+          ? 'usageMaster'
+          : 'usageDivination'
 
   if (user?.isAdmin) {
     // Admin: no credit deduction but still track usage
-    await prisma.$executeRawUnsafe(
-      `UPDATE "User" SET "${usageField}" = "${usageField}" + 1 WHERE id = $1`,
-      userId
-    )
+    await prisma.user.update({
+      where: { id: userId },
+      data: { [usageField]: { increment: 1 } },
+    })
     return true
   }
   if (cost <= 0) return true
-  // Atomic: decrement credits + increment usage counter
-  const result = await prisma.$executeRawUnsafe(
-    `UPDATE "User" SET "credits" = "credits" - $1, "${usageField}" = "${usageField}" + 1 WHERE id = $2 AND "credits" >= $1`,
-    cost, userId
-  )
-  if (result > 0) {
+  // Atomic: decrement credits + increment usage counter, only if credits ≥ cost.
+  // updateMany lets us add the credits-gte gate to WHERE; it returns the row
+  // count, which we need to detect "insufficient balance" (returns 0).
+  const result = await prisma.user.updateMany({
+    where: { id: userId, credits: { gte: cost } },
+    data: {
+      credits: { decrement: cost },
+      [usageField]: { increment: 1 },
+    },
+  })
+  if (result.count > 0) {
     // Query balance after deduction for audit log
     const updated = await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } })
     logCreditChange({

@@ -1,10 +1,6 @@
 /**
  * UserPortrait store — typed wrapper around UserPortrait + UserPortraitHistory.
  *
- * Uses raw SQL via Prisma's $executeRawUnsafe / $queryRawUnsafe so it works
- * regardless of generated-client state (the dev-server lock can prevent
- * `prisma generate` on Windows). Wraps both tables behind a typed interface.
- *
  * Versioning rule: every save that changes any field bumps `version` and
  * appends a row to UserPortraitHistory with the trigger source. Identical
  * portraits (no diff) are no-ops — neither table is touched.
@@ -14,7 +10,6 @@
  */
 
 import { prisma } from '../prisma'
-import { randomUUID } from 'node:crypto'
 
 export type PortraitTone = 'direct' | 'gentle' | 'neutral'
 export type PortraitDepth = 'concise' | 'balanced' | 'detailed'
@@ -51,38 +46,6 @@ export interface PortraitRow extends Portrait {
 
 export type PortraitTrigger = 'auto' | 'manual' | 'admin' | 'restore'
 
-interface PortraitDbRow {
-  userId: string
-  version: number
-  topics: string
-  preferences: string
-  lifeContext: string | null
-  toneNotes: string | null
-  generatedPrompt: string | null
-  lastExtractedAt: Date
-  lastTurnIndexCovered: number
-  lastManualEditAt: Date | null
-  createdAt: Date
-  updatedAt: Date
-}
-
-function deserializeRow(row: PortraitDbRow): PortraitRow {
-  return {
-    userId: row.userId,
-    version: row.version,
-    topics: safeJsonParse<string[]>(row.topics, []),
-    preferences: safeJsonParse<PortraitPreferences>(row.preferences, {}),
-    lifeContext: row.lifeContext,
-    toneNotes: row.toneNotes,
-    generatedPrompt: row.generatedPrompt,
-    lastExtractedAt: row.lastExtractedAt,
-    lastTurnIndexCovered: row.lastTurnIndexCovered,
-    lastManualEditAt: row.lastManualEditAt,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  }
-}
-
 function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
   if (!raw) return fallback
   try {
@@ -96,17 +59,22 @@ function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
 
 export async function loadPortrait(userId: string): Promise<PortraitRow | null> {
   try {
-    const rows = await prisma.$queryRawUnsafe<PortraitDbRow[]>(
-      `SELECT
-         "userId", "version", "topics", "preferences", "lifeContext", "toneNotes",
-         "generatedPrompt", "lastExtractedAt", "lastTurnIndexCovered",
-         "lastManualEditAt", "createdAt", "updatedAt"
-       FROM "UserPortrait"
-       WHERE "userId" = $1`,
-      userId,
-    )
-    if (rows.length === 0) return null
-    return deserializeRow(rows[0])
+    const row = await prisma.userPortrait.findUnique({ where: { userId } })
+    if (!row) return null
+    return {
+      userId: row.userId,
+      version: row.version,
+      topics: safeJsonParse<string[]>(row.topics, []),
+      preferences: safeJsonParse<PortraitPreferences>(row.preferences, {}),
+      lifeContext: row.lifeContext,
+      toneNotes: row.toneNotes,
+      generatedPrompt: row.generatedPrompt,
+      lastExtractedAt: row.lastExtractedAt,
+      lastTurnIndexCovered: row.lastTurnIndexCovered,
+      lastManualEditAt: row.lastManualEditAt,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    }
   } catch (err) {
     console.error('[portraitStore] loadPortrait failed:', err)
     return null
@@ -127,24 +95,11 @@ export async function loadPortraitHistory(
   createdAt: Date
 }>> {
   try {
-    const rows = await prisma.$queryRawUnsafe<Array<{
-      id: string
-      version: number
-      topics: string
-      preferences: string
-      lifeContext: string | null
-      toneNotes: string | null
-      trigger: string
-      createdAt: Date
-    }>>(
-      `SELECT "id", "version", "topics", "preferences", "lifeContext", "toneNotes", "trigger", "createdAt"
-       FROM "UserPortraitHistory"
-       WHERE "userId" = $1
-       ORDER BY "version" DESC
-       LIMIT $2`,
-      userId,
-      limit,
-    )
+    const rows = await prisma.userPortraitHistory.findMany({
+      where: { userId },
+      orderBy: { version: 'desc' },
+      take: limit,
+    })
     return rows.map((r) => ({
       id: r.id,
       version: r.version,
@@ -215,66 +170,48 @@ export async function savePortrait(input: SavePortraitInput): Promise<SavePortra
     const generatedPrompt = input.generatedPrompt ?? null
     const cursor = input.lastTurnIndexCovered ?? existing?.lastTurnIndexCovered ?? 0
     const isManual = input.trigger === 'manual'
+    const now = new Date()
 
-    if (existing) {
-      const lastManualEditClause = isManual ? `"lastManualEditAt" = NOW(),` : ''
-      await prisma.$executeRawUnsafe(
-        `UPDATE "UserPortrait"
-         SET "version" = $2,
-             "topics" = $3,
-             "preferences" = $4,
-             "lifeContext" = $5,
-             "toneNotes" = $6,
-             "generatedPrompt" = $7,
-             "lastExtractedAt" = NOW(),
-             "lastTurnIndexCovered" = $8,
-             ${lastManualEditClause}
-             "updatedAt" = NOW()
-         WHERE "userId" = $1`,
-        input.userId,
-        newVersion,
-        topicsJson,
-        preferencesJson,
+    await prisma.userPortrait.upsert({
+      where: { userId: input.userId },
+      create: {
+        userId: input.userId,
+        version: newVersion,
+        topics: topicsJson,
+        preferences: preferencesJson,
         lifeContext,
         toneNotes,
         generatedPrompt,
-        cursor,
-      )
-    } else {
-      const lastManualEditAt = isManual ? new Date() : null
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "UserPortrait"
-          ("userId", "version", "topics", "preferences", "lifeContext", "toneNotes",
-           "generatedPrompt", "lastExtractedAt", "lastTurnIndexCovered",
-           "lastManualEditAt", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8, $9, NOW(), NOW())`,
-        input.userId,
-        newVersion,
-        topicsJson,
-        preferencesJson,
+        lastExtractedAt: now,
+        lastTurnIndexCovered: cursor,
+        lastManualEditAt: isManual ? now : null,
+      },
+      update: {
+        version: newVersion,
+        topics: topicsJson,
+        preferences: preferencesJson,
         lifeContext,
         toneNotes,
         generatedPrompt,
-        cursor,
-        lastManualEditAt,
-      )
-    }
+        lastExtractedAt: now,
+        lastTurnIndexCovered: cursor,
+        // Preserve previous lastManualEditAt for non-manual triggers; only
+        // overwrite when the current save is a manual edit.
+        ...(isManual ? { lastManualEditAt: now } : {}),
+      },
+    })
 
-    // Append history row
-    const historyId = `uph_${randomUUID().replace(/-/g, '').slice(0, 20)}`
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "UserPortraitHistory"
-        ("id", "userId", "version", "topics", "preferences", "lifeContext", "toneNotes", "trigger", "createdAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
-      historyId,
-      input.userId,
-      newVersion,
-      topicsJson,
-      preferencesJson,
-      lifeContext,
-      toneNotes,
-      input.trigger,
-    )
+    await prisma.userPortraitHistory.create({
+      data: {
+        userId: input.userId,
+        version: newVersion,
+        topics: topicsJson,
+        preferences: preferencesJson,
+        lifeContext,
+        toneNotes,
+        trigger: input.trigger,
+      },
+    })
 
     return { saved: true, newVersion }
   } catch (err) {
@@ -294,8 +231,10 @@ export async function savePortrait(input: SavePortraitInput): Promise<SavePortra
  */
 export async function deletePortrait(userId: string): Promise<{ deleted: boolean }> {
   try {
-    await prisma.$executeRawUnsafe(`DELETE FROM "UserPortrait" WHERE "userId" = $1`, userId)
-    await prisma.$executeRawUnsafe(`DELETE FROM "UserPortraitHistory" WHERE "userId" = $1`, userId)
+    await prisma.$transaction([
+      prisma.userPortrait.deleteMany({ where: { userId } }),
+      prisma.userPortraitHistory.deleteMany({ where: { userId } }),
+    ])
     return { deleted: true }
   } catch (err) {
     console.error('[portraitStore] deletePortrait failed:', err)

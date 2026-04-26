@@ -241,12 +241,12 @@ export async function maybeExtractPortrait(
   input: ExtractPortraitInput,
 ): Promise<ExtractPortraitResult> {
   try {
-    // Gate 1: user opted out. Raw SQL because the generated client may
-    // not have the new portraitEnabled column until the dev server restarts.
-    const userRows = await prisma.$queryRawUnsafe<
-      Array<{ portraitEnabled: boolean }>
-    >(`SELECT "portraitEnabled" FROM "User" WHERE "id" = $1`, input.userId)
-    if (userRows[0]?.portraitEnabled === false) {
+    // Gate 1: user opted out.
+    const user = await prisma.user.findUnique({
+      where: { id: input.userId },
+      select: { portraitEnabled: true },
+    })
+    if (user?.portraitEnabled === false) {
       return { ran: false, reason: 'disabled' }
     }
 

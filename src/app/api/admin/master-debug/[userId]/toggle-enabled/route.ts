@@ -46,11 +46,10 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     )
   }
 
-  await prisma.$executeRawUnsafe(
-    `UPDATE "User" SET "portraitEnabled" = $2 WHERE "id" = $1`,
-    targetUserId,
-    body.enabled,
-  )
+  await prisma.user.update({
+    where: { id: targetUserId },
+    data: { portraitEnabled: body.enabled },
+  })
 
   await logAdminAccess({
     adminUserId,
