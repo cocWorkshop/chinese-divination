@@ -172,14 +172,14 @@ export default function Navbar() {
           <Link href="/divination" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
             {lang === 'en' ? 'Divination' : '占卜'}
           </Link>
-          <Link href="/subscribe" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
-            {lang === 'en' ? 'Karma Shop' : '機緣商店'}
-          </Link>
           {session && (
             <Link href="/dashboard" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
               {lang === 'zh-TW' ? '歷史' : 'History'}
             </Link>
           )}
+          <Link href="/subscribe" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+            {lang === 'en' ? 'Karma Shop' : '機緣商店'}
+          </Link>
           {session && (
             <Link href="/profile" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
               {lang === 'zh-TW' ? '個人資料' : 'Profile'}
