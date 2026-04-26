@@ -181,11 +181,6 @@ export default function Navbar() {
             {lang === 'en' ? 'Karma Shop' : '機緣商店'}
           </Link>
           {session && (
-            <Link href="/profile" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
-              {lang === 'zh-TW' ? '個人資料' : 'Profile'}
-            </Link>
-          )}
-          {session && (
             <button onClick={() => { handleShare(); setMenuOpen(false) }} className="text-left text-white/80 hover:text-gold">
               {lang === 'en' ? '🔗 Share for Karma' : '🔗 分享賺機緣'}
             </button>
@@ -207,6 +202,11 @@ export default function Navbar() {
           >
             {lang === 'zh-TW' ? 'Switch to English' : '切換到繁體中文'}
           </button>
+          {session && (
+            <Link href="/profile" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+              {lang === 'zh-TW' ? '個人資料' : 'Profile'}
+            </Link>
+          )}
           {session ? (
             <button onClick={() => fetch('/api/auth/logout', { method: 'POST' }).finally(() => signOut({ redirect: false }).then(() => window.location.href = '/'))} className="text-left text-white/80 hover:text-gold">
               {lang === 'zh-TW' ? '登出' : 'Sign Out'}
