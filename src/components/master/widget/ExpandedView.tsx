@@ -150,7 +150,7 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 40, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 220, damping: 24 }}
-          className="relative w-full h-full sm:h-[85vh] sm:max-w-2xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden shadow-2xl"
+          className="relative w-full max-w-[100vw] h-full sm:h-[85vh] sm:max-w-2xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden shadow-2xl"
           style={{ border: '1px solid var(--card-border)' }}
         >
           <div className="absolute inset-0" style={{ backgroundColor: 'var(--bg-primary)', opacity: 0.98 }} />

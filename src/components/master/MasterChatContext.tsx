@@ -601,11 +601,48 @@ export function MasterChatProvider({ children }: ProviderProps) {
         }
       } catch (e) {
         if ((e as Error).name !== 'AbortError') {
+          // Show friendly "thinking" message and auto-retry once
           setMessages((prev) => {
             const updated = [...prev]
             updated[updated.length - 1] = {
               ...assistantMsg,
-              content: lang === 'en' ? 'Connection interrupted. Please retry.' : '連接中斷，請重試。',
+              content: lang === 'en' ? 'Let me think again...' : '讓我再想想……',
+            }
+            return updated
+          })
+
+          // Auto-retry after a brief pause
+          await new Promise(r => setTimeout(r, 2000))
+          try {
+            abortRef.current = new AbortController()
+            const retryRes = await fetch('/api/master', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+              signal: abortRef.current.signal,
+            })
+            if (retryRes.ok) {
+              // Retry succeeded — process the stream normally
+              // (simplified: just show a success message since full stream parsing is complex to duplicate)
+              const retryData = await retryRes.text()
+              if (retryData.includes('"content"')) {
+                // Got content — reload history to show the full response
+                await loadHistory()
+                return
+              }
+            }
+          } catch {
+            // Retry also failed
+          }
+
+          // Final failure message
+          setMessages((prev) => {
+            const updated = [...prev]
+            updated[updated.length - 1] = {
+              ...assistantMsg,
+              content: lang === 'en'
+                ? 'My connection to the celestial realm has been disrupted. Please try again in a moment.'
+                : '玄機與天機的連結暫時中斷了。\n\n稍後再試，老夫在此恭候。',
             }
             return updated
           })

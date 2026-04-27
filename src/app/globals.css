@@ -54,6 +54,11 @@ body {
   --accent-bg: rgba(17, 29, 53, 0.5);
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);

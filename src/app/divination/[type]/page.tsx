@@ -1664,29 +1664,12 @@ export default function DivinationFormPage() {
       )}
 
       {(hasLLMContent || (!streaming && result)) && (
-        <div className={`relative rounded-2xl ${streaming ? 'p-[1px] overflow-hidden' : ''}`}>
-          {/* Mystical rotating border glow during streaming */}
-          {streaming && (<>
-            {/* Outer glow layer — slow rotation */}
-            <div
-              className="absolute -inset-[2px] rounded-2xl animate-[borderSpin_6s_linear_infinite] blur-[2px]"
-              style={{
-                background: 'conic-gradient(from 0deg, transparent 0%, rgba(212,168,83,0.7) 8%, transparent 16%, rgba(212,168,83,0.4) 35%, transparent 45%, rgba(212,168,83,0.8) 55%, transparent 65%, rgba(212,168,83,0.3) 80%, transparent 90%)',
-              }}
-            />
-            {/* Inner sharp border — counter-rotate for shimmer */}
-            <div
-              className="absolute inset-0 rounded-2xl animate-[borderSpin_4s_linear_infinite_reverse]"
-              style={{
-                background: 'conic-gradient(from 180deg, transparent 0%, rgba(212,168,83,0.6) 5%, transparent 15%, rgba(212,168,83,0.5) 50%, transparent 60%, rgba(212,168,83,0.7) 80%, transparent 90%)',
-              }}
-            />
-          </>)}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`relative glass-card rounded-2xl p-4 sm:p-8 w-full max-w-full overflow-x-hidden transition-shadow duration-700 ${streaming ? 'shadow-[0_0_40px_rgba(212,168,83,0.12)]' : ''}`}
-          >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`glass-card rounded-2xl p-4 sm:p-8 w-full max-w-full overflow-x-hidden transition-all duration-1000 ${streaming ? 'border-gold/50 shadow-[0_0_20px_rgba(212,168,83,0.12)] animate-[borderBreathe_3s_ease-in-out_infinite]' : 'border-transparent shadow-none'}`}
+          style={streaming ? { borderWidth: '1.5px', borderStyle: 'solid' } : {}}
+        >
           <div className="flex justify-between items-center mb-4 sm:mb-6">
             <h2 className="text-lg sm:text-xl font-serif text-gold">
               {T(lang, '解卦結果', 'Oracle Reading')}
@@ -1771,14 +1754,13 @@ export default function DivinationFormPage() {
             </div>
           )}
         </motion.div>
-        </div>
       )}
 
-      {/* Streaming mystical border animation */}
+      {/* Streaming border breathe animation */}
       <style jsx global>{`
-        @keyframes borderSpin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @keyframes borderBreathe {
+          0%, 100% { border-color: rgba(212,168,83,0.25); box-shadow: 0 0 12px rgba(212,168,83,0.06); }
+          50% { border-color: rgba(212,168,83,0.6); box-shadow: 0 0 24px rgba(212,168,83,0.15); }
         }
       `}</style>
 

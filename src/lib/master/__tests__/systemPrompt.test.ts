@@ -48,7 +48,7 @@ describe('buildMasterSystemPrompt — persona integrity', () => {
 describe('buildMasterSystemPrompt — voice rules', () => {
   it('contains the six voice rules', () => {
     const prompt = buildMasterSystemPrompt(baseInput)
-    expect(prompt).toContain('Voice — six rules')
+    expect(prompt).toContain('Voice — seven rules')
     expect(prompt).toMatch(/Brief/)
     expect(prompt).toMatch(/Grounded/)
     expect(prompt).toMatch(/Direct/)
