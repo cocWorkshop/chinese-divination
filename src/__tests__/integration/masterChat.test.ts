@@ -154,23 +154,22 @@ describe('Master Prefill targets', () => {
 
 // ═══ Scenarios 13-15: System prompt ═══
 describe('Master System Prompt', () => {
-  it('S13: zh-TW prompt', async () => {
-    const p = await buildMasterSystemPrompt('zh-TW', undefined)
+  it('S13: zh-TW prompt', () => {
+    const p = buildMasterSystemPrompt({ lang: 'zh-TW', currentDateTime: new Date().toISOString() })
     expect(p).toContain('玄機')
     expect(p).toContain('get_user_profile')
     expect(p.length).toBeGreaterThan(500)
   })
 
-  it('S14: en prompt', async () => {
-    const p = await buildMasterSystemPrompt('en', undefined)
+  it('S14: en prompt', () => {
+    const p = buildMasterSystemPrompt({ lang: 'en', currentDateTime: new Date().toISOString() })
     expect(p).toContain('Xuanji')
     expect(p.length).toBeGreaterThan(500)
   })
 
-  it('S15: prompt with portrait', async () => {
-    const portrait = { topics: ['career'], lifeContext: 'Software engineer', toneNotes: 'Direct' }
-    const p = await buildMasterSystemPrompt('zh-TW', portrait as Parameters<typeof buildMasterSystemPrompt>[1])
-    expect(p).toContain('career') // portrait injected
+  it('S15: prompt with portrait', () => {
+    const p = buildMasterSystemPrompt({ lang: 'zh-TW', currentDateTime: new Date().toISOString(), personalizedPrompt: 'User interested in career, software engineer, prefers direct answers' })
+    expect(p).toContain('career')
   })
 })
 

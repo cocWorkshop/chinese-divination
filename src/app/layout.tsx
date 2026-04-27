@@ -163,7 +163,7 @@ export default function RootLayout({
               Skip to content
             </a>
             <Navbar />
-            <main id="main-content" className="pt-16 flex-1 flex flex-col pb-16">
+            <main id="main-content" className="pt-16 flex-1 flex flex-col pb-20">
               {children}
             </main>
 

@@ -21,7 +21,8 @@ function makeCtx(type: string, inputData: Record<string, unknown>): DivinationCo
     type,
     inputData,
     language: 'zh-TW',
-    targetPersonInfo: undefined,
+    targetPersonInfo: '',
+    clientDate: new Date(),
   }
 }
 
@@ -52,7 +53,8 @@ describe('BaZi Integration — handler.calculate()', () => {
       const ctx = makeCtx('bazi', tc.input)
       const handler = selectHandler(ctx)
       expect(handler).toBeDefined()
-      const { chart, userMessage } = handler.calculate(ctx)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { chart, userMessage } = handler.calculate(ctx) as { chart: any; userMessage: string }
       expect(chart).not.toBeNull()
       expect(userMessage).toContain('八字')
       expect(chart.yearPillar.stem).toBeTruthy()
@@ -99,7 +101,8 @@ describe('ZiWei Integration — handler.calculate()', () => {
     it(tc.label, () => {
       const ctx = makeCtx('ziwei', tc.input)
       const handler = selectHandler(ctx)
-      const { chart, userMessage } = handler.calculate(ctx)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { chart, userMessage } = handler.calculate(ctx) as { chart: any; userMessage: string }
       expect(chart).not.toBeNull()
       expect(userMessage).toContain('紫微')
       const zChart = chart.chart
@@ -114,8 +117,10 @@ describe('ZiWei Integration — handler.calculate()', () => {
   }
 
   it('gender affects 大限 direction', () => {
-    const m = selectHandler(makeCtx('ziwei', { birthDate: '1990-08-15', birthTime: 'wu', gender: 'male', lunarToggle: 'solar' })).calculate(makeCtx('ziwei', { birthDate: '1990-08-15', birthTime: 'wu', gender: 'male', lunarToggle: 'solar' }))
-    const f = selectHandler(makeCtx('ziwei', { birthDate: '1990-08-15', birthTime: 'wu', gender: 'female', lunarToggle: 'solar' })).calculate(makeCtx('ziwei', { birthDate: '1990-08-15', birthTime: 'wu', gender: 'female', lunarToggle: 'solar' }))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const m = selectHandler(makeCtx('ziwei', { birthDate: '1990-08-15', birthTime: 'wu', gender: 'male', lunarToggle: 'solar' })).calculate(makeCtx('ziwei', { birthDate: '1990-08-15', birthTime: 'wu', gender: 'male', lunarToggle: 'solar' })) as { chart: any }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const f = selectHandler(makeCtx('ziwei', { birthDate: '1990-08-15', birthTime: 'wu', gender: 'female', lunarToggle: 'solar' })).calculate(makeCtx('ziwei', { birthDate: '1990-08-15', birthTime: 'wu', gender: 'female', lunarToggle: 'solar' })) as { chart: any }
     const mNames = m.chart.chart.palaces.filter((p: { decadal: { range: number[] } }) => p.decadal?.range?.[0] > 0).sort((a: { decadal: { range: number[] } }, b: { decadal: { range: number[] } }) => a.decadal.range[0] - b.decadal.range[0]).map((p: { name: string }) => p.name)
     const fNames = f.chart.chart.palaces.filter((p: { decadal: { range: number[] } }) => p.decadal?.range?.[0] > 0).sort((a: { decadal: { range: number[] } }, b: { decadal: { range: number[] } }) => a.decadal.range[0] - b.decadal.range[0]).map((p: { name: string }) => p.name)
     expect(mNames).not.toEqual(fNames)
@@ -136,7 +141,8 @@ describe('LiuYao Integration', () => {
   for (const tc of cases) {
     it(tc.label, () => {
       const ctx = makeCtx('liuyao', tc.input)
-      const { chart } = selectHandler(ctx).calculate(ctx)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { chart } = selectHandler(ctx).calculate(ctx) as { chart: any }
       expect(chart).not.toBeNull()
       expect(chart.originalHexagram.lines).toHaveLength(6)
       const rawLines = JSON.parse(tc.input.liuyaoLines) as { value: number }[]
@@ -161,7 +167,8 @@ describe('QiMen Integration', () => {
   for (const tc of cases) {
     it(tc.label, () => {
       const ctx = makeCtx('qimen', tc.input)
-      const { chart } = selectHandler(ctx).calculate(ctx)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { chart } = selectHandler(ctx).calculate(ctx) as { chart: any }
       expect(chart).not.toBeNull()
       expect(chart.palaces).toHaveLength(9)
       expect(chart.zhiFu).toBeTruthy()
@@ -184,7 +191,8 @@ describe('MeiHua Integration', () => {
   for (const tc of cases) {
     it(tc.label, () => {
       const ctx = makeCtx('meihua', tc.input)
-      const { chart } = selectHandler(ctx).calculate(ctx)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { chart } = selectHandler(ctx).calculate(ctx) as { chart: any }
       expect(chart).not.toBeNull()
       expect(chart.benGua).toBeDefined()
       expect(chart.huGua).toBeDefined()
@@ -201,13 +209,16 @@ describe('Cross-type consistency', () => {
   it('bazi deterministic', () => {
     const ctx = makeCtx('bazi', { birthDate: '1988-09-17', birthTime: 'hai', gender: 'male', lunarToggle: 'solar' })
     const h = selectHandler(ctx)
-    const r1 = h.calculate(ctx), r2 = h.calculate(ctx)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r1 = h.calculate(ctx) as { chart: any }, r2 = h.calculate(ctx) as { chart: any }
     expect(r1.chart.yearPillar.stem + r1.chart.yearPillar.branch).toBe(r2.chart.yearPillar.stem + r2.chart.yearPillar.branch)
   })
 
   it('lunar bazi = solar equivalent', () => {
-    const r1 = selectHandler(makeCtx('bazi', { birthDate: '1988-08-07', birthTime: 'hai', gender: 'male', lunarToggle: 'lunar' })).calculate(makeCtx('bazi', { birthDate: '1988-08-07', birthTime: 'hai', gender: 'male', lunarToggle: 'lunar' }))
-    const r2 = selectHandler(makeCtx('bazi', { birthDate: '1988-09-17', birthTime: 'hai', gender: 'male', lunarToggle: 'solar' })).calculate(makeCtx('bazi', { birthDate: '1988-09-17', birthTime: 'hai', gender: 'male', lunarToggle: 'solar' }))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r1 = selectHandler(makeCtx('bazi', { birthDate: '1988-08-07', birthTime: 'hai', gender: 'male', lunarToggle: 'lunar' })).calculate(makeCtx('bazi', { birthDate: '1988-08-07', birthTime: 'hai', gender: 'male', lunarToggle: 'lunar' })) as { chart: any }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r2 = selectHandler(makeCtx('bazi', { birthDate: '1988-09-17', birthTime: 'hai', gender: 'male', lunarToggle: 'solar' })).calculate(makeCtx('bazi', { birthDate: '1988-09-17', birthTime: 'hai', gender: 'male', lunarToggle: 'solar' })) as { chart: any }
     expect(r1.chart.yearPillar.stem).toBe(r2.chart.yearPillar.stem)
     expect(r1.chart.dayPillar.stem).toBe(r2.chart.dayPillar.stem)
   })

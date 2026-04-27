@@ -303,10 +303,10 @@ export default function DashboardPage() {
             : `${readings.length} readings${activeTypeFilter ? ` · Filter: ${typeLabels[activeTypeFilter]?.en ?? activeTypeFilter}` : ''}`}
         </p>
         {/* Type filter chips */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
           <button
             onClick={() => { setActiveTypeFilter(null); setVisibleCount(15) }}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+            className="px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0"
             style={{
               background: !activeTypeFilter ? 'var(--gold)' : 'transparent',
               color: !activeTypeFilter ? '#000' : 'var(--text-muted)',
@@ -324,7 +324,7 @@ export default function DashboardPage() {
                 <button
                   key={key}
                   onClick={() => { setActiveTypeFilter(active ? null : key); setVisibleCount(15) }}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1.5"
                   style={{
                     background: active ? 'var(--gold)' : 'transparent',
                     color: active ? '#000' : 'var(--text-muted)',
@@ -413,16 +413,16 @@ export default function DashboardPage() {
                       {new Date(r.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')}
                     </span>
                     {confirmDeleteId === r.id ? (
-                      <span className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                      <span className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => { deleteReading(r.id); setConfirmDeleteId(null) }}
-                          className="text-red-400 hover:text-red-300 text-[10px] font-medium transition-colors"
+                          className="text-red-400 hover:text-red-300 text-xs font-medium transition-colors px-1.5 py-0.5"
                         >
                           {lang === 'en' ? 'Delete' : '刪除'}
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(null)}
-                          className="text-white/40 hover:text-white/60 text-[10px] transition-colors"
+                          className="text-white/40 hover:text-white/60 text-xs transition-colors px-1.5 py-0.5"
                         >
                           {lang === 'en' ? 'Cancel' : '取消'}
                         </button>

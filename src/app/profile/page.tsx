@@ -322,7 +322,7 @@ export default function ProfilePage() {
             }`}
           >
             <span className="block text-base sm:text-sm sm:inline">{tab.icon}</span>
-            <span className="block text-[9px] leading-tight sm:hidden">{T(lang, tab.zh, tab.en).split(/[\s/]/)[0]}</span>
+            <span className="block text-[11px] leading-tight sm:hidden">{T(lang, tab.zh, tab.en).split(/[\s/]/)[0]}</span>
             <span className="hidden sm:inline"> {T(lang, tab.zh, tab.en)}</span>
           </button>
         ))}

@@ -796,11 +796,11 @@ export default function DivinationFormPage() {
           {session && ['bazi', 'ziwei', 'qimen', 'meihua'].includes(type) && (
             <div className="flex rounded-full border overflow-hidden w-fit mx-auto" style={{ borderColor: 'var(--border-gold)' }}>
               <button type="button" onClick={() => setPaipanOnly(false)}
-                className={`px-4 py-1.5 text-xs font-medium transition-colors ${!paipanOnly ? 'bg-gold text-navy-950' : ''}`}
+                className={`px-4 sm:px-4 py-2 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors ${!paipanOnly ? 'bg-gold text-navy-950' : ''}`}
                 style={paipanOnly ? { color: 'var(--text-muted)' } : {}}
               >{T(lang, '完整解盤', 'Full Reading')}</button>
               <button type="button" onClick={() => setPaipanOnly(true)}
-                className={`px-4 py-1.5 text-xs font-medium transition-colors ${paipanOnly ? 'bg-gold text-navy-950' : ''}`}
+                className={`px-4 sm:px-4 py-2 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors ${paipanOnly ? 'bg-gold text-navy-950' : ''}`}
                 style={!paipanOnly ? { color: 'var(--text-muted)' } : {}}
               >{T(lang, '只排盤（免費）', 'Chart Only (free)')}</button>
             </div>
@@ -1513,7 +1513,7 @@ export default function DivinationFormPage() {
             <details className="border border-gold/20 rounded-xl bg-navy-900/50 group">
               <summary className="px-4 py-3 cursor-pointer list-none flex items-center justify-between text-white/60 text-xs font-semibold uppercase tracking-wider hover:text-white/80 transition-colors">
                 <span>{T(lang, '🔒 隱私設置', '🔒 Privacy Settings')}</span>
-                <span className="text-white/30 group-open:rotate-180 transition-transform">▼</span>
+                <span className="text-gold/40 group-open:rotate-180 transition-transform">▼</span>
               </summary>
               <div className="px-4 pb-4 space-y-3">
 
@@ -1760,7 +1760,7 @@ export default function DivinationFormPage() {
         <button
           type="button"
           onClick={() => document.getElementById('xuanji-qa')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-          className="fixed bottom-20 right-4 z-30 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-lg transition-all hover:scale-110 active:scale-95"
+          className="fixed bottom-24 right-4 z-30 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-lg transition-all hover:scale-110 active:scale-95"
           style={{ background: 'var(--gold)', color: '#0a0f1e' }}
           title={T(lang, '問問大師', 'Ask the Master')}
         >
