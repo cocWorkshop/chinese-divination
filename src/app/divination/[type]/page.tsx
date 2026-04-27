@@ -1720,7 +1720,7 @@ export default function DivinationFormPage() {
                         navigator.clipboard.writeText(url)
                         toast.success(T(lang, '連結已複製！可發送給朋友查看', 'Link copied! Share with friends'))
                       }
-                    } catch { toast.error('Error') }
+                    } catch { toast.error(T(lang, '分享失敗', 'Share failed')) }
                     setSharing(false)
                   }}
                   disabled={sharing}

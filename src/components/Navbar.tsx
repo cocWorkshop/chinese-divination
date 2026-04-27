@@ -81,10 +81,10 @@ export default function Navbar() {
       if (res.ok) {
         router.push(`/share/${data.code}`)
       } else {
-        toast.error(data.error || 'Failed')
+        toast.error(data.error || (lang === 'en' ? 'Failed' : '操作失敗'))
       }
     } catch {
-      toast.error('Network error')
+      toast.error(lang === 'en' ? 'Network error' : '網絡錯誤')
     }
     setSharing(false)
   }
@@ -101,7 +101,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden lg:flex items-center gap-6">
             <Link href="/divination" className="text-white/80 hover:text-gold transition-colors">
               {lang === 'en' ? 'Divination' : '占卜'}
             </Link>
@@ -207,7 +207,7 @@ export default function Navbar() {
           {/* Mobile hamburger */}
           <button
             ref={mobileToggleRef}
-            className="md:hidden text-white/80 hover:text-gold"
+            className="lg:hidden text-white/80 hover:text-gold"
             onClick={() => setMenuOpen(!menuOpen)}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,7 +223,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div ref={mobileMenuRef} className="md:hidden border-t px-4 py-4 flex flex-col gap-3" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-gold)' }}>
+        <div ref={mobileMenuRef} className="lg:hidden border-t px-4 py-4 flex flex-col gap-3" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-gold)' }}>
           <Link href="/divination" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
             {lang === 'en' ? 'Divination' : '占卜'}
           </Link>

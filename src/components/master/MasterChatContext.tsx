@@ -433,7 +433,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
             const updated = [...prev]
             updated[updated.length - 1] = {
               ...assistantMsg,
-              content: (err as { error?: string }).error ?? '抱歉，出了點問題。',
+              content: (err as { error?: string }).error ?? (lang === 'en' ? 'Sorry, something went wrong.' : '抱歉，出了點問題。'),
             }
             return updated
           })
@@ -565,7 +565,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
                   const updated = [...prev]
                   updated[updated.length - 1] = {
                     ...assistantMsg,
-                    content: event.error ?? '抱歉，出了點問題。',
+                    content: event.error ?? (lang === 'en' ? 'Sorry, something went wrong.' : '抱歉，出了點問題。'),
                   }
                   return updated
                 })

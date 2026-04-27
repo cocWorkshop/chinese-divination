@@ -39,19 +39,19 @@ interface FamilyMember {
 }
 
 const shichen = [
-  { value: 'zi_early', label: '早子時  00:00 – 01:00' },
-  { value: 'chou', label: '丑時  01:00 – 03:00' },
-  { value: 'yin',  label: '寅時  03:00 – 05:00' },
-  { value: 'mao',  label: '卯時  05:00 – 07:00' },
-  { value: 'chen', label: '辰時  07:00 – 09:00' },
-  { value: 'si',   label: '巳時  09:00 – 11:00' },
-  { value: 'wu',   label: '午時  11:00 – 13:00' },
-  { value: 'wei',  label: '未時  13:00 – 15:00' },
-  { value: 'shen', label: '申時  15:00 – 17:00' },
-  { value: 'you',  label: '酉時  17:00 – 19:00' },
-  { value: 'xu',   label: '戌時  19:00 – 21:00' },
-  { value: 'hai',  label: '亥時  21:00 – 23:00' },
-  { value: 'zi_late', label: '晚子時  23:00 – 00:00' },
+  { value: 'zi_early', zh: '早子時 (00:00-01:00)', en: 'Early Zi (00:00-01:00)' },
+  { value: 'chou', zh: '丑時 (01:00-03:00)', en: 'Chou (01:00-03:00)' },
+  { value: 'yin',  zh: '寅時 (03:00-05:00)', en: 'Yin (03:00-05:00)' },
+  { value: 'mao',  zh: '卯時 (05:00-07:00)', en: 'Mao (05:00-07:00)' },
+  { value: 'chen', zh: '辰時 (07:00-09:00)', en: 'Chen (07:00-09:00)' },
+  { value: 'si',   zh: '巳時 (09:00-11:00)', en: 'Si (09:00-11:00)' },
+  { value: 'wu',   zh: '午時 (11:00-13:00)', en: 'Wu (11:00-13:00)' },
+  { value: 'wei',  zh: '未時 (13:00-15:00)', en: 'Wei (13:00-15:00)' },
+  { value: 'shen', zh: '申時 (15:00-17:00)', en: 'Shen (15:00-17:00)' },
+  { value: 'you',  zh: '酉時 (17:00-19:00)', en: 'You (17:00-19:00)' },
+  { value: 'xu',   zh: '戌時 (19:00-21:00)', en: 'Xu (19:00-21:00)' },
+  { value: 'hai',  zh: '亥時 (21:00-23:00)', en: 'Hai (21:00-23:00)' },
+  { value: 'zi_late', zh: '晚子時 (23:00-00:00)', en: 'Late Zi (23:00-00:00)' },
 ]
 
 const T = (lang: string, zhTW: string, en: string) =>
@@ -408,7 +408,7 @@ export default function ProfilePage() {
                   ) : (
                     <select className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))}>
                       <option value="">{T(lang, '請選擇', 'Select')}</option>
-                      {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
                     </select>
                   )}
                 </div>
@@ -558,7 +558,7 @@ export default function ProfilePage() {
                         ) : (
                           <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
                             <option value="">{T(lang, '請選擇', 'Select')}</option>
-                            {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                            {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
                           </select>
                         )}
                       </div>
@@ -717,7 +717,7 @@ export default function ProfilePage() {
                     ) : (
                       <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
                         <option value="">{T(lang, '請選擇', 'Select')}</option>
-                        {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
                       </select>
                     )}
                   </div>
@@ -926,7 +926,7 @@ export default function ProfilePage() {
                           setTimeout(() => { setFbSent(false); setFbRating(0); setFbText('') }, 3000)
                           fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(catchAndReport('/api/site-feedback'))
                         }
-                      } catch { toast.error('Error') }
+                      } catch { toast.error(T(lang, '提交失敗', 'Submission failed')) }
                       setFbSending(false)
                     }}
                     className="px-5 py-2.5 rounded-xl font-medium text-sm bg-gold text-navy-950 hover:bg-gold-light transition-colors disabled:opacity-40">

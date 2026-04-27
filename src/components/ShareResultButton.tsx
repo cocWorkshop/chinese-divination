@@ -52,7 +52,7 @@ export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW
           toast.success(T(lang, '分享連結已生成', 'Share link generated'))
         }
       }
-    } catch { toast.error('Error') }
+    } catch { toast.error(T(lang, '分享失敗', 'Share failed')) }
     setLoading(false)
   }
 

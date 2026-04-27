@@ -41,7 +41,7 @@ export default function FeedbackModal({ open, onClose }: Props) {
         onClose()
       }
     } catch {
-      toast.error('Error')
+      toast.error(T(lang, '提交失敗', 'Submission failed'))
     }
     setSending(false)
   }
