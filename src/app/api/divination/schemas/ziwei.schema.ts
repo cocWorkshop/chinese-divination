@@ -136,6 +136,13 @@ export const ziweiSchemaV2 = z.object({
     family: z.string().describe('六亲分析(100+字)：父母/兄弟/子女宫主星→具体特征推断'),
   }),
 
+  sectionSummaries: z.object({
+    career: z.string().describe('一句话概括，如"📈 官禄紫微庙旺 — 适合管理或公职"'),
+    marriage: z.string().describe('一句话概括，如"💛 夫妻宫桃花旺 — 28-32岁婚期"'),
+    wealth: z.string().describe('一句话概括，如"💰 武曲化禄入财帛 — 理财型"'),
+    health: z.string().describe('一句话概括，如"⚠️ 疾厄天机落陷 — 注意神经系统"'),
+  }).optional().describe('每个section的一句话摘要'),
+
   daYunAnalysis: z.array(daYunEntrySchemaZiwei).describe('逐步大限精批，每步含主题、四化叠加、关键事件、建议'),
 
   keyPredictions: z.array(z.object({

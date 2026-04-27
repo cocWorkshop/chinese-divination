@@ -93,23 +93,28 @@ export default function SubscribePage() {
               )}
               {costs && (
                 <div className="flex-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {/* Divination */}
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
-                    {(visibility?.bazi !== false) && <span>🏛️ {T(lang, '八字', 'BaZi')} <b style={{ color: 'var(--gold)' }}>{costs.bazi}</b>{T(lang, '點/次', 'pts')}</span>}
-                    {(visibility?.ziwei !== false) && <span>⭐ {T(lang, '紫微', 'ZiWei')} <b style={{ color: 'var(--gold)' }}>{costs.ziwei}</b>{T(lang, '點/次', 'pts')}</span>}
-                    {(visibility?.qimen !== false) && <span>🧭 {T(lang, '奇門', 'QiMen')} <b style={{ color: 'var(--gold)' }}>{costs.qimen}</b>{T(lang, '點/次', 'pts')}</span>}
-                    {(visibility?.meihua !== false) && <span>🌸 {T(lang, '梅花', 'MeiHua')} <b style={{ color: 'var(--gold)' }}>{costs.meihua}</b>{T(lang, '點/次', 'pts')}</span>}
-                    {(visibility?.liuyao !== false) && <span>🪙 {T(lang, '六爻', 'LiuYao')} <b style={{ color: 'var(--gold)' }}>{costs.liuyao}</b>{T(lang, '點/次', 'pts')}</span>}
-                    {(visibility?.iching !== false) && <span>📖 {T(lang, '易經', 'IChing')} <b style={{ color: 'var(--gold)' }}>{costs.iching}</b>{T(lang, '點/次', 'pts')}</span>}
-                    {(visibility?.fengshui !== false) && <span>🏯 {T(lang, '風水', 'FengShui')} <b style={{ color: 'var(--gold)' }}>{costs.fengshui}</b>{T(lang, '點/次', 'pts')}</span>}
-                  </div>
-                  {/* Separator */}
-                  <div className="my-1.5 h-px mx-auto max-w-[200px]" style={{ background: 'var(--border-gold)', opacity: 0.3 }} />
-                  {/* Chat & Master */}
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 justify-center">
-                    <span>💬 {T(lang, '玄機問答', 'Chat Q&A')} <b style={{ color: 'var(--gold)' }}>{costs.chat}</b>{T(lang, '點/次', 'pts')}</span>
-                    <span>🧙 {T(lang, '玄機大師', 'Ask Master')} <b style={{ color: 'var(--gold)' }}>{costs.master}</b>{T(lang, '點/輪', 'pts/turn')}</span>
-                  </div>
+                  <table className="w-full text-left">
+                    <tbody>
+                      <tr><td colSpan={2} className="pb-1 font-medium" style={{ color: 'var(--text-muted)' }}>{T(lang, '占卜', 'Divination')}</td></tr>
+                      <tr>
+                        <td className="py-0.5">{T(lang, '八字 / 紫微 / 奇門', 'BaZi / ZiWei / QiMen')}</td>
+                        <td className="text-right font-bold" style={{ color: 'var(--gold)' }}>{costs.bazi} {T(lang, '點', 'pts')}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-0.5">{T(lang, '梅花 / 六爻 / 易經 / 風水', 'MeiHua / LiuYao / IChing / FengShui')}</td>
+                        <td className="text-right font-bold" style={{ color: 'var(--gold)' }}>{costs.meihua} {T(lang, '點', 'pts')}</td>
+                      </tr>
+                      <tr><td colSpan={2} className="pt-2 pb-1 font-medium" style={{ color: 'var(--text-muted)' }}>{T(lang, '對話', 'Chat')}</td></tr>
+                      <tr>
+                        <td className="py-0.5">{T(lang, '玄機問答', 'Follow-up Q&A')}</td>
+                        <td className="text-right font-bold" style={{ color: 'var(--gold)' }}>{costs.chat} {T(lang, '點', 'pts')}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-0.5">{T(lang, '玄機大師', 'Master Chat')}</td>
+                        <td className="text-right font-bold" style={{ color: 'var(--gold)' }}>{costs.master} {T(lang, '點/輪', 'pt/turn')}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

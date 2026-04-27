@@ -114,6 +114,7 @@ export interface BaziDataV2 {
   sections: { overview: string; career: string; marriage: string; wealth: string; health: string }
   daYunAnalysis?: DaYunAnalysisEntry[]
   branchAnalysis?: string
+  sectionSummaries?: { career?: string; marriage?: string; wealth?: string; health?: string }
   keyPredictions?: { age: string; event: string; basis: string }[]
   keyAdvice: string[]
   luckyInfo: { colors: string[]; directions: string[] }

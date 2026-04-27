@@ -8,6 +8,8 @@ import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
 import BirthplaceInput from '@/components/BirthplaceInput'
 import { catchAndReport } from '@/lib/errorReporter'
+import FamilyTab from './_tabs/FamilyTab'
+import type { FamilyMemberData } from './_components/FamilyDrawer'
 
 const relationPresets = [
   { value: 'spouse', zh: '配偶', en: 'Spouse' },
@@ -449,8 +451,17 @@ export default function ProfilePage() {
         </form>
       )}
 
-      {/* ========== Family Members Tab ========== */}
+      {/* ========== Family Members Tab (extracted) ========== */}
       {activeTab === 'family' && (
+        <FamilyTab
+          members={familyMembers as FamilyMemberData[]}
+          onMembersChange={(updated) => setFamilyMembers(updated as typeof familyMembers)}
+        />
+      )}
+
+      {/* Old family tab removed — now handled by FamilyTab component */}
+      {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+      {false && (
         <div className="glass-card rounded-2xl">
           <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
             <div className="flex items-center gap-3">

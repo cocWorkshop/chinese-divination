@@ -97,7 +97,7 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
                     if (!palace) return <div key={`${ri}-${ci}`} className="bg-navy-950/90 p-2" />
                     const isCenter = palace.number === 5
                     return (
-                      <div key={`${ri}-${ci}`} onClick={() => setSelectedPalace(selectedPalace?.number === palace.number ? null : palace)}
+                      <div key={`${ri}-${ci}`} role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter') setSelectedPalace(selectedPalace?.number === palace.number ? null : palace) }} onClick={() => setSelectedPalace(selectedPalace?.number === palace.number ? null : palace)}
                         className={`bg-navy-950/90 p-1.5 sm:p-2.5 cursor-pointer transition-all hover:bg-gold/5 min-h-[80px] sm:min-h-[100px] ${selectedPalace?.number === palace.number ? 'ring-1 ring-gold/50' : ''} ${isCenter ? 'bg-gold/3' : ''}`}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[var(--text-muted)] text-[9px] sm:text-[10px]">{palace.direction}</span>

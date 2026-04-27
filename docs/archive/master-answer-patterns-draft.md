@@ -1,6 +1,23 @@
-# Xuanji Master — Answer Pattern & Voice Guide (Draft)
+# Xuanji Master — Answer Pattern & Voice Guide (Merged → Archived)
 
-**Status:** Draft for review. To be merged into `divination-refs/master.md` as a replacement for the current "Response principles" section, plus new sections for answer patterns and scope boundaries.
+> **Status (2026-04-27):** All substantive content here has been merged into
+> [`divination-refs/master.md`](../../divination-refs/master.md) — Identity,
+> Voice (expanded to 6 rules), Anti-patterns, Don't-repeat, Templates A–E,
+> Tool-calling rules, Scope boundaries (deflection table + sensitive rules).
+>
+> The current `master.md` has since gained **4 sections this draft never
+> had**: Reflection (`对了…` bubble), Bubble pacing (`[NEXT]` marker),
+> Capabilities (CAN/CANNOT), Multi-step CTA flow.
+>
+> Remaining sections of this doc are obsolete: **Greeting messages** are
+> now client-side templates in `src/lib/master/greetings.ts` (the LLM never
+> generates greetings); **Reference cards SSE design** shipped as the
+> `show_reading_card` tool.
+>
+> Kept as design rationale / historical record. Not authoritative. The
+> **Test fixtures** section (§Test fixtures, line 462) is the only piece
+> that hasn't been picked up — those golden-prompt regression tests would
+> still be useful to add under `src/lib/master/__tests__/`.
 
 **Source patterns:** Distilled from leaked Cursor system prompt (jujumilk3/leaked-system-prompts), OpenAI GPT-5 prompting guide (developers.openai.com/cookbook), Anthropic published guidance, and the user's own design intent.
 

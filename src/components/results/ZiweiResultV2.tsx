@@ -245,6 +245,11 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
               ) : undefined}
             >
               <div className={`text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown overflow-x-auto break-words transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}>
+                {d.sectionSummaries?.[s.key as keyof (typeof d.sectionSummaries & object)] && (
+                  <p className="text-xs mb-2 px-2 py-1 rounded-lg inline-block" style={{ background: 'rgba(212,175,55,0.1)', color: 'var(--gold)' }}>
+                    {(d.sectionSummaries as Record<string, string>)[s.key]}
+                  </p>
+                )}
                 {hasContent ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
                 ) : streaming ? (

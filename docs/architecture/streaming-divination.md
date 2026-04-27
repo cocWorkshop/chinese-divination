@@ -1,6 +1,6 @@
-# 占卜流式渲染 — Session 交接文檔
+# 占卜流式渲染 — 架構參考
 
-寫於連續多個 session 工作完成後，準備在新 session（將載入 Playwright MCP）做端到端測試。本文記錄**邏輯架構、改動清單、預期行為、測試清單、已知風險**，讓新 session 0-context 也能繼續推進。
+> **狀態**：實作已上線，本文從原本的「session 交接文檔」轉為長期參考。記錄**邏輯架構、改動清單、預期行為、測試清單、已知風險**，方便新 session 0-context 也能快速理解流式排盤系統。
 
 ---
 
@@ -222,4 +222,4 @@
 
 ## 八、新 session 啟動建議第一句話
 
-> 「我已經做完八字/紫微的流式渲染重構（後端 SSE + 前端 path-aware partial + vertical flat layout）。現在要用 Playwright MCP 做端到端驗證。先讀 [docs/streaming-divination-handoff.md](docs/streaming-divination-handoff.md)，然後啟動 dev server，按照「五、新 Session 測試清單」逐項跑。」
+> 「我要動到流式排盤的 [具體事項]。先讀 [docs/architecture/streaming-divination.md](../architecture/streaming-divination.md)，重點看 §一 目標、§二 核心模塊（streaming JSON parser + chart_ready）、§六 已知風險。」

@@ -143,6 +143,7 @@ export default function DashboardPage() {
   const [activeTypeFilter, setActiveTypeFilter] = useState<string | null>(null)
   const [visibleCount, setVisibleCount] = useState(15)
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const { setShape: setMasterShape, enabled: masterEnabled } = useMasterChat()
 
 
@@ -242,8 +243,6 @@ export default function DashboardPage() {
   }
 
   const deleteReading = async (id: string) => {
-    const msg = lang === 'en' ? 'Are you sure you want to delete this reading?' : '確定要刪除這條記錄嗎？'
-    if (!window.confirm(msg)) return
     // Mark as deleting so the card shows a loading overlay while the request
     // is in flight — the card is NOT removed until the API confirms success,
     // so a backend failure leaves the card in place with an error toast.
@@ -371,8 +370,10 @@ export default function DashboardPage() {
                   </span>
                 </div>
               )}
-              <div
-                className={`p-5 cursor-pointer hover:bg-white/5 transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''} ${isDeleting ? 'pointer-events-none' : ''}`}
+              <button
+                type="button"
+                aria-expanded={expanded === r.id}
+                className={`w-full text-left p-5 cursor-pointer hover:bg-white/5 transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''} ${isDeleting ? 'pointer-events-none' : ''}`}
                 onClick={() => setExpanded(expanded === r.id ? null : r.id)}
               >
                 <div className="flex justify-between items-start">
@@ -411,13 +412,30 @@ export default function DashboardPage() {
                     <span className="text-white/40 text-xs">
                       {new Date(r.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')}
                     </span>
-                    <button
-                      onClick={e => { e.stopPropagation(); deleteReading(r.id) }}
-                      disabled={isDeleting}
-                      className="text-white/30 hover:text-red-400 transition-colors text-xs disabled:opacity-40 disabled:cursor-wait"
-                    >
-                      ✕
-                    </button>
+                    {confirmDeleteId === r.id ? (
+                      <span className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={() => { deleteReading(r.id); setConfirmDeleteId(null) }}
+                          className="text-red-400 hover:text-red-300 text-[10px] font-medium transition-colors"
+                        >
+                          {lang === 'en' ? 'Delete' : '刪除'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-white/40 hover:text-white/60 text-[10px] transition-colors"
+                        >
+                          {lang === 'en' ? 'Cancel' : '取消'}
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={e => { e.stopPropagation(); setConfirmDeleteId(r.id) }}
+                        disabled={isDeleting}
+                        className="text-white/30 hover:text-red-400 transition-colors text-xs disabled:opacity-40 disabled:cursor-wait"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 </div>
                 {expanded !== r.id && (() => {
@@ -469,7 +487,7 @@ export default function DashboardPage() {
                     </p>
                   )
                 })()}
-              </div>
+              </button>
               <AnimatePresence>
                 {expanded === r.id && (
                   <motion.div

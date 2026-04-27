@@ -1,9 +1,14 @@
 # Xuanji Master — Conversation Memory & User Portrait System
 
-**Status:** Draft — pending review
+> **Status:** Shipped (originally drafted 2026-04-11). The 6-phase plan
+> below is preserved as the design reference; consult code under
+> `src/lib/master/` and `src/app/api/master/` for the current implementation,
+> and `prisma/schema.prisma` (`UserPortrait`, `UserPortraitHistory`,
+> `MasterChatMessage`) for the data model that ultimately shipped.
+
 **Author:** Claude (drafted from design conversation 2026-04-11)
 **Owner:** Wei Zhang
-**Estimated scope:** 6 phases, each independently shippable
+**Original scope:** 6 phases, each independently shippable
 
 ---
 

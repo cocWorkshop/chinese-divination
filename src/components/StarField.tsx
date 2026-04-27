@@ -6,6 +6,8 @@ export default function StarField() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
+    // Respect prefers-reduced-motion — render static stars instead of animating
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -14,8 +16,12 @@ export default function StarField() {
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
 
+    // Fewer stars on mobile for performance
+    const isMobile = window.innerWidth < 640
+    const count = isMobile ? 80 : 200
+
     const stars: { x: number; y: number; r: number; a: number; da: number }[] = []
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < count; i++) {
       stars.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
@@ -25,8 +31,22 @@ export default function StarField() {
       })
     }
 
+    // Static render for reduced-motion preference
+    if (prefersReduced) {
+      stars.forEach((s) => {
+        ctx.beginPath()
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(212, 168, 83, ${s.a})`
+        ctx.fill()
+      })
+      return
+    }
+
     let animId: number
+    let paused = false
+
     const draw = () => {
+      if (paused) { animId = requestAnimationFrame(draw); return }
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       stars.forEach((s) => {
         s.a += s.da
@@ -40,6 +60,10 @@ export default function StarField() {
     }
     draw()
 
+    // Pause when tab is not visible to save CPU/battery
+    const onVisibility = () => { paused = document.hidden }
+    document.addEventListener('visibilitychange', onVisibility)
+
     const handleResize = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
@@ -48,6 +72,7 @@ export default function StarField() {
 
     return () => {
       cancelAnimationFrame(animId)
+      document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('resize', handleResize)
     }
   }, [])

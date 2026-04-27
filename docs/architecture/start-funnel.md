@@ -456,4 +456,4 @@ tests/run_funnel_tests.sh                       8 sections, curl + cookie jar
 
 ## 十四、新 session 啟動建議第一句話
 
-> 「我要加/改 /start 廣告漏斗的 [具體事項]。先讀 [docs/start-funnel.md](docs/start-funnel.md)，重點看 §三 資料流、§五 Auth 雙軌、§九 視覺，然後 grep 既有檔。改動 schema 記得跑 `npx prisma migrate deploy`，改完跑 `./tests/run_funnel_tests.sh`。」
+> 「我要加/改 /start 廣告漏斗的 [具體事項]。先讀 [docs/architecture/start-funnel.md](../architecture/start-funnel.md)，重點看 §三 資料流、§五 Auth 雙軌、§九 視覺，然後 grep 既有檔。改動 schema 記得跑 `npx prisma migrate deploy`，改完跑 `./tests/run_funnel_tests.sh`。」

@@ -63,7 +63,7 @@ export default function XuanjiChatCard({ readingResult, readingType, readingId, 
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
+    <motion.div id="xuanji-qa" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
       <div className="glass-card rounded-xl p-4 sm:p-6 border-2 border-gold/30">
         <h3 className="flex items-center gap-2 text-gold font-serif text-base sm:text-lg mb-3">
           <span className="text-xl">☯</span>

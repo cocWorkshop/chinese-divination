@@ -48,7 +48,8 @@ export async function POST(req: NextRequest) {
     return (
       input.birthDate === inputData.birthDate &&
       input.birthTime === inputData.birthTime &&
-      input.gender === inputData.gender
+      input.gender === inputData.gender &&
+      (input.birthPlace || '') === (inputData.birthPlace || '')
     )
   })
 

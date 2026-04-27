@@ -773,6 +773,18 @@ export default function DivinationFormPage() {
         <h1 className="text-3xl font-serif text-gold">{lang === 'en' ? info.enName : info.twName}</h1>
       </motion.div>
 
+      {/* Back link */}
+      {!result && !loading && (
+        <button
+          type="button"
+          onClick={() => router.push('/divination')}
+          className="mb-4 text-sm transition-colors hover:text-gold flex items-center gap-1"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          ← {T(lang, '返回占卜列表', 'Back to Divination')}
+        </button>
+      )}
+
       {!result && !loading && (
         <motion.form
           initial={{ opacity: 0 }}
@@ -780,6 +792,20 @@ export default function DivinationFormPage() {
           onSubmit={handleSubmit}
           className="glass-card rounded-2xl p-4 sm:p-8 space-y-4 sm:space-y-5"
         >
+          {/* Mode switch — Full Reading vs Chart Only */}
+          {session && ['bazi', 'ziwei', 'qimen', 'meihua'].includes(type) && (
+            <div className="flex rounded-full border overflow-hidden w-fit mx-auto" style={{ borderColor: 'var(--border-gold)' }}>
+              <button type="button" onClick={() => setPaipanOnly(false)}
+                className={`px-4 py-1.5 text-xs font-medium transition-colors ${!paipanOnly ? 'bg-gold text-navy-950' : ''}`}
+                style={paipanOnly ? { color: 'var(--text-muted)' } : {}}
+              >{T(lang, '完整解盤', 'Full Reading')}</button>
+              <button type="button" onClick={() => setPaipanOnly(true)}
+                className={`px-4 py-1.5 text-xs font-medium transition-colors ${paipanOnly ? 'bg-gold text-navy-950' : ''}`}
+                style={!paipanOnly ? { color: 'var(--text-muted)' } : {}}
+              >{T(lang, '只排盤（免費）', 'Chart Only (free)')}</button>
+            </div>
+          )}
+
           {/* Target Person Selection — locked placeholder when signed out so
               the form's vertical layout matches the signed-in state */}
           {['bazi', 'ziwei'].includes(type) && !session && (
@@ -1439,7 +1465,11 @@ export default function DivinationFormPage() {
             </button>
           )}
 
-          {/* Credits display */}
+          {/* Credits display.
+              In paipanOnly mode the backend skips both checkCredits + early-
+              returns before deductCredits (see /api/divination/route.ts:106,
+              :215), so no Karma is consumed. We swap the "本次消耗 X 點"
+              subscript for a "本次免費" tag so the UI matches reality. */}
           {session && credits && (
             <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50">
               <div className="flex items-center justify-between">
@@ -1448,7 +1478,11 @@ export default function DivinationFormPage() {
                 </span>
                 <span className="text-gold font-mono font-bold">
                   {credits.credits === 999 ? '∞' : (credits.credits ?? 0)}
-                  {credits.costs && credits.costs[type] ? (
+                  {paipanOnly ? (
+                    <span className="text-emerald-400/80 text-xs ml-1 font-sans font-normal">
+                      ({T(lang, '本次免費', 'free this time')})
+                    </span>
+                  ) : credits.costs && credits.costs[type] ? (
                     <span className="text-white/40 text-xs ml-1">
                       ({T(lang, `本次消耗 ${credits.costs[type]} 點`, `costs ${credits.costs[type]} pts`)})
                     </span>
@@ -1570,20 +1604,7 @@ export default function DivinationFormPage() {
             </label>
           )}
 
-          {/* paipanOnly checkbox (all logged-in users) */}
-          {session && credits && ['bazi', 'ziwei', 'qimen', 'meihua'].includes(type) && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={paipanOnly}
-                onChange={e => setPaipanOnly(e.target.checked)}
-                className="w-4 h-4 rounded border-gold/30 accent-gold"
-              />
-              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                {T(lang, '只排盤（不調用AI解盤，不扣機緣）', 'Paipan only (no AI interpretation, no Karma cost)')}
-              </span>
-            </label>
-          )}
+          {/* paipanOnly toggle moved to top of form as mode switch */}
 
           {(() => {
             const remaining = credits?.credits ?? credits?.divination?.remaining ?? 0
@@ -1646,7 +1667,7 @@ export default function DivinationFormPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card rounded-2xl p-4 sm:p-8"
+          className="glass-card rounded-2xl p-4 sm:p-8 w-full max-w-full overflow-x-hidden"
         >
           <div className="flex justify-between items-center mb-4 sm:mb-6">
             <h2 className="text-lg sm:text-xl font-serif text-gold">
@@ -1732,6 +1753,19 @@ export default function DivinationFormPage() {
             </div>
           )}
         </motion.div>
+      )}
+
+      {/* Floating Ask Master FAB — appears when result is visible */}
+      {result && !streaming && (
+        <button
+          type="button"
+          onClick={() => document.getElementById('xuanji-qa')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+          className="fixed bottom-20 right-4 z-30 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-lg transition-all hover:scale-110 active:scale-95"
+          style={{ background: 'var(--gold)', color: '#0a0f1e' }}
+          title={T(lang, '問問大師', 'Ask the Master')}
+        >
+          ☯
+        </button>
       )}
     </div>
   )

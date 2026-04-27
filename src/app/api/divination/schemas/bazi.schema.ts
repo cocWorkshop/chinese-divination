@@ -132,6 +132,12 @@ export const baziSchemaV2 = z.object({
     wealth: z.string().describe('财运分析(150+字)：正偏财、理财、财运高峰期'),
     health: z.string().describe('健康分析(100+字)：具体器官、高风险时段、养生方向'),
   }),
+  sectionSummaries: z.object({
+    career: z.string().describe('一句话概括，如"📈 整体偏好 — 35-40岁关键期"'),
+    marriage: z.string().describe('一句话概括，如"💛 婚期2028-2030 — 注意桃花年"'),
+    wealth: z.string().describe('一句话概括，如"💰 偏财旺 — 投资型，非稳定薪资"'),
+    health: z.string().describe('一句话概括，如"⚠️ 注意肝胆 — 40岁后重点"'),
+  }).optional().describe('每个section的一句话摘要，显示在标题旁帮助用户快速扫描'),
 
   daYunAnalysis: z.array(daYunEntrySchema).describe('逐步大运精批（共8步），每步含主题、互动、关键流年、建议'),
 

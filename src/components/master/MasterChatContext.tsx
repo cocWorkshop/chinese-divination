@@ -236,7 +236,8 @@ export function MasterChatProvider({ children }: ProviderProps) {
   // 0 = ready to reflect once when idle timer fires
   // 1 = already reflected once this silent stretch — DEAD until user replies
   const reflectionAttemptsRef = useRef(0)
-  const REFLECTION_IDLE_MS = 90_000
+  const REFLECTION_IDLE_MS_BASE = 75_000  // 75s base
+  const REFLECTION_IDLE_MS_JITTER = 45_000 // +0-45s random to feel natural
 
   const toggleShape = useCallback(() => {
     setShape((s) => (s === 'collapsed' ? 'expanded' : 'collapsed'))
@@ -412,16 +413,17 @@ export function MasterChatProvider({ children }: ProviderProps) {
       // Deferring guarantees: all narrative text settles, brief beat, then
       // cards pop in at the end. Order within the buffer is preserved.
       const pendingCards: MasterMsg[] = []
-      const flushPendingCards = async () => {
+      const flushPendingCards = () => {
         if (pendingCards.length === 0) return
-        // Small beat after the final text settles so the card doesn't feel
-        // glued to the last word.
-        await new Promise((resolve) => setTimeout(resolve, 400))
-        setMessages((prev) => [...prev, ...pendingCards])
+        const cards = [...pendingCards]
         pendingCards.length = 0
+        // Use RAF to let the last text render settle before cards pop in,
+        // but don't use a long setTimeout that races with the finally block.
+        requestAnimationFrame(() => {
+          setMessages((prev) => [...prev, ...cards])
+        })
       }
 
-      let sseBuffer = ''
       try {
         abortRef.current = new AbortController()
         const res = await fetch('/api/master', {
@@ -447,13 +449,14 @@ export function MasterChatProvider({ children }: ProviderProps) {
         const reader = res.body?.getReader()
         if (!reader) return
         const decoder = new TextDecoder()
+        let buf = ''
 
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
-          sseBuffer += decoder.decode(value, { stream: true })
-          const lines = sseBuffer.split('\n')
-          sseBuffer = lines.pop() ?? ''
+          buf += decoder.decode(value, { stream: true })
+          const lines = buf.split('\n')
+          buf = lines.pop() ?? ''
 
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue
@@ -576,7 +579,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
                 // Stream complete — release any queued cards now. The 400ms
                 // beat inside flushPendingCards lets the final text settle
                 // before the card animates in.
-                await flushPendingCards()
+                flushPendingCards()
               }
             } catch {
               /* ignore malformed frames */
@@ -595,27 +598,12 @@ export function MasterChatProvider({ children }: ProviderProps) {
           })
         }
       } finally {
-        // Flush any remaining buffer — the last SSE event (typically `done`)
-        // may sit in the buffer when the stream closes, causing cards to
-        // never render on first conversation.
-        if (sseBuffer.trim()) {
-          for (const line of sseBuffer.split('\n')) {
-            if (!line.startsWith('data: ')) continue
-            try {
-              const event = JSON.parse(line.slice(6))
-              if (event.type === 'done' && pendingCards.length > 0) {
-                setMessages((prev) => [...prev, ...pendingCards])
-                pendingCards.length = 0
-              }
-            } catch { /* ignore */ }
-          }
-        }
-        // Safety: if the stream errored or aborted before `done` fired but
-        // cards were already queued, flush them now so the user still sees
-        // the redirect.
+        // Safety: if the stream ended before `done` fired (error/abort),
+        // flush any remaining queued cards so the user still sees the CTA.
         if (pendingCards.length > 0) {
-          setMessages((prev) => [...prev, ...pendingCards])
+          const cards = [...pendingCards]
           pendingCards.length = 0
+          setMessages((prev) => [...prev, ...cards])
         }
         setLoading(false)
         setToolStatus(null)
@@ -772,32 +760,54 @@ export function MasterChatProvider({ children }: ProviderProps) {
     await runTurn({ reflection: true })
   }, [enabled, runTurn])
 
+  // Content-aware check: should the master follow up?
+  // Returns false for trivial closers, true for substantive conversation.
+  const shouldReflect = useCallback((): boolean => {
+    // Find the last user message (skip cards and system)
+    const userMsgs = messages.filter(m => m.role === 'user' && m.kind === 'text')
+    if (userMsgs.length === 0) return false
+    const lastUserMsg = userMsgs[userMsgs.length - 1].content.trim()
+
+    // Skip if user's last message was a trivial closer
+    const trivialPatterns = /^(好|ok|好的|嗯|谢谢|謝謝|thank|thanks|bye|再[見见]|掰|知道了|明白|收到|got it|sure|okay|行|对|對|是的|没了|沒了|就这样|就這樣)$/i
+    if (trivialPatterns.test(lastUserMsg)) return false
+
+    // Skip if very short (< 5 chars) — likely a filler
+    if (lastUserMsg.length < 5) return false
+
+    return true
+  }, [messages])
+
   const scheduleReflection = useCallback(() => {
     cancelReflection()
     if (!enabled) return
     if (reflectionAttemptsRef.current >= 1) return  // dead until user replies
     if (shape !== 'expanded') return  // user can't see the bubble anyway
+
+    // Content-aware gate: skip reflection for trivial closers
+    if (!shouldReflect()) return
+
+    // Randomize delay to feel natural (75-120s)
+    const delay = REFLECTION_IDLE_MS_BASE + Math.random() * REFLECTION_IDLE_MS_JITTER
     reflectionTimerRef.current = setTimeout(() => {
       reflectionTimerRef.current = null
-      // Re-check guards at fire time — state may have changed during the wait.
       if (reflectionAttemptsRef.current >= 1) return
-      if (sendingRef.current) return  // master mid-stream — skip this beat
+      if (sendingRef.current) return
       if (shape !== 'expanded') return
+      if (!shouldReflect()) return  // re-check at fire time
       void triggerReflection()
-    }, REFLECTION_IDLE_MS)
-  }, [enabled, shape, triggerReflection, cancelReflection])
+    }, delay)
+  }, [enabled, shape, triggerReflection, cancelReflection, shouldReflect])
 
-  // Schedule reflection after each completed master reply. `loading` going
-  // false marks the end of a turn (the runTurn finally block ran).
+  // Schedule reflection after each completed master reply.
   useEffect(() => {
-    if (loading) return  // turn in progress
+    if (loading) return
     if (!enabled) return
     if (shape !== 'expanded') return
     if (messages.length === 0) return
     const last = messages[messages.length - 1]
     if (!last || last.role !== 'assistant') return
     scheduleReflection()
-    // Cleanup cancels the timer if any dependency flips before fire.
     return () => cancelReflection()
   }, [loading, enabled, shape, messages, scheduleReflection, cancelReflection])
 
