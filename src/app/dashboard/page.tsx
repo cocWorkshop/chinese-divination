@@ -303,7 +303,7 @@ export default function DashboardPage() {
             : `${readings.length} readings${activeTypeFilter ? ` · Filter: ${typeLabels[activeTypeFilter]?.en ?? activeTypeFilter}` : ''}`}
         </p>
         {/* Type filter chips */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-1 px-1">
+        <div className="flex gap-2 overflow-x-auto lg:flex-wrap pb-2 scrollbar-hide -mx-1 px-1">
           <button
             onClick={() => { setActiveTypeFilter(null); setVisibleCount(15) }}
             className="px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0"
@@ -543,6 +543,14 @@ export default function DashboardPage() {
                           />
                         </div>
                         <ShareResultButton readingId={r.id} shareToken={r.shareToken} lang={lang} />
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setExpanded(null) }}
+                          className="w-full mt-4 py-2 text-xs rounded-lg transition-colors"
+                          style={{ color: 'var(--text-muted)', border: '1px solid var(--card-border)' }}
+                        >
+                          {lang === 'en' ? '▲ Collapse' : '▲ 收起'}
+                        </button>
                       </>
                     )}
                   </motion.div>

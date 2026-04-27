@@ -21,7 +21,7 @@ import {
 import { compressHistory } from '@/lib/master/compression'
 import { loadPortrait, deletePortrait } from '@/lib/master/portraitStore'
 import { renderPersonalizedPrompt } from '@/lib/master/personalizedPrompt'
-import { runMasterTurn, type EngineEvent } from '@/lib/master/turnEngine'
+import { runMasterTurn, type EngineEvent, type CheckinHint } from '@/lib/master/turnEngine'
 import { SolarDay, SolarTime } from 'tyme4ts'
 import { FUNNEL_COOKIE_NAME, verifyFunnelToken } from '@/lib/funnelSession'
 
@@ -93,9 +93,16 @@ export async function POST(req: NextRequest) {
     //                                          WeChat where users send 2-3
     //                                          short messages in a row before
     //                                          the master responds)
-    //   - { checkin: true }                    proactive open: master speaks
+    //   - { checkin: true | CheckinHint }      proactive open: master speaks
     //                                          first, no user message
-    //                                          appended this turn
+    //                                          appended this turn. `true` is
+    //                                          the legacy "gap" variant; a
+    //                                          string hint lets the
+    //                                          activation-resume dispatcher
+    //                                          ask for one of the named
+    //                                          branches (cta_pending_aged /
+    //                                          unanswered_user / ambiguous_resume /
+    //                                          long_gap_resume).
     //   - { reflection: true }                 idle reflection: user has been
     //                                          silent in the expanded chat
     //                                          for ~90s; master scans the
@@ -110,7 +117,17 @@ export async function POST(req: NextRequest) {
       checkin?: unknown
       reflection?: unknown
     }
-    const isCheckin = body.checkin === true
+    const VALID_HINTS: readonly CheckinHint[] = [
+      'gap', 'cta_pending_aged', 'unanswered_user', 'ambiguous_resume', 'long_gap_resume',
+    ]
+    let isCheckin = false
+    let checkinHint: CheckinHint = 'gap'
+    if (body.checkin === true) {
+      isCheckin = true
+    } else if (typeof body.checkin === 'string' && VALID_HINTS.includes(body.checkin as CheckinHint)) {
+      isCheckin = true
+      checkinHint = body.checkin as CheckinHint
+    }
     const isReflection = body.reflection === true
     let userMessages: string[] = []
     if (Array.isArray(body.messages)) {
@@ -174,6 +191,26 @@ export async function POST(req: NextRequest) {
     let sessionId = await getActiveSessionId(userId)
     if (!sessionId) sessionId = generateSessionId()
 
+    // Turn limit — prevent runaway sessions. Configurable via AdminSetting
+    // 'masterMaxTurns', defaults to 50. Checkins and reflections are exempt
+    // (they're system-initiated, not user-initiated).
+    if (!isCheckin && !isReflection) {
+      const maxTurnsSetting = await prisma.adminSetting.findUnique({ where: { key: 'masterMaxTurns' } })
+      const maxTurns = parseInt(maxTurnsSetting?.value || '50', 10) || 50
+      const turnCount = await prisma.masterChatMessage.count({
+        where: { userId, sessionId: sessionId!, role: 'user' },
+      })
+      if (turnCount >= maxTurns) {
+        const msg = lang === 'en'
+          ? 'The Master needs to rest and gather his thoughts. Let\'s continue our conversation next time — start a "New Chat" whenever you\'re ready. Everything I\'ve learned about you is safely kept.'
+          : '老夫今日耗神頗多，需閉目養息片刻。\n\n下次再會時，點「新對話」即可續接 —— 你說過的，我都記著。'
+        return new Response(
+          JSON.stringify({ error: msg }),
+          { status: 429, headers: { 'Content-Type': 'application/json' } },
+        )
+      }
+    }
+
     // Append each user message as its own row. A debounced burst from the
     // client arrives as `messages: [a, b, c]`; each becomes a separate user
     // bubble in history (and the LLM sees them as 3 consecutive user
@@ -224,7 +261,7 @@ export async function POST(req: NextRequest) {
     // natural opener instead of generic small talk. Falls through silently
     // if not a checkin (the model never sees the appendix).
     if (isCheckin) {
-      const checkinAppendix = await buildCheckinAppendix(userId, sessionId, lang)
+      const checkinAppendix = await buildCheckinAppendix(userId, sessionId, lang, checkinHint)
       systemPrompt += `\n\n---\n\n${checkinAppendix}`
     }
 
@@ -272,6 +309,7 @@ export async function POST(req: NextRequest) {
             userId,
             sessionId: sessionId!,
             isCheckin,
+            checkinHint,
             isReflection,
             systemPrompt,
             initialMessages,
@@ -589,10 +627,99 @@ function buildReflectionAppendix(lang: 'zh-TW' | 'en'): string {
   ].join('\n')
 }
 
+/**
+ * Per-hint appendix for `cta_pending_aged` / `unanswered_user` /
+ * `ambiguous_resume` / `long_gap_resume`. These mirror the persona's
+ * "## Activation" section — the appendix is the per-turn nudge that points
+ * at the right branch and supplies any concrete data the master needs (gap,
+ * recent reading) without re-stating the rules already in master.md.
+ */
+function buildActivationAppendix(
+  hint: CheckinHint,
+  lang: 'zh-TW' | 'en',
+  ctx: { gapStr: string | null; lastReadingLine: string | null },
+): string {
+  const { gapStr, lastReadingLine } = ctx
+  if (lang === 'en') {
+    if (hint === 'cta_pending_aged') {
+      return [
+        '## Activation — CTA pending',
+        `The user previously received a divination CTA card${gapStr ? ` (~${gapStr} ago)` : ''} but never finished the reading. They just reopened the chat.`,
+        '',
+        'Do ONE thing: ask in a single short bubble whether they still want that reading. If they hesitate, offer to talk about their question with the data you already have. **Never re-emit the same CTA.**',
+      ].join('\n')
+    }
+    if (hint === 'unanswered_user') {
+      return [
+        '## Activation — unanswered user message',
+        'The last message in the transcript is the user\'s, and you never replied. Treat it as just-arrived.',
+        '',
+        'Answer it directly. No apology preamble, no "sorry I missed that". A short "About your X — " is fine if it helps anchor the answer.',
+      ].join('\n')
+    }
+    if (hint === 'long_gap_resume') {
+      return [
+        '## Activation — long gap',
+        `It has been ${gapStr ?? 'a long time'} since you last spoke. The old thread is cold; do NOT pick it up.`,
+        '',
+        lastReadingLine
+          ? `Anchor on something present: their most recent reading **${lastReadingLine}**, today's 節氣, or 流年.`
+          : "Anchor on something present: today's 節氣 / 流年, or ask one focused question.",
+        '',
+        'One short greeting + one focused question. No "welcome back!" customer-service tone.',
+      ].join('\n')
+    }
+    // ambiguous_resume
+    return [
+      '## Activation — ambiguous resume',
+      'The user reopened the chat but there is no obvious thread to pick up.',
+      '',
+      'Scan the last 3-5 turns. If you find ONE specific thing worth saying → 1-2 short bubbles. If nothing → one short closing line ("Welcome back — I\'ll be here.") and stop. Same rule as reflection: empty filler is worse than a silent stop.',
+    ].join('\n')
+  }
+  // zh-TW
+  if (hint === 'cta_pending_aged') {
+    return [
+      '## 主動詢問 — CTA 待完成',
+      `用戶之前收過一張占卜引導卡片${gapStr ? `（約 ${gapStr}前）` : ''}，但沒完成排盤就走了。剛剛他重新打開對話。`,
+      '',
+      '只做一件事：用一句短氣泡問他**是否還想做那盤**。如果他猶豫 → 提議「先講您的問題，我看現有資料能不能直接給方向」。**禁止再次發出同一張 CTA**。',
+    ].join('\n')
+  }
+  if (hint === 'unanswered_user') {
+    return [
+      '## 主動接住 — 你欠用戶一個回覆',
+      '對話的最後一條是用戶發的，你從未回覆。當作剛剛才收到，正常回應。',
+      '',
+      '直接答。不要「不好意思讓您等」這種致歉開場 — 用戶要的是內容，不是客服話術。如果需要對位，開頭可以加一句「您剛才問的 X — 」，僅此。',
+    ].join('\n')
+  }
+  if (hint === 'long_gap_resume') {
+    return [
+      '## 主動開場 — 久違',
+      `距上次對話已 ${gapStr ?? '很久'}。舊話題太遠，**別接**。`,
+      '',
+      lastReadingLine
+        ? `找個今天的錨點：他最近一張命盤 **${lastReadingLine}**、節氣、或流年。`
+        : '找個今天的錨點：節氣、流年，或問一個聚焦的問題。',
+      '',
+      '一句短打招呼 + 一個聚焦問題即可。**禁止**「歡迎回來！」這種客服腔。',
+    ].join('\n')
+  }
+  // ambiguous_resume
+  return [
+    '## 主動續話 — 找一個值得補的點',
+    '用戶重新打開對話，但沒有明顯的話頭可接。',
+    '',
+    '掃最近 3-5 輪。**找到一個具體值得補的東西** → 1-2 個短氣泡。**找不到** → 一句短結尾（「嗯，您回來了。有事再說。」）打住。規則同 reflection：empty 比 filler 好。',
+  ].join('\n')
+}
+
 async function buildCheckinAppendix(
   userId: string,
   sessionId: string,
   lang: 'zh-TW' | 'en',
+  hint: CheckinHint = 'gap',
 ): Promise<string> {
   // 1) Gap since last assistant turn in this session.
   let gapStr: string | null = null
@@ -636,6 +763,13 @@ async function buildCheckinAppendix(
     }
   } catch {
     /* best-effort */
+  }
+
+  // Hint variants from the activation-resume dispatcher delegate to a
+  // dedicated appendix (one per branch). The legacy `gap` path stays as the
+  // generic three-anchor "proactive open" below for backwards compatibility.
+  if (hint !== 'gap') {
+    return buildActivationAppendix(hint, lang, { gapStr, lastReadingLine })
   }
 
   if (lang === 'en') {

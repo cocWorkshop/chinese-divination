@@ -8,8 +8,8 @@
 - 前端：Next.js 14 (TypeScript)
 - 後端：Next.js API Routes
 - 數據庫：PostgreSQL + Prisma ORM
-- AI：通過 OpenRouter API 調用不同等級的模型
-- 部署：Docker (端口 8094)
+- AI：統一 LLM 抽象層（`src/lib/llm/`），支持 OpenRouter API + 本地 Claude Proxy 雙通道
+- 部署：Docker（dev server 端口 8088）
 
 ---
 

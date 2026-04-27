@@ -95,7 +95,9 @@
       "Bash(chmod +x tests/run_funnel_tests.sh)",
       "Bash(bash -n tests/run_funnel_tests.sh)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(ls src/lib/master/tools/__tests__/)",
+      "Bash(ls src/lib/master/tools/)"
     ]
   }
 }

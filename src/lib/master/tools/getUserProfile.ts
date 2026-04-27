@@ -10,6 +10,7 @@
 import { z } from 'zod'
 import { defineTool } from './_types'
 import { notFound, ok } from './_errors'
+import { computeAge } from './_age'
 
 const InputSchema = z.object({}).describe('No arguments. Operates on the authenticated user.')
 
@@ -26,6 +27,8 @@ const OutputSchema = z.object({
   birthLng: z.number().nullable(),
   name: z.string().nullable(),
   language: z.string().nullable(),
+  /** Auto-computed Western age (周歲) from birthDate. Null when birthDate is missing or unparseable. */
+  age: z.number().int().nullable(),
   isComplete: z.boolean(),
 })
 
@@ -33,7 +36,8 @@ export const getUserProfileTool = defineTool<z.infer<typeof InputSchema>, z.infe
   name: 'get_user_profile',
   description:
     "Returns the authenticated user's stored birth profile. Use this at the start of a conversation or whenever you need birth data to reason about the user. All fields may be null for users who haven't filled their profile. " +
-    'Returns: `{ birthDate, birthTime, exactTime, timeMode, birthPlace, gender, calendarType, birthLat, birthLng, name, language, isComplete }`. ' +
+    'Returns: `{ birthDate, birthTime, exactTime, timeMode, birthPlace, gender, calendarType, birthLat, birthLng, name, language, age, isComplete }`. ' +
+    '`age` is the auto-computed Western age (周歲) in years, or null if birthDate is missing — never compute it yourself. ' +
     "When `timeMode === 'precise'`, prefer `exactTime` (HH:MM) over `birthTime` (shichen). " +
     'If `isComplete` is false, you must ask the user via `prefill_divination_form` to start a bazi reading (which fills the profile) — do NOT fabricate birth data.',
   inputSchema: InputSchema,
@@ -73,6 +77,7 @@ export const getUserProfileTool = defineTool<z.infer<typeof InputSchema>, z.infe
       birthLng: user.birthLng,
       name: user.name,
       language: user.language,
+      age: computeAge(user.birthDate),
       isComplete,
     })
   },

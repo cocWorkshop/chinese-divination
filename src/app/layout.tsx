@@ -15,6 +15,7 @@ import Footer from '@/components/Footer'
 import NotificationPopup from '@/components/NotificationPopup'
 import NativeInitializer from '@/components/NativeInitializer'
 import InstallPrompt from '@/components/InstallPrompt'
+import ScrollToTop from '@/components/ScrollToTop'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -174,8 +175,9 @@ export default function RootLayout({
             <CookieBanner />
             <Footer />
             <MasterChatWidget />
+            <ScrollToTop />
             <Toaster
-              position="top-right"
+              position="top-center"
               toastOptions={{
                 style: {
                   background: '#111d35',

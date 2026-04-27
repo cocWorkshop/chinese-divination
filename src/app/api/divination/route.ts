@@ -567,7 +567,7 @@ function runStreamingDivination(args: {
           ? '🔧 玄機暫時出了點小故障，您的機緣未扣除。請稍後再試。'
           : '🔧 The oracle encountered a hiccup — your Karma was not deducted.'
         send({ type: 'error', error: friendlyError, status: err?.status === 429 ? 429 : 502 })
-        controller.close()
+        try { controller.close() } catch { /* already closed */ }
         return
       }
       clearInterval(heartbeat)
@@ -675,21 +675,23 @@ function runStreamingDivination(args: {
         ? Object.assign({}, savedReading, { result: resultToStore })
         : { id: null, result: resultToStore, type, createdAt: new Date() }
       send({ type: 'done', reading, saved: !!savedReading })
-      controller.close()
+      try { controller.close() } catch { /* already closed */ }
 
       } catch (unexpectedErr) {
-        // Top-level safety net. Any error reaching here means a code path
-        // we didn't anticipate threw — log it loudly, mark the reading
-        // failed (so the client's pollForReadingById fallback also sees
-        // a definite state), and emit a friendly error SSE event. WITHOUT
-        // this catch, an exception would silently terminate the stream
-        // and the client would see "請求超時" with no actionable info.
+        // Top-level safety net. Log the error, but only mark reading as
+        // failed if it hasn't already been saved as completed (the DB save
+        // happens before send('done'), so if only the SSE delivery fails
+        // due to a closed controller, the reading is already completed).
         console.error('[divination/stream] unexpected error in stream lifecycle:', unexpectedErr)
         if (pendingReadingId) {
-          await prisma.reading.update({
-            where: { id: pendingReadingId },
-            data: { status: 'failed', result: (unexpectedErr instanceof Error ? unexpectedErr.message : 'Internal stream error') },
-          }).catch(() => {})
+          // Check current status before overwriting — don't clobber a completed reading
+          const current = await prisma.reading.findUnique({ where: { id: pendingReadingId }, select: { status: true } }).catch(() => null)
+          if (current?.status !== 'completed') {
+            await prisma.reading.update({
+              where: { id: pendingReadingId },
+              data: { status: 'failed', result: (unexpectedErr instanceof Error ? unexpectedErr.message : 'Internal stream error') },
+            }).catch(() => {})
+          }
         }
         const errMsg = language !== 'en'
           ? '🔧 玄機解讀過程出現異常，您的機緣未扣除。請重新嘗試。'

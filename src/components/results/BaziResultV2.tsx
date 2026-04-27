@@ -388,7 +388,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.04 }}
-            className={`px-1 sm:px-2 transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}
+            className={`px-1 sm:px-2 pt-2 border-t border-gold/10 transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}
           >
             <h3 className="text-gold font-serif text-base mb-3 flex items-center gap-2">
               <span aria-hidden>☰</span>
@@ -498,7 +498,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                       <span className={`text-lg font-serif font-bold ${elClr[branchEl]}`}>{dy.branch}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[var(--text-muted)] text-[11px]">
+                      <div className="text-[var(--text-muted)] text-xs">
                         {dy.startAge}-{dy.endAge}{T(lang, '歲', '')} ({dy.startYear}-{dy.endYear})
                       </div>
                     </div>
@@ -597,7 +597,8 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
           <h3 className="text-gold font-serif text-base mb-2">🎯 {T(lang, '關鍵預測', 'Key Predictions')}</h3>
           <div className="grid gap-2">
             {d.keyPredictions.map((pred: { age: string; event: string; basis: string }, i: number) => {
-              const isCurrent = pred.age.includes('當前') || pred.age.includes('当前') || pred.age.toLowerCase().includes('current')
+              const ageStr = pred.age || ''
+              const isCurrent = ageStr.includes('當前') || ageStr.includes('当前') || ageStr.toLowerCase().includes('current')
               return (
                 <div key={i} className={`glass-card rounded-xl p-3 border ${isCurrent ? 'border-gold/50 ring-1 ring-gold/20' : 'border-gold/20'}`}>
                   <div className="mb-1.5 flex items-center gap-2">

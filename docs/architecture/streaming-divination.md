@@ -209,14 +209,21 @@
 
 ---
 
-## 七、本次 session 沒做但下一輪可以接的
+## 七、後續完成的改進
 
-- 用 Playwright MCP 做自動化端到端 streaming 測試
-- BaziResult V1 / ZiweiResult V1 改 vertical flat（視覺統一）
-- ZiweiResultV2 mobile 響應式（這次只改了 BaziResultV2）
-- 其他 renderer（IChing/Qimen/Fengshui）的 mobile 細節
-- 廣告 landing 頁專用路由 `/start` （之前討論過的 4-view funnel）
-- 後端 SSE 事件加 `keep-alive` 心跳，防止某些代理在長靜默時斷線
+**已完成：**
+- ✅ 後端 SSE 15 秒 `keep-alive` 心跳（`: heartbeat\n\n`），防止代理在 LLM reasoning 期間斷線
+- ✅ `buildReasoningParam()` 增加 `max_tokens` 上限，防止 reasoning 耗盡所有 token（medium=40% 上限）
+- ✅ `hasLLMContent` 狀態：reasoning 期間繼續顯示 LoadingOracle，而非空的「玄機正在書寫」佔位符
+- ✅ 所有 7 種 renderer 統一為五段式佈局（Chart → Overview → Sections → Footer → QA）
+- ✅ StreamingSection 共用組件（高斯模糊 + typing dots + placeholder）
+- ✅ ZiweiResultV2 mobile 響應式
+- ✅ 其他 renderer（IChing/Qimen/Fengshui/LiuYao/Meihua）全部重構
+- ✅ 廣告 landing 頁 `/start` funnel 已上線
+- ✅ controller.close() 異常保護 — reading 不再因 SSE 斷線被誤標 failed
+
+**待做：**
+- BaziResult V1 / ZiweiResult V1 改 vertical flat（只影響舊 reading 顯示，低優先級）
 
 ---
 

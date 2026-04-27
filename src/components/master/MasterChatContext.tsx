@@ -30,6 +30,12 @@ import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
 import { splitBubbles, BUBBLE_MARKER } from '@/lib/master/bubbleStream'
 import { pickOpener } from '@/lib/master/greetings'
+import {
+  findLatestPendingCTA,
+  isClosed as isConversationClosed,
+  type DetectableMsg,
+} from '@/lib/master/activationDetect'
+import type { CheckinHint } from '@/lib/master/turnEngine'
 
 // ---------------------------------------------------------------------------
 // Message shapes used inside the widget transcript
@@ -111,7 +117,7 @@ interface MasterChatContextValue {
   messages: MasterMsg[]
   loading: boolean
   toolStatus: ToolStatus | null
-  pendingReading: { type: string; url: string } | null
+  pendingReading: { type: string; url: string; subjectName?: string } | null
   greetingHints: GreetingHints
   /** Whether the user has seen the master memory first-use disclosure modal. */
   disclosureSeen: boolean
@@ -179,7 +185,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
   const [messages, setMessages] = useState<MasterMsg[]>([])
   const [loading, setLoading] = useState(false)
   const [toolStatus, setToolStatus] = useState<ToolStatus | null>(null)
-  const [pendingReading, setPendingReading] = useState<{ type: string; url: string } | null>(null)
+  const [pendingReading, setPendingReading] = useState<{ type: string; url: string; subjectName?: string } | null>(null)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [greetingHints, setGreetingHints] = useState<GreetingHints>({
     hasReadings: false,
@@ -224,8 +230,9 @@ export function MasterChatProvider({ children }: ProviderProps) {
   // session to prevent the master from "greeting" the user repeatedly if
   // they collapse + re-expand the widget within minutes.
   const proactiveLastFiredRef = useRef<number>(0)
-  const PROACTIVE_GAP_MS = 2 * 60 * 60 * 1000  // 2h since last assistant turn
   const PROACTIVE_COOLDOWN_MS = 5 * 60 * 1000  // 5 min between checkin attempts
+  const CTA_AGED_THRESHOLD_MS = 30 * 60 * 1000 // CTA pending past this → ask user
+  const LONG_GAP_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000  // >14 days → long_gap_resume
 
   // Idle reflection — fires when the user has been silent in the EXPANDED
   // chat for ~90s after the master's last reply. At most ONCE per silent
@@ -327,19 +334,19 @@ export function MasterChatProvider({ children }: ProviderProps) {
     }
   }, [shape, enabled, loadHistory])
 
-  // Proactive checkin on expand. When the user opens the widget after a
-  // sufficient gap (PROACTIVE_GAP_MS since the last assistant turn), fire a
-  // master-initiated turn instead of leaving them at a silent transcript.
-  // Conditions:
-  //   - widget is expanded and enabled
-  //   - history has finished loading (so we know the actual last timestamp)
-  //   - there is at least one prior assistant message (no greeting on a
-  //     truly fresh session — that's covered by the templated greeting)
-  //   - the last message is from the assistant (don't speak when the user
-  //     was clearly mid-thought)
-  //   - cooldown elapsed since last fire (prevents spamming on
-  //     collapse/expand cycles within minutes)
-  //   - not currently streaming
+  // Activation-resume dispatcher — see docs/planning/activation-resume-design-2026-04-27.md.
+  // Fires when the widget is expanded and the conversation has prior content.
+  // Two stages:
+  //   Stage 1 (deterministic): scan for the latest pending CTA card. If a
+  //     reading of that type was completed externally → swap the card and
+  //     inject a [reading complete] synthetic. If aged > 30 min and still
+  //     pending → ask "do you still want that reading?" via the
+  //     `cta_pending_aged` hint. <30 min with no completion → user is
+  //     probably still on the form; do nothing.
+  //   Stage 2 (master self-classifies): no pending CTA. Branch on the last
+  //     message: user → `unanswered_user`; closed-gracefully → silent;
+  //     long gap → `long_gap_resume`; otherwise → `ambiguous_resume`.
+  // Cooldown / preconditions are shared with the legacy 2h-gap path.
   useEffect(() => {
     if (shape !== 'expanded' || !enabled || !historyLoaded) return
     if (sendingRef.current) return
@@ -347,11 +354,14 @@ export function MasterChatProvider({ children }: ProviderProps) {
     if (now - proactiveLastFiredRef.current < PROACTIVE_COOLDOWN_MS) return
     if (messages.length === 0) return
     const last = messages[messages.length - 1]
-    if (!last || last.role !== 'assistant') return
+    if (!last) return
     const lastTs = new Date(last.timestamp).getTime()
     if (!Number.isFinite(lastTs)) return
-    if (now - lastTs < PROACTIVE_GAP_MS) return
-    void triggerCheckin()
+    const ageMs = now - lastTs
+    // <5 min: same session, user just collapsed/expanded — never fire.
+    if (ageMs < 5 * 60 * 1000) return
+
+    void runActivationDispatch()
     // intentionally only depends on shape+historyLoaded — we do NOT want
     // this to re-fire on every messages update mid-stream.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -373,7 +383,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
   // three POST to the same /api/master endpoint and stream back via SSE
   // — the route just adapts which prompt appendix it glues on.
   const runTurn = useCallback(
-    async (payload: { messages: string[] } | { checkin: true } | { reflection: true }) => {
+    async (payload: { messages: string[] } | { checkin: true | CheckinHint } | { reflection: true }) => {
       if (!enabled || sendingRef.current) return
 
       sendingRef.current = true
@@ -554,7 +564,10 @@ export function MasterChatProvider({ children }: ProviderProps) {
                 // pendingReading is the collapsed-bar status flag; set it
                 // immediately so the collapsed bar shows "waiting for your
                 // reading..." even before the card itself becomes visible.
-                setPendingReading({ type: payload.divinationType, url: payload.url })
+                // Extract subject name from ctaContext for the collapsed bar display
+                const ctxTarget = (payload as CtaCardPayload).ctaContext?.target
+                const subjectName = ctxTarget && !ctxTarget.includes('自己') && !ctxTarget.includes('yourself') ? ctxTarget.replace(/^(為|For)\s*/, '').replace(/預測$/, '') : undefined
+                setPendingReading({ type: payload.divinationType, url: payload.url, subjectName: subjectName || undefined })
               } else if (event.type === 'reading_card' && event.payload) {
                 // Same deferral pattern as cta_card. Queue and let the
                 // surrounding prose finish streaming before the card appears.
@@ -730,15 +743,80 @@ export function MasterChatProvider({ children }: ProviderProps) {
     [enabled, flushPendingSends],
   )
 
-  // Proactive checkin — fires when the widget is expanded after an extended
-  // gap. The master speaks first ("上週你說的合同簽了嗎？") instead of
-  // waiting for the user to type. Throttled by PROACTIVE_COOLDOWN_MS to
-  // avoid spamming on collapse/expand cycles.
-  const triggerCheckin = useCallback(async () => {
+  // Activation-resume dispatcher core. Called by the expand-effect after
+  // its preconditions pass (history loaded, gap > 5 min, cooldown elapsed,
+  // not streaming). Two stages — see docs/planning/activation-resume-design-2026-04-27.md.
+  const runActivationDispatch = useCallback(async () => {
     if (!enabled || sendingRef.current) return
     proactiveLastFiredRef.current = Date.now()
-    await runTurn({ checkin: true })
-  }, [enabled, runTurn])
+
+    // Stage 1: pending CTA fast-path.
+    const detectableMessages: DetectableMsg[] = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+      timestamp: m.timestamp,
+      kind: m.kind,
+      ctaPayload: m.ctaPayload
+        ? { divinationType: m.ctaPayload.divinationType, ctaContext: m.ctaPayload.ctaContext }
+        : undefined,
+    }))
+    const cta = findLatestPendingCTA(detectableMessages)
+    if (cta) {
+      const ctaAgeMs = Date.now() - new Date(cta.timestamp).getTime()
+      // Query the server: did a matching reading get created since the CTA
+      // was emitted? Catches the cross-device / cross-tab completion case.
+      try {
+        const params = new URLSearchParams({
+          type: cta.type,
+          since: cta.timestamp,
+          target: cta.target,
+        })
+        const res = await fetch(`/api/master/cta-status?${params.toString()}`, { cache: 'no-store' })
+        if (res.ok) {
+          const data = (await res.json()) as { completed: boolean; readingId?: string }
+          if (data.completed && data.readingId) {
+            // Reuse the same handoff phrasing as the in-session readingComplete
+            // listener: tell the master the chart now exists and re-check
+            // multi-step CTA prerequisites before continuing.
+            const synthetic = lang === 'en'
+              ? `[reading complete] ${cta.type} reading saved (id: ${data.readingId}). The user just reopened the chat after completing it elsewhere. Re-check whether the current task still has missing prerequisites; if so, redirect to the next CTA. Otherwise proceed with the analysis.`
+              : `[占卜完成] ${cta.type} 的命盤已存好 (id: ${data.readingId})。用戶在他處完成後剛重新打開對話。請重新檢查當前任務是否還有缺失的前置占卜，若有則繼續發下一張 CTA 卡片；若已齊備，再進行分析。`
+            await runTurn({ messages: [synthetic] })
+            return
+          }
+        }
+      } catch {
+        /* network failure → fall through to aged-CTA branch */
+      }
+      // Not completed. Old enough → ask; otherwise stay quiet (user may
+      // still be on the form).
+      if (ctaAgeMs >= CTA_AGED_THRESHOLD_MS) {
+        await runTurn({ checkin: 'cta_pending_aged' })
+      }
+      return
+    }
+
+    // Stage 2: structural triage.
+    const last = messages[messages.length - 1]
+    if (!last) return
+    const lastTs = new Date(last.timestamp).getTime()
+    const ageMs = Date.now() - lastTs
+
+    if (last.role === 'user') {
+      // Assistant never replied — answer the user's question now.
+      await runTurn({ checkin: 'unanswered_user' })
+      return
+    }
+    if (last.role === 'assistant' && isConversationClosed(detectableMessages, lang)) {
+      // Conversation looks closed; stay silent.
+      return
+    }
+    if (ageMs > LONG_GAP_THRESHOLD_MS) {
+      await runTurn({ checkin: 'long_gap_resume' })
+      return
+    }
+    await runTurn({ checkin: 'ambiguous_resume' })
+  }, [enabled, messages, runTurn, lang])
 
   // ── Idle reflection scheduler ────────────────────────────────────────────
   // After every master reply, set a 90s timer. If it fires while the

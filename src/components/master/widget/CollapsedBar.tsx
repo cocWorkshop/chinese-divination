@@ -108,7 +108,9 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate }: Props) 
               </span>
               <span className="flex-1 min-w-0 truncate text-sm">
                 <span className="font-serif" style={{ color: 'var(--gold)' }}>
-                  {isEn ? `Reading your ${typeName} chart...` : `正在研讀您的${typeName}命盤...`}
+                  {pendingReading.subjectName
+                    ? (isEn ? `Reading ${pendingReading.subjectName}'s ${typeName} chart...` : `正在研讀${pendingReading.subjectName}的${typeName}命盤...`)
+                    : (isEn ? `Reading your ${typeName} chart...` : `正在研讀您的${typeName}命盤...`)}
                 </span>
                 <span className="ml-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                   {isEn ? '· let me take a look' : '· 讓我先看看'}

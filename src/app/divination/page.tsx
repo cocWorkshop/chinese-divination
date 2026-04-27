@@ -185,11 +185,14 @@ export default function DivinationPage() {
                     <p className="text-xs sm:text-sm leading-relaxed mb-2" style={{ color: 'var(--text-muted)' }}>
                       {lang === 'en' ? svc.enDesc : svc.twDesc}
                     </p>
-                    {costs[svc.id] != null && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.12)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                        ✨ {costs[svc.id]} {lang === 'en' ? 'pts' : '點'}
-                      </span>
-                    )}
+                    <div className="flex items-center justify-between">
+                      {costs[svc.id] != null && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.12)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                          ✨ {costs[svc.id]} {lang === 'en' ? 'pts' : '點'}
+                        </span>
+                      )}
+                      <span className="text-gold/30 group-hover:text-gold/60 transition-colors text-sm">→</span>
+                    </div>
 
                     {/* Subtle hover glow */}
                     <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ boxShadow: 'inset 0 0 30px rgba(212,168,83,0.05)' }} />

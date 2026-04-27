@@ -10,19 +10,21 @@ docs/
 └── archive/          ← 已被取代或已上線的歷史文檔
 ```
 
+另有 `divination-refs/` 目錄——**運行時載入的 LLM 提示詞參考**，不屬於開發文檔，見下方說明。
+
 ---
 
 ## architecture/ — 系統參考
 
-新人看這裡。每份文檔對應一塊**已上線**的系統，記錄它為什麼這樣、資料怎麼流、邊界在哪。改動相關代碼前先讀。
+新人看這裡。每份文檔對應一塊**已上線**的系統。
 
 | 文檔 | 涵蓋 |
 |---|---|
-| [overview.md](architecture/overview.md) | 整體架構概覽：占卜 pipeline、路由、handler 系統、LLM 抽象層 |
-| [start-funnel.md](architecture/start-funnel.md) | `/start` 廣告漏斗：5 view + verify-sent，funnel cookie auth 雙軌，admin 運維介面，數位道場視覺風格 |
-| [streaming-divination.md](architecture/streaming-divination.md) | 流式排盤：path-aware JSON parser + chart_ready + value_chunk SSE 協議 |
-| [master-interaction-features.md](architecture/master-interaction-features.md) | 玄機大師三個互動機制：debounced burst send、用戶取消 CTA、閒置反思 |
-| [master-portrait-system.md](architecture/master-portrait-system.md) | 玄機大師記憶系統：MasterChatMessage、UserPortrait 漸進式提取 |
+| [overview.md](architecture/overview.md) | 整體架構概覽：占卜 pipeline、handler 系統、LLM 雙通道（OpenRouter + Claude Proxy） |
+| [start-funnel.md](architecture/start-funnel.md) | `/start` 廣告漏斗：5 view + verify-sent，funnel cookie auth 雙軌 |
+| [streaming-divination.md](architecture/streaming-divination.md) | 流式排盤：SSE 協議 + streaming JSON parser + 15s heartbeat + 推理 token 上限 |
+| [master-interaction-features.md](architecture/master-interaction-features.md) | 玄機大師互動機制：burst send、CTA 取消、智能反思（75-120s 抖動 + 內容感知門控）、激活續接 |
+| [master-portrait-system.md](architecture/master-portrait-system.md) | 玄機大師記憶系統：兩軸提取觸發（≥8 輪 OR ≥24h+3 輪）、漸進式 portrait 更新 |
 
 ## references/ — 占卜類型參考
 
@@ -30,47 +32,59 @@ docs/
 
 | 文檔 | 涵蓋 |
 |---|---|
-| [bazi-gold-standard-example.md](references/bazi-gold-standard-example.md) | 八字 V2 schema 的標竿輸出範例（特定命盤） |
+| [bazi-gold-standard-example.md](references/bazi-gold-standard-example.md) | 八字 V2 schema 的標竿輸出範例 |
 | [ziwei-gold-standard-example.md](references/ziwei-gold-standard-example.md) | 紫微 V2 schema 的標竿輸出範例 |
-| [dayun-reference.md](references/dayun-reference.md) | 大運排盤外部參考文章（豆瓣） |
+| [dayun-reference.md](references/dayun-reference.md) | 大運排盤外部參考文章 |
 
 ## planning/ — 當前 audit、draft、roadmap
 
-進行中的提案、待 review 的草稿、最新的 audit。**會隨時間流動**——shipped 的搬到 archive，superseded 的也搬。
+進行中的提案。shipped 的搬到 archive。
 
 | 文檔 | 狀態 |
 |---|---|
-| [hci-audit-2026-04-27.md](planning/hci-audit-2026-04-27.md) | 25 條 HCI 優化提案，分 P0/P1/P2/P3。已完成：2.2、5.1、5.3、5.4、9.4。剩 P0：2.1（表單分段）、3.1（推理階段進度）、1.2（卡片 cost 透明）、3.3（超時警告） |
+| [hci-audit-2026-04-27.md](planning/hci-audit-2026-04-27.md) | 25 條 HCI 優化提案 — P0/P1 已全部實作，P2 大部分完成 |
+| [divination-skill-roadmap-2026-04-27.md](planning/divination-skill-roadmap-2026-04-27.md) | Master skill 擴充 roadmap — Tier 1 已實作（合盤 + 卦命互參） |
+| [activation-resume-design-2026-04-27.md](planning/activation-resume-design-2026-04-27.md) | Master 激活續接機制 — 已實作（4 種 hint 變體） |
 
 ## archive/ — 歷史文檔
 
-已被取代或已上線的計畫。**不再維護**，但保留以便追溯設計決策的脈絡。
+已被取代或已上線。**不再維護**，保留追溯設計決策。
 
 | 文檔 | 狀態 |
 |---|---|
-| [hci-audit-2026-04-12.md](archive/hci-audit-2026-04-12.md) | 較早的 HCI audit（被 04-27 audit 取代）；P0/P1 多數已實作 |
-| [master-answer-patterns-draft.md](archive/master-answer-patterns-draft.md) | 玄機大師 voice + answer-pattern 草稿；substantive 內容已併入 [`divination-refs/master.md`](../divination-refs/master.md) |
-| [ziwei-upgrade-plan.md](archive/ziwei-upgrade-plan.md) | 紫微 V2 升級計畫；已透過 `ZiweiResultV2` + `ziweiSchemaV2` 上線 |
+| [hci-audit-2026-04-12.md](archive/hci-audit-2026-04-12.md) | 較早的 HCI audit（被 04-27 取代） |
+| [master-answer-patterns-draft.md](archive/master-answer-patterns-draft.md) | 大師 voice + answer-pattern 草稿，已併入 `master.md` |
+| [ziwei-upgrade-plan.md](archive/ziwei-upgrade-plan.md) | 紫微 V2 升級計畫，已上線 |
+| [master-chat-scenarios-reference.md](archive/master-chat-scenarios-reference.md) | 22 個 WeChat 對話場景設計稿（對話技巧：拋鉤子、鏡像情緒、軟對抗等） |
+
+## 其他頂層文檔
+
+| 文檔 | 涵蓋 |
+|---|---|
+| [ui-improvement-proposal-2026-04-27.md](ui-improvement-proposal-2026-04-27.md) | 34 個 UI 改進項 — P0/P1/P2 已全部實作 |
 
 ---
 
-## 何時新增 / 何時搬
+## divination-refs/ — 運行時 LLM 提示詞
 
-**新增**到 `architecture/` — 當你交付了一個獨立的子系統（funnel、streaming、master memory…）並希望未來自己或同事 0-context 也能快速重新進入。
+這些文件由 `src/lib/llm/prompts.ts` 和 `src/lib/master/systemPrompt/persona.ts` 在**運行時載入**，作為 LLM 的指令參考。**改動這些文件直接影響 LLM 輸出品質。**
 
-**新增**到 `planning/` — 當你寫了一份 audit、draft proposal、或 roadmap 文件，等待 review 或實作中。
-
-**從 planning → architecture** — 當 plan 完整 ship，把 plan 文件本身改成「這就是現在系統長這樣」的形態（更新 status header、移除 TODO list、保留設計理由），然後搬。
-
-**從 planning / architecture → archive** — 當文檔已被新版取代（如 hci-04-12 被 04-27 取代），或當文檔描述的計畫已實作且 architecture/ 裡有對應替代品。
-
-**從 archive → 刪除** — 不刪。git 歷史已經保留，留著看設計脈絡的成本是零。
+| 文件 | 載入者 | 用途 |
+|---|---|---|
+| `master.md` | `persona.ts` | 玄機大師人格、voice 規則、激活機制、bubble 節奏、能力邊界 |
+| `bazi.md` | `prompts.ts` | 八字解讀框架：旺衰論、調候、格局定法、十神 |
+| `ziwei.md` | `prompts.ts` | 紫微解讀框架：格局、四化飛星、三方四正 |
+| `iching.md` | `prompts.ts` | 易經理論：8 經卦 64 別卦、爻辭解讀 |
+| `liuyao.md` | `prompts.ts` | 六爻規則：京房納甲、世應、六親、用神 |
+| `qimen.md` | `prompts.ts` | 奇門遁甲：九宮、八門、八神、天地盤 |
+| `fengshui.md` | `prompts.ts` | 風水：四獸、形法、八宅理論 |
+| `others.md` | `prompts.ts` | 梅花易數、六壬：時間起卦、體用卦 |
 
 ---
 
-## 寫作風格慣例
+## 寫作慣例
 
-- 中英混用 OK（玄學/命理術語用中文，技術術語用英文），跟 master 的 voice 一致
-- 用實際的代碼路徑做 markdown link，如 `[chatMessageStore.ts:50](../../src/lib/master/chatMessageStore.ts#L50)`
-- 每份文檔結尾加「新 session 啟動建議第一句話」——讓未來自己/同事 0-context 也能快速接續
-- 別過度抽象。具體的「為什麼這樣寫」比一份漂亮的架構圖有用十倍
+- 中英混用 OK（命理術語中文，技術術語英文）
+- 用實際代碼路徑做 link：`[chatMessageStore.ts:50](../../src/lib/master/chatMessageStore.ts#L50)`
+- 每份文檔結尾加「新 session 啟動建議第一句話」
+- 別過度抽象。具體的「為什麼這樣寫」比架構圖有用十倍

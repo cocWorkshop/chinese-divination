@@ -125,6 +125,8 @@ export const baziSchemaV2 = z.object({
   }),
   seasonalNote: z.string().describe('调候分析(30+字)：出生季节寒暖对命局的影响，是否有调候用神').optional(),
 
+  branchAnalysis: z.string().describe('原局地支关系解读(50+字)：基于预计算冲/合/害/刑数据的影响分析').optional(),
+
   sections: z.object({
     overview: z.string().describe('命主性格与出身(200+字)：格局定性、性格、家庭、六亲'),
     career: z.string().describe('事业官运(150+字)：适合行业、贵人运、发展路线'),
@@ -140,8 +142,6 @@ export const baziSchemaV2 = z.object({
   }).optional().describe('每个section的一句话摘要，显示在标题旁帮助用户快速扫描'),
 
   daYunAnalysis: z.array(daYunEntrySchema).describe('逐步大运精批（共8步），每步含主题、互动、关键流年、建议'),
-
-  branchAnalysis: z.string().describe('原局地支关系解读(50+字)：基于预计算冲/合/害/刑数据的影响分析').optional(),
 
   keyPredictions: z.array(z.object({
     age: z.string().describe('格式："36歲（2024年）" 或 "46-50歲（2034-2038年）"，如果覆盖当前年份加"當前"如"38歲（2026年，當前）"'),

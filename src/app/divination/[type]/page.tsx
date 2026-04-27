@@ -1664,11 +1664,29 @@ export default function DivinationFormPage() {
       )}
 
       {(hasLLMContent || (!streaming && result)) && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card rounded-2xl p-4 sm:p-8 w-full max-w-full overflow-x-hidden"
-        >
+        <div className={`relative rounded-2xl ${streaming ? 'p-[1px] overflow-hidden' : ''}`}>
+          {/* Mystical rotating border glow during streaming */}
+          {streaming && (<>
+            {/* Outer glow layer — slow rotation */}
+            <div
+              className="absolute -inset-[2px] rounded-2xl animate-[borderSpin_6s_linear_infinite] blur-[2px]"
+              style={{
+                background: 'conic-gradient(from 0deg, transparent 0%, rgba(212,168,83,0.7) 8%, transparent 16%, rgba(212,168,83,0.4) 35%, transparent 45%, rgba(212,168,83,0.8) 55%, transparent 65%, rgba(212,168,83,0.3) 80%, transparent 90%)',
+              }}
+            />
+            {/* Inner sharp border — counter-rotate for shimmer */}
+            <div
+              className="absolute inset-0 rounded-2xl animate-[borderSpin_4s_linear_infinite_reverse]"
+              style={{
+                background: 'conic-gradient(from 180deg, transparent 0%, rgba(212,168,83,0.6) 5%, transparent 15%, rgba(212,168,83,0.5) 50%, transparent 60%, rgba(212,168,83,0.7) 80%, transparent 90%)',
+              }}
+            />
+          </>)}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`relative glass-card rounded-2xl p-4 sm:p-8 w-full max-w-full overflow-x-hidden transition-shadow duration-700 ${streaming ? 'shadow-[0_0_40px_rgba(212,168,83,0.12)]' : ''}`}
+          >
           <div className="flex justify-between items-center mb-4 sm:mb-6">
             <h2 className="text-lg sm:text-xl font-serif text-gold">
               {T(lang, '解卦結果', 'Oracle Reading')}
@@ -1753,7 +1771,16 @@ export default function DivinationFormPage() {
             </div>
           )}
         </motion.div>
+        </div>
       )}
+
+      {/* Streaming mystical border animation */}
+      <style jsx global>{`
+        @keyframes borderSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
       {/* Floating Ask Master FAB — appears when result is visible */}
       {result && !streaming && (

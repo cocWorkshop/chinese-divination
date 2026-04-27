@@ -51,7 +51,7 @@ The unifying insight: **anything fetchable from the database is evidence, not me
 | Stage-1 compression | Stub tool results older than 3 turns | Reclaims ~80% of context burden, no LLM call |
 | Stage-2 compression | Narrative summary of prose older than 10 turns | Only fires if Stage-1 insufficient |
 | Tool-call dedupe | By `(name, JSON.stringify(args))` within a turn | Prevents stuck loops without breaking legitimate multi-call patterns (`get_reading_detail` × N sections) |
-| Portrait extraction frequency | Lazy: when ≥ 30 new turns since last extraction | No background worker; runs inline on the next master turn after threshold |
+| Portrait extraction frequency | Two-axis trigger: ≥ 8 new turns OR (≥ 24 hours since last + ≥ 3 new turns) | No background worker; runs inline on the next master turn after threshold |
 | Portrait extraction model | New `portraitModelName` AdminSetting, defaults to `model1Name` | Lets ops switch to a cheaper model for extraction without affecting main master |
 | Portrait reasoning effort | `'low'` or `'off'` | Pure summarization; no need for extended thinking |
 | Portrait credits | Not deducted from user | Infrastructure cost, not a user-facing call |
@@ -299,10 +299,13 @@ Naturally caps total work without limiting legitimate multi-call patterns. Combi
 At the start of each master turn, after compression, before the LLM call:
 
 ```ts
-if (
-  user.portraitEnabled &&
-  (currentTurnIndex - (portrait?.lastTurnIndexCovered ?? 0)) >= 30
-) {
+const turnsSince = currentTurnIndex - (portrait?.lastTurnIndexCovered ?? 0)
+const timeSinceMs = portrait?.lastExtractedAt
+  ? Date.now() - new Date(portrait.lastExtractedAt).getTime()
+  : Infinity
+const turnTriggered = turnsSince >= 8  // EXTRACTION_TURN_THRESHOLD
+const timeTriggered = timeSinceMs >= 86_400_000 && turnsSince >= 3  // 24h + MIN_TURNS_FOR_TIME_TRIGGER
+if (user.portraitEnabled && (turnTriggered || timeTriggered)) {
   // Run extraction inline (cheap model, low reasoning, no credit deduction)
   await extractPortrait(userId, currentTurnIndex)
 }
@@ -316,7 +319,7 @@ if (
 
 This is the single most important property of the extraction design. It means:
 
-- **Cost is bounded.** A user with 5,000 messages of history triggers an extraction with the same input size as a user with 30 — the extractor only sees the 30 new ones plus the portrait. Cost stays flat regardless of how long the user has been chatting.
+- **Cost is bounded.** A user with 5,000 messages of history triggers an extraction with the same input size as a user with 8 new turns — the extractor only sees the new ones since `lastTurnIndexCovered` plus the existing portrait. Cost stays flat regardless of how long the user has been chatting.
 - **Stability.** Small evidence increments produce small portrait diffs. Re-deriving from scratch every 30 turns would let tiny LLM-output variance shake the portrait around even when nothing meaningful changed.
 - **Hallucination resistance.** Asking "what should change?" against a known portrait is grounded; asking "summarize this user from 500 messages" invites invention.
 - **Auditability.** The diff between input portrait and output portrait is the proposed change, naturally. Easy to log, easy to test against golden transcripts.
@@ -679,7 +682,7 @@ Without these, prompt drift in the extractor will silently degrade quality. With
 ### 12.3 Integration tests
 
 - POST `/api/master` end-to-end with a fresh user → creates session, writes messages, no portrait extracted yet (under threshold)
-- POST `/api/master` after 30 turns → triggers extraction, writes portrait + history
+- POST `/api/master` after ≥8 turns (or ≥24h+3 turns) → triggers extraction, writes portrait + history
 - POST `/api/master/new-session` → bumps sessionId, keeps portrait, new session starts with personalized prompt
 - DELETE `/api/master` → all messages + portrait + history gone
 - PUT `/api/profile/portrait` then POST `/api/master` 30 more turns → manually edited fields are NOT overwritten by extractor
@@ -804,7 +807,7 @@ model MasterChatMessage {
 | Compression loses information the master needed | Medium | Tool result stubbing is reversible (re-fetch); never compress recent 10 turns; never touch system prompt |
 | Token estimator inaccuracy → over/under-compression | Low | chars/4 is conservative; if proven wrong, swap to a real tokenizer in one place |
 | Migration data loss | Low | No backfill; legacy table preserved through Phase 5 |
-| Cost blowout from extraction | Low | Lazy trigger (≥30 turn threshold), low reasoning, optional cheaper model, no credit deduction |
+| Cost blowout from extraction | Low | Lazy trigger (≥8 turn / 24h+3 turn threshold), low reasoning, optional cheaper model, no credit deduction |
 | GDPR export missing new tables | High | Phase 6 explicitly updates export endpoint + cascade-delete; integration test |
 | User edits silently overwritten by extractor | High | `lastManualEditAt` field; merge-not-overwrite logic in extractor output handler; integration test |
 | Persona file accidentally empty in production | Medium | Composer throws on empty persona; deploy check |

@@ -213,7 +213,7 @@ export default function SubscribePage() {
         </div>
 
         {/* Bottom note */}
-        <p className="text-center mt-8 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-center mt-8 text-sm" style={{ color: 'var(--text-secondary)' }}>
           {T(lang, '💫 機緣永久有效，不會過期', '💫 Karma never expires')}
         </p>
 

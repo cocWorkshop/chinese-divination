@@ -80,6 +80,7 @@ export default function MessageBubble({
           style={{
             background: 'var(--accent-bg, rgba(212,175,55,0.08))',
             border: '1px solid var(--border-gold, rgba(212,175,55,0.35))',
+            borderLeft: '3px solid var(--gold, #d4a853)',
           }}
         >
           <div className="font-serif text-base mb-2" style={{ color: 'var(--gold)' }}>

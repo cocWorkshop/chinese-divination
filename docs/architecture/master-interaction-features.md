@@ -167,7 +167,7 @@ master 回覆 done → loading=false
           ↓
    reflectionAttemptsRef.current >= 1?
    ├─ YES → return (DEAD)
-   └─ NO  → setTimeout 90_000ms
+   └─ NO  → shouldReflect()? → setTimeout 75_000 + random(0-45_000)ms
                 ↓
             [計時]
             ├─ 用戶打字 → flushPendingSends → runTurn({ messages }) 
@@ -198,14 +198,20 @@ master 回覆 done → loading=false
 |---|---|---|
 | `reflectionTimerRef.current` | MasterChatContext | setTimeout handle |
 | `reflectionAttemptsRef.current` | MasterChatContext | 0 = READY, 1 = DEAD |
-| `REFLECTION_IDLE_MS = 90_000` | MasterChatContext | 反思觸發前的閒置時間 |
+| `REFLECTION_IDLE_MS_BASE = 75_000` | MasterChatContext | 反思觸發基礎延遲 |
+| `REFLECTION_IDLE_MS_JITTER = 45_000` | MasterChatContext | 隨機抖動 (0-45s) 使觸發更自然 |
+| `shouldReflect()` | MasterChatContext | 內容感知門控 — 跳過「好」「ok」「謝謝」等結束語 |
 
-### 為什麼是 90 秒
+### 為什麼是 75-120 秒 + 內容感知
 
-太短：用戶剛看完一段話、還在消化、master 又冒出來打擾
-太長：用戶已經離開了，反思白白消耗一次 LLM 呼叫
+延遲使用 75s 基礎 + 0-45s 隨機抖動（75-120 秒），避免機械感。
 
-90 秒是「讀完一段中等長度的回答 + 短時間思考」的合理分位。如果觀察到太多反思 LLM 沒人理（DB 統計 reflection 後 N 分鐘內無 user 回覆的比例），可以調長。
+同時增加了**內容感知門控**（`shouldReflect()`）：
+- 如果用戶最後一條消息是結束語（好/ok/謝謝/再見等）→ **不觸發**
+- 如果用戶最後一條消息 < 5 字 → **不觸發**
+- 觸發時再次檢查，防止用戶在等待期間發了結束語
+
+這避免了用戶說「好的謝謝」後大師還追著說話的尷尬。
 
 ### Master 端行為（master.md 規定）
 

@@ -40,6 +40,20 @@ export type EngineEvent =
   | { type: 'error'; error: string }
   | { type: 'done' }
 
+/**
+ * Activation hint variants. Surface in the synthetic trigger message as
+ * `[activation_trigger:HINT]` so the master persona's "## Activation" rules
+ * can branch per case (cta_pending_aged / unanswered_user / ambiguous_resume
+ * / long_gap_resume). `gap` is the legacy default and maps to the older
+ * `[user_just_opened_chat]` synthetic for backwards compatibility.
+ */
+export type CheckinHint =
+  | 'gap'
+  | 'cta_pending_aged'
+  | 'unanswered_user'
+  | 'ambiguous_resume'
+  | 'long_gap_resume'
+
 export interface RunTurnInput {
   userId: string
   sessionId: string
@@ -50,6 +64,13 @@ export interface RunTurnInput {
    * persisted; it only exists for this one streamLLM call.
    */
   isCheckin: boolean
+  /**
+   * Optional hint variant for `isCheckin` turns. When omitted (or `'gap'`),
+   * the synthetic injected message is the legacy `[user_just_opened_chat]`.
+   * Otherwise the synthetic becomes `[activation_trigger:HINT]` so the
+   * persona's activation rules can pick the right branch.
+   */
+  checkinHint?: CheckinHint
   /**
    * True when the master is reflecting on prior turns (no user message
    * this turn either). Mirrors `isCheckin` mechanically — both inject an
@@ -80,10 +101,17 @@ export async function* runMasterTurn(
 
     // Checkin: master speaks first. Inject an ephemeral synthetic user
     // message so the LLM has something to respond to. NOT persisted.
+    // The hint variant lets the persona's activation rules branch per
+    // resume case (CTA pending, unanswered user, ambiguous, long gap).
     if (input.isCheckin) {
+      const hint = input.checkinHint
+      const synthetic =
+        !hint || hint === 'gap'
+          ? '[user_just_opened_chat]'
+          : `[activation_trigger:${hint}]`
       currentMessages.push({
         role: 'user',
-        content: '[user_just_opened_chat]',
+        content: synthetic,
       })
     } else if (input.isReflection) {
       // Same shape, different tag — gives the persona's reflection
