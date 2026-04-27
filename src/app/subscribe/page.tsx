@@ -181,6 +181,13 @@ export default function SubscribePage() {
                   <span style={{ color: 'var(--gold)' }}>✦</span>
                   {T(lang, '所有功能通用', 'Works for all features')}
                 </li>
+                <li className="flex items-start gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <span style={{ color: 'var(--gold)' }}>≈</span>
+                  {T(lang,
+                    `${Math.floor(pack.credits / 5)} 次八字/紫微 或 ${Math.floor(pack.credits / 3)} 次六爻/梅花`,
+                    `${Math.floor(pack.credits / 5)} BaZi/ZiWei or ${Math.floor(pack.credits / 3)} LiuYao readings`
+                  )}
+                </li>
               </ul>
 
               <div className="mt-auto">

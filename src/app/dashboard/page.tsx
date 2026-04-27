@@ -63,6 +63,17 @@ const typeIcons: Record<string, string> = {
   other: '📖',
 }
 
+const typeBorderColor: Record<string, string> = {
+  bazi: 'rgba(212,175,55,0.6)',
+  ziwei: 'rgba(147,112,219,0.6)',
+  iching: 'rgba(100,149,237,0.6)',
+  qimen: 'rgba(220,120,60,0.6)',
+  liuyao: 'rgba(100,149,237,0.6)',
+  meihua: 'rgba(236,130,180,0.6)',
+  fengshui: 'rgba(76,175,80,0.6)',
+  other: 'rgba(160,160,160,0.6)',
+}
+
 const shichenLabels: Record<string, { 'zh-TW': string; en: string }> = {
   zi_early: { 'zh-TW': '早子時', en: 'Early Zi' },
   chou: { 'zh-TW': '丑時', en: 'Chou' },
@@ -350,6 +361,7 @@ export default function DashboardPage() {
               exit={{ opacity: 0, x: 40, scale: 0.95, transition: { duration: 0.25 } }}
               transition={{ delay: i * 0.05 }}
               className="glass-card rounded-2xl overflow-hidden w-full min-w-0 relative scroll-mt-24"
+              style={{ borderLeft: `3px solid ${typeBorderColor[r.type] || typeBorderColor.other}` }}
             >
               {isDeleting && (
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-20 pointer-events-none">

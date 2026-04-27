@@ -319,8 +319,9 @@ export default function ProfilePage() {
                 : 'bg-navy-800/50 text-white/50 hover:text-white/70 hover:bg-navy-800'
             }`}
           >
-            <span className="block sm:inline">{tab.icon}</span>{' '}
-            <span className="hidden sm:inline">{T(lang, tab.zh, tab.en)}</span>
+            <span className="block text-base sm:text-sm sm:inline">{tab.icon}</span>
+            <span className="block text-[9px] leading-tight sm:hidden">{T(lang, tab.zh, tab.en).split(/[\s/]/)[0]}</span>
+            <span className="hidden sm:inline"> {T(lang, tab.zh, tab.en)}</span>
           </button>
         ))}
       </div>

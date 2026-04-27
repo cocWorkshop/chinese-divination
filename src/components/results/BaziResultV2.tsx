@@ -590,15 +590,19 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h3 className="text-gold font-serif text-base mb-2">🎯 {T(lang, '關鍵預測', 'Key Predictions')}</h3>
           <div className="grid gap-2">
-            {d.keyPredictions.map((pred: { age: string; event: string; basis: string }, i: number) => (
-              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20">
-                <div className="mb-1.5">
-                  <span className="px-2 py-0.5 rounded bg-gold/20 text-gold text-[11px] font-bold">{pred.age}</span>
+            {d.keyPredictions.map((pred: { age: string; event: string; basis: string }, i: number) => {
+              const isCurrent = pred.age.includes('當前') || pred.age.includes('当前') || pred.age.toLowerCase().includes('current')
+              return (
+                <div key={i} className={`glass-card rounded-xl p-3 border ${isCurrent ? 'border-gold/50 ring-1 ring-gold/20' : 'border-gold/20'}`}>
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${isCurrent ? 'bg-gold/30 text-gold' : 'bg-gold/20 text-gold'}`}>{pred.age}</span>
+                    {isCurrent && <span className="text-[10px] text-gold/80">📍</span>}
+                  </div>
+                  <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{pred.event}</p>
+                  <p className="text-[var(--text-muted)] text-xs mt-1 italic leading-relaxed">{pred.basis}</p>
                 </div>
-                <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{pred.event}</p>
-                <p className="text-[var(--text-muted)] text-xs mt-1 italic leading-relaxed">{pred.basis}</p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </motion.div>
       )}

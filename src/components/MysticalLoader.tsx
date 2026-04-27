@@ -304,6 +304,20 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
           </motion.div>
         )
       })()}
+
+      {/* Timeout warning — appears after 3 minutes */}
+      {elapsed >= 180 && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-xs text-center mt-3 max-w-xs mx-auto leading-relaxed"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {lang === 'en'
+            ? 'Analysis is taking longer than usual. Your reading is still being processed — please stay on this page.'
+            : '分析時間比平常長，您的解讀仍在處理中 — 請留在此頁面。'}
+        </motion.p>
+      )}
     </motion.div>
   )
 }

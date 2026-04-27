@@ -159,8 +159,11 @@ export default function RootLayout({
           <LanguageProvider>
             <ThemeProvider>
             <MasterChatProvider>
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-gold focus:text-navy-950 focus:rounded-lg focus:text-sm focus:font-medium">
+              Skip to content
+            </a>
             <Navbar />
-            <main className="pt-16 flex-1 flex flex-col pb-16">
+            <main id="main-content" className="pt-16 flex-1 flex flex-col pb-16">
               {children}
             </main>
 

@@ -51,6 +51,7 @@ export default function DivinationPage() {
   const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
   const [welcomeMessages, setWelcomeMessages] = useState<WelcomeItem[]>([])
   const [welcomeIndex, setWelcomeIndex] = useState(0)
+  const [costs, setCosts] = useState<Record<string, number>>({})
 
   useEffect(() => {
     fetch('/api/welcome')
@@ -75,7 +76,10 @@ export default function DivinationPage() {
   useEffect(() => {
     fetch('/api/divination/visibility')
       .then(r => r.json())
-      .then((items: VisibilityItem[]) => {
+      .then((items: (VisibilityItem & { cost?: number })[]) => {
+        const costMap: Record<string, number> = {}
+        items.forEach(item => { if (item.cost != null) costMap[item.type] = item.cost })
+        setCosts(costMap)
         const ordered = items
           .filter(item => item.visible && serviceMap[item.type])
           .sort((a, b) => a.order - b.order)
@@ -178,9 +182,14 @@ export default function DivinationPage() {
                     <h2 className="text-lg sm:text-xl font-serif mb-1.5 transition-colors group-hover:text-gold" style={{ color: 'var(--gold)' }}>
                       {lang === 'en' ? svc.enName : svc.twName}
                     </h2>
-                    <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-xs sm:text-sm leading-relaxed mb-2" style={{ color: 'var(--text-muted)' }}>
                       {lang === 'en' ? svc.enDesc : svc.twDesc}
                     </p>
+                    {costs[svc.id] != null && (
+                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.12)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                        ✨ {costs[svc.id]} {lang === 'en' ? 'pts' : '點'}
+                      </span>
+                    )}
 
                     {/* Subtle hover glow */}
                     <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ boxShadow: 'inset 0 0 30px rgba(212,168,83,0.05)' }} />

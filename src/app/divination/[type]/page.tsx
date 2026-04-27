@@ -157,6 +157,8 @@ export default function DivinationFormPage() {
   // visible so the user doesn't stare at empty "玄機正在書寫…" placeholders
   // during the (potentially long) LLM reasoning phase.
   const [hasLLMContent, setHasLLMContent] = useState(false)
+  // Track streaming duration for timeout warnings
+  const [streamStartTime, setStreamStartTime] = useState<number | null>(null)
   const [result, setResult] = useState<string | null>(null)
   const [resultType, setResultType] = useState<string>('')
   const [shareUrl, setShareUrl] = useState<string | null>(null)
@@ -551,6 +553,7 @@ export default function DivinationFormPage() {
       setResult(JSON.stringify(partial))
       setResultType(type)
       setStreaming(true)
+      setStreamStartTime(Date.now())
 
       // Throttle re-renders to one per animation frame. Without this, a
       // 200-char section emits ~200 value_chunk events in a few seconds —
@@ -591,7 +594,7 @@ export default function DivinationFormPage() {
             }
             scheduleRender()
           } else if (evt.type === 'value_chunk' && evt.path && typeof evt.text === 'string') {
-            if (!hasLLMContentRef) { hasLLMContentRef = true; setHasLLMContent(true) }
+            if (!hasLLMContentRef) { hasLLMContentRef = true; setHasLLMContent(true); setStreamStartTime(null) }
             mutateAtPath(partial, evt.path, (cur) => (typeof cur === 'string' ? cur : '') + evt.text)
             scheduleRender()
           } else if (evt.type === 'value_done' && evt.path) {
@@ -725,48 +728,40 @@ export default function DivinationFormPage() {
   return (
     <div className={`flex flex-col py-8 sm:py-12 px-3 sm:px-4 max-w-2xl mx-auto ${loading ? '' : 'min-h-[calc(100vh-4rem)]'}`}>
       {/* Bazi cache dialog */}
+      {/* Inline cache banner — replaces the old blocking modal. Sits above
+          the form, non-blocking, so users can still edit fields or ignore. */}
       {showCacheDialog && cachedReading && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-card p-6 rounded-xl max-w-md w-full text-center space-y-4"
-          >
-            <div className="text-4xl mb-2">📦</div>
-            <h3 className="text-xl font-serif text-gold">
-              {T(lang,
-                type === 'ziwei' ? '發現歷史紫微分析' : '發現歷史八字分析',
-                type === 'ziwei' ? 'Existing Zi Wei Reading Found' : 'Existing BaZi Reading Found'
-              )}
-            </h3>
-            <p className="text-white/70 text-sm">
-              {T(lang,
-                `已有 ${cachedReading.count} 筆相同生辰的${type === 'ziwei' ? '紫微' : '八字'}分析記錄。最近一次：${new Date(cachedReading.createdAt).toLocaleDateString('zh-TW')}`,
-                `Found ${cachedReading.count} existing reading(s) with the same birth data. Latest: ${new Date(cachedReading.createdAt).toLocaleDateString('en-US')}`
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl p-4 mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-3"
+          style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}
+        >
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-serif" style={{ color: 'var(--gold)' }}>
+              📦 {T(lang,
+                `已有 ${cachedReading.count} 筆相同分析（${new Date(cachedReading.createdAt).toLocaleDateString('zh-TW')}）`,
+                `${cachedReading.count} existing reading(s) found (${new Date(cachedReading.createdAt).toLocaleDateString('en-US')})`
               )}
             </p>
-            <div className="flex gap-3 justify-center pt-2">
-              <button
-                onClick={handleViewCached}
-                className="px-5 py-2.5 bg-gold/20 border border-gold/40 rounded-lg text-gold hover:bg-gold/30 transition-colors font-medium"
-              >
-                {T(lang, '📖 查看歷史', '📖 View History')}
-              </button>
-              <button
-                onClick={handleNewReading}
-                className="px-5 py-2.5 bg-gold text-navy-900 rounded-lg hover:bg-gold-light transition-colors font-medium"
-              >
-                {T(lang, '🔮 重新占卜', '🔮 New Reading')}
-              </button>
-            </div>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <button
+              onClick={handleViewCached}
+              className="px-3 py-1.5 text-xs rounded-lg font-medium transition-colors"
+              style={{ background: 'rgba(212,175,55,0.15)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.3)' }}
+            >
+              {T(lang, '查看歷史', 'View History')}
+            </button>
             <button
               onClick={() => setShowCacheDialog(false)}
-              className="text-white/40 hover:text-white/60 text-sm transition-colors"
+              className="px-3 py-1.5 text-xs rounded-lg transition-colors"
+              style={{ color: 'var(--text-muted)' }}
             >
-              {T(lang, '取消', 'Cancel')}
+              ✕
             </button>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       )}
 
       <motion.div
@@ -1479,12 +1474,14 @@ export default function DivinationFormPage() {
             </button>
           )}
 
-          {/* Privacy Controls */}
+          {/* Privacy Controls — collapsed by default to reduce form length */}
           {session && (
-            <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-3">
-              <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-2">
-                {T(lang, '🔒 隱私設置', '🔒 Privacy Settings')}
-              </p>
+            <details className="border border-gold/20 rounded-xl bg-navy-900/50 group">
+              <summary className="px-4 py-3 cursor-pointer list-none flex items-center justify-between text-white/60 text-xs font-semibold uppercase tracking-wider hover:text-white/80 transition-colors">
+                <span>{T(lang, '🔒 隱私設置', '🔒 Privacy Settings')}</span>
+                <span className="text-white/30 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-4 pb-4 space-y-3">
 
               {/* Save to History */}
               <label className="flex items-start gap-3 cursor-pointer group">
@@ -1548,7 +1545,8 @@ export default function DivinationFormPage() {
                   {T(lang, '本次占卜結果不會被儲存，請自行記錄', 'This reading will not be stored anywhere. Please note it down if needed.')}
                 </p>
               )}
-            </div>
+              </div>
+            </details>
           )}
 
           {/* PaipanOnly — locked placeholder when signed out (only for the
@@ -1640,7 +1638,7 @@ export default function DivinationFormPage() {
           result is set. */}
       {((loading && !streaming && !result) || (streaming && !hasLLMContent)) && (
         <div className="flex-1 flex flex-col">
-          <LoadingOracle divinationType={type} />
+          <LoadingOracle divinationType={type} startTime={streamStartTime || undefined} />
         </div>
       )}
 

@@ -207,6 +207,8 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
             ref={scrollRef}
             onScroll={handleScroll}
             className="relative flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4 scrollbar-thin"
+            aria-live="polite"
+            aria-label="Chat messages"
           >
             {showWelcome && (
               <div className="flex flex-col items-center text-center pt-8 pb-4">
