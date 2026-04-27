@@ -275,7 +275,10 @@ export function MasterChatProvider({ children }: ProviderProps) {
         // we render 3 bubbles after refresh too — not one bubble with the
         // marker showing.
         const expanded: MasterMsg[] = []
-        for (const m of data.messages.filter((x) => x.role !== 'system')) {
+        for (const m of data.messages.filter((x) =>
+          x.role !== 'system' &&
+          !(x.role === 'user' && typeof x.content === 'string' && (x.content.startsWith('[user cancelled]') || x.content.startsWith('[用戶取消]')))
+        )) {
           if (
             m.role === 'assistant' &&
             typeof m.content === 'string' &&
@@ -418,6 +421,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
         pendingCards.length = 0
       }
 
+      let sseBuffer = ''
       try {
         abortRef.current = new AbortController()
         const res = await fetch('/api/master', {
@@ -443,14 +447,13 @@ export function MasterChatProvider({ children }: ProviderProps) {
         const reader = res.body?.getReader()
         if (!reader) return
         const decoder = new TextDecoder()
-        let buffer = ''
 
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
-          buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split('\n')
-          buffer = lines.pop() ?? ''
+          sseBuffer += decoder.decode(value, { stream: true })
+          const lines = sseBuffer.split('\n')
+          sseBuffer = lines.pop() ?? ''
 
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue
@@ -592,10 +595,24 @@ export function MasterChatProvider({ children }: ProviderProps) {
           })
         }
       } finally {
+        // Flush any remaining buffer — the last SSE event (typically `done`)
+        // may sit in the buffer when the stream closes, causing cards to
+        // never render on first conversation.
+        if (sseBuffer.trim()) {
+          for (const line of sseBuffer.split('\n')) {
+            if (!line.startsWith('data: ')) continue
+            try {
+              const event = JSON.parse(line.slice(6))
+              if (event.type === 'done' && pendingCards.length > 0) {
+                setMessages((prev) => [...prev, ...pendingCards])
+                pendingCards.length = 0
+              }
+            } catch { /* ignore */ }
+          }
+        }
         // Safety: if the stream errored or aborted before `done` fired but
         // cards were already queued, flush them now so the user still sees
-        // the redirect (avoids the bug where the master "told you to click"
-        // but the card never appeared because the stream cut off).
+        // the redirect.
         if (pendingCards.length > 0) {
           setMessages((prev) => [...prev, ...pendingCards])
           pendingCards.length = 0
