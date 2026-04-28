@@ -1,34 +1,56 @@
 /**
- * Master system prompt composer.
+ * Master system prompt composer — progressive disclosure.
  *
  * Assembles:
- *   1. Persona (from divination-refs/master.md)
- *   2. Capability catalog (generated from tool registry)
- *   3. Skills catalog (generated from skills registry, language-aware)
- *   4. Personalized prompt block (optional, rendered from UserPortrait)
- *   5. Dynamic per-request context (language, current time)
+ *   1. Core persona (from divination-refs/master.md) — STABLE, cacheable
+ *   2. Capability catalog (from tool registry) — STABLE
+ *   3. Skills catalog (from skills registry) — STABLE
+ *   ─── cache prefix boundary (provider caches this block for 5 min) ───
+ *   4. Personalized prompt block (per-user, from UserPortrait)
+ *   5. Turn-type appendices (only injected when relevant):
+ *      - reflection.md  → only on reflection turns
+ *      - activation.md  → only on checkin turns
+ *      - templates.md   → only on first user message in a topic
+ *   6. Dynamic per-request context (language, current time)
  *
- * Kept deterministic so the first ~90% is stable → benefits from the
- * provider-side prompt cache (Anthropic 5-min TTL) across turns.
+ * By keeping conditional content AFTER the stable prefix, we maximize
+ * cache hit rate. Normal message turns (90%+ of traffic) carry zero
+ * appendix overhead.
  */
 
+import fs from 'fs'
+import path from 'path'
 import { loadMasterPersona } from './persona'
 import { buildCapabilityCatalog } from './capabilityCatalog'
 import { buildSkillsCatalog } from '../skills'
 
+export type TurnType = 'message' | 'reflection' | 'checkin'
+
 export interface BuildMasterSystemPromptInput {
   lang: 'zh-TW' | 'en'
   currentDateTime: string
-  /**
-   * Personalized prompt block rendered from UserPortrait by
-   * renderPersonalizedPrompt(). When null/empty, the block is omitted —
-   * the cold-start path is identical to the pre-feature output.
-   *
-   * The block must already include the identity guard sentence at the
-   * end (renderPersonalizedPrompt always appends it). The composer does
-   * not add or modify the guard.
-   */
   personalizedPrompt?: string | null
+  /** Turn type determines which appendices are injected. Defaults to 'message'. */
+  turnType?: TurnType
+  /** Whether this is the first user message in a new topic (injects answer templates). */
+  isFirstMessage?: boolean
+}
+
+// Lazy-loaded appendix cache
+const appendixCache = new Map<string, string>()
+function loadAppendix(name: string): string {
+  const cached = appendixCache.get(name)
+  if (cached !== undefined) return cached
+  try {
+    const content = fs.readFileSync(
+      path.join(process.cwd(), 'divination-refs', 'master-appendices', `${name}.md`),
+      'utf-8'
+    )
+    appendixCache.set(name, content)
+    return content
+  } catch {
+    return ''
+  }
 }
 
 export function buildMasterSystemPrompt(input: BuildMasterSystemPromptInput): string {
@@ -38,16 +60,36 @@ export function buildMasterSystemPrompt(input: BuildMasterSystemPromptInput): st
   }
   const catalog = buildCapabilityCatalog()
   const skills = buildSkillsCatalog(input.lang)
+
+  // ─── Stable prefix (cacheable) ───
+  const stablePrefix = [persona, catalog, skills].join('\n\n---\n\n')
+
+  // ─── Per-user layer ───
   const personalized = input.personalizedPrompt && input.personalizedPrompt.trim().length > 0
     ? input.personalizedPrompt
     : null
+
+  // ─── Turn-type appendices (conditional) ───
+  const appendices: string[] = []
+  const turnType = input.turnType ?? 'message'
+
+  if (turnType === 'reflection') {
+    appendices.push(loadAppendix('reflection'))
+  } else if (turnType === 'checkin') {
+    appendices.push(loadAppendix('activation'))
+  }
+
+  // Inject answer templates on first substantive user message
+  if (input.isFirstMessage && turnType === 'message') {
+    appendices.push(loadAppendix('templates'))
+  }
+
+  const appendixBlock = appendices.filter(Boolean).join('\n\n---\n\n') || null
+
+  // ─── Dynamic context ───
   const contextBlock = buildContextBlock(input)
 
-  // Persona first (stable, cacheable), catalog + skills next (regenerates
-  // when you add a tool/skill but still stable within a release), then the
-  // personalized block (per-user, cache-breaking but bounded), then the
-  // dynamic context (session-specific).
-  return [persona, catalog, skills, personalized, contextBlock]
+  return [stablePrefix, personalized, appendixBlock, contextBlock]
     .filter(Boolean)
     .join('\n\n---\n\n')
 }

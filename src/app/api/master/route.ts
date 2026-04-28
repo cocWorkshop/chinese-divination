@@ -246,34 +246,25 @@ export async function POST(req: NextRequest) {
         )
     }
 
-    // Compose system prompt from persona + registry catalogs + personalized
-    // block + dynamic ctx.
+    // Compose system prompt with progressive disclosure:
+    // - Core persona + catalog + skills = stable cache prefix
+    // - Personalized block = per-user
+    // - Turn-type appendices = only injected when relevant (reflection/checkin/templates)
+    // This maximizes prompt cache hit rate (normal messages carry zero appendix).
+    const turnType = isReflection ? 'reflection' as const : isCheckin ? 'checkin' as const : 'message' as const
     let systemPrompt = buildMasterSystemPrompt({
       lang,
       currentDateTime,
       personalizedPrompt,
+      turnType,
+      isFirstMessage: !isCheckin && !isReflection && userMessages.length > 0,
     })
 
-    // Proactive checkin appendix — when the master is the one initiating the
-    // turn (no user message), nudge it to open with one short, contextual
-    // bubble instead of waiting for the user. We gather concrete anchors
-    // (gap, today's 節氣/流年, last reading) so the master can pick a
-    // natural opener instead of generic small talk. Falls through silently
-    // if not a checkin (the model never sees the appendix).
+    // Proactive checkin appendix — additional per-hint context (gap duration,
+    // last reading info) that the generic activation.md appendix can't know.
     if (isCheckin) {
       const checkinAppendix = await buildCheckinAppendix(userId, sessionId, lang, checkinHint)
       systemPrompt += `\n\n---\n\n${checkinAppendix}`
-    }
-
-    // Reflection appendix — fires when the user has been silent inside an
-    // expanded chat for ~90s. The frontend rate-gates this (at most one
-    // reflection per silent stretch — see master-interaction-features.md).
-    // The appendix tells the master: scan the last few turns, find ONE
-    // worthwhile follow-up, OR if nothing genuine to add, just emit a
-    // short closing line. The persona's "Reflection" section in
-    // master.md handles the quality bar.
-    if (isReflection) {
-      systemPrompt += `\n\n---\n\n${buildReflectionAppendix(lang)}`
     }
 
     // Resolve model + initial messages (history compressed if needed).
@@ -586,46 +577,10 @@ const READING_TYPE_EN: Record<string, string> = {
  * `reflection: true`. Pure synchronous — the persona section in
  * master.md does the heavy lifting (quality bar, output shape, "skip
  * if nothing to add" rule). The appendix's job is just to inject the
- * `[reflection_trigger]` framing at the right place.
- *
- * Why no DB calls (unlike checkin): reflection happens within an
- * already-active session. The master can read the chat history that's
- * already being passed in `currentMessages` — no extra anchors needed.
+ * buildReflectionAppendix removed — reflection rules now loaded from
+ * divination-refs/master-appendices/reflection.md via buildSystemPrompt's
+ * progressive disclosure (turnType='reflection').
  */
-function buildReflectionAppendix(lang: 'zh-TW' | 'en'): string {
-  if (lang === 'en') {
-    return [
-      '## Reflection moment',
-      "The user has gone quiet in the expanded chat. They haven't left — they're still looking at the screen — but something stopped them from typing.",
-      '',
-      'Scan the last 3-5 turns. Find ONE specific thing worth a short follow-up:',
-      '- A thread you opened but didn\'t close',
-      '- A chart element you cited but didn\'t fully connect',
-      '- An indirect question they asked that you answered around, not at',
-      '',
-      "If you find one → open with `对了` or its English equivalent (\"One more thing —\"), 1-2 short bubbles, end with a soft invitation OR a quiet stop. NEVER ask a generic open-ended question.",
-      '',
-      "If you find NOTHING genuinely worth saying → emit a single short closing line (\"I'll wait — let me know if anything comes up.\") and stop. Do NOT manufacture a topic to fill silence.",
-      '',
-      '**Hard rules**: Max 2 bubbles. No greeting. No summary of what you\'ve said. Treat this as your only shot — if the user doesn\'t reply, no further reflection comes.',
-    ].join('\n')
-  }
-  return [
-    '## 反思時刻',
-    '用戶在展開的對話裡停了下來。他沒走 — 螢幕還在 — 但有什麼讓他暫時不想打字。',
-    '',
-    '掃一眼最近的 3-5 輪對話，找一個**具體**值得補的東西：',
-    '- 你開了個話頭沒收尾',
-    '- 你引用了某個命盤元素但沒完全把意思講透',
-    '- 用戶其實在問 X，但你答的是 X 旁邊的東西',
-    '',
-    '找到了 → 開頭用「對了」或「我再想了一下」，**1-2 個短氣泡**，結尾留個軟邀請或安靜停住。**不要**問「還有什麼想問的嗎」這種泛問。',
-    '',
-    '**找不到值得補的東西** → 就一句短結尾（「先這樣，你想到什麼再說。」）打住。不要硬擠話題填靜默。',
-    '',
-    '**硬規則**：最多 2 個氣泡。不要打招呼，不要總結你已經說過的，不要羅列工具名。當作這是你唯一一次機會 — 用戶若不回覆，後續不會再反思。',
-  ].join('\n')
-}
 
 /**
  * Per-hint appendix for `cta_pending_aged` / `unanswered_user` /

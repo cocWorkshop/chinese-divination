@@ -72,9 +72,9 @@ describe('buildMasterSystemPrompt — voice rules', () => {
   })
 })
 
-describe('buildMasterSystemPrompt — answer pattern templates', () => {
-  it('contains all five answer pattern templates A through E', () => {
-    const prompt = buildMasterSystemPrompt(baseInput)
+describe('buildMasterSystemPrompt — answer pattern templates (progressive disclosure)', () => {
+  it('contains all five answer pattern templates A through E when isFirstMessage', () => {
+    const prompt = buildMasterSystemPrompt({ ...baseInput, isFirstMessage: true })
     expect(prompt).toContain('Template A')
     expect(prompt).toContain('Template B')
     expect(prompt).toContain('Template C')
@@ -82,28 +82,34 @@ describe('buildMasterSystemPrompt — answer pattern templates', () => {
     expect(prompt).toContain('Template E')
   })
 
-  it('Template A specifies the 3-part shape (headline / card / invitation)', () => {
-    const prompt = buildMasterSystemPrompt(baseInput)
-    // Find Template A section
+  it('Template A references show_reading_card', () => {
+    const prompt = buildMasterSystemPrompt({ ...baseInput, isFirstMessage: true })
     const aIdx = prompt.indexOf('Template A')
-    const bIdx = prompt.indexOf('Template B')
     expect(aIdx).toBeGreaterThan(0)
-    expect(bIdx).toBeGreaterThan(aIdx)
-    const aSection = prompt.slice(aIdx, bIdx)
-    expect(aSection).toContain('Headline')
-    expect(aSection).toContain('Reading card')
+    const aSection = prompt.slice(aIdx, prompt.indexOf('Template B'))
     expect(aSection).toContain('show_reading_card')
-    expect(aSection).toContain('Focused invitation')
   })
 
-  it('Template B forbids statistics and full directory listing', () => {
-    const prompt = buildMasterSystemPrompt(baseInput)
+  it('Template B forbids listing all readings', () => {
+    const prompt = buildMasterSystemPrompt({ ...baseInput, isFirstMessage: true })
     const bIdx = prompt.indexOf('Template B')
-    const cIdx = prompt.indexOf('Template C')
-    const bSection = prompt.slice(bIdx, cIdx)
-    expect(bSection).toContain('Forbidden')
-    expect(bSection).toMatch(/Listing all readings/i)
-    expect(bSection).toMatch(/Statistics/i)
+    const bSection = prompt.slice(bIdx, prompt.indexOf('Template C'))
+    expect(bSection).toContain('禁止')
+  })
+
+  it('templates NOT injected on non-first-message turns', () => {
+    const prompt = buildMasterSystemPrompt(baseInput)
+    expect(prompt).not.toContain('Template A')
+  })
+
+  it('reflection appendix injected on reflection turns', () => {
+    const prompt = buildMasterSystemPrompt({ ...baseInput, turnType: 'reflection' })
+    expect(prompt).toContain('Reflection moment')
+  })
+
+  it('activation appendix injected on checkin turns', () => {
+    const prompt = buildMasterSystemPrompt({ ...baseInput, turnType: 'checkin' })
+    expect(prompt).toContain('Activation')
   })
 })
 
