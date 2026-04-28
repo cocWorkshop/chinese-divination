@@ -1667,9 +1667,19 @@ export default function DivinationFormPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`glass-card rounded-2xl p-4 sm:p-8 w-full max-w-full overflow-x-hidden transition-all duration-1000 ${streaming ? 'border-gold/50 shadow-[0_0_20px_rgba(212,168,83,0.12)] animate-[borderBreathe_3s_ease-in-out_infinite]' : 'border-transparent shadow-none'}`}
-          style={streaming ? { borderWidth: '1.5px', borderStyle: 'solid' } : {}}
+          className={`glass-card rounded-2xl p-4 sm:p-8 w-full max-w-full transition-all duration-1000 ${streaming ? 'flame-border-active overflow-visible' : 'border-transparent shadow-none overflow-x-auto'}`}
         >
+          {/* Spark particles — small glowing dots that orbit the card edge */}
+          {streaming && (
+            <div className="flame-sparks" aria-hidden>
+              <span className="flame-spark flame-spark-1" />
+              <span className="flame-spark flame-spark-2" />
+              <span className="flame-spark flame-spark-3" />
+              <span className="flame-spark flame-spark-4" />
+              <span className="flame-spark flame-spark-5" />
+              <span className="flame-spark flame-spark-6" />
+            </div>
+          )}
           <div className="flex justify-between items-center mb-4 sm:mb-6">
             <h2 className="text-lg sm:text-xl font-serif text-gold">
               {T(lang, '解卦結果', 'Oracle Reading')}
@@ -1756,11 +1766,164 @@ export default function DivinationFormPage() {
         </motion.div>
       )}
 
-      {/* Streaming border breathe animation */}
+      {/* Golden flame border effect for streaming */}
       <style jsx global>{`
-        @keyframes borderBreathe {
-          0%, 100% { border-color: rgba(212,168,83,0.25); box-shadow: 0 0 12px rgba(212,168,83,0.06); }
-          50% { border-color: rgba(212,168,83,0.6); box-shadow: 0 0 24px rgba(212,168,83,0.15); }
+        .flame-border-active {
+          position: relative;
+          border: 2px solid transparent;
+          background-clip: padding-box;
+          z-index: 0;
+        }
+        /* Rotating conic gradient — the "flame ring" */
+        .flame-border-active::before {
+          content: '';
+          position: absolute;
+          inset: -2px;
+          border-radius: inherit;
+          padding: 2px;
+          background: conic-gradient(
+            from var(--flame-angle, 0deg),
+            rgba(212,168,83,0.1) 0%,
+            rgba(255,180,50,0.9) 8%,
+            rgba(255,140,20,1) 15%,
+            rgba(255,200,60,0.95) 22%,
+            rgba(212,168,83,0.2) 35%,
+            rgba(180,120,40,0.05) 50%,
+            rgba(212,168,83,0.1) 65%,
+            rgba(255,160,30,0.85) 72%,
+            rgba(255,120,10,0.95) 80%,
+            rgba(255,190,50,0.9) 88%,
+            rgba(212,168,83,0.1) 100%
+          );
+          -webkit-mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+          mask-composite: exclude;
+          animation: flameRotate 3s linear infinite;
+          z-index: -1;
+        }
+        /* Outer glow — warm pulsing halo */
+        .flame-border-active::after {
+          content: '';
+          position: absolute;
+          inset: -4px;
+          border-radius: inherit;
+          background: transparent;
+          box-shadow:
+            0 0 8px rgba(255,170,40,0.3),
+            0 0 20px rgba(255,140,20,0.15),
+            0 0 40px rgba(212,168,83,0.08);
+          animation: flameGlow 2s ease-in-out infinite;
+          z-index: -2;
+          pointer-events: none;
+        }
+        @keyframes flameRotate {
+          to { --flame-angle: 360deg; }
+        }
+        @keyframes flameGlow {
+          0%, 100% {
+            box-shadow:
+              0 0 8px rgba(255,170,40,0.25),
+              0 0 20px rgba(255,140,20,0.1),
+              0 0 40px rgba(212,168,83,0.05);
+          }
+          50% {
+            box-shadow:
+              0 0 12px rgba(255,170,40,0.45),
+              0 0 30px rgba(255,140,20,0.25),
+              0 0 60px rgba(212,168,83,0.12);
+          }
+        }
+        @property --flame-angle {
+          syntax: '<angle>';
+          initial-value: 0deg;
+          inherits: false;
+        }
+
+        /* ── Spark particles ── */
+        .flame-sparks {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          overflow: visible;
+          z-index: 1;
+          border-radius: inherit;
+        }
+        .flame-spark {
+          position: absolute;
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(255,210,80,1) 0%, rgba(255,140,20,0.8) 50%, transparent 100%);
+          box-shadow:
+            0 0 6px rgba(255,180,40,0.9),
+            0 0 12px rgba(255,140,20,0.5);
+          filter: blur(0.5px);
+        }
+        /* Each spark orbits via offset-path on a rounded rect matching the card.
+           Fallback: absolute positioning with individual keyframes. */
+        .flame-spark-1 { animation: sparkOrbit1 4s linear infinite; }
+        .flame-spark-2 { animation: sparkOrbit2 5s linear infinite; }
+        .flame-spark-3 { animation: sparkOrbit3 3.5s linear infinite; }
+        .flame-spark-4 { animation: sparkOrbit4 4.5s linear infinite; }
+        .flame-spark-5 { animation: sparkOrbit5 6s linear infinite; opacity: 0.7; width: 3px; height: 3px; }
+        .flame-spark-6 { animation: sparkOrbit6 5.5s linear infinite; opacity: 0.6; width: 3px; height: 3px; }
+
+        /* Sparks move along the card perimeter using top/left keyframes.
+           Perimeter path: top edge → right edge → bottom edge → left edge. */
+        @keyframes sparkOrbit1 {
+          0%   { top: -2px; left: 10%; opacity: 1; }
+          25%  { top: -2px; left: 90%; opacity: 0.9; }
+          26%  { top: 5%; right: auto; left: calc(100% + 0px); }
+          50%  { top: 90%; left: calc(100% + 0px); opacity: 1; }
+          51%  { top: calc(100% + 0px); left: 85%; }
+          75%  { top: calc(100% + 0px); left: 15%; opacity: 0.8; }
+          76%  { top: 85%; left: -2px; }
+          99%  { top: 5%; left: -2px; opacity: 0.9; }
+          100% { top: -2px; left: 10%; opacity: 1; }
+        }
+        @keyframes sparkOrbit2 {
+          0%   { top: -2px; left: 55%; opacity: 0.8; }
+          20%  { top: -2px; left: 95%; opacity: 1; }
+          21%  { top: 10%; left: calc(100% + 0px); }
+          45%  { top: 85%; left: calc(100% + 0px); opacity: 0.9; }
+          46%  { top: calc(100% + 0px); left: 80%; }
+          70%  { top: calc(100% + 0px); left: 10%; opacity: 0.7; }
+          71%  { top: 80%; left: -2px; }
+          95%  { top: 8%; left: -2px; opacity: 0.9; }
+          100% { top: -2px; left: 55%; opacity: 0.8; }
+        }
+        @keyframes sparkOrbit3 {
+          0%   { top: 50%; left: calc(100% + 0px); opacity: 1; }
+          30%  { top: calc(100% + 0px); left: calc(100% + 0px); }
+          35%  { top: calc(100% + 0px); left: 70%; opacity: 0.8; }
+          65%  { top: calc(100% + 0px); left: 5%; }
+          70%  { top: 80%; left: -2px; opacity: 1; }
+          100% { top: 50%; left: calc(100% + 0px); opacity: 1; }
+        }
+        @keyframes sparkOrbit4 {
+          0%   { top: calc(100% + 0px); left: 40%; opacity: 0.9; }
+          25%  { top: calc(100% + 0px); left: 5%; opacity: 0.7; }
+          30%  { top: 80%; left: -2px; }
+          55%  { top: 10%; left: -2px; opacity: 1; }
+          60%  { top: -2px; left: 15%; }
+          85%  { top: -2px; left: 80%; opacity: 0.8; }
+          90%  { top: 15%; left: calc(100% + 0px); }
+          100% { top: calc(100% + 0px); left: 40%; opacity: 0.9; }
+        }
+        @keyframes sparkOrbit5 {
+          0%   { top: -2px; left: 30%; opacity: 0.6; }
+          50%  { top: calc(100% + 0px); left: 70%; opacity: 0.8; }
+          100% { top: -2px; left: 30%; opacity: 0.6; }
+        }
+        @keyframes sparkOrbit6 {
+          0%   { top: 30%; left: -2px; opacity: 0.5; }
+          50%  { top: 70%; left: calc(100% + 0px); opacity: 0.7; }
+          100% { top: 30%; left: -2px; opacity: 0.5; }
         }
       `}</style>
 

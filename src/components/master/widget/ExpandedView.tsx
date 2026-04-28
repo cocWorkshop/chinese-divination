@@ -296,7 +296,7 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
                 }}
                 placeholder={isEn ? 'Ask the Master...' : '請問大師...'}
                 rows={1}
-                className="flex-1 resize-none rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-1 transition-all"
+                className="flex-1 resize-none rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-1 transition-all"
                 style={{
                   color: 'var(--text-primary)',
                   backgroundColor: 'var(--card-bg)',

@@ -66,7 +66,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
   const br = d.branchRelationships
 
   return (
-    <div className="space-y-3 sm:space-y-4 overflow-hidden">
+    <div className="space-y-3 sm:space-y-4 overflow-x-auto">
 
       <PersonInfoHeader subjectName={subjectName} birthInfo={birthInfo} createdAt={createdAt} />
 

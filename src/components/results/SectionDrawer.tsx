@@ -115,7 +115,7 @@ export default function SectionDrawer({
             transition={{ duration: 0.25 }}
             className="overflow-hidden"
           >
-            <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-gold/10">
+            <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-gold/10 overflow-x-auto">
               {children}
             </div>
           </motion.div>
