@@ -91,12 +91,15 @@ export const ziweiSchemaV2 = z.object({
   type: z.literal('ziwei'),
   version: z.literal(2),
 
-  // merge-injected
+  // merge-injected (overwritten by handler.merge from the iztro chart — the
+  // shape here mirrors what merge actually produces: name/palace/brightness/
+  // mutagen, NOT element).
   mainStars: z.array(z.object({
     name: z.string().describe('紫微'),
     palace: z.string().describe('命宫'),
-    element: z.string().describe('土'),
-  })).default([{ name: '紫微', palace: '命宫', element: '土' }]),
+    brightness: z.string().optional().describe('庙'),
+    mutagen: z.string().optional().describe('化禄'),
+  })).default([{ name: '紫微', palace: '命宫' }]),
 
   patterns: z.array(z.object({
     name: z.string().describe('格局名'),

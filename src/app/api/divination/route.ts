@@ -81,6 +81,12 @@ export async function POST(req: NextRequest) {
       'model1Name',
       'llmTimeoutSeconds',
       'llmMaxTokens',
+      // Per-endpoint overrides resolveLLMConfig reads first for endpoint
+      // 'divination' (see SETTING_KEYS in lib/llm/settings.ts). These were
+      // missing, so admin-configured per-function timeout/max-tokens were
+      // silently ignored and only the global llm* fallbacks took effect.
+      'divinationMaxTokens',
+      'divinationTimeoutSeconds',
       'divinationReasoningEffort',
       'llmReasoningEffort',
     ]

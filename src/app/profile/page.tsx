@@ -292,23 +292,6 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* C2: Master memory quick-access card — links to /profile/portrait */}
-      <a
-        href="/profile/portrait"
-        className="glass-card rounded-xl p-4 mb-6 flex items-center gap-4 border border-gold/20 hover:border-gold/40 transition-all group cursor-pointer block"
-      >
-        <span className="text-2xl flex-shrink-0">🧙‍♂️</span>
-        <div className="flex-1 min-w-0">
-          <div className="font-serif text-sm text-gold group-hover:text-gold/90 transition-colors">
-            {T(lang, '玄機大師記憶', 'Master Xuanji Memory')}
-          </div>
-          <div className="text-xs text-white/40 mt-0.5">
-            {T(lang, '查看、編輯大師對你的了解', 'View and edit what the Master remembers about you')}
-          </div>
-        </div>
-        <span className="text-white/30 group-hover:text-gold/60 transition-colors text-sm">→</span>
-      </a>
-
       {/* Tab Navigation */}
       <div className="flex rounded-xl overflow-hidden mb-6 border border-gold/20">
         {TABS.map(tab => (

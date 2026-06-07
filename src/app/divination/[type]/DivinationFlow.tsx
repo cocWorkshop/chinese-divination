@@ -9,7 +9,7 @@ import { T } from './constants'
 import DivinationForm from './forms/DivinationForm'
 import GeneratingState from './components/GeneratingState'
 import ReadingPanel from './components/ReadingPanel'
-import CacheBanner from './components/CacheBanner'
+import CacheDialog from './components/CacheDialog'
 
 /**
  * Stage orchestrator — switches between form (stage 1), generating
@@ -41,7 +41,7 @@ export default function DivinationFlow() {
   // Stages 1 & 2 — form / generating share the narrower form layout.
   return (
     <div className={`flex flex-col py-8 sm:py-12 px-3 sm:px-4 max-w-4xl mx-auto w-full ${loading ? '' : 'min-h-[calc(100vh-4rem)]'}`}>
-      <CacheBanner />
+      <CacheDialog />
 
       {/* Page header (type symbol + name). Hidden during the generating
           stage so it doesn't sit redundantly above the animated loader. */}

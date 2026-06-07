@@ -110,3 +110,42 @@ describe('calculateLiuYao', () => {
     expect(chart.originalHexagram.fullName).toContain('坤')
   })
 })
+
+// Value-level regression guard for the 京房八宫 table + 六亲 logic. The
+// original code had a hand-typed palace table wrong for ~48/64 hexagrams and a
+// getSixRelative() that could never assign 妻财/官鬼 (emitting '?'). The old
+// tests only checked truthiness, so both bugs survived. These pin actual values.
+describe('六爻 京房八宫 / 世应 / 六亲 — value regression', () => {
+  const VALID_RELATIVES = ['兄弟', '子孙', '父母', '妻财', '官鬼']
+  const PALACES = ['乾', '坤', '震', '巽', '坎', '离', '艮', '兑']
+
+  it('all 64 hexagrams resolve a valid 宫, exactly one 世/一应 (3 apart), and never a "?" 六亲', () => {
+    for (let mask = 0; mask < 64; mask++) {
+      const values: number[] = []
+      for (let i = 0; i < 6; i++) values.push(((mask >> i) & 1) ? 7 : 8)
+      const o = calculateLiuYao(makeLines(values)).originalHexagram
+      expect(PALACES).toContain(o.palace)
+      const shi = o.lines.filter(l => l.isShiYao)
+      const ying = o.lines.filter(l => l.isYingYao)
+      expect(shi).toHaveLength(1)
+      expect(ying).toHaveLength(1)
+      expect(Math.abs(shi[0].position - ying[0].position)).toBe(3)
+      for (const l of o.lines) expect(VALID_RELATIVES).toContain(l.sixRelative)
+    }
+  })
+
+  it.each([
+    { values: [7, 7, 7, 7, 7, 7], name: '乾为天', palace: '乾', el: '金', shi: 6, ying: 3, six: ['子孙', '妻财', '父母', '官鬼', '兄弟', '父母'] },
+    { values: [8, 8, 8, 8, 8, 8], name: '坤为地', palace: '坤', el: '土', shi: 6, ying: 3, six: ['兄弟', '父母', '官鬼', '兄弟', '妻财', '子孙'] },
+    { values: [8, 8, 7, 7, 7, 7], name: '天山遁', palace: '乾', el: '金', shi: 2, ying: 5, six: ['父母', '官鬼', '兄弟', '官鬼', '兄弟', '父母'] },
+    { values: [8, 7, 8, 8, 8, 8], name: '地水师', palace: '坎', el: '水', shi: 3, ying: 6, six: ['子孙', '官鬼', '妻财', '官鬼', '兄弟', '父母'] },
+  ])('$name → correct 宫/世应/六亲', ({ values, name, palace, el, shi, ying, six }) => {
+    const o = calculateLiuYao(makeLines(values)).originalHexagram
+    expect(o.fullName).toBe(name)
+    expect(o.palace).toBe(palace)
+    expect(o.palaceElement).toBe(el)
+    expect(o.lines.find(l => l.isShiYao)!.position).toBe(shi)
+    expect(o.lines.find(l => l.isYingYao)!.position).toBe(ying)
+    expect(o.lines.map(l => l.sixRelative)).toEqual(six)
+  })
+})

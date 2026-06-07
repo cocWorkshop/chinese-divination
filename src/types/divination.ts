@@ -129,6 +129,8 @@ export interface BaziDataV2 {
     combines: { branch1: string; pillar1: string; branch2: string; pillar2: string; result: string }[]
     harms: { branch1: string; pillar1: string; branch2: string; pillar2: string }[]
     punishments: { branches: string[]; pillars: string[]; type: string }[]
+    triCombines?: { branches: string[]; pillars: string[]; element: string; kind: 'full' | 'half' | 'gong' }[]
+    threeWayMeets?: { branches: string[]; pillars: string[]; element: string; direction: string; kind: 'full' | 'half' }[]
   }
   liuNian?: LiuNianEntry[]
   hideHeavenStemDay?: { stem: string; type: string }

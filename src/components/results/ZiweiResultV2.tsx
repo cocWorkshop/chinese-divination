@@ -291,7 +291,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
             {daYunAnalysis.map((dy, i) => {
               const stemEl = charElement(dy.heavenlyStem || '')
               return (
-                <details key={i} className="glass-card rounded-xl border border-gold/20 group" open={i === 0}>
+                <details key={i} className="glass-card rounded-xl border border-gold/20 group" open>
                   <summary className="flex items-center gap-3 px-3 py-2.5 cursor-pointer list-none">
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <span className={`text-lg font-serif font-bold ${elClr[stemEl] || ''}`}>{dy.heavenlyStem}{dy.earthlyBranch}</span>

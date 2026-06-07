@@ -279,6 +279,11 @@ export default function PortraitPage() {
     )
   }
 
+  // Only the 記憶功能 (enable/pause) card is shown to users for now. The other
+  // cards (current memory editor, history, chat sessions) are hidden behind
+  // this flag — kept in code so they can be re-enabled without rewriting.
+  const SHOW_MEMORY_DETAILS: boolean = false
+
   return (
     <div className="flex-1 px-4 py-12" style={{ background: 'var(--bg-primary)' }}>
       <div className="max-w-3xl mx-auto space-y-6">
@@ -300,16 +305,8 @@ export default function PortraitPage() {
               </h2>
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                 {portraitEnabled
-                  ? T(
-                      lang,
-                      '已啟用 — 您在對話中提到的主題與偏好會記錄於下方，您可隨時查看、編輯或暫停。',
-                      'Enabled — topics and preferences you mention are noted below. You can view, edit, or pause at any time.',
-                    )
-                  : T(
-                      lang,
-                      '已暫停 — 已保存的內容保留不變，不會新增記錄。',
-                      'Paused — existing memory is kept unchanged; no new notes will be added.',
-                    )}
+                  ? T(lang, '已啟用', 'Enabled')
+                  : T(lang, '已暫停', 'Paused')}
               </p>
             </div>
             <button
@@ -326,6 +323,8 @@ export default function PortraitPage() {
           </div>
         </section>
 
+        {SHOW_MEMORY_DETAILS && (
+        <>
         {/* Editable portrait */}
         <section
           className="glass-card rounded-xl p-5"
@@ -690,6 +689,8 @@ export default function PortraitPage() {
             </div>
           )}
         </section>
+        </>
+        )}
 
       </div>
     </div>

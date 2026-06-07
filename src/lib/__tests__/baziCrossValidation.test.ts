@@ -211,3 +211,60 @@ describe('BaZi structural integrity — all test dates', () => {
     })
   }
 })
+
+// Regression for the 喜用神/忌神 (lucky/avoid) logic. The weak-day-master
+// branch used to push the day master's OWN element (比劫) into avoidElements
+// instead of 财 (KE_MAP[dayElement]), so the same element appeared in both
+// lucky and avoid lists and 财 was never flagged as 忌. This polluted the
+// 流年 lucky/avoid tagging and the LLM's 忌神 input.
+describe('喜用神/忌神 — lucky and avoid never overlap', () => {
+  const samples: { date: string; shichen: string }[] = [
+    { date: '1990-01-15', shichen: 'wu' },
+    { date: '2000-06-21', shichen: 'mao' },
+    { date: '1985-11-03', shichen: 'you' },
+    { date: '1972-03-20', shichen: 'zi_early' },
+    { date: '2010-09-09', shichen: 'shen' },
+    { date: '1995-07-07', shichen: 'chen' },
+    { date: '1968-12-25', shichen: 'hai' },
+  ]
+  // 五行: 生(produces), 克(overcomes).
+  const PRODUCES: Record<string, string> = { 木: '火', 火: '土', 土: '金', 金: '水', 水: '木' }
+  const PRODUCED_BY: Record<string, string> = { 火: '木', 土: '火', 金: '土', 水: '金', 木: '水' }
+  const OVERCOMES: Record<string, string> = { 木: '土', 土: '水', 水: '火', 火: '金', 金: '木' }
+  const overcameBy = (el: string) => Object.keys(OVERCOMES).find((e) => OVERCOMES[e] === el)!
+
+  for (const s of samples) {
+    it(`${s.date} ${s.shichen}: lucky/avoid are a correct 喜忌 partition`, () => {
+      const chart = calculateBazi(s.date, s.shichen, '', 'male')
+      const lucky = chart.luckyElements.filter(Boolean)
+      const avoid = chart.avoidElements.filter(Boolean)
+      const dm = chart.dayMaster.element
+
+      // Never overlapping.
+      expect(lucky.filter((e) => avoid.includes(e))).toEqual([])
+
+      const robbery = dm                 // 比劫
+      const seal = PRODUCED_BY[dm]        // 印
+      const output = PRODUCES[dm]         // 食伤
+      const wealth = OVERCOMES[dm]        // 财
+      const officer = overcameBy(dm)      // 官杀
+
+      if (chart.strength === 'weak') {
+        // 身弱: 喜 比劫+印; 忌 食伤+财+官杀 (官杀 must be present — the completion).
+        expect(lucky.sort()).toEqual([robbery, seal].sort())
+        expect(avoid.sort()).toEqual([output, wealth, officer].sort())
+        expect(avoid).toContain(officer)
+        expect(avoid).not.toContain(robbery)
+      } else if (chart.strength === 'strong') {
+        // 身强: 喜 食伤+财+官杀; 忌 比劫+印.
+        expect(lucky.sort()).toEqual([output, wealth, officer].sort())
+        expect(avoid.sort()).toEqual([robbery, seal].sort())
+        expect(lucky).toContain(officer)
+      }
+      // For strong/weak the five elements are fully partitioned.
+      if (chart.strength !== 'neutral') {
+        expect(new Set([...lucky, ...avoid]).size).toBe(5)
+      }
+    })
+  }
+})

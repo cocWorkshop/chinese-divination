@@ -177,7 +177,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
       </motion.div>
 
       {/* ═══ BRANCH RELATIONSHIPS (if any) ═══ */}
-      {br && (br.clashes.length > 0 || br.combines.length > 0 || br.harms.length > 0 || br.punishments.length > 0) && (
+      {br && (br.clashes.length > 0 || br.combines.length > 0 || br.harms.length > 0 || br.punishments.length > 0 || (br.triCombines?.length ?? 0) > 0 || (br.threeWayMeets?.length ?? 0) > 0) && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}
           className="glass-card rounded-xl p-3 border border-gold/20">
           <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '地支關係', 'Branch Relationships')}</h3>
@@ -200,6 +200,16 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
             {br.punishments.map((p, i) => (
               <span key={`punish-${i}`} className="px-2 py-0.5 rounded border border-rose-400/30 bg-rose-400/10 text-rose-400 text-[10px]">
                 {p.branches.join('')} {T(lang, '刑', 'Punish')} ({p.type})
+              </span>
+            ))}
+            {br.triCombines?.map((t, i) => (
+              <span key={`tricombine-${i}`} className="px-2 py-0.5 rounded border border-teal-400/30 bg-teal-400/10 text-teal-400 text-[10px]">
+                {t.branches.join('')} {T(lang, t.kind === 'full' ? '三合' : t.kind === 'half' ? '半三合' : '拱合', t.kind === 'full' ? 'Tri-Combine' : t.kind === 'half' ? 'Half Tri' : 'Gong')} → {t.element}
+              </span>
+            ))}
+            {br.threeWayMeets?.map((t, i) => (
+              <span key={`trimeet-${i}`} className="px-2 py-0.5 rounded border border-sky-400/30 bg-sky-400/10 text-sky-400 text-[10px]">
+                {t.branches.join('')} {T(lang, t.kind === 'full' ? '三會' : '半會', t.kind === 'full' ? 'Tri-Meet' : 'Half Meet')} → {t.direction}{t.element}
               </span>
             ))}
           </div>

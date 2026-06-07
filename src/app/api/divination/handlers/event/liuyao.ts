@@ -87,6 +87,26 @@ ${changed ? `6. **changingAnalysis**：变卦（${changed.fullName}）分析—�
     }
   },
 
-  // No merge — liuyao's programmatic chart is fully embedded in userMessage;
-  // the LLM result's interpretation is the value-add. Matches today's behavior.
+  // Inject the deterministic hexagram into the result at the root level the
+  // renderer reads (originalHexagram / changedHexagram / changingLines).
+  // Without this the chart only lived in Reading.calculationData and never
+  // reached Reading.result, so saved/shared/streamed readings rendered the
+  // prose but no hexagram at all. (Mirrors the iching handler's merge.)
+  // NOTE: do NOT tag version:2 — that flag routes bazi/ziwei to their V2
+  // components; liuyao must stay on its own renderer.
+  merge(llmResult, chart) {
+    const mapHex = (h: LiuYaoChart['originalHexagram']) => ({
+      name: h.name,
+      fullName: h.fullName,
+      number: h.number,
+      palace: h.palace,
+      palaceElement: h.palaceElement,
+      upperTrigram: { name: h.upperTrigram.name, symbol: h.upperTrigram.symbol, element: h.upperTrigram.element, nature: h.upperTrigram.nature },
+      lowerTrigram: { name: h.lowerTrigram.name, symbol: h.lowerTrigram.symbol, element: h.lowerTrigram.element, nature: h.lowerTrigram.nature },
+      lines: h.lines,
+    })
+    llmResult.originalHexagram = mapHex(chart.originalHexagram)
+    llmResult.changedHexagram = chart.changedHexagram ? mapHex(chart.changedHexagram) : null
+    llmResult.changingLines = chart.changingLines
+  },
 }

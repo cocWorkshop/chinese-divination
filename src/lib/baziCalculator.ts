@@ -490,17 +490,29 @@ export function calculateBazi(
   else if (ratio < 0.35) { strength = 'weak'; strengthLabel = '身弱' }
   else { strength = 'neutral'; strengthLabel = '中和' }
 
-  const luckyElements: string[] = []
-  const avoidElements: string[] = []
+  // 六神 elements relative to the day master:
+  const robbery = sameAsMe                  // 比劫 (same element)
+  const seal = producesMe                   // 印 (generates me)
+  const output = PRODUCES[dayElement]       // 食伤 (I generate)
+  const wealth = KE_MAP[dayElement]         // 财 (I overcome)
+  const officer = Object.keys(KE_MAP).find((e) => KE_MAP[e] === dayElement) || '' // 官杀 (overcomes me)
+
+  const luckyRaw: string[] = []
+  const avoidRaw: string[] = []
   if (strength === 'weak') {
-    luckyElements.push(sameAsMe, producesMe)
-    avoidElements.push(KE_MAP[dayElement] ? dayElement : '', PRODUCES[dayElement])
+    // 身弱：喜比劫、印（生扶日主）；忌食伤、财、官杀（耗、泄、克日主）。
+    luckyRaw.push(robbery, seal)
+    avoidRaw.push(output, wealth, officer)
   } else if (strength === 'strong') {
-    luckyElements.push(PRODUCES[dayElement], KE_MAP[dayElement] || '')
-    avoidElements.push(sameAsMe, producesMe)
+    // 身强：喜食伤、财、官杀（泄、耗、克旺身）；忌比劫、印（再生扶）。
+    luckyRaw.push(output, wealth, officer)
+    avoidRaw.push(robbery, seal)
   } else {
-    luckyElements.push(sameAsMe)
+    luckyRaw.push(robbery)
   }
+  const dedupe = (arr: string[]) => Array.from(new Set(arr.filter(Boolean)))
+  const luckyElements = dedupe(luckyRaw)
+  const avoidElements = dedupe(avoidRaw)
 
   // ─── tyme4ts: ChildLimit / Da Yun / Xiao Yun / Liu Nian ─────────────
   const tymeGender = gender === 'male' ? Gender.MAN : Gender.WOMAN
@@ -552,13 +564,18 @@ export function calculateBazi(
     })
   }
 
-  // Xiao Yun (before qi yun starts) — tyme4ts `Fortune` is the 小運; take its
-  // own year (getLunarYear) rather than manual `year + age`, which was off by
-  // one (虛歲 N = birthYear + N - 1).
+  // Xiao Yun (小運) — covers 虛歲 1 up to 起運 (exclusive), i.e. the years
+  // before the first 大運 takes over.
+  //
+  // IMPORTANT: tyme4ts indexes `Fortune` from the 起運 age — `index 0` is the
+  // 起運 虛歲 itself, and earlier ages are NEGATIVE indices (index = age −
+  // 起運虛歲). The previous code used indices 0..N, which produced the years
+  // AFTER 起運 (mislabelled as 起運前). Use `age − 起運虛歲` so age 1 maps to
+  // the correct pre-起運 小運 (時柱 ±1, direction per 陽男陰女).
   const xiaoYun: XiaoYunPillar[] = []
-  const maxXiaoYunAge = Math.floor(startAge)
-  for (let i = 0; i < Math.max(maxXiaoYunAge, 1); i++) {
-    const f = Fortune.fromChildLimit(childLimit, i)
+  const qiYunVirtualAge = daYun[0]?.startAge ?? 0
+  for (let age = 1; age < qiYunVirtualAge; age++) {
+    const f = Fortune.fromChildLimit(childLimit, age - qiYunVirtualAge)
     const sc = f.getSixtyCycle()
     xiaoYun.push({
       stem: sc.getHeavenStem().getName(),

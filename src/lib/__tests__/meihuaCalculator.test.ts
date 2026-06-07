@@ -111,4 +111,30 @@ describe('calculateMeihua', () => {
     expect(chart.hourNum).toBeGreaterThanOrEqual(1)
     expect(chart.hourNum).toBeLessThanOrEqual(12)
   })
+
+  // 早子时 (zi_early) and 子 are the same shichen (#1) on the SAME day.
+  it('zi_early and zi resolve to the same shichen #1 (same day)', () => {
+    const a = calculateMeihua('2024-03-15', 'zi_early')
+    const b = calculateMeihua('2024-03-15', 'zi')
+    expect(a.hourNum).toBe(1)
+    expect(b.hourNum).toBe(1)
+    expect(a.benGua.name).toBe(b.benGua.name)
+    expect(a.changingLine).toBe(b.changingLine)
+  })
+
+  // 晚子时 (zi_late, 23:00–24:00) rolls to the NEXT lunar day (子时换日),
+  // so it must equal the next calendar day's 早子时 chart — NOT the same day's.
+  it('zi_late rolls to the next day (子时换日), matching next-day zi_early', () => {
+    const keys = ['lunarYear', 'lunarMonth', 'lunarDay', 'upperNum', 'lowerNum', 'changingLine'] as const
+    for (const [d, next] of [['2024-03-15', '2024-03-16'], ['1990-05-15', '1990-05-16']]) {
+      const late = calculateMeihua(d, 'zi_late')
+      const nextEarly = calculateMeihua(next, 'zi_early')
+      for (const k of keys) expect(late[k]).toBe(nextEarly[k])
+      expect(late.benGua.name).toBe(nextEarly.benGua.name)
+      expect(late.bianGua.name).toBe(nextEarly.bianGua.name)
+      // And it must DIFFER from the same day's 早子时 (the pre-fix behavior).
+      const sameEarly = calculateMeihua(d, 'zi_early')
+      expect(late.lunarDay).not.toBe(sameEarly.lunarDay)
+    }
+  })
 })
