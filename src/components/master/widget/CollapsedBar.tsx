@@ -36,6 +36,21 @@ const typeLabels: Record<string, { 'zh-TW': string; en: string }> = {
   other: { 'zh-TW': '命理', en: 'Reading' },
 }
 
+// The thing being read, by type. Destiny charts (八字/紫微) are 命盤; hexagram
+// / event casts are not — 易經·六爻·梅花 produce a 卦象, 奇門 a 局, 風水 a 格局.
+// Calling everything "命盤" reads wrong for the oracle types, so each carries
+// its own noun appended after the type name (e.g. "六爻卦象", "奇門局").
+const readingNoun: Record<string, { 'zh-TW': string; en: string }> = {
+  bazi: { 'zh-TW': '命盤', en: 'chart' },
+  ziwei: { 'zh-TW': '命盤', en: 'chart' },
+  iching: { 'zh-TW': '卦象', en: 'hexagram' },
+  qimen: { 'zh-TW': '局', en: 'chart' },
+  liuyao: { 'zh-TW': '卦象', en: 'hexagram' },
+  meihua: { 'zh-TW': '卦象', en: 'hexagram' },
+  fengshui: { 'zh-TW': '格局', en: 'analysis' },
+  other: { 'zh-TW': '卦象', en: 'reading' },
+}
+
 export default function CollapsedBar({ needsMemoryGate, onRequestGate }: Props) {
   const { lang } = useLang()
   const isEn = lang === 'en'
@@ -80,6 +95,8 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate }: Props) 
       {pendingReading ? (() => {
         const label = typeLabels[pendingReading.type]
         const typeName = label ? label[isEn ? 'en' : 'zh-TW'] : pendingReading.type
+        const noun = readingNoun[pendingReading.type] ?? readingNoun.other
+        const nounText = noun[isEn ? 'en' : 'zh-TW']
         return (
           // Two separate click targets sharing the bar — primary is
           // "return to form" (most-used path), secondary is the cancel
@@ -109,8 +126,8 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate }: Props) 
               <span className="flex-1 min-w-0 truncate text-sm">
                 <span className="font-serif" style={{ color: 'var(--gold)' }}>
                   {pendingReading.subjectName
-                    ? (isEn ? `Reading ${pendingReading.subjectName}'s ${typeName} chart...` : `正在研讀${pendingReading.subjectName}的${typeName}命盤...`)
-                    : (isEn ? `Reading your ${typeName} chart...` : `正在研讀您的${typeName}命盤...`)}
+                    ? (isEn ? `Reading ${pendingReading.subjectName}'s ${typeName} ${nounText}...` : `正在研讀${pendingReading.subjectName}的${typeName}${nounText}...`)
+                    : (isEn ? `Reading your ${typeName} ${nounText}...` : `正在研讀您的${typeName}${nounText}...`)}
                 </span>
                 <span className="ml-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                   {isEn ? '· let me take a look' : '· 讓我先看看'}

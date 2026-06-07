@@ -101,13 +101,13 @@ export async function POST(_req: Request, { params }: RouteParams) {
   let rawOutput = ''
   try {
     const result = await completeLLM({
+      // Mirror the real extractor: maxTokens / reasoning resolved from the
+      // masterBackground admin config (only the model is pre-resolved).
       endpoint: 'masterBackground',
       userId: targetUserId,
       systemPrompt: DRY_RUN_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
       model,
-      maxTokens: 1500,
-      reasoningEffort: 'low',
     })
     rawOutput = result.content || ''
     proposed = parseExtractorOutput(rawOutput)

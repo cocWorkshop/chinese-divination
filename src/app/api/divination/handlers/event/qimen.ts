@@ -37,6 +37,12 @@ ${JSON.stringify({
   },
   zhiFu: chart.zhiFu,
   zhiShi: chart.zhiShi,
+  关键落宫: {
+    值符落宫: chart.zhiFuPalace,
+    值使落宫: chart.zhiShiPalace,
+    旬空: { 地支: chart.voidBranches, 落宫: chart.voidPalaces },
+    驿马: { 地支: chart.horseBranch, 落宫: chart.horsePalace },
+  },
   palaces: chart.palaces.map(p => ({
     name: p.name,
     direction: p.direction,
@@ -63,8 +69,8 @@ ${ctx.question ? `- 求测问题：${ctx.question}` : '- 求测问题：综合�
 ## 解盘要求
 你是资深奇门遁甲术数师，请基于以上程序排出的奇门盘进行分析。重点：
 1. **situation**：分析当前格局，值符${chart.zhiFu}和值使${chart.zhiShi}的含义${chart.patterns.length > 0 ? `，重点分析已检测到的格局：${chart.patterns.map(p => p.name).join('、')}` : ''}（100字以上）
-2. **trend**：从九宫格局分析事态走向，特别关注天盘与地盘天干的关系（100字以上）
-3. **timing**：根据八门旺衰判断最佳时机（100字以上）
+2. **trend**：从九宫格局分析事态走向，特别关注天盘与地盘天干的关系，并结合**值符落宫（${chart.zhiFuPalace}）、值使落宫（${chart.zhiShiPalace}）**判断用神状态（100字以上）
+3. **timing**：根据八门旺衰判断最佳时机，**务必结合旬空（${chart.voidBranches.join('')}空亡）与驿马（马在${chart.horseBranch}）** —— 空亡主迟滞落空、填实则应；驿马主动象与应期（100字以上）
 4. **strategy**：综合星、门、神给出行动策略（100字以上）
 
 同时请判断整体吉凶(outcome字段)，并确定palace字段中的inquiry(问事宫)、outcome(结果宫)、god(值符神)、star(值符星)、door(当值门)。
@@ -87,6 +93,12 @@ ${ctx.question ? `- 求测问题：${ctx.question}` : '- 求测问题：综合�
       roundLabel: chart.roundLabel,
       zhiFu: chart.zhiFu,
       zhiShi: chart.zhiShi,
+      zhiFuPalace: chart.zhiFuPalace,
+      zhiShiPalace: chart.zhiShiPalace,
+      voidBranches: chart.voidBranches,
+      voidPalaces: chart.voidPalaces,
+      horseBranch: chart.horseBranch,
+      horsePalace: chart.horsePalace,
       palaces: chart.palaces,
       grid: chart.grid,
       patterns: chart.patterns,

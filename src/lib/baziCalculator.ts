@@ -157,6 +157,12 @@ export interface BaziChart {
   fetalOrigin?: string
   ownSign?: string
   bodySign?: string
+  /** Pillar-shaped data (干支/藏干/十神/长生/纳音) for 命宫/身宫/胎元, so they
+   *  can render as extra columns alongside the four pillars. No per-pillar
+   *  神煞/空亡 are computed for these (left empty). */
+  ownSignPillar?: PillarData
+  bodySignPillar?: PillarData
+  fetalOriginPillar?: PillarData
   /** 截路空亡 — day-stem-driven hour-branch block; absent when not triggered. */
   jieLu?: JieLuInfo
   /** Per-ten-god structural-strength signals. Always populated. */
@@ -632,16 +638,42 @@ export function calculateBazi(
   )
 
   // ─── 胎元 / 命宫 / 身宫 ──────────────────────────────────────────────
+  // Build pillar-shaped data (干支/藏干/十神/长生/纳音) for each, mirroring
+  // makePillar() but without per-pillar 神煞/空亡 (not meaningful for these
+  // reference points).
   let fetalOrigin: string | undefined
   let ownSign: string | undefined
   let bodySign: string | undefined
+  let fetalOriginPillar: PillarData | undefined
+  let ownSignPillar: PillarData | undefined
+  let bodySignPillar: PillarData | undefined
+  const makePalacePillar = (sc: SixtyCycle): PillarData => {
+    const stem = sc.getHeavenStem().getName()
+    const branch = sc.getEarthBranch().getName()
+    const hidden = HIDDEN_STEMS[branch] || []
+    const gods = hidden.map(hs => ({ stem: hs, god: tenGod(dStem, hs) }))
+    return {
+      stem,
+      branch,
+      element: STEM_ELEMENT[stem] || '',
+      nayin: sc.getSound().getName(),
+      hiddenStems: hidden,
+      tenGods: [{ stem, god: dayStemObj.getTenStar(sc.getHeavenStem()).getName() }, ...gods],
+      changSheng: dayStemObj.getTerrain(sc.getEarthBranch()).getName(),
+      kongWang: [],
+      shenSha: [],
+    }
+  }
   try {
     const fo = eightChar.getFetalOrigin()
     fetalOrigin = fo.getName()
+    fetalOriginPillar = makePalacePillar(fo)
     const os = eightChar.getOwnSign()
     ownSign = os.getName()
+    ownSignPillar = makePalacePillar(os)
     const bs = eightChar.getBodySign()
     bodySign = bs.getName()
+    bodySignPillar = makePalacePillar(bs)
   } catch {
     // fallback: leave undefined
   }
@@ -671,6 +703,9 @@ export function calculateBazi(
     fetalOrigin,
     ownSign,
     bodySign,
+    ownSignPillar,
+    bodySignPillar,
+    fetalOriginPillar,
     jieLu,
     tenGodStrength,
   }

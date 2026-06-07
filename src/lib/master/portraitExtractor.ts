@@ -47,7 +47,7 @@ import { renderPersonalizedPrompt } from './personalizedPrompt'
 export const EXTRACTION_TURN_THRESHOLD = 8
 export const EXTRACTION_TIME_THRESHOLD_MS = 24 * 60 * 60 * 1000 // 24 hours
 export const MIN_TURNS_FOR_TIME_TRIGGER = 3
-export const EXTRACTOR_MAX_TOKENS = 1500
+// Output length governed by the `masterBackground` max-tokens admin setting.
 
 const EXTRACTION_SYSTEM_PROMPT = `你正在更新一个用户的"玄机大师记忆"画像。
 
@@ -271,13 +271,13 @@ export async function maybeExtractPortrait(
     })
 
     const result = await completeLLM({
+      // maxTokens / reasoning / timeout resolved from the masterBackground
+      // admin config; only the model is pre-resolved (shared TTL cache).
       endpoint: 'masterBackground',
       userId: input.userId,
       systemPrompt: EXTRACTION_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
       model,
-      maxTokens: EXTRACTOR_MAX_TOKENS,
-      reasoningEffort: 'low',
     })
 
     const parsed = parseExtractorOutput(result.content || '')

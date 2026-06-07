@@ -122,7 +122,7 @@ export async function completeLLM(
         }
         const body = {
           ...baseBody,
-          ...buildReasoningParam(cfg.reasoningEffort, cfg.maxTokens),
+          ...buildReasoningParam(cfg.reasoningEffort),
         } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming
         const completion = await client.chat.completions.create(
           body,

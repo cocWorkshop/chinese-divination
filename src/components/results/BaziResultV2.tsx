@@ -60,6 +60,17 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
     { label: '時柱', en: 'Hour', data: d.pillars?.hour },
   ]
 
+  // 命宫/身宫/胎元 rendered as extra columns AHEAD of the four pillars (only
+  // those with computed pillar data show). `palaceCount` marks where the
+  // visual divider before 年柱 goes.
+  const palaceColumns = [
+    { label: '命宮', en: 'Life', data: d.ownSignPillar },
+    { label: '身宮', en: 'Body', data: d.bodySignPillar },
+    { label: '胎元', en: 'Fetal', data: d.fetalOriginPillar },
+  ].filter(c => c.data)
+  const palaceCount = palaceColumns.length
+  const tableColumns = [...palaceColumns, ...pillars]
+
   const fe = d.fiveElements || {}
   const feEntries: [string, number][] = [
     ['木', fe.wood || 0], ['火', fe.fire || 0], ['土', fe.earth || 0], ['金', fe.metal || 0], ['水', fe.water || 0],
@@ -161,22 +172,8 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                 <span key={el} className="text-red-400 text-xs font-bold">{el}</span>
               ))}
             </div>
-            <div className="space-y-0.5 mt-2">
-              {d.fetalOrigin && <div className="text-[var(--text-muted)] text-[9px]">{T(lang, '胎元', 'Fetal')}: <span className="text-[var(--text-secondary)]">{d.fetalOrigin}</span></div>}
-              {d.ownSign && <div className="text-[var(--text-muted)] text-[9px]">{T(lang, '命宮', 'Life')}: <span className="text-[var(--text-secondary)]">{d.ownSign}</span></div>}
-              {d.bodySign && <div className="text-[var(--text-muted)] text-[9px]">{T(lang, '身宮', 'Body')}: <span className="text-[var(--text-secondary)]">{d.bodySign}</span></div>}
-            </div>
           </div>
         </div>
-
-        {/* Mobile-only: extras row at the bottom */}
-        {(d.fetalOrigin || d.ownSign || d.bodySign) && (
-          <div className="sm:hidden mt-2 pt-2 border-t border-gold/10 flex flex-wrap gap-x-3 gap-y-1 text-[9px]">
-            {d.fetalOrigin && <div className="text-[var(--text-muted)]">{T(lang, '胎元', 'Fetal')}: <span className="text-[var(--text-secondary)]">{d.fetalOrigin}</span></div>}
-            {d.ownSign && <div className="text-[var(--text-muted)]">{T(lang, '命宮', 'Life')}: <span className="text-[var(--text-secondary)]">{d.ownSign}</span></div>}
-            {d.bodySign && <div className="text-[var(--text-muted)]">{T(lang, '身宮', 'Body')}: <span className="text-[var(--text-secondary)]">{d.bodySign}</span></div>}
-          </div>
-        )}
       </motion.div>
 
       {/* ═══ BRANCH RELATIONSHIPS (if any) ═══ */}
@@ -236,12 +233,13 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                 {tst.shichenChanged && <span className="text-amber-400 text-[10px]">{T(lang, '⚠️時辰已變', '⚠️ Hour shifted')}</span>}
               </div>
             )}
-            <table className="w-full text-center border-collapse">
+            <div className="overflow-x-auto">
+            <table className={`w-full text-center border-collapse ${palaceCount > 0 ? 'min-w-[520px]' : ''}`}>
               <thead>
                 <tr>
                   <td className="text-[var(--text-muted)] text-[10px] sm:text-xs py-1 w-12 sm:w-16"></td>
-                  {pillars.map(p => (
-                    <td key={p.label} className="text-[var(--text-secondary)] text-[10px] sm:text-xs py-1 font-medium">
+                  {tableColumns.map((p, ci) => (
+                    <td key={p.label} className={`text-[10px] sm:text-xs py-1 font-medium ${ci < palaceCount ? 'text-gold/80' : 'text-[var(--text-secondary)]'}${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>
                       {T(lang, p.label, p.en)}
                     </td>
                   ))}
@@ -250,17 +248,17 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
               <tbody>
                 <tr className="border-t border-white/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '主星', 'God')}</td>
-                  {pillars.map(({ label, data: p }) => {
+                  {tableColumns.map(({ label, data: p }, ci) => {
                     const god = label === '日柱' ? T(lang, '日主', 'Self') : p?.tenGods?.[0]?.god || ''
-                    return <td key={label} className="text-[var(--text-secondary)] text-[10px] sm:text-xs py-1">{god}</td>
+                    return <td key={label} className={`text-[var(--text-secondary)] text-[10px] sm:text-xs py-1${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>{god}</td>
                   })}
                 </tr>
                 <tr className="border-t border-[var(--text-muted)]/10">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '天干', 'Stem')}</td>
-                  {pillars.map(({ label, data: p }) => {
+                  {tableColumns.map(({ label, data: p }, ci) => {
                     const el = charElement(p?.stem || '')
                     return (
-                      <td key={label} className="py-1.5">
+                      <td key={label} className={`py-1.5${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>
                         <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[el]}`}>{p?.stem || '?'}</span>
                         {el && <span className="text-[10px] ml-0.5 opacity-70" aria-label={el}>{ELEMENT_ICON[el]}</span>}
                       </td>
@@ -269,10 +267,10 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                 </tr>
                 <tr className="border-t border-[var(--text-muted)]/10">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '地支', 'Branch')}</td>
-                  {pillars.map(({ label, data: p }) => {
+                  {tableColumns.map(({ label, data: p }, ci) => {
                     const el = charElement(p?.branch || '')
                     return (
-                      <td key={label} className="py-1.5">
+                      <td key={label} className={`py-1.5${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>
                         <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[el]}`}>{p?.branch || '?'}</span>
                         {el && <span className="text-[10px] ml-0.5 opacity-70" aria-label={el}>{ELEMENT_ICON[el]}</span>}
                       </td>
@@ -281,8 +279,8 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                 </tr>
                 <tr className="border-t border-white/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '藏干', 'Hidden')}</td>
-                  {pillars.map(({ label, data: p }) => (
-                    <td key={label} className="text-[10px] py-1 leading-tight">
+                  {tableColumns.map(({ label, data: p }, ci) => (
+                    <td key={label} className={`text-[10px] py-1 leading-tight${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>
                       {(p?.hiddenStems || []).map((hs, i) => (
                         <span key={i} className={elClr[STEM_ELEMENT_MAP[hs] || ''] || 'text-[var(--text-muted)]'}>{hs} </span>
                       ))}
@@ -291,37 +289,37 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                 </tr>
                 <tr className="border-t border-white/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '副星', 'Sub')}</td>
-                  {pillars.map(({ label, data: p }) => (
-                    <td key={label} className="text-[var(--text-muted)] text-[10px] py-1 leading-tight">
+                  {tableColumns.map(({ label, data: p }, ci) => (
+                    <td key={label} className={`text-[var(--text-muted)] text-[10px] py-1 leading-tight${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>
                       {(p?.tenGods || []).slice(1).map((tg, i) => <div key={i}>{tg.god}</div>)}
                     </td>
                   ))}
                 </tr>
                 <tr className="border-t border-white/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '長生', 'Stage')}</td>
-                  {pillars.map(({ label, data: p }) => (
-                    <td key={label} className="text-[var(--text-muted)] text-[10px] py-1">{p?.changSheng || ''}</td>
+                  {tableColumns.map(({ label, data: p }, ci) => (
+                    <td key={label} className={`text-[var(--text-muted)] text-[10px] py-1${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>{p?.changSheng || ''}</td>
                   ))}
                 </tr>
                 <tr className="border-t border-white/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '納音', 'Nayin')}</td>
-                  {pillars.map(({ label, data: p }) => (
-                    <td key={label} className="text-[var(--text-muted)] text-[10px] py-1">{p?.nayin || ''}</td>
+                  {tableColumns.map(({ label, data: p }, ci) => (
+                    <td key={label} className={`text-[var(--text-muted)] text-[10px] py-1${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>{p?.nayin || ''}</td>
                   ))}
                 </tr>
                 <tr className="border-t border-white/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '空亡', 'Void')}</td>
-                  {pillars.map(({ label, data: p }) => (
-                    <td key={label} className="text-[var(--text-muted)] text-[10px] py-1">{(p?.kongWang || []).join('')}</td>
+                  {tableColumns.map(({ label, data: p }, ci) => (
+                    <td key={label} className={`text-[var(--text-muted)] text-[10px] py-1${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>{(p?.kongWang || []).join('')}</td>
                   ))}
                 </tr>
                 {allPillarShenSha && (
                   <tr className="border-t border-white/5">
                     <td className="text-[var(--text-muted)] text-[10px] py-1 align-top">{T(lang, '神煞', 'Spirits')}</td>
-                    {pillars.map(({ label, data: p }) => {
+                    {tableColumns.map(({ label, data: p }, ci) => {
                       const ss = p?.shenSha || []
                       return (
-                        <td key={label} className="py-1 align-top">
+                        <td key={label} className={`py-1 align-top${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>
                           <div className="flex flex-col items-center gap-0.5">
                             {ss.length > 0 ? ss.map((s: ShenShaEntry, i: number) => (
                               <span key={i} className="group relative px-1 py-0.5 rounded border border-gold/20 bg-gold/5 text-gold text-[9px] cursor-default leading-none whitespace-nowrap">
@@ -339,6 +337,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                 )}
               </tbody>
             </table>
+            </div>
           </motion.div>
 
           {/* Da Yun + Xiao Yun — shown directly (no collapse) */}

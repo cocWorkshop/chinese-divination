@@ -38,8 +38,8 @@ export const COMPRESSION_TOKEN_BUDGET = 60_000
 /** Number of recent prose turns kept verbatim (never summarized). */
 export const KEEP_RECENT_TURNS = 10
 
-/** Maximum tokens for the summarizer's output. */
-export const SUMMARY_MAX_TOKENS = 1500
+// Summarizer output length is governed by the `masterBackground` function's
+// max-tokens admin setting (default 1500), not a hardcoded constant.
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -168,12 +168,13 @@ async function narrativeSummarize(
     // Background task — uses the 'masterBackground' endpoint so it resolves the
     // admin-configured background model (separate from the main answer model).
     const result = await completeLLM({
+      // model / maxTokens / reasoning / timeout all resolved from the
+      // masterBackground admin config (no per-call overrides — so the admin
+      // settings are authoritative for this background task).
       endpoint: 'masterBackground',
       userId,
       systemPrompt: NARRATIVE_SUMMARY_SYSTEM_PROMPT_ZH,
       messages: [{ role: 'user', content: serializeForSummary(oldMessages) }],
-      maxTokens: SUMMARY_MAX_TOKENS,
-      reasoningEffort: 'low',
     })
     return result.content?.trim() || null
   } catch (err) {

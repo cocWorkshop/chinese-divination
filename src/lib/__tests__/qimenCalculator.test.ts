@@ -145,3 +145,68 @@ describe('calculateQimen', () => {
     expect(divinities.length).toBeGreaterThanOrEqual(8)
   })
 })
+
+// Value-level regression tests — assert known-date → known chart values and
+// that pattern conditions are actually reachable (so a 格局 can't silently die,
+// as 青龙返首 did when gated on the impossible 地盘甲).
+describe('calculateQimen — value-level regression', () => {
+  it('known cast 2024-06-01 12:00 → exact 干支 / 節氣 / 局 / 值符值使', () => {
+    const c = calculateQimen(new Date('2024-06-01T12:00:00'))
+    expect(c.year).toBe('甲辰')
+    expect(c.month).toBe('己巳')
+    expect(c.day).toBe('丁酉')
+    expect(c.hour).toBe('丙午')      // 丁日午時 = 丙午 (五鼠遁)
+    expect(c.solarTerm).toBe('小满')
+    expect(c.roundLabel).toBe('阳遁8局')
+    expect(c.zhiFu).toBe('天冲星')
+    expect(c.zhiShi).toBe('伤门')
+  })
+
+  it('甲 never appears on the heaven/earth plate (hidden as 戊/旬首)', () => {
+    // Guards the dead-condition class: any rule testing for 甲 can never fire.
+    for (let m = 0; m < 12; m++) {
+      const c = calculateQimen(new Date(2024, m, 15, 9, 0, 0))
+      for (const p of c.palaces) {
+        expect(p.heavenStem).not.toContain('甲')
+        expect(p.earthStem).not.toContain('甲')
+      }
+    }
+  })
+
+  it('寄宫 keeps BOTH stacked stars/stems, normalized to 、 (no raw comma leak)', () => {
+    let found = false
+    for (let d = 0; d < 40 && !found; d++) {
+      const c = calculateQimen(new Date(2024, 2, 1 + d, 9, 0, 0))
+      for (const p of c.palaces) {
+        if (p.star.includes('天禽星')) {
+          found = true
+          expect(p.star).toContain('天芮星')   // 天禽 no longer dropped
+          expect(p.star).toContain('、')
+          expect(p.star).not.toContain(',')
+          expect(p.heavenStem).not.toContain(',')
+        }
+      }
+    }
+    expect(found).toBe(true)
+  })
+
+  it('derives 值符/值使落宮 + 旬空 + 驛馬 for 2024-06-01 12:00', () => {
+    const c = calculateQimen(new Date('2024-06-01T12:00:00'))
+    expect(c.zhiFuPalace).toBe('乾宫')                 // 值符天冲星 落 乾6
+    expect(c.zhiShiPalace).toMatch(/宫$/)              // 值使伤门 sits in a palace
+    expect(c.voidBranches).toEqual(['寅', '卯'])        // 丙午 ∈ 甲辰旬 → 旬空 寅卯
+    expect(c.voidPalaces).toEqual(expect.arrayContaining(['艮宫', '震宫']))
+    expect(c.horseBranch).toBe('申')                   // 午 ∈ 寅午戌 → 馬在申
+    expect(c.horsePalace).toBe('坤宫')                 // 申 落 坤2
+  })
+
+  it('青龙返首 (戊天盤 + 丙地盤) is reachable — not a dead condition', () => {
+    const names = new Set<string>()
+    const start = new Date('2024-01-01T00:00:00').getTime()
+    const end = new Date('2025-01-01T00:00:00').getTime()
+    for (let t = start; t < end; t += 4 * 3600_000) {
+      for (const p of calculateQimen(new Date(t)).patterns) names.add(p.name)
+    }
+    expect(names.has('青龙返首')).toBe(true)
+  }, 30000)
+})

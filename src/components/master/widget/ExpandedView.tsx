@@ -37,6 +37,7 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
     sendMessage,
     startNewSession,
     widgetOpener,
+    notifyTyping,
   } = useMasterChat()
 
   const [input, setInput] = useState('')
@@ -98,6 +99,7 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
       return
     }
     setInput('')
+    notifyTyping(0)  // draft consumed — clear the typing guard
     userScrolledRef.current = false
     sendMessage(msg)
     inputRef.current?.focus()
@@ -283,7 +285,12 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
               <textarea
                 ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value)
+                  // Tell the provider the user is composing so proactive
+                  // turns (reflection / activation checkin) hold off.
+                  notifyTyping(e.target.value.length)
+                }}
                 onKeyDown={handleKeyDown}
                 onFocus={(e) => {
                   // If memory was paused while the widget was still expanded

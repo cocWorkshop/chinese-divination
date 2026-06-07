@@ -1,17 +1,24 @@
 /**
  * Helpers for building / unpacking OpenRouter's `reasoning` parameter.
  *
- * OpenRouter exposes a unified reasoning object:
- *   { effort: 'low' | 'medium' | 'high' | ..., max_tokens?: number, enabled?: boolean, exclude?: boolean }
+ * We send the UNIFIED `effort` form — `{ reasoning: { effort: 'low'|'medium'|'high' } }`
+ * — which is the most portable control across providers on OpenRouter:
+ *   - OpenAI o-series / GPT-5 and xAI Grok take `effort` natively.
+ *   - For Anthropic extended-thinking and Gemini "thinking" models, OpenRouter
+ *     converts `effort` into the provider's reasoning/thinking-token budget
+ *     (a fraction of max_tokens), leaving the remainder for content output.
+ *   - Models with NO reasoning support (e.g. claude-3-5-haiku, gpt-4o) simply
+ *     ignore the parameter — OpenRouter does not error.
  *
- * It normalizes this across OpenAI reasoning models (o1/o3/GPT-5) and
- * Anthropic extended-thinking models: for Anthropic it maps effort into a
- * `budget_tokens` via the documented ratio (low 0.2 / medium 0.5 / high 0.8 of
- * max_tokens, clamped [1024, 128000]).
+ * We deliberately do NOT send the `max_tokens` budget form: it's only honored
+ * by Anthropic/Gemini and is NOT reliably converted for OpenAI reasoning
+ * models, so it fails the "works on every model we may use" requirement.
+ * Letting OpenRouter own the per-provider budget keeps a single code path that
+ * behaves correctly everywhere.
  *
- * We map our internal ReasoningEffort to this shape:
- *   'off'                     → undefined (omit the parameter entirely)
- *   'low' | 'medium' | 'high' → { effort: <same> }
+ * IMPORTANT: reasoning only has a visible effect when the configured model
+ * actually supports it. Pointing a function at a non-reasoning model makes the
+ * effort setting a (harmless) no-op.
  *
  * The OpenAI SDK types don't know about `reasoning`, so callers spread the
  * return value into the request body with a cast.
@@ -24,35 +31,14 @@
 import type { ReasoningEffort } from './types'
 
 export interface OpenRouterReasoningParam {
-  reasoning: { effort?: 'low' | 'medium' | 'high'; max_tokens?: number }
-}
-
-/**
- * Effort → fraction of max_tokens reserved for reasoning.
- * The remainder is guaranteed for content output.
- *
- * OpenRouter does NOT allow both `effort` and `max_tokens` in the same
- * reasoning object. When `maxTokens` is provided we use `max_tokens` only
- * (gives us a hard cap); otherwise we fall back to `effort` (OpenRouter
- * decides the budget).
- */
-const REASONING_FRACTION: Record<'low' | 'medium' | 'high', number> = {
-  low: 0.2,
-  medium: 0.4,
-  high: 0.6,
+  reasoning: { effort: 'low' | 'medium' | 'high' }
 }
 
 export function buildReasoningParam(
   effort: ReasoningEffort,
-  maxTokens?: number,
 ): OpenRouterReasoningParam | Record<string, never> {
+  // 'off' → omit the parameter entirely so the model runs in normal mode.
   if (effort === 'off') return {}
-  if (maxTokens) {
-    // Explicitly cap reasoning tokens so the model can't exhaust max_tokens
-    // on thinking alone, leaving zero tokens for the actual content output.
-    const cap = Math.max(1024, Math.floor(maxTokens * REASONING_FRACTION[effort]))
-    return { reasoning: { max_tokens: cap } }
-  }
   return { reasoning: { effort } }
 }
 

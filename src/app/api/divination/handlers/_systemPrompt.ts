@@ -37,6 +37,7 @@ ${JSON.stringify(schema, null, 2)}
 The user's language preference is ${langText}. Write all text values (sections, advice, analysis paragraphs) in ${textLang}.
 For luckyInfo: colors must be in ${textLang} (e.g. ${isEn ? 'Red, Green, Gold' : '紅色, 綠色, 金色'}), directions in ${textLang} (e.g. ${isEn ? 'South, East' : '南方, 東方'}).
 Keep core Chinese terminology (天干地支, star names, palace names, trigram names) in Chinese regardless of language setting.
+In the prose text values, never echo raw input-data field names, JSON keys, or boolean literals (true/false) — express everything in natural ${textLang} divination terms.
 Be thorough and insightful in the text sections. Minimum 100 words per section.
 For the pillars/stars/palace data fields, use proper Chinese characters (e.g. 甲乙丙丁 for stems, 子丑寅卯 for branches).`
 }

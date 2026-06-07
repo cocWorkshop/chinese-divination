@@ -124,7 +124,7 @@ export async function* streamLLM(
     }
     const body = {
       ...baseBody,
-      ...buildReasoningParam(cfg.reasoningEffort, cfg.maxTokens),
+      ...buildReasoningParam(cfg.reasoningEffort),
     } as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming
     const completion = await client.chat.completions.create(
       body,

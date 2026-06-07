@@ -77,7 +77,7 @@ export interface MasterMsg {
   content: string
   timestamp: string
   /** Optional special-rendering kind. Default is text. */
-  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting'
+  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting' | 'system_note'
   ctaPayload?: CtaCardPayload
   readingCardPayload?: ReadingCardPayload
 }
@@ -85,6 +85,41 @@ export interface MasterMsg {
 export interface ToolStatus {
   name: string
   label: string
+}
+
+// ---------------------------------------------------------------------------
+// Reading-completion handoff note
+// ---------------------------------------------------------------------------
+// When a CTA-triggered reading finishes, we send the master an internal
+// synthetic turn ("[占卜完成] <type> ... (id: ...)。請重新檢查…") so it can pull
+// the new reading into context. That raw text is plumbing — it embeds the
+// reading id and re-check instructions meant for the LLM, not the user. In the
+// transcript we surface only a clean, type-specific completion note rendered as
+// a centered system note (never a user bubble).
+const READING_COMPLETE_NOTE: Record<string, { zh: string; en: string }> = {
+  bazi: { zh: '八字命盤已完成', en: 'BaZi reading complete' },
+  ziwei: { zh: '紫微命盤已完成', en: 'Zi Wei reading complete' },
+  iching: { zh: '易經占卜已完成', en: 'I Ching reading complete' },
+  qimen: { zh: '奇門遁甲已完成', en: 'Qi Men reading complete' },
+  liuyao: { zh: '六爻占卜已完成', en: 'Liu Yao reading complete' },
+  meihua: { zh: '梅花易數已完成', en: 'Mei Hua reading complete' },
+  fengshui: { zh: '風水分析已完成', en: 'Feng Shui reading complete' },
+  other: { zh: '占卜已完成', en: 'Reading complete' },
+}
+
+function readingCompleteNoteText(type: string, lang: string): string {
+  const note = READING_COMPLETE_NOTE[type] ?? READING_COMPLETE_NOTE.other
+  return lang === 'en' ? note.en : note.zh
+}
+
+// Both the in-session and activation-resume handoffs prefix their synthetic
+// with `[占卜完成]` / `[reading complete]` followed by the divination type token.
+// Detect that shape so the stored user row can be re-rendered as a system note.
+const READING_COMPLETE_RE = /^\[(?:占卜完成|reading complete)\]\s+([a-z]+)\b/
+
+function parseReadingCompleteType(content: string): string | null {
+  const m = READING_COMPLETE_RE.exec(content)
+  return m ? m[1] : null
 }
 
 type Shape = 'collapsed' | 'expanded'
@@ -124,6 +159,12 @@ interface MasterChatContextValue {
   /** Whether portrait extraction + personalized prompt are enabled for this user. */
   portraitEnabled: boolean
   sendMessage: (content: string) => Promise<void>
+  /**
+   * Report composer activity so the proactive paths (idle reflection +
+   * activation-resume checkin) don't speak over a user who's mid-message.
+   * Call on every keystroke with the current draft length (0 when cleared).
+   */
+  notifyTyping: (draftLength: number) => void
   /**
    * Abort whatever CTA is currently pending. Clears `pendingReading`
    * locally AND injects a synthetic "[user cancelled]" message so the
@@ -246,6 +287,36 @@ export function MasterChatProvider({ children }: ProviderProps) {
   const REFLECTION_IDLE_MS_BASE = 75_000  // 75s base
   const REFLECTION_IDLE_MS_JITTER = 45_000 // +0-45s random to feel natural
 
+  // ── Typing guard ─────────────────────────────────────────────────────────
+  // Both proactive paths (idle reflection + activation-resume checkin) must
+  // NOT speak while the user is composing — interrupting an in-progress
+  // message would steal focus / scroll and discard their intent. The expanded
+  // composer reports keystrokes via `notifyTyping`; the proactive paths check
+  // `isUserActivelyTyping()` at fire time. "Actively typing" = a non-empty
+  // draft sitting in the box (clear intent to send) OR a keystroke within the
+  // last few seconds (mid-thought, briefly paused).
+  const lastTypingAtRef = useRef<number>(0)
+  const hasDraftRef = useRef<boolean>(false)
+  const TYPING_GRACE_MS = 4000
+
+  const notifyTyping = useCallback((draftLength: number) => {
+    hasDraftRef.current = draftLength > 0
+    // Only a real keystroke (non-empty draft) extends the grace window;
+    // clearing the box on send must not keep the guard hot.
+    if (draftLength > 0) lastTypingAtRef.current = Date.now()
+  }, [])
+
+  const isUserActivelyTyping = useCallback((): boolean => {
+    // Non-empty draft = unmistakable intent to send; never interrupt.
+    if (hasDraftRef.current) return true
+    // Empty box but a very recent keystroke (just cleared / pausing) — grace.
+    return Date.now() - lastTypingAtRef.current < TYPING_GRACE_MS
+  }, [])
+
+  // Self-reference so the reflection timer can re-arm itself when it fires
+  // mid-typing (defer instead of dropping the reflection for this stretch).
+  const scheduleReflectionRef = useRef<() => void>(() => {})
+
   const toggleShape = useCallback(() => {
     setShape((s) => (s === 'collapsed' ? 'expanded' : 'collapsed'))
   }, [])
@@ -287,6 +358,22 @@ export function MasterChatProvider({ children }: ProviderProps) {
           x.role !== 'system' &&
           !(x.role === 'user' && typeof x.content === 'string' && (x.content.startsWith('[user cancelled]') || x.content.startsWith('[用戶取消]')))
         )) {
+          // Reading-completion handoffs are stored as user rows (the LLM needs
+          // them in history) but must NOT render as user bubbles. Re-render as
+          // a clean, type-specific centered system note instead.
+          const completeType =
+            m.role === 'user' && typeof m.content === 'string'
+              ? parseReadingCompleteType(m.content)
+              : null
+          if (completeType) {
+            expanded.push({
+              ...m,
+              role: 'system',
+              kind: 'system_note',
+              content: readingCompleteNoteText(completeType, lang),
+            })
+            continue
+          }
           if (
             m.role === 'assistant' &&
             typeof m.content === 'string' &&
@@ -785,6 +872,8 @@ export function MasterChatProvider({ children }: ProviderProps) {
   // not streaming). Two stages — see docs/planning/activation-resume-design-2026-04-27.md.
   const runActivationDispatch = useCallback(async () => {
     if (!enabled || sendingRef.current) return
+    // Don't speak over a user who's mid-message — let them send first.
+    if (isUserActivelyTyping()) return
     proactiveLastFiredRef.current = Date.now()
 
     // Stage 1: pending CTA fast-path.
@@ -818,6 +907,16 @@ export function MasterChatProvider({ children }: ProviderProps) {
             const synthetic = lang === 'en'
               ? `[reading complete] ${cta.type} reading saved (id: ${data.readingId}). The user just reopened the chat after completing it elsewhere. Re-check whether the current task still has missing prerequisites; if so, redirect to the next CTA. Otherwise proceed with the analysis.`
               : `[占卜完成] ${cta.type} 的命盤已存好 (id: ${data.readingId})。用戶在他處完成後剛重新打開對話。請重新檢查當前任務是否還有缺失的前置占卜，若有則繼續發下一張 CTA 卡片；若已齊備，再進行分析。`
+            // Clean completion marker (the synthetic goes to the LLM only).
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: 'system',
+                kind: 'system_note',
+                content: readingCompleteNoteText(cta.type, lang),
+                timestamp: new Date().toISOString(),
+              },
+            ])
             await runTurn({ messages: [synthetic] })
             return
           }
@@ -853,7 +952,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
       return
     }
     await runTurn({ checkin: 'ambiguous_resume' })
-  }, [enabled, messages, runTurn, lang])
+  }, [enabled, messages, runTurn, lang, isUserActivelyTyping])
 
   // ── Idle reflection scheduler ────────────────────────────────────────────
   // After every master reply, set a 90s timer. If it fires while the
@@ -910,9 +1009,20 @@ export function MasterChatProvider({ children }: ProviderProps) {
       if (sendingRef.current) return
       if (shape !== 'expanded') return
       if (!shouldReflect()) return  // re-check at fire time
+      // User is mid-message — defer rather than drop. Re-arm so the
+      // reflection still happens once they stop typing (this does NOT
+      // consume the once-per-stretch budget, so silence later still fires).
+      if (isUserActivelyTyping()) {
+        scheduleReflectionRef.current()
+        return
+      }
       void triggerReflection()
     }, delay)
-  }, [enabled, shape, triggerReflection, cancelReflection, shouldReflect])
+  }, [enabled, shape, triggerReflection, cancelReflection, shouldReflect, isUserActivelyTyping])
+
+  // Keep the self-reference current so the in-timer re-arm above always calls
+  // the latest scheduleReflection closure.
+  scheduleReflectionRef.current = scheduleReflection
 
   // Schedule reflection after each completed master reply.
   useEffect(() => {
@@ -1029,6 +1139,18 @@ export function MasterChatProvider({ children }: ProviderProps) {
         const synthetic = lang === 'en'
           ? `[reading complete] ${detail.type} reading saved (id: ${detail.readingId}). Re-check whether the current task still has missing prerequisites; if so, redirect to the next CTA. Otherwise proceed with the analysis.`
           : `[占卜完成] ${detail.type} 的命盤已存好 (id: ${detail.readingId})。請重新檢查當前任務是否還有缺失的前置占卜，若有則繼續發下一張 CTA 卡片；若已齊備，再進行分析。`
+        // Surface a clean completion marker right away (the synthetic itself is
+        // sent to the LLM via runTurn but never rendered as a user bubble; on a
+        // later reload loadHistory re-derives this same note from the stored row).
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'system',
+            kind: 'system_note',
+            content: readingCompleteNoteText(detail.type, lang),
+            timestamp: new Date().toISOString(),
+          },
+        ])
         void runTurn({ messages: [synthetic] })
       }
     }
@@ -1136,6 +1258,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
       disclosureSeen,
       portraitEnabled,
       sendMessage,
+      notifyTyping,
       cancelPendingReading,
       startNewSession,
       clearSession,
@@ -1147,7 +1270,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
     [
       enabled, shape, toggleShape, messages, loading, toolStatus, pendingReading,
       greetingHints, disclosureSeen, portraitEnabled,
-      sendMessage, cancelPendingReading, startNewSession, clearSession,
+      sendMessage, notifyTyping, cancelPendingReading, startNewSession, clearSession,
       markDisclosureSeen, setPortraitEnabled, historyLoaded, widgetOpener,
     ],
   )

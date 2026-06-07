@@ -44,6 +44,9 @@ const DEFAULT_MASTER_MODEL = 'openai/gpt-4o'
 // cheap, fast model — these are infrastructure calls, not user-facing answers.
 const DEFAULT_MASTER_BACKGROUND_MODEL = 'openai/gpt-4o-mini'
 const DEFAULT_MAX_TOKENS = 8192
+// Master background tasks (summary / portrait extraction) emit short outputs;
+// a small default keeps them cheap/fast. Admin can override per-function.
+const DEFAULT_MASTER_BACKGROUND_MAX_TOKENS = 1500
 const DEFAULT_TIMEOUT_SECONDS = 240
 
 // Per-endpoint reasoning defaults.
@@ -51,6 +54,10 @@ const DEFAULT_TIMEOUT_SECONDS = 240
 // Chat / master are interactive — prefer low latency, cheaper output.
 const DEFAULT_DIVINATION_REASONING: ReasoningEffort = 'medium'
 const DEFAULT_CHAT_REASONING: ReasoningEffort = 'low'
+// Master main answer is interactive → low. Background tasks (summaries,
+// portrait extraction) don't need reasoning → off by default.
+const DEFAULT_MASTER_REASONING: ReasoningEffort = 'low'
+const DEFAULT_MASTER_BACKGROUND_REASONING: ReasoningEffort = 'off'
 
 const SETTING_KEYS = [
   'model1Name',
@@ -60,14 +67,50 @@ const SETTING_KEYS = [
   'masterBackgroundModelName',
   // Legacy key kept as a fallback for masterBackground (was the portrait model).
   'portraitModelName',
-  'llmTimeoutSeconds',
-  'llmMaxTokens',
-  // Per-endpoint reasoning settings (preferred).
+  // Per-function reasoning effort.
   'divinationReasoningEffort',
   'chatReasoningEffort',
-  // Global fallback (used if the endpoint-specific key is unset).
+  'masterReasoningEffort',
+  'masterBackgroundReasoningEffort',
+  // Per-function max output tokens.
+  'divinationMaxTokens',
+  'chatMaxTokens',
+  'masterMaxTokens',
+  'masterBackgroundMaxTokens',
+  // Per-function request timeout (seconds).
+  'divinationTimeoutSeconds',
+  'chatTimeoutSeconds',
+  'masterTimeoutSeconds',
+  'masterBackgroundTimeoutSeconds',
+  // Global fallbacks (used when a per-function key is unset/empty).
+  'llmTimeoutSeconds',
+  'llmMaxTokens',
   'llmReasoningEffort',
 ] as const
+
+// Per-endpoint AdminSetting key names + reasoning env var + reasoning default.
+// Model keys are resolved separately (irregular legacy names) in
+// resolveModelForEndpoint; this table covers reasoning / tokens / timeout.
+const ENDPOINT_CFG: Record<Endpoint, {
+  reasoningKey: string
+  reasoningEnv: string
+  reasoningDefault: ReasoningEffort
+  maxTokensKey: string
+  maxTokensDefault: number
+  timeoutKey: string
+}> = {
+  divination: { reasoningKey: 'divinationReasoningEffort', reasoningEnv: 'DIVINATION_REASONING_EFFORT', reasoningDefault: DEFAULT_DIVINATION_REASONING, maxTokensKey: 'divinationMaxTokens', maxTokensDefault: DEFAULT_MAX_TOKENS, timeoutKey: 'divinationTimeoutSeconds' },
+  chat: { reasoningKey: 'chatReasoningEffort', reasoningEnv: 'CHAT_REASONING_EFFORT', reasoningDefault: DEFAULT_CHAT_REASONING, maxTokensKey: 'chatMaxTokens', maxTokensDefault: DEFAULT_MAX_TOKENS, timeoutKey: 'chatTimeoutSeconds' },
+  master: { reasoningKey: 'masterReasoningEffort', reasoningEnv: 'MASTER_REASONING_EFFORT', reasoningDefault: DEFAULT_MASTER_REASONING, maxTokensKey: 'masterMaxTokens', maxTokensDefault: DEFAULT_MAX_TOKENS, timeoutKey: 'masterTimeoutSeconds' },
+  masterBackground: { reasoningKey: 'masterBackgroundReasoningEffort', reasoningEnv: 'MASTER_BACKGROUND_REASONING_EFFORT', reasoningDefault: DEFAULT_MASTER_BACKGROUND_REASONING, maxTokensKey: 'masterBackgroundMaxTokens', maxTokensDefault: DEFAULT_MASTER_BACKGROUND_MAX_TOKENS, timeoutKey: 'masterBackgroundTimeoutSeconds' },
+}
+
+// First value that is present and non-blank. Treats '' (an empty admin field)
+// as "unset" so it falls through to the global fallback / default.
+function firstSet(...vals: (string | undefined)[]): string | undefined {
+  for (const v of vals) if (v != null && v.trim() !== '') return v
+  return undefined
+}
 
 // Keys that routes must include when they pre-fetch AdminSetting themselves
 // and pass `settingsMap` to `resolveLLMConfig`. Exported so call sites can't drift.
@@ -155,7 +198,10 @@ function resolveModelForEndpoint(
       DEFAULT_MODEL
     )
   }
-  // divination
+  // divination — historically the "primary"/standard model, so its admin keys
+  // keep the legacy names `model1Name` (API id) + `model1Label` (display name).
+  // This is intentional: model1 == the Divination model. Other functions use
+  // <fn>ModelName; only divination retains the model1 alias.
   return (
     settingsMap.model1Name ||
     process.env.OPENROUTER_MODEL ||
@@ -167,24 +213,40 @@ function resolveReasoningForEndpoint(
   endpoint: Endpoint,
   settingsMap: Record<string, string | undefined>
 ): ReasoningEffort {
-  // divination vs chat/master split
-  const isDivination = endpoint === 'divination'
-  const endpointKey = isDivination
-    ? settingsMap.divinationReasoningEffort
-    : settingsMap.chatReasoningEffort
-  const endpointEnv = isDivination
-    ? process.env.DIVINATION_REASONING_EFFORT
-    : process.env.CHAT_REASONING_EFFORT
-  const fallbackDefault = isDivination ? DEFAULT_DIVINATION_REASONING : DEFAULT_CHAT_REASONING
-
-  // Endpoint-specific (DB) → global fallback (DB) → endpoint-specific (env)
-  // → global fallback (env) → hardcoded default.
+  const c = ENDPOINT_CFG[endpoint]
+  // Per-function (DB) → global (DB) → per-function (env) → global (env) → default.
   return parseReasoningEffort(
-    endpointKey ??
-      settingsMap.llmReasoningEffort ??
-      endpointEnv ??
+    firstSet(
+      settingsMap[c.reasoningKey],
+      settingsMap.llmReasoningEffort,
+      process.env[c.reasoningEnv],
       process.env.LLM_REASONING_EFFORT,
-    fallbackDefault
+    ),
+    c.reasoningDefault
+  )
+}
+
+function resolveMaxTokensForEndpoint(
+  endpoint: Endpoint,
+  settingsMap: Record<string, string | undefined>
+): number {
+  const c = ENDPOINT_CFG[endpoint]
+  // Per-function (DB) → global llmMaxTokens (DB) → per-function default.
+  return parseIntOrDefault(
+    firstSet(settingsMap[c.maxTokensKey], settingsMap.llmMaxTokens),
+    c.maxTokensDefault
+  )
+}
+
+function resolveTimeoutSecondsForEndpoint(
+  endpoint: Endpoint,
+  settingsMap: Record<string, string | undefined>
+): number {
+  const c = ENDPOINT_CFG[endpoint]
+  // Per-function (DB) → global llmTimeoutSeconds (DB) → default.
+  return parseIntOrDefault(
+    firstSet(settingsMap[c.timeoutKey], settingsMap.llmTimeoutSeconds),
+    DEFAULT_TIMEOUT_SECONDS
   )
 }
 
@@ -194,12 +256,8 @@ export async function resolveLLMConfig(opts: ResolveOptions): Promise<LLMConfig>
 
   const model = overrides.model ?? resolveModelForEndpoint(opts.endpoint, settingsMap)
   const maxTokens =
-    overrides.maxTokens ??
-    parseIntOrDefault(settingsMap.llmMaxTokens, DEFAULT_MAX_TOKENS)
-  const timeoutSeconds = parseIntOrDefault(
-    settingsMap.llmTimeoutSeconds,
-    DEFAULT_TIMEOUT_SECONDS
-  )
+    overrides.maxTokens ?? resolveMaxTokensForEndpoint(opts.endpoint, settingsMap)
+  const timeoutSeconds = resolveTimeoutSecondsForEndpoint(opts.endpoint, settingsMap)
   const timeoutMs = overrides.timeoutMs ?? timeoutSeconds * 1000
 
   const reasoningEffort =
@@ -222,4 +280,6 @@ export const LLM_DEFAULTS = {
   TIMEOUT_SECONDS: DEFAULT_TIMEOUT_SECONDS,
   DIVINATION_REASONING: DEFAULT_DIVINATION_REASONING,
   CHAT_REASONING: DEFAULT_CHAT_REASONING,
+  MASTER_REASONING: DEFAULT_MASTER_REASONING,
+  MASTER_BACKGROUND_REASONING: DEFAULT_MASTER_BACKGROUND_REASONING,
 } as const

@@ -23,7 +23,7 @@ export interface DetectableMsg {
   role: 'user' | 'assistant' | 'system'
   content: string
   timestamp: string
-  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting'
+  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting' | 'system_note'
   ctaPayload?: DetectableCtaPayload
 }
 

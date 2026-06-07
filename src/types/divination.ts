@@ -135,6 +135,10 @@ export interface BaziDataV2 {
   fetalOrigin?: string
   ownSign?: string
   bodySign?: string
+  // Pillar-shaped data for 命宫/身宫/胎元 (rendered as extra columns).
+  ownSignPillar?: Pillar
+  bodySignPillar?: Pillar
+  fetalOriginPillar?: Pillar
 }
 
 export interface LiuNianEntry {
@@ -234,6 +238,12 @@ export interface QimenChartInfo {
   roundLabel?: string
   zhiFu?: string
   zhiShi?: string
+  zhiFuPalace?: string
+  zhiShiPalace?: string
+  voidBranches?: string[]
+  voidPalaces?: string[]
+  horseBranch?: string
+  horsePalace?: string
   palaces?: QimenPalace[]
   grid?: (QimenPalace | null)[][]
   patterns?: QimenPattern[]

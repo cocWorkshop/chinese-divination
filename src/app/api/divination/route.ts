@@ -7,6 +7,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkCredits, deductCredits } from '@/lib/rateLimit'
 import { completeLLM, streamLLM, resolveLLMConfig } from '@/lib/llm'
+import type { LLMConfig } from '@/lib/llm'
 import { selectHandler, buildHandlerSchema, validateHandlerOutput, type DivinationContext } from './handlers'
 import { buildSystemPrompt } from './handlers/_systemPrompt'
 import { parseJsonFromLLMOutput, PARSE_FAILED_KEY } from './handlers/_jsonParse'
@@ -312,9 +313,13 @@ export async function POST(req: NextRequest) {
         userId: userId,
         systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
+        // Reuse the config already resolved above (from this request's fresh
+        // settingsMap) so model / tokens / timeout / reasoning are all
+        // consistent — no divergent re-resolution inside completeLLM.
         model: llmConfig.model,
         maxTokens: llmConfig.maxTokens,
         timeoutMs: llmConfig.timeoutMs,
+        reasoningEffort: llmConfig.reasoningEffort,
       })
       resultText = result.content
     } catch (apiErr: unknown) {
@@ -473,7 +478,7 @@ function runStreamingDivination(args: {
   type: string
   language: string
   modelName: string
-  llmConfig: { model: string; maxTokens?: number; timeoutMs?: number }
+  llmConfig: LLMConfig
   systemPrompt: string
   userMessage: string
   chart: unknown
@@ -562,9 +567,11 @@ function runStreamingDivination(args: {
           userId,
           systemPrompt,
           messages: [{ role: 'user', content: userMessage }],
+          // Reuse the already-resolved config (see completeLLM call above).
           model: llmConfig.model,
           maxTokens: llmConfig.maxTokens,
           timeoutMs: llmConfig.timeoutMs,
+          reasoningEffort: llmConfig.reasoningEffort,
         })) {
           if (chunk.type === 'content') {
             accumulatedRaw += chunk.text

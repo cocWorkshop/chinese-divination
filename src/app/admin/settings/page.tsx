@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import toast from 'react-hot-toast'
 
 interface VisibilityItem {
@@ -42,9 +42,23 @@ export default function AdminSettings() {
     dailyBonusCredits: '2',
     llmTimeoutSeconds: '240',
     llmMaxTokens: '8192',
+    llmReasoningEffort: 'medium',
     chatModelName: '',
     masterModelName: '',
     masterBackgroundModelName: '',
+    // Per-function reasoning / tokens / timeout (defaults mirror settings.ts).
+    divinationReasoningEffort: 'medium',
+    divinationMaxTokens: '8192',
+    divinationTimeoutSeconds: '240',
+    chatReasoningEffort: 'low',
+    chatMaxTokens: '8192',
+    chatTimeoutSeconds: '240',
+    masterReasoningEffort: 'low',
+    masterMaxTokens: '8192',
+    masterTimeoutSeconds: '240',
+    masterBackgroundReasoningEffort: 'off',
+    masterBackgroundMaxTokens: '1500',
+    masterBackgroundTimeoutSeconds: '240',
     cost_bazi: '5',
     cost_ziwei: '5',
     cost_qimen: '5',
@@ -115,6 +129,46 @@ export default function AdminSettings() {
     </div>
   )
 
+  const REASONING_OPTIONS = [
+    { v: 'off', l: '關閉 / Off' },
+    { v: 'low', l: '低 / Low' },
+    { v: 'medium', l: '中 / Medium' },
+    { v: 'high', l: '高 / High' },
+  ]
+
+  const selectField = (key: string, label: string, options: { v: string; l: string }[], desc?: string) => (
+    <div>
+      <label className="text-white/60 text-sm block mb-2">{label}</label>
+      <select
+        value={settings[key] || ''}
+        onChange={e => set(key, e.target.value)}
+        className="w-full px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/50 text-sm"
+      >
+        {options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+      </select>
+      {desc && <p className="text-white/30 text-xs mt-1">{desc}</p>}
+    </div>
+  )
+
+  // One function's full config block: model + reasoning + tokens + timeout.
+  const fnBlock = (
+    title: string,
+    modelFields: React.ReactNode,
+    keys: { reasoning: string; maxTokens: string; timeout: string },
+  ) => (
+    <div className="border-t border-gold/10 pt-4 first:border-t-0 first:pt-0">
+      <h3 className="text-gold text-sm font-bold mb-3">{title}</h3>
+      <div className="space-y-3">
+        {modelFields}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {selectField(keys.reasoning, '思考強度 / Reasoning', REASONING_OPTIONS)}
+          {numberField(keys.maxTokens, '最大Tokens / Max tokens')}
+          {numberField(keys.timeout, '超時秒數 / Timeout (s)')}
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="p-8 max-w-2xl">
       <div className="mb-8">
@@ -128,12 +182,25 @@ export default function AdminSettings() {
           <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
             <span>🤖</span> 模型配置 / Model Configuration
           </h2>
-          <div className="space-y-4">
-            {textField('model1Name', '占卜模型 API名称 / Divination Model Name', 'e.g. anthropic/claude-3-5-haiku')}
-            {textField('model1Label', '占卜模型 顯示名 / Divination Model Label')}
-            {textField('chatModelName', '聊天模型 / Chat Model Name', '留空則使用占卜模型')}
-            {textField('masterModelName', '玄機大師（主對話）模型 / Xuanji Master Model', '大師問答主回覆模型。留空則用 MASTER_MODEL 環境變數或占卜模型，預設 openai/gpt-4o')}
-            {textField('masterBackgroundModelName', '玄機大師（後台任務）模型 / Master Background Model', '對話摘要、用戶畫像提取等後台任務，與主對話模型分開配置。留空預設 openai/gpt-4o-mini')}
+          <p className="text-white/40 text-xs mb-2">每個功能可獨立配置模型、思考強度、最大Tokens 與超時。留空則回退到下方「全局默認」。/ Each function configures its own model, reasoning, max-tokens and timeout; blank falls back to the global defaults below.</p>
+          <p className="text-amber-300/70 text-xs mb-4">⚠️ 「思考強度 / Reasoning」僅對支援推理的模型生效（如 Claude 3.7+/4、OpenAI o系列/GPT-5、Gemini 2.5 thinking、Grok）。對 claude-3-5-haiku、gpt-4o 等非推理模型無效（會被安全忽略）。/ Reasoning only affects reasoning-capable models; it is silently ignored by non-reasoning models.</p>
+          <div className="space-y-5">
+            {fnBlock('占卜 / Divination',
+              <>
+                {/* Divination keeps the legacy "model1" key names (model1 == the Divination/standard model). */}
+                {textField('model1Name', '模型 API名称 / Model Name（model1）', 'e.g. anthropic/claude-3-5-haiku')}
+                {textField('model1Label', '顯示名 / Model Label（model1）')}
+              </>,
+              { reasoning: 'divinationReasoningEffort', maxTokens: 'divinationMaxTokens', timeout: 'divinationTimeoutSeconds' })}
+            {fnBlock('聊天 / Chat',
+              textField('chatModelName', '模型 / Model Name', '留空則使用占卜模型'),
+              { reasoning: 'chatReasoningEffort', maxTokens: 'chatMaxTokens', timeout: 'chatTimeoutSeconds' })}
+            {fnBlock('玄機大師 · 主對話 / Master',
+              textField('masterModelName', '模型 / Model Name', '留空用 MASTER_MODEL 或占卜模型，預設 openai/gpt-4o'),
+              { reasoning: 'masterReasoningEffort', maxTokens: 'masterMaxTokens', timeout: 'masterTimeoutSeconds' })}
+            {fnBlock('玄機大師 · 後台任務 / Master Background',
+              textField('masterBackgroundModelName', '模型 / Model Name', '對話摘要、用戶畫像提取等，留空預設 openai/gpt-4o-mini'),
+              { reasoning: 'masterBackgroundReasoningEffort', maxTokens: 'masterBackgroundMaxTokens', timeout: 'masterBackgroundTimeoutSeconds' })}
           </div>
         </div>
 
@@ -230,14 +297,16 @@ export default function AdminSettings() {
           </div>
         </div>
 
-        {/* LLM Timeout */}
+        {/* Global LLM fallback defaults */}
         <div className="glass-card rounded-xl p-6">
           <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
-            <span>⏳</span> LLM 超時設置 / LLM Timeout
+            <span>⏳</span> 全局默認 / Global LLM Defaults
           </h2>
+          <p className="text-white/40 text-xs mb-4">當某功能未單獨設定時使用。/ Used only when a function above leaves a field blank.</p>
           <div className="space-y-4">
-            {numberField('llmTimeoutSeconds', 'LLM 請求超時（秒）/ LLM request timeout (seconds)', '默認 240 秒，適用於占卜和聊天接口')}
-            {numberField('llmMaxTokens', 'LLM 最大輸出 Tokens / Max output tokens', '默認 8192，八字精批建議 8192+')}
+            {selectField('llmReasoningEffort', '全局思考強度 / Global reasoning', REASONING_OPTIONS, '默認 medium')}
+            {numberField('llmTimeoutSeconds', '全局請求超時（秒）/ Global timeout (seconds)', '默認 240 秒')}
+            {numberField('llmMaxTokens', '全局最大輸出 Tokens / Global max output tokens', '默認 8192，八字精批建議 8192+')}
           </div>
         </div>
 

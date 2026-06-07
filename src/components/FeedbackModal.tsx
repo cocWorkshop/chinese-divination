@@ -8,6 +8,7 @@
  */
 
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
 
@@ -24,7 +25,9 @@ export default function FeedbackModal({ open, onClose }: Props) {
   const [rating, setRating] = useState(0)
   const [sending, setSending] = useState(false)
 
-  if (!open) return null
+  // Guard SSR: the modal only renders after a client-side click (open starts
+  // false), but check anyway so createPortal never sees an undefined document.
+  if (!open || typeof document === 'undefined') return null
 
   const handleSubmit = async () => {
     setSending(true)
@@ -46,14 +49,19 @@ export default function FeedbackModal({ open, onClose }: Props) {
     setSending(false)
   }
 
-  return (
+  // Render into <body> via a portal so the modal escapes the Navbar's
+  // containing block. The Navbar is `position: fixed` with `backdrop-blur`,
+  // which makes it a containing block for fixed-position descendants — without
+  // the portal the modal would anchor to the ~64px navbar box and its title
+  // would be clipped above the viewport instead of centering on screen.
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-sm glass-card rounded-2xl p-6 space-y-4"
+        className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto glass-card rounded-2xl p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -109,6 +117,7 @@ export default function FeedbackModal({ open, onClose }: Props) {
           {sending ? '...' : T(lang, '提交回饋', 'Submit')}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

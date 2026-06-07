@@ -56,6 +56,30 @@ export default function MessageBubble({
     return null
   }
 
+  // System note — a centered, low-emphasis status line woven into the flow
+  // (e.g. "六爻占卜已完成"). Not a chat bubble; never attributed to user/master.
+  if (msg.kind === 'system_note') {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="flex justify-center my-1"
+      >
+        <span
+          className="text-[11px] px-3 py-1 rounded-full"
+          style={{
+            color: 'var(--text-muted)',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--card-border)',
+          }}
+        >
+          ✓ {msg.content}
+        </span>
+      </motion.div>
+    )
+  }
+
   if (msg.kind === 'cta_card' && msg.ctaPayload) {
     const cx = msg.ctaPayload.ctaContext
     // Build info lines from structured context

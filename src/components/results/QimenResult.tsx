@@ -72,6 +72,19 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
             </div>
           )}
 
+          {/* Key positions — 值符/值使落宫, 旬空, 驿马 (the analysis anchors) */}
+          {hasProgrammaticData && (chart.zhiFuPalace || (chart.voidBranches && chart.voidBranches.length > 0)) && (
+            <div className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
+              <h3 className="text-gold font-serif text-sm mb-2">📍 {T(lang, '關鍵落宮', 'Key Positions')}</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
+                <div><span className="text-[var(--text-muted)]">{T(lang, '值符落宮：', '值符 @ ')}</span><span className="text-yellow-300">{chart.zhiFu}{chart.zhiFuPalace ? ` · ${chart.zhiFuPalace}` : ''}</span></div>
+                <div><span className="text-[var(--text-muted)]">{T(lang, '值使落宮：', '值使 @ ')}</span><span className="text-blue-300">{chart.zhiShi}{chart.zhiShiPalace ? ` · ${chart.zhiShiPalace}` : ''}</span></div>
+                <div><span className="text-[var(--text-muted)]">{T(lang, '旬空：', 'Void: ')}</span><span className="text-[var(--text-secondary)]">{chart.voidBranches && chart.voidBranches.length ? chart.voidBranches.join('') : '—'}{chart.voidPalaces && chart.voidPalaces.length ? `（${chart.voidPalaces.join('、')}）` : ''}</span></div>
+                <div><span className="text-[var(--text-muted)]">{T(lang, '驛馬：', 'Horse: ')}</span><span className="text-[var(--text-secondary)]">{chart.horseBranch || '—'}{chart.horsePalace ? `（${chart.horsePalace}）` : ''}</span></div>
+              </div>
+            </div>
+          )}
+
           {/* Patterns */}
           {chart?.patterns && chart.patterns.length > 0 && (
             <div className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
@@ -260,7 +273,8 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
         </motion.div>
       )}
 
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="qimen" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />
+      {/* Reveal Q&A only after streaming completes (consistent with V2 results). */}
+      {!streaming && <XuanjiChatCard readingResult={rawResult || ''} readingType="qimen" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />}
     </div>
   )
 }

@@ -20,7 +20,7 @@ const PALACE_LAYOUT = [
 ]
 
 export interface QimenPalace {
-  name: string         // e.g. '坎一'
+  name: string         // e.g. '坎宫' (center renders as '中五宫')
   number: number       // 1-9
   direction: string    // e.g. '北'
   star: string         // 九星 e.g. '天任星'
@@ -49,6 +49,13 @@ export interface QimenChart {
   // Key elements
   zhiFu: string      // 值符 (star name)
   zhiShi: string     // 值使 (door name)
+  // Derived key positions — the anchors qimen analysis (用神/應期/方位) hinges on
+  zhiFuPalace: string    // 值符落宮 e.g. '坎宫'
+  zhiShiPalace: string   // 值使落宮 e.g. '艮宫'
+  voidBranches: string[] // 旬空 (空亡) 地支 e.g. ['寅','卯']
+  voidPalaces: string[]  // 空亡所落宮 names
+  horseBranch: string    // 驛馬 (馬星) 地支 e.g. '申'
+  horsePalace: string    // 馬星所落宮 name
   // 9 palaces
   palaces: QimenPalace[]
   // Flat 3x3 grid for rendering
@@ -91,6 +98,24 @@ const OPPOSITE_PALACE: Record<number, number> = {
   1: 9, 9: 1, 2: 8, 8: 2, 3: 7, 7: 3, 4: 6, 6: 4,
 }
 
+// 地支 → 后天宫位 (洛书定位): used to map 旬空 / 驿马 地支 onto palaces.
+const BRANCH_PALACE: Record<string, number> = {
+  '子': 1, '丑': 8, '寅': 8, '卯': 3, '辰': 4, '巳': 4,
+  '午': 9, '未': 2, '申': 2, '酉': 7, '戌': 6, '亥': 6,
+}
+// 六甲旬 → 旬空 (空亡) 地支. Index = floor(hour 60-cycle index / 10):
+// 甲子旬→戌亥, 甲戌旬→申酉, 甲申旬→午未, 甲午旬→辰巳, 甲辰旬→寅卯, 甲寅旬→子丑.
+const XUN_KONG: string[][] = [
+  ['戌', '亥'], ['申', '酉'], ['午', '未'], ['辰', '巳'], ['寅', '卯'], ['子', '丑'],
+]
+// 时支三合局 → 驿马 (马星) 地支. 申子辰马在寅 / 寅午戌马在申 / 巳酉丑马在亥 / 亥卯未马在巳.
+const HORSE_BY_BRANCH: Record<string, string> = {
+  '申': '寅', '子': '寅', '辰': '寅',
+  '寅': '申', '午': '申', '戌': '申',
+  '巳': '亥', '酉': '亥', '丑': '亥',
+  '亥': '巳', '卯': '巳', '未': '巳',
+}
+
 /**
  * Detect Qimen patterns (格局) from the calculated chart.
  */
@@ -106,11 +131,12 @@ function detectPatterns(palaces: QimenPalace[]): QimenPattern[] {
 
   for (const p of palaces) {
     if (p.number === 5) continue // skip center
-    // Star check
-    if (p.star && STAR_DEFAULT_PALACE[p.star] !== undefined) {
+    // Star check — use the PRIMARY star (寄宫 lodges 天禽 onto 天芮; 天芮 is primary)
+    const primaryStar = p.star.split('、')[0]
+    if (primaryStar && STAR_DEFAULT_PALACE[primaryStar] !== undefined) {
       starTotal++
-      if (STAR_DEFAULT_PALACE[p.star] === p.number) starFuyin++
-      if (OPPOSITE_PALACE[STAR_DEFAULT_PALACE[p.star]] === p.number) starFanyin++
+      if (STAR_DEFAULT_PALACE[primaryStar] === p.number) starFuyin++
+      if (OPPOSITE_PALACE[STAR_DEFAULT_PALACE[primaryStar]] === p.number) starFanyin++
     }
     // Door check
     if (p.door && DOOR_DEFAULT_PALACE[p.door] !== undefined) {
@@ -135,115 +161,60 @@ function detectPatterns(palaces: QimenPalace[]): QimenPattern[] {
     })
   }
 
-  // ═══ 2. Stem combination patterns (天盘干+地盘干) ═══
+  // ═══ 2. Stem-combination 格局 (天盘干 over 地盘干) ═══
+  // 甲 is HIDDEN in Qi Men (represented by 戊 / the 旬首 六仪) and NEVER appears
+  // on a plate, so no rule may test for 甲 — the old `e === '甲'` conditions were
+  // dead and fired 0 times. The 寄宫 stacks two heaven stems (e.g. "丙、己"); we
+  // test EACH so 格局 sitting there aren't silently missed.
+  const sanQi = ['乙', '丙', '丁']
+  const jiMen = ['开门', '休门', '生门']
+  // 天干墓库宫 (五行墓库 → 后天宫位): 木墓未→坤2, 火墓戌→乾6, 金墓丑→艮8, 水/土墓辰→巽4.
+  const stemTombs: Record<string, number> = {
+    '乙': 2, '丁': 2, '丙': 6, '壬': 4, '癸': 4,
+    '庚': 8, '辛': 8,   // 金墓在丑→艮8  (corrected: was mis-set to 坤2)
+    '戊': 4, '己': 4,
+  }
   for (const p of palaces) {
     if (p.number === 5) continue
-    const h = p.heavenStem, e = p.earthStem
-    if (!h || !e) continue
+    const e = p.earthStem
+    const heavenStems = p.heavenStem.split('、').map(s => s.trim()).filter(Boolean)
+    if (!e || heavenStems.length === 0) continue
+    const push = (name: string, type: QimenPattern['type'], description: string) =>
+      patterns.push({ name, type, palace: p.name, description })
 
-    // 青龙返首: 天盘戊+地盘甲 (戊代甲)
-    if (h === '戊' && e === '甲') {
-      // Strictly in 乾6 is classic, but any palace is recognized
-      patterns.push({
-        name: '青龙返首', type: 'auspicious', palace: p.name,
-        description: '大吉格，万事如意，利于谋事、出行、求官',
-      })
-    }
-    // 飞鸟跌穴: 天盘甲+地盘己 (or 戊+己 in some schools)
-    if ((h === '甲' || h === '戊') && e === '己') {
-      patterns.push({
-        name: '飞鸟跌穴', type: 'auspicious', palace: p.name,
-        description: '吉格，利于隐藏、防守、暗中谋事',
-      })
-    }
-    // 龙逃走: 天盘甲(戊)遇地盘辛
-    if ((h === '甲' || h === '戊') && e === '辛') {
-      patterns.push({
-        name: '龙逃走', type: 'inauspicious', palace: p.name,
-        description: '不利格，主人走失、逃避、奴欺主',
-      })
-    }
-    // 虎猖狂: 天盘辛遇地盘甲(戊)
-    if (h === '辛' && (e === '甲' || e === '戊')) {
-      patterns.push({
-        name: '虎猖狂', type: 'inauspicious', palace: p.name,
-        description: '凶格，主强人作乱、客欺主、有损失',
-      })
-    }
+    for (const h of heavenStems) {
+      // ── 仪奇格 (天盘干 + 地盘干) ──
+      if (h === '戊' && e === '丙') push('青龙返首', 'auspicious', '大吉格，万事如意，利于谋事、出行、求官')      // 戊(代甲)+丙
+      if (h === '丙' && e === '戊') push('飞鸟跌穴', 'auspicious', '大吉格，喜从天降、谋望遂心、利求财')          // 丙+戊
+      if (h === '戊' && e === '辛') push('龙逃走', 'inauspicious', '不利格，主走失、逃避、计划受阻')              // 戊(代甲)+辛
+      if (h === '辛' && e === '戊') push('虎猖狂', 'inauspicious', '凶格，主强人作乱、客欺主、有损失')            // 辛+戊(代甲)
 
-    // 三奇得使: 乙丙丁临开休生三吉门
-    const sanQi = ['乙', '丙', '丁']
-    const jiMen = ['开门', '休门', '生门']
-    if (sanQi.includes(h) && jiMen.includes(p.door)) {
-      patterns.push({
-        name: '三奇得使', type: 'auspicious', palace: p.name,
-        description: `${h}奇临${p.door}，吉格，利于谋事、求官、出行`,
-      })
-    }
+      // ── 庚格 (六仪凶格) ──  庚加癸=大格 / 庚加壬=小格 / 庚加己=刑格 / 庚加庚=战格
+      if (h === '庚') {
+        if (e === '癸') push('大格', 'inauspicious', '凶格，主道路阻隔、行人不至、官非是非')
+        else if (e === '壬') push('小格', 'inauspicious', '凶格，主小阻、出行往来不利')
+        else if (e === '己') push('刑格', 'inauspicious', '凶格，主官符、刑讼牵连')
+        else if (e === '庚') push('战格', 'inauspicious', '凶格，两金相争，主争斗、冲突')
+      }
 
-    // 三奇入墓
-    if ((h === '乙' && p.number === 6) || // 乙入乾金墓
-        (h === '丙' && p.number === 6) || // 丙入乾(戌墓)
-        (h === '丁' && p.number === 2))   // 丁入坤(未墓)
-    {
-      patterns.push({
-        name: '三奇入墓', type: 'inauspicious', palace: p.name,
-        description: `${h}奇入墓于${p.name}，主昏暗不明、事情受阻`,
-      })
-    }
+      // ── 三奇得使: 乙丙丁临开休生三吉门 ──
+      if (sanQi.includes(h) && jiMen.includes(p.door)) push('三奇得使', 'auspicious', `${h}奇临${p.door}，吉格，利于谋事、求官、出行`)
 
-    // 天遁: 天盘丙+地盘戊+生门
-    if (h === '丙' && e === '戊' && p.door === '生门') {
-      patterns.push({
-        name: '天遁', type: 'auspicious', palace: p.name,
-        description: '大吉格，天助之格，利于祈福、上书、迁徙',
-      })
-    }
-    // 地遁: 天盘乙+地盘己+开门
-    if (h === '乙' && e === '己' && p.door === '开门') {
-      patterns.push({
-        name: '地遁', type: 'auspicious', palace: p.name,
-        description: '大吉格，地助之格，利于藏形、遁迹、营建',
-      })
-    }
-    // 人遁: 天盘丁+地盘己+休门
-    if (h === '丁' && e === '己' && p.door === '休门') {
-      patterns.push({
-        name: '人遁', type: 'auspicious', palace: p.name,
-        description: '大吉格，人助之格，利于求贵、见人、婚姻',
-      })
-    }
+      // ── 三遁 (天/地/人遁) ──
+      if (h === '丙' && e === '戊' && p.door === '生门') push('天遁', 'auspicious', '大吉格，天助之格，利于祈福、上书、迁徙')
+      if (h === '乙' && e === '己' && p.door === '开门') push('地遁', 'auspicious', '大吉格，地助之格，利于藏形、遁迹、营建')
+      if (h === '丁' && e === '己' && p.door === '休门') push('人遁', 'auspicious', '大吉格，人助之格，利于求贵、见人、婚姻')
 
-    // 玉女守门: 天盘丁+地盘己+开门(一说休门)
-    if (h === '丁' && e === '己' && (p.door === '开门')) {
-      patterns.push({
-        name: '玉女守门', type: 'auspicious', palace: p.name,
-        description: '吉格，利于求婚、见贵人、暗中行事',
-      })
-    }
+      // ── 玉女守门 ──
+      if (h === '丁' && e === '己' && p.door === '开门') push('玉女守门', 'auspicious', '吉格，利于求婚、见贵人、暗中行事')
 
-    // 庚格: 天盘庚遇地盘丙/丁/乙
-    if (h === '庚' && ['丙', '丁', '乙'].includes(e)) {
-      const subName = e === '丙' ? '大格' : e === '丁' ? '小格' : '刑格'
-      patterns.push({
-        name: `庚${subName}`, type: 'inauspicious', palace: p.name,
-        description: `凶格，主阻隔、官讼、行事不通`,
-      })
-    }
+      // ── 三奇入墓 ──  (NOTE: palace mapping is school-variant — kept from the
+      //     original; verify against your reference before relying on it.)
+      if ((h === '乙' && p.number === 6) || (h === '丙' && p.number === 6) || (h === '丁' && p.number === 2))
+        push('三奇入墓', 'inauspicious', `${h}奇入墓于${p.name}，主昏暗不明、事情受阻`)
 
-    // 入墓: 天干入墓于所在宫
-    const stemTombs: Record<string, number> = {
-      '甲': 2, '乙': 2, // 木墓在未→坤2
-      '丙': 6, '丁': 6, // 火墓在戌→乾6
-      '壬': 4, '癸': 4, // 水墓在辰→巽4
-      '庚': 2, '辛': 2, // 金墓在丑→艮8? (some use 坤2/未)
-      '戊': 4, '己': 4, // 土墓在辰→巽4
-    }
-    if (stemTombs[h] === p.number && !sanQi.includes(h)) {
-      patterns.push({
-        name: '天干入墓', type: 'inauspicious', palace: p.name,
-        description: `${h}入墓于${p.name}，主事情受阻、不得出头`,
-      })
+      // ── 六仪入墓 (非三奇之干临其墓库宫) ──
+      if (stemTombs[h] === p.number && !sanQi.includes(h)) push('天干入墓', 'inauspicious', `${h}入墓于${p.name}，主事情受阻、不得出头`)
     }
   }
 
@@ -283,7 +254,6 @@ export function calculateQimen(dateTime: Date): QimenChart {
   const round = taobi.round as number
   const roundLabel = round > 0 ? `阳遁${round}局` : `阴遁${Math.abs(round)}局`
 
-  const zhiFuIndex = taobi.getSymbol() as number
   const zhiFu = taobi.getSymbol(true) as string
   const zhiShiIndex = taobi.getMandate() as number
   const zhiShi = DOOR_ARR[zhiShiIndex] || `第${zhiShiIndex}门`
@@ -300,8 +270,12 @@ export function calculateQimen(dateTime: Date): QimenChart {
       // cell structure: [[divinity,"",""], [door,"",heavenStem], [star,"palaceName",earthStem]]
       const divinity = cell[0][0] || ''
       const door = cell[1][0] || ''
-      const heavenStem = cell[1][2] || ''
-      const star = (cell[2][0] || '').split(',')[0] // may have comma-separated (e.g. 天芮星,天禽星)
+      // The 寄宫 stacks two stars and their two heaven stems (e.g. "天芮星,天禽星"
+      // / "丙,己"). Keep BOTH — normalize the separator to 、. Previously `star`
+      // dropped the 2nd (lost 天禽) and `heavenStem` leaked the raw "丙,己" into
+      // the LLM/renderer AND broke equality checks in detectPatterns.
+      const heavenStem = (cell[1][2] || '').replace(/[,，]/g, '、')
+      const star = (cell[2][0] || '').replace(/[,，]/g, '、')
       const earthStem = cell[2][2] || ''
 
       const palace: QimenPalace = {
@@ -322,6 +296,19 @@ export function calculateQimen(dateTime: Date): QimenChart {
 
   const patterns = detectPatterns(palaces)
 
+  // ─── Derived key positions ───────────────────────────────────────────
+  const palaceName = (num: number) => palaces.find(p => p.number === num)?.name || ''
+  const hourCycleIndex = cal.hour.index as number
+  // 值符落宫 / 值使落宫: locate the palace currently holding the 值符 star / 值使 door.
+  const zhiFuPalace = palaces.find(p => p.star.includes(zhiFu))?.name || ''
+  const zhiShiPalace = palaces.find(p => p.door === zhiShi)?.name || ''
+  // 旬空 (空亡): from the hour's 旬 (六甲旬 index) → 地支 → 宫.
+  const voidBranches = XUN_KONG[Math.floor(hourCycleIndex / 10)] || []
+  const voidPalaces = Array.from(new Set(voidBranches.map(b => BRANCH_PALACE[b]).filter(Boolean))).map(palaceName)
+  // 驿马 (马星): from the hour 地支 三合局 → 地支 → 宫.
+  const horseBranch = HORSE_BY_BRANCH[BRANCHES[hourCycleIndex % 12]] || ''
+  const horsePalace = horseBranch && BRANCH_PALACE[horseBranch] ? palaceName(BRANCH_PALACE[horseBranch]) : ''
+
   return {
     year: yearGZ,
     month: monthGZ,
@@ -332,6 +319,12 @@ export function calculateQimen(dateTime: Date): QimenChart {
     roundLabel,
     zhiFu,
     zhiShi,
+    zhiFuPalace,
+    zhiShiPalace,
+    voidBranches,
+    voidPalaces,
+    horseBranch,
+    horsePalace,
     palaces,
     grid,
     patterns,

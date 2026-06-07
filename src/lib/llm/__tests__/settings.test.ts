@@ -20,6 +20,8 @@ beforeEach(() => {
   delete process.env.LLM_REASONING_EFFORT
   delete process.env.DIVINATION_REASONING_EFFORT
   delete process.env.CHAT_REASONING_EFFORT
+  delete process.env.MASTER_REASONING_EFFORT
+  delete process.env.MASTER_BACKGROUND_REASONING_EFFORT
 })
 
 afterEach(() => {
@@ -144,6 +146,11 @@ describe('resolveLLMConfig — timeout and maxTokens resolution', () => {
     expect(cfg.maxTokens).toBe(LLM_DEFAULTS.MAX_TOKENS)
   })
 
+  it('masterBackground defaults maxTokens to 1500 (short background task)', async () => {
+    const cfg = await resolveLLMConfig({ endpoint: 'masterBackground', settingsMap: {} })
+    expect(cfg.maxTokens).toBe(1500)
+  })
+
   it('parses llmTimeoutSeconds setting into milliseconds', async () => {
     const cfg = await resolveLLMConfig({
       endpoint: 'divination',
@@ -175,6 +182,30 @@ describe('resolveLLMConfig — timeout and maxTokens resolution', () => {
     expect(cfg.model).toBe('x/y')
     expect(cfg.maxTokens).toBe(2048)
     expect(cfg.timeoutMs).toBe(5000)
+  })
+
+  it('per-function maxTokens overrides global llmMaxTokens', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'master',
+      settingsMap: { masterMaxTokens: '2000', llmMaxTokens: '8192' },
+    })
+    expect(cfg.maxTokens).toBe(2000)
+  })
+
+  it('blank per-function maxTokens falls back to global llmMaxTokens', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'master',
+      settingsMap: { masterMaxTokens: '', llmMaxTokens: '5000' },
+    })
+    expect(cfg.maxTokens).toBe(5000)
+  })
+
+  it('per-function timeout overrides global llmTimeoutSeconds', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'chat',
+      settingsMap: { chatTimeoutSeconds: '90', llmTimeoutSeconds: '240' },
+    })
+    expect(cfg.timeoutMs).toBe(90 * 1000)
   })
 })
 
@@ -210,12 +241,40 @@ describe('resolveLLMConfig — reasoningEffort resolution', () => {
     expect(cfg.reasoningEffort).toBe('off')
   })
 
-  it('chatReasoningEffort also applies to master endpoint', async () => {
+  it("masterBackground defaults to 'off'", async () => {
+    const cfg = await resolveLLMConfig({ endpoint: 'masterBackground', settingsMap: {} })
+    expect(cfg.reasoningEffort).toBe('off')
+  })
+
+  it('masterReasoningEffort drives master (no longer inherits chat)', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'master',
+      settingsMap: { masterReasoningEffort: 'high', chatReasoningEffort: 'medium' },
+    })
+    expect(cfg.reasoningEffort).toBe('high')
+  })
+
+  it('chatReasoningEffort does NOT leak to master endpoint', async () => {
     const cfg = await resolveLLMConfig({
       endpoint: 'master',
       settingsMap: { chatReasoningEffort: 'medium' },
     })
-    expect(cfg.reasoningEffort).toBe('medium')
+    expect(cfg.reasoningEffort).toBe('low') // master default, not chat's value
+  })
+
+  it('masterBackgroundReasoningEffort drives masterBackground', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'masterBackground',
+      settingsMap: { masterBackgroundReasoningEffort: 'high' },
+    })
+    expect(cfg.reasoningEffort).toBe('high')
+  })
+
+  it('global llmReasoningEffort applies to master/masterBackground when their key unset', async () => {
+    const cfgM = await resolveLLMConfig({ endpoint: 'master', settingsMap: { llmReasoningEffort: 'high' } })
+    expect(cfgM.reasoningEffort).toBe('high')
+    const cfgB = await resolveLLMConfig({ endpoint: 'masterBackground', settingsMap: { llmReasoningEffort: 'high' } })
+    expect(cfgB.reasoningEffort).toBe('high')
   })
 
   it('divinationReasoningEffort does NOT leak to chat endpoint', async () => {
