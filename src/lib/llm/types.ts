@@ -2,7 +2,15 @@
  * Shared types for the unified LLM module.
  */
 
-export type Endpoint = 'divination' | 'chat' | 'master'
+/**
+ * LLM call endpoints. Each resolves its own model/config from AdminSetting.
+ *   - 'master'           → Xuanji Master main ask→answer turn (user-facing).
+ *   - 'masterBackground' → Master background tasks (history summarization,
+ *                          portrait extraction) — configured separately from
+ *                          the main answer model so they can run on a cheaper
+ *                          model without affecting answer quality.
+ */
+export type Endpoint = 'divination' | 'chat' | 'master' | 'masterBackground'
 
 export type MessageRole = 'system' | 'user' | 'assistant' | 'tool'
 

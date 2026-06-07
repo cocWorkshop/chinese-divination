@@ -540,13 +540,15 @@ export function calculateBazi(
       branch: sc.getEarthBranch().getName(),
       nayin: sc.getSound().getName(),
       startAge: df.getStartAge(),
-      startYear: year + df.getStartAge(),
+      startYear: df.getStartLunarYear().getYear(),
       endAge: df.getEndAge(),
-      endYear: year + df.getEndAge(),
+      endYear: df.getEndLunarYear().getYear(),
     })
   }
 
-  // Xiao Yun (before qi yun starts)
+  // Xiao Yun (before qi yun starts) — tyme4ts `Fortune` is the 小運; take its
+  // own year (getLunarYear) rather than manual `year + age`, which was off by
+  // one (虛歲 N = birthYear + N - 1).
   const xiaoYun: XiaoYunPillar[] = []
   const maxXiaoYunAge = Math.floor(startAge)
   for (let i = 0; i < Math.max(maxXiaoYunAge, 1); i++) {
@@ -556,18 +558,24 @@ export function calculateBazi(
       stem: sc.getHeavenStem().getName(),
       branch: sc.getEarthBranch().getName(),
       age: f.getAge(),
-      year: year + f.getAge(),
+      year: f.getLunarYear().getYear(),
     })
   }
 
-  // Liu Nian (流年) — annual fortune pillars across Da Yun range
+  // Liu Nian (流年) — each year's CALENDAR 干支 across the Da Yun range.
+  // NOTE: tyme4ts `Fortune.getSixtyCycle()` is 小運 (time-pillar-derived), NOT
+  // the calendar-year 干支 — using it showed wrong 流年 (e.g. 2024 as 癸亥
+  // instead of 甲辰). 流年 is universal/calendar-based, so take the Fortune's
+  // own SixtyCycleYear (立春-correct) for both the year number and its 干支;
+  // this also gives the correct year (no manual `year + age` off-by-one).
   const liuNian: LiuNianPillar[] = []
   const luckySet = new Set(luckyElements.filter(Boolean))
   const avoidSet = new Set(avoidElements.filter(Boolean))
   const totalLiuNianCount = Math.min(opts.liuNianCount, 80)
   for (let i = 0; i < totalLiuNianCount; i++) {
     const f = Fortune.fromChildLimit(childLimit, i)
-    const sc = f.getSixtyCycle()
+    const scy = f.getSixtyCycleYear()
+    const sc = scy.getSixtyCycle()
     const stemName = sc.getHeavenStem().getName()
     const branchName = sc.getEarthBranch().getName()
     const stemElement = STEM_ELEMENT[stemName]
@@ -580,7 +588,7 @@ export function calculateBazi(
       branch: branchName,
       nayin: sc.getSound().getName(),
       age: f.getAge(),
-      year: year + f.getAge(),
+      year: scy.getYear(),
       tenGod: tenGod(dStem, stemName),
       isLucky,
     })

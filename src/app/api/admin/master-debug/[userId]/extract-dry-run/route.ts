@@ -17,14 +17,13 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/adminAuth'
-import { prisma } from '@/lib/prisma'
 import {
   loadMasterChatMessages,
   getActiveSessionId,
 } from '@/lib/master/chatMessageStore'
 import { loadPortrait } from '@/lib/master/portraitStore'
 import { parseExtractorOutput } from '@/lib/master/portraitExtractor'
-import { completeLLM } from '@/lib/llm'
+import { completeLLM, resolveLLMConfig } from '@/lib/llm'
 import { logAdminAccess } from '@/lib/master/adminAccessLog'
 
 interface RouteParams {
@@ -93,12 +92,8 @@ export async function POST(_req: Request, { params }: RouteParams) {
     '[/NEW_MESSAGES]',
   ].join('\n')
 
-  // Resolve model (same fallback as the real extractor)
-  const settings = await prisma.adminSetting.findMany({
-    where: { key: { in: ['portraitModelName', 'model1Name'] } },
-  })
-  const map = Object.fromEntries(settings.map((s) => [s.key, s.value]))
-  const model = process.env.PORTRAIT_MODEL || map.portraitModelName || map.model1Name || 'openai/gpt-4o-mini'
+  // Resolve model (same as the real extractor — masterBackground endpoint)
+  const { model } = await resolveLLMConfig({ endpoint: 'masterBackground' })
 
   let proposed: ReturnType<typeof parseExtractorOutput> | null = null
   let parseError: string | null = null
@@ -106,7 +101,7 @@ export async function POST(_req: Request, { params }: RouteParams) {
   let rawOutput = ''
   try {
     const result = await completeLLM({
-      endpoint: 'master',
+      endpoint: 'masterBackground',
       userId: targetUserId,
       systemPrompt: DRY_RUN_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],

@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
@@ -46,7 +45,12 @@ const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 export default function BaziResultV2({ data, isShared, rawResult, readingId, chatMessages, subjectName, birthInfo, createdAt, streaming }: DivinationResultProps) {
   const d = data as unknown as BaziDataV2
   const { lang } = useLang()
-  const [showExtra, setShowExtra] = useState(false)
+  // Chart-only (排盤) reading: the chart fields are present but there are no
+  // LLM-written sections, so hide the section drawers and the Q&A card.
+  const isPaipan = Boolean((data as { paipanOnly?: boolean }).paipanOnly)
+  // Reveal the Xuanji Q&A only after streaming completes (the 3 auto-generated
+  // suggested questions are ready by then); hide it during streaming.
+  const qaReady = !streaming
   const liuNianScroll = useDragScroll<HTMLDivElement>()
 
   const pillars = [
@@ -311,35 +315,16 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                     <td key={label} className="text-[var(--text-muted)] text-[10px] py-1">{(p?.kongWang || []).join('')}</td>
                   ))}
                 </tr>
-              </tbody>
-            </table>
-          </motion.div>
-
-          {/* Shen Sha + Xiao Yun collapsible */}
-          <button onClick={() => setShowExtra(!showExtra)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all"
-            style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--text-secondary)' }}>
-            <span>{T(lang, '📋 神煞 · 小運', '📋 Spirits · Xiao Yun')}</span>
-            <motion.span animate={{ rotate: showExtra ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-gold">▼</motion.span>
-          </button>
-          <AnimatePresence>
-          {showExtra && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }} className="overflow-hidden space-y-3">
-              {allPillarShenSha && (
-                <div className="glass-card rounded-xl p-3 border border-gold/20">
-                  <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '神煞', 'Shen Sha')}</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {(['year','month','day','hour'] as const).map(key => {
-                      const p = d.pillars[key]
+                {allPillarShenSha && (
+                  <tr className="border-t border-white/5">
+                    <td className="text-[var(--text-muted)] text-[10px] py-1 align-top">{T(lang, '神煞', 'Spirits')}</td>
+                    {pillars.map(({ label, data: p }) => {
                       const ss = p?.shenSha || []
-                      const label = lang === 'en' ? key.charAt(0).toUpperCase() + key.slice(1) : (key === 'year' ? '年' : key === 'month' ? '月' : key === 'day' ? '日' : '時')
                       return (
-                        <div key={key}>
-                          <div className="text-[var(--text-muted)] text-[10px] mb-1">{label}</div>
-                          <div className="flex flex-wrap gap-0.5">
+                        <td key={label} className="py-1 align-top">
+                          <div className="flex flex-col items-center gap-0.5">
                             {ss.length > 0 ? ss.map((s: ShenShaEntry, i: number) => (
-                              <span key={i} className="group relative px-1.5 py-0.5 rounded border border-gold/20 bg-gold/5 text-gold text-[10px] cursor-default">
+                              <span key={i} className="group relative px-1 py-0.5 rounded border border-gold/20 bg-gold/5 text-gold text-[9px] cursor-default leading-none whitespace-nowrap">
                                 {s.name}
                                 <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-navy-800 border border-gold/30 rounded text-white/70 text-[9px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                                   {s.description}
@@ -347,6 +332,41 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                               </span>
                             )) : <span className="text-[var(--text-muted)] text-[10px]">—</span>}
                           </div>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </motion.div>
+
+          {/* Da Yun + Xiao Yun — shown directly (no collapse) */}
+          <div className="space-y-3">
+              {d.daYun && d.daYun.length > 0 && (
+                <div className="glass-card rounded-xl p-3 border border-gold/20">
+                  <h3 className="text-gold font-serif text-xs mb-2 flex items-center gap-2">
+                    {T(lang, '大運', 'Da Yun')}
+                    {d.qiYun && (
+                      <span className="text-[var(--text-muted)] text-[10px] font-normal">
+                        {d.qiYun.direction} · {lang === 'en'
+                          ? `starts 虛歲 ${d.daYun?.[0]?.startAge} (≈${d.qiYun.startAgeLabel})`
+                          : `虛歲${d.daYun?.[0]?.startAge}起運（實歲${d.qiYun.startAgeLabel}）`}
+                      </span>
+                    )}
+                  </h3>
+                  <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-1">
+                    {d.daYun.map((dy, i) => {
+                      const currentYear = new Date().getFullYear()
+                      const isCurrent = currentYear >= dy.startYear && currentYear <= dy.endYear
+                      return (
+                        <div key={i} className={`flex-shrink-0 px-2 py-1.5 rounded border text-center min-w-[3rem] ${isCurrent ? 'border-gold ring-1 ring-gold/40 bg-gold/10' : 'border-gold/20 bg-white/5'}`}>
+                          <div className="text-[var(--text-muted)] text-[10px]">{dy.startAge}-{dy.endAge}{T(lang, '歲', '')}</div>
+                          <div className="text-sm font-serif">
+                            <span className={elClr[charElement(dy.stem)] || ''}>{dy.stem}</span>
+                            <span className={elClr[charElement(dy.branch)] || ''}>{dy.branch}</span>
+                          </div>
+                          <div className="text-[var(--text-muted)] text-[9px]">{dy.startYear}</div>
                         </div>
                       )
                     })}
@@ -369,9 +389,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                   </div>
                 </div>
               )}
-            </motion.div>
-          )}
-          </AnimatePresence>
+          </div>
         </div>
       </SectionDrawer>
 
@@ -380,7 +398,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
           prose, not collapsible. Other sections (career/marriage/...) are
           drawers below. During streaming this block also shows the
           typing-dot + blur placeholder. */}
-      {(() => {
+      {!isPaipan && (() => {
         const overview = d.sections?.overview
         const hasContent = typeof overview === 'string' && overview.trim().length > 0
         return (
@@ -426,6 +444,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
           paint; users can collapse individually. During streaming the
           drawer header shows a typing-dot indicator and the body has a
           gaussian blur placeholder until content starts arriving. */}
+      {!isPaipan && (
       <div className="space-y-2">
         {sectionsList.filter(s => s.key !== 'overview').map((s) => {
           const content = d.sections?.[s.key as keyof typeof d.sections]
@@ -468,6 +487,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
           )
         })}
       </div>
+      )}
       <style jsx global>{`
         @keyframes dotPulseV2 {
           0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
@@ -596,17 +616,21 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h3 className="text-gold font-serif text-base mb-2">🎯 {T(lang, '關鍵預測', 'Key Predictions')}</h3>
           <div className="grid gap-2">
-            {d.keyPredictions.map((pred: { age: string; event: string; basis: string }, i: number) => {
-              const ageStr = pred.age || ''
+            {d.keyPredictions.map((pred: { age?: string; ageRange?: string; event: string; basis?: string; reason?: string }, i: number) => {
+              // LLM output varies: age/basis (schema) vs ageRange/reason (observed). Accept both.
+              const ageStr = pred.age || pred.ageRange || ''
+              const basis = pred.basis || pred.reason || ''
               const isCurrent = ageStr.includes('當前') || ageStr.includes('当前') || ageStr.toLowerCase().includes('current')
               return (
                 <div key={i} className={`glass-card rounded-xl p-3 border ${isCurrent ? 'border-gold/50 ring-1 ring-gold/20' : 'border-gold/20'}`}>
-                  <div className="mb-1.5 flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${isCurrent ? 'bg-gold/30 text-gold' : 'bg-gold/20 text-gold'}`}>{pred.age}</span>
-                    {isCurrent && <span className="text-[10px] text-gold/80">📍</span>}
-                  </div>
+                  {ageStr && (
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${isCurrent ? 'bg-gold/30 text-gold' : 'bg-gold/20 text-gold'}`}>{ageStr}</span>
+                      {isCurrent && <span className="text-[10px] text-gold/80">📍</span>}
+                    </div>
+                  )}
                   <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{pred.event}</p>
-                  <p className="text-[var(--text-muted)] text-xs mt-1 italic leading-relaxed">{pred.basis}</p>
+                  {basis && <p className="text-[var(--text-muted)] text-xs mt-1 italic leading-relaxed">{basis}</p>}
                 </div>
               )
             })}
@@ -629,8 +653,8 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
         </motion.div>
       )}
 
-      {/* ═══ XUANJI Q&A ═══ */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />
+      {/* ═══ XUANJI Q&A ═══ (only once streaming done + 3 auto questions ready) */}
+      {!isPaipan && qaReady && <XuanjiChatCard readingResult={rawResult || ''} readingType="bazi" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />}
 
       {/* ═══ LUCKY INFO ═══ */}
       {d.luckyInfo && (

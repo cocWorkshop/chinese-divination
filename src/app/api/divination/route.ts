@@ -214,7 +214,26 @@ export async function POST(req: NextRequest) {
     // ═══ PAIPAN ONLY MODE ═══ — skip LLM, return raw chart, no credit deduction.
     if (paipanOnly) {
       const paipanResult: Record<string, unknown> = { paipanOnly: true, type }
-      if (chart && handler.chartKey) {
+      // Produce the SAME chart shape a full reading would, so the chart-only
+      // view renders through the same (new) renderer instead of a legacy one.
+      // handler.merge() builds the root-level fields the renderers consume
+      // (and bazi/ziwei tag version:2 → V2 renderer). Handlers without a
+      // version-tagging merge fall back to the raw chartKey shape their
+      // renderers already expect for paipan (e.g. qimen, meihua).
+      let merged = false
+      if (chart && handler.merge) {
+        const seed: Record<string, unknown> = {}
+        try {
+          handler.merge(seed, chart, ctx)
+          if (seed.version === 2) {
+            Object.assign(paipanResult, seed)
+            merged = true
+          }
+        } catch (mergeErr) {
+          console.error('[divination/paipan] seed-merge failed:', mergeErr)
+        }
+      }
+      if (!merged && chart && handler.chartKey) {
         paipanResult[handler.chartKey] = chart
       }
       if (shouldSaveHistory && pendingReadingId) {

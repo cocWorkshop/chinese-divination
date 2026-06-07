@@ -143,7 +143,7 @@ export const ziweiSchemaV2 = z.object({
     health: z.string().describe('一句话概括，如"⚠️ 疾厄天机落陷 — 注意神经系统"'),
   }).optional().describe('每个section的一句话摘要'),
 
-  daYunAnalysis: z.array(daYunEntrySchemaZiwei).describe('逐步大限精批，每步含主题、四化叠加、关键事件、建议'),
+  daYunAnalysis: z.array(daYunEntrySchemaZiwei).describe('逐步大限精批（共8步，从第一个大限起连续覆盖约前80年），每步含主题、四化叠加、关键事件、建议'),
 
   keyPredictions: z.array(z.object({
     age: z.string().describe('格式："36歲（2024年）" 或 "46-50歲（2034-2038年）"，如果覆盖当前年份加"當前"如"38歲（2026年，當前）"'),

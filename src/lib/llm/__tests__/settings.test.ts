@@ -16,6 +16,7 @@ beforeEach(() => {
   // Start each test from a clean env slice — tests set only what they need.
   delete process.env.MASTER_MODEL
   delete process.env.OPENROUTER_MODEL
+  delete process.env.PORTRAIT_MODEL
   delete process.env.LLM_REASONING_EFFORT
   delete process.env.DIVINATION_REASONING_EFFORT
   delete process.env.CHAT_REASONING_EFFORT
@@ -77,6 +78,47 @@ describe('resolveLLMConfig — model resolution per endpoint', () => {
   it('master: defaults to gpt-4o when nothing configured', async () => {
     const cfg = await resolveLLMConfig({ endpoint: 'master', settingsMap: {} })
     expect(cfg.model).toBe(LLM_DEFAULTS.MASTER_MODEL)
+  })
+
+  it('master: AdminSetting.masterModelName wins over env and model1Name', async () => {
+    process.env.MASTER_MODEL = 'openai/gpt-4-turbo'
+    const cfg = await resolveLLMConfig({
+      endpoint: 'master',
+      settingsMap: {
+        masterModelName: 'anthropic/claude-3-opus',
+        model1Name: 'anthropic/claude-3-5-haiku',
+      },
+    })
+    expect(cfg.model).toBe('anthropic/claude-3-opus')
+  })
+
+  it('masterBackground: masterBackgroundModelName wins', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'masterBackground',
+      settingsMap: { masterBackgroundModelName: 'openai/gpt-4o-mini' },
+    })
+    expect(cfg.model).toBe('openai/gpt-4o-mini')
+  })
+
+  it('masterBackground: falls back to legacy PORTRAIT_MODEL env then portraitModelName', async () => {
+    process.env.PORTRAIT_MODEL = 'env/portrait-model'
+    const cfg1 = await resolveLLMConfig({ endpoint: 'masterBackground', settingsMap: {} })
+    expect(cfg1.model).toBe('env/portrait-model')
+
+    delete process.env.PORTRAIT_MODEL
+    const cfg2 = await resolveLLMConfig({
+      endpoint: 'masterBackground',
+      settingsMap: { portraitModelName: 'legacy/portrait-key' },
+    })
+    expect(cfg2.model).toBe('legacy/portrait-key')
+  })
+
+  it('masterBackground: defaults to gpt-4o-mini and is independent of master model', async () => {
+    const cfg = await resolveLLMConfig({
+      endpoint: 'masterBackground',
+      settingsMap: { masterModelName: 'anthropic/claude-3-opus' },
+    })
+    expect(cfg.model).toBe(LLM_DEFAULTS.MASTER_BACKGROUND_MODEL)
   })
 
   it('detects local/claude-proxy sentinel', async () => {

@@ -50,12 +50,18 @@ type AnyData = Record<string, any>
 export default function ZiweiResultV2({ data, isShared, rawResult, readingId, chatMessages, subjectName, birthInfo, createdAt, streaming }: DivinationResultProps) {
   const d = data as AnyData
   const { lang } = useLang()
+  // Chart-only (排盤) reading: chart/palaces present but no LLM sections, so
+  // hide the section drawers and the Q&A card.
+  const isPaipan = Boolean((data as { paipanOnly?: boolean }).paipanOnly)
+  // Reveal the Xuanji Q&A only after streaming completes (the 3 auto-generated
+  // suggested questions are ready by then); hide it during streaming.
+  const qaReady = !streaming
   const liuNianScroll = useDragScroll<HTMLDivElement>()
 
   const chart = d.ziweiChart || {}
   const formation = d.formation as { name: string; level: string; analysis: string } | undefined
   const daYunAnalysis = d.daYunAnalysis as AnyData[] | undefined
-  const keyPredictions = d.keyPredictions as { age: string; event: string; basis: string }[] | undefined
+  const keyPredictions = d.keyPredictions as { age?: string; ageRange?: string; event: string; basis?: string; reason?: string }[] | undefined
   const liuNian = d.liuNian as { year: number; age: number; earthlyBranch: string; yearlyMutagen: string[]; huaLuPalace: string; huaJiPalace: string; isLucky: boolean | null }[] | undefined
 
   const levelColor = (level: string) => {
@@ -186,7 +192,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
       )}
 
       {/* ═══ OVERVIEW — main text, NOT a drawer ═══ */}
-      {(() => {
+      {!isPaipan && (() => {
         const overview = d.sections?.overview
         const hasContent = typeof overview === 'string' && overview.trim().length > 0
         return (
@@ -227,6 +233,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
       })()}
 
       {/* ═══ OTHER SECTIONS — drawer style (all default-open) ═══ */}
+      {!isPaipan && (
       <div className="space-y-2">
         {sectionsList.filter(s => s.key !== 'overview').map((s) => {
           const content = d.sections?.[s.key]
@@ -268,6 +275,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
           )
         })}
       </div>
+      )}
       <style jsx global>{`
         @keyframes dotPulseZW {
           0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
@@ -380,16 +388,20 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
           <h3 className="text-gold font-serif text-base mb-2">🎯 {T(lang, '關鍵預測', 'Key Predictions')}</h3>
           <div className="grid gap-2">
             {keyPredictions.map((pred, i) => {
-              const ageStr = pred.age || ''
+              // LLM output varies: age/basis (schema) vs ageRange/reason (observed). Accept both.
+              const ageStr = pred.age || pred.ageRange || ''
+              const basis = pred.basis || pred.reason || ''
               const isCurrent = ageStr.includes('當前') || ageStr.includes('当前') || ageStr.toLowerCase().includes('current')
               return (
                 <div key={i} className={`glass-card rounded-xl p-3 border ${isCurrent ? 'border-gold/50 ring-1 ring-gold/20' : 'border-gold/20'}`}>
-                  <div className="mb-1.5 flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${isCurrent ? 'bg-gold/30 text-gold' : 'bg-gold/20 text-gold'}`}>{pred.age}</span>
-                    {isCurrent && <span className="text-[10px] text-gold/80">📍</span>}
-                  </div>
+                  {ageStr && (
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${isCurrent ? 'bg-gold/30 text-gold' : 'bg-gold/20 text-gold'}`}>{ageStr}</span>
+                      {isCurrent && <span className="text-[10px] text-gold/80">📍</span>}
+                    </div>
+                  )}
                   <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{pred.event}</p>
-                  <p className="text-[var(--text-muted)] text-xs mt-1 italic leading-relaxed">{pred.basis}</p>
+                  {basis && <p className="text-[var(--text-muted)] text-xs mt-1 italic leading-relaxed">{basis}</p>}
                 </div>
               )
             })}
@@ -412,8 +424,8 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
         </motion.div>
       )}
 
-      {/* ═══ XUANJI Q&A ═══ */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.14} />
+      {/* ═══ XUANJI Q&A ═══ (only once streaming done + 3 auto questions ready) */}
+      {!isPaipan && qaReady && <XuanjiChatCard readingResult={rawResult || ''} readingType="ziwei" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.14} />}
 
       {/* ═══ LUCKY INFO ═══ */}
       {d.luckyInfo && (

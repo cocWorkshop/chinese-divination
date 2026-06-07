@@ -19,7 +19,7 @@
  *   - never deducted from user credits (infrastructure cost)
  */
 
-import { completeLLM } from '@/lib/llm'
+import { completeLLM, resolveLLMConfig, clearLLMSettingsCache } from '@/lib/llm'
 import { prisma } from '../prisma'
 import {
   loadPortrait,
@@ -97,37 +97,20 @@ const EXTRACTION_SYSTEM_PROMPT = `你正在更新一个用户的"玄机大师记
 
 // ─── Resolve the model used for extraction ───────────────────────────────
 
-let modelCache: { value: string; expiresAt: number } | null = null
-const MODEL_CACHE_TTL_MS = 60_000
-
+/**
+ * Resolve the model for portrait extraction via the shared 'masterBackground'
+ * endpoint — admin-configurable (masterBackgroundModelName) and distinct from
+ * the master main answer model. Honors the legacy PORTRAIT_MODEL env /
+ * portraitModelName key through the resolver's fallback chain.
+ */
 async function resolvePortraitModel(): Promise<string> {
-  const now = Date.now()
-  if (modelCache && modelCache.expiresAt > now) return modelCache.value
-
-  // Env var wins
-  const envModel = process.env.PORTRAIT_MODEL
-  if (envModel) {
-    modelCache = { value: envModel, expiresAt: now + MODEL_CACHE_TTL_MS }
-    return envModel
-  }
-
-  // AdminSetting fallback chain: portraitModelName → model1Name → default
-  try {
-    const settings = await prisma.adminSetting.findMany({
-      where: { key: { in: ['portraitModelName', 'model1Name'] } },
-    })
-    const map = Object.fromEntries(settings.map((s) => [s.key, s.value]))
-    const value = map.portraitModelName || map.model1Name || 'openai/gpt-4o-mini'
-    modelCache = { value, expiresAt: now + MODEL_CACHE_TTL_MS }
-    return value
-  } catch (err) {
-    console.error('[portraitExtractor] resolvePortraitModel failed:', err)
-    return 'openai/gpt-4o-mini'
-  }
+  const cfg = await resolveLLMConfig({ endpoint: 'masterBackground' })
+  return cfg.model
 }
 
 export function clearPortraitModelCache(): void {
-  modelCache = null
+  // The model now comes from resolveLLMConfig's own TTL cache.
+  clearLLMSettingsCache()
 }
 
 // ─── Build the input message for the extractor ───────────────────────────
@@ -288,7 +271,7 @@ export async function maybeExtractPortrait(
     })
 
     const result = await completeLLM({
-      endpoint: 'master',
+      endpoint: 'masterBackground',
       userId: input.userId,
       systemPrompt: EXTRACTION_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],

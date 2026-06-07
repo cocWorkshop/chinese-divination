@@ -162,16 +162,16 @@ function serializeForSummary(messages: Message[]): string {
 async function narrativeSummarize(
   userId: string,
   oldMessages: Message[],
-  model: string,
 ): Promise<string | null> {
   if (oldMessages.length === 0) return null
   try {
+    // Background task — uses the 'masterBackground' endpoint so it resolves the
+    // admin-configured background model (separate from the main answer model).
     const result = await completeLLM({
-      endpoint: 'master',
+      endpoint: 'masterBackground',
       userId,
       systemPrompt: NARRATIVE_SUMMARY_SYSTEM_PROMPT_ZH,
       messages: [{ role: 'user', content: serializeForSummary(oldMessages) }],
-      model,
       maxTokens: SUMMARY_MAX_TOKENS,
       reasoningEffort: 'low',
     })
@@ -187,7 +187,11 @@ async function narrativeSummarize(
 export interface CompressOptions {
   userId: string
   systemPrompt: string
-  model: string
+  /**
+   * @deprecated No longer used. The narrative summarizer resolves its own model
+   * via the 'masterBackground' endpoint. Kept optional for call-site compat.
+   */
+  model?: string
   /** Override the token budget for tests. */
   tokenBudget?: number
   /** Override how many recent turns to keep verbatim (for tests). */
@@ -223,7 +227,7 @@ export async function compressHistory(
   const old = messages.slice(0, messages.length - keepRecent)
   const recent = messages.slice(messages.length - keepRecent)
 
-  const summary = await narrativeSummarize(opts.userId, old, opts.model)
+  const summary = await narrativeSummarize(opts.userId, old)
   if (!summary) {
     // Summary failed — fall back to dropping the old messages entirely
     // rather than sending an over-budget prompt. Better to lose some

@@ -9,6 +9,7 @@ import { resolveLLMConfig } from '@/lib/llm'
 import type { Message } from '@/lib/llm'
 import { buildMasterSystemPrompt } from '@/lib/master'
 import type { ToolContext } from '@/lib/master'
+import { describeMoment } from '@/lib/currentMoment'
 import {
   appendMasterChatMessage,
   loadMasterChatMessages,
@@ -116,6 +117,8 @@ export async function POST(req: NextRequest) {
       messages?: unknown
       checkin?: unknown
       reflection?: unknown
+      clientTime?: unknown
+      tzOffsetMin?: unknown
     }
     const VALID_HINTS: readonly CheckinHint[] = [
       'gap', 'cta_pending_aged', 'unanswered_user', 'ambiguous_resume', 'long_gap_resume',
@@ -167,15 +170,35 @@ export async function POST(req: NextRequest) {
       select: { language: true },
     })
     const lang: 'zh-TW' | 'en' = user?.language === 'en' ? 'en' : 'zh-TW'
-    const currentDateTime = new Date().toISOString()
+    // Inputs for the "now" the Master sees. The instant comes from the client
+    // when present (else server clock); the timezone offset is resolved below
+    // against the stored value so server-initiated turns stay correct.
+    const clientInstant = typeof body.clientTime === 'string' && !Number.isNaN(Date.parse(body.clientTime))
+      ? new Date(body.clientTime)
+      : new Date()
+    const clientTz = typeof body.tzOffsetMin === 'number' && Number.isFinite(body.tzOffsetMin)
+      ? body.tzOffsetMin
+      : null
 
     // Ensure a MasterSession row exists for this user — it tracks the
     // per-user master usage counter (totalCreditsUsed). Chat history and
     // portrait live in dedicated tables (MasterChatMessage / UserPortrait).
     let masterSession = await prisma.masterSession.findUnique({ where: { userId } })
     if (!masterSession) {
-      masterSession = await prisma.masterSession.create({ data: { userId } })
+      masterSession = await prisma.masterSession.create({ data: { userId, tzOffsetMin: clientTz ?? undefined } })
     }
+
+    // Resolve the timezone: this request's client offset wins; otherwise fall
+    // back to the user's last-seen offset (so server-initiated check-ins are
+    // still in the user's local time); finally UTC. Persist a fresh client
+    // offset for future server-initiated turns.
+    const tzOffsetMin = clientTz ?? masterSession.tzOffsetMin ?? 0
+    if (clientTz !== null && clientTz !== masterSession.tzOffsetMin) {
+      prisma.masterSession.update({ where: { userId }, data: { tzOffsetMin: clientTz } }).catch(() => {})
+    }
+    // Build a divination-friendly "now": local solar date + weekday + 農曆 +
+    // 干支 (年/月/日) — the latter load-bearing for 流年/應期/擇日.
+    const currentDateTime = describeMoment(clientInstant, tzOffsetMin).line
 
     // Silently archive the active session if it has been idle past the stale
     // threshold (default 24h). After this, getActiveSessionId returns null and
@@ -267,13 +290,13 @@ export async function POST(req: NextRequest) {
       systemPrompt += `\n\n---\n\n${checkinAppendix}`
     }
 
-    // Resolve model + initial messages (history compressed if needed).
+    // Resolve the main answer model; background summarization inside
+    // compressHistory resolves its own ('masterBackground') model separately.
     const { model } = await resolveLLMConfig({ endpoint: 'master' })
     const storedRows = await loadMasterChatMessages(userId, sessionId)
     const compressed = await compressHistory(storedRows, {
       userId,
       systemPrompt,
-      model,
     })
     const initialMessages: Message[] = compressed.messages
     if (compressed.summarized) {

@@ -20,7 +20,9 @@ export default function ScrollToTop() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.8 }}
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-24 left-4 z-30 w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-sm transition-colors"
+          // Bottom-right, stacked above the Master FAB. The FAB sits at right-4
+          // (56px wide); right-6 (24px) centers this 40px button over it.
+          className="fixed bottom-24 right-6 z-30 w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-sm transition-colors"
           style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--text-muted)' }}
           aria-label="Scroll to top"
         >

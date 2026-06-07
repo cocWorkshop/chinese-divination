@@ -213,7 +213,7 @@ describe('buildMasterSystemPrompt — personalized prompt block (Phase 4)', () =
     // and BEFORE the dynamic session context
     const personaIdx = prompt.indexOf('玄機大師')
     const personalizedIdx = prompt.indexOf('## User context')
-    const sessionIdx = prompt.indexOf('Current session')
+    const sessionIdx = prompt.indexOf('Current moment — authoritative')
     expect(personaIdx).toBeGreaterThanOrEqual(0)
     expect(personalizedIdx).toBeGreaterThan(personaIdx)
     expect(sessionIdx).toBeGreaterThan(personalizedIdx)

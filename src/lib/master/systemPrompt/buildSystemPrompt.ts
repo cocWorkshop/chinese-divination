@@ -96,8 +96,9 @@ export function buildMasterSystemPrompt(input: BuildMasterSystemPromptInput): st
 
 function buildContextBlock(input: BuildMasterSystemPromptInput): string {
   return [
-    '## Current session',
+    '## Current moment — authoritative; anchor all time reasoning here',
+    `- Now (現在): ${input.currentDateTime}`,
     `- Language: ${input.lang}`,
-    `- Current date/time: ${input.currentDateTime}`,
+    'Resolve 今天／今年／本月、流年大運、年齡、應期、擇日 against the moment above — never against an assumed or training-cutoff date.',
   ].join('\n')
 }

@@ -43,6 +43,8 @@ export default function AdminSettings() {
     llmTimeoutSeconds: '240',
     llmMaxTokens: '8192',
     chatModelName: '',
+    masterModelName: '',
+    masterBackgroundModelName: '',
     cost_bazi: '5',
     cost_ziwei: '5',
     cost_qimen: '5',
@@ -130,6 +132,8 @@ export default function AdminSettings() {
             {textField('model1Name', '占卜模型 API名称 / Divination Model Name', 'e.g. anthropic/claude-3-5-haiku')}
             {textField('model1Label', '占卜模型 顯示名 / Divination Model Label')}
             {textField('chatModelName', '聊天模型 / Chat Model Name', '留空則使用占卜模型')}
+            {textField('masterModelName', '玄機大師（主對話）模型 / Xuanji Master Model', '大師問答主回覆模型。留空則用 MASTER_MODEL 環境變數或占卜模型，預設 openai/gpt-4o')}
+            {textField('masterBackgroundModelName', '玄機大師（後台任務）模型 / Master Background Model', '對話摘要、用戶畫像提取等後台任務，與主對話模型分開配置。留空預設 openai/gpt-4o-mini')}
           </div>
         </div>
 

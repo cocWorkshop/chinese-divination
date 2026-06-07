@@ -26,6 +26,7 @@ import { usePathname } from 'next/navigation'
 import { useMasterChat } from './MasterChatContext'
 import { useLang } from '@/components/LanguageContext'
 import CollapsedBar, { type GateIntent } from './widget/CollapsedBar'
+import MasterFab from './widget/MasterFab'
 import ExpandedView from './widget/ExpandedView'
 import MemoryGateModal from './widget/MemoryGateModal'
 
@@ -36,6 +37,7 @@ export default function MasterChatWidget() {
     enabled,
     shape,
     setShape,
+    pendingReading,
     disclosureSeen,
     portraitEnabled,
     sendMessage,
@@ -83,7 +85,14 @@ export default function MasterChatWidget() {
   return (
     <>
       {shape === 'collapsed' ? (
-        <CollapsedBar needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} />
+        // Default collapsed entry is a compact bottom-right FAB. The
+        // informative full-width bar is reserved for the active-reading
+        // handoff (pendingReading), where its return-to-form text matters.
+        pendingReading ? (
+          <CollapsedBar needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} />
+        ) : (
+          <MasterFab needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} />
+        )
       ) : (
         <ExpandedView needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} />
       )}

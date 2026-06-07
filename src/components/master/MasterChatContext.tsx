@@ -439,7 +439,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
         const res = await fetch('/api/master', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ ...payload, clientTime: new Date().toISOString(), tzOffsetMin: new Date().getTimezoneOffset() }),
           signal: abortRef.current.signal,
         })
 
@@ -618,7 +618,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
             const retryRes = await fetch('/api/master', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
+              body: JSON.stringify({ ...payload, clientTime: new Date().toISOString(), tzOffsetMin: new Date().getTimezoneOffset() }),
               signal: abortRef.current.signal,
             })
             if (retryRes.ok) {

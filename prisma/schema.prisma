@@ -406,6 +406,9 @@ model MasterSession {
   userId           String   @unique
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   totalCreditsUsed Int      @default(0)
+  /// Last-seen client timezone offset (Date.getTimezoneOffset() minutes; UTC+8 → -480).
+  /// Timezone fallback for server-initiated turns (check-ins / reflections).
+  tzOffsetMin      Int?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

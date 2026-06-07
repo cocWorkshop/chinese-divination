@@ -8,10 +8,6 @@ import YinYangIcon from '@/components/YinYangIcon'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
-import LoadingOracle from '@/components/LoadingOracle'
-import ResultRenderer from '@/components/results/ResultRenderer'
-import ReadingFeedback from '@/components/ReadingFeedback'
-import ShareResultButton from '@/components/ShareResultButton'
 import { useMasterChat } from '@/components/master/MasterChatContext'
 
 const relationLabels: Record<string, { zh: string; en: string }> = {
@@ -25,6 +21,7 @@ const relationLabels: Record<string, { zh: string; en: string }> = {
   friend: { zh: '朋友', en: 'Friend' },
   other: { zh: '其他', en: 'Other' },
 }
+
 
 interface Reading {
   id: string
@@ -138,7 +135,6 @@ export default function DashboardPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [readings, setReadings] = useState<Reading[]>([])
-  const [expanded, setExpanded] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTypeFilter, setActiveTypeFilter] = useState<string | null>(null)
   const [visibleCount, setVisibleCount] = useState(15)
@@ -171,46 +167,13 @@ export default function DashboardPage() {
   }, [session])
 
   // Deep-link: when arriving with `?reading={id}` (e.g. from a Master
-  // chat reading-card click), auto-expand and scroll to that reading once
-  // the list has loaded. We bump visibleCount if the target is past the
-  // initial slice so the element actually exists in the DOM to scroll to.
+  // chat reading-card click), open that reading on its own page.
   useEffect(() => {
     const targetId = searchParams.get('reading')
-    if (!targetId || readings.length === 0) return
-    const idx = readings.findIndex((r) => r.id === targetId)
-    if (idx < 0) return
-    setExpanded(targetId)
-    if (idx + 1 > visibleCount) {
-      setVisibleCount(idx + 5)
-    }
-    // Defer the scroll until after the expand re-render has committed.
-    requestAnimationFrame(() => {
-      const el = document.getElementById(`reading-${targetId}`)
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-  }, [readings, searchParams, visibleCount])
+    if (targetId) router.replace(`/reading/${targetId}`)
+  }, [searchParams, router])
 
-  // Poll pending readings when expanded
-  useEffect(() => {
-    if (!expanded) return
-    const reading = readings.find(r => r.id === expanded)
-    if (!reading || (reading.status !== 'pending' && reading.status !== undefined)) return
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/readings/${expanded}`)
-        if (!res.ok) return
-        const data = await res.json()
-        if (data.reading?.status === 'completed' || data.reading?.status === 'failed') {
-          setReadings(prev => prev.map(r => r.id === expanded ? { ...r, ...data.reading } : r))
-        }
-      } catch { /* ignore */ }
-    }, 10000)
-
-    return () => clearInterval(interval)
-  }, [expanded, readings])
-
-  // Auto-poll all pending readings (even when not expanded)
+  // Auto-poll all pending readings to keep their status badges fresh
   useEffect(() => {
     const pendingReadings = readings.filter(r => r.status === 'pending')
     if (pendingReadings.length === 0) return
@@ -230,17 +193,6 @@ export default function DashboardPage() {
 
     return () => clearInterval(interval)
   }, [readings])
-
-  const retryReading = async (r: Reading) => {
-    // Delete the failed reading, then redirect to divination page for a fresh start
-    try {
-      await fetch(`/api/readings/${r.id}`, { method: 'DELETE' })
-      setReadings(prev => prev.filter(x => x.id !== r.id))
-    } catch {
-      // Even if delete fails, still navigate
-    }
-    router.push(`/divination/${r.type}`)
-  }
 
   const deleteReading = async (id: string) => {
     // Mark as deleting so the card shows a loading overlay while the request
@@ -372,9 +324,8 @@ export default function DashboardPage() {
               )}
               <button
                 type="button"
-                aria-expanded={expanded === r.id}
                 className={`w-full text-left p-5 cursor-pointer hover:bg-white/5 transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''} ${isDeleting ? 'pointer-events-none' : ''}`}
-                onClick={() => setExpanded(expanded === r.id ? null : r.id)}
+                onClick={() => router.push(`/reading/${r.id}`)}
               >
                 <div className="flex justify-between items-start">
                   <div>
@@ -438,7 +389,7 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </div>
-                {expanded !== r.id && (() => {
+                {(() => {
                   if (r.status === 'pending') {
                     return (
                       <p className="text-white/50 text-sm mt-2">
@@ -488,74 +439,6 @@ export default function DashboardPage() {
                   )
                 })()}
               </button>
-              <AnimatePresence>
-                {expanded === r.id && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="border-t border-gold/10 px-2 sm:px-5 pb-4 sm:pb-5 pt-3 sm:pt-4 overflow-hidden w-full min-w-0"
-                  >
-                    {r.status === 'pending' ? (
-                      <LoadingOracle divinationType={r.type} startTime={new Date(r.createdAt).getTime()} />
-                    ) : r.status === 'failed' ? (
-                      <div className="text-center py-8 text-red-300">
-                        <p className="text-2xl mb-2">⚠️</p>
-                        <p>{lang === 'en' ? 'This reading failed to generate.' : '解讀生成失敗'}</p>
-                        <p className="text-sm text-white/40 mt-1">
-                          {lang === 'en' ? 'Your Karma was not deducted. Please try again.' : '機緣未被扣除，請重新嘗試。'}
-                        </p>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); retryReading(r) }}
-                          className="mt-4 px-6 py-2 rounded-lg font-medium text-sm transition-all hover:opacity-90"
-                          style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}
-                        >
-                          {lang === 'en' ? '🔄 Retry' : '🔄 重新占卜'}
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-full max-w-full overflow-x-hidden">
-                          <ResultRenderer
-                            result={r.result}
-                            type={r.type}
-                            readingId={r.id}
-                            subjectName={
-                              r.targetType === 'family' && r.familyMember
-                                ? r.familyMember.name || r.familyMember.relation
-                                : session?.user?.name || null
-                            }
-                            birthInfo={r.inputData ? {
-                              birthDate: r.inputData.birthDate as string | undefined,
-                              birthTime: r.inputData.birthTime as string | undefined,
-                              gender: r.inputData.gender as string | undefined,
-                              calendarType: r.inputData.lunarToggle as string | undefined,
-                              birthPlace: r.inputData.birthPlace as string | undefined,
-                              exactTime: r.inputData.timeMode === 'precise' ? (r.inputData.exactTime as string | undefined) : undefined,
-                            } : null}
-                            createdAt={r.createdAt}
-                          />
-                        </div>
-                        <div className="mt-4">
-                          <ReadingFeedback
-                            readingId={r.id}
-                            initialRating={r.rating}
-                          />
-                        </div>
-                        <ShareResultButton readingId={r.id} shareToken={r.shareToken} lang={lang} />
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setExpanded(null) }}
-                          className="w-full mt-4 py-2 text-xs rounded-lg transition-colors"
-                          style={{ color: 'var(--text-muted)', border: '1px solid var(--card-border)' }}
-                        >
-                          {lang === 'en' ? '▲ Collapse' : '▲ 收起'}
-                        </button>
-                      </>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </motion.div>
             )
           })}

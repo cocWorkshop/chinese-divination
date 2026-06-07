@@ -40,6 +40,9 @@ export interface ResolveOptions {
 
 const DEFAULT_MODEL = 'anthropic/claude-3-5-haiku'
 const DEFAULT_MASTER_MODEL = 'openai/gpt-4o'
+// Master background tasks (summarization / portrait extraction) default to a
+// cheap, fast model — these are infrastructure calls, not user-facing answers.
+const DEFAULT_MASTER_BACKGROUND_MODEL = 'openai/gpt-4o-mini'
 const DEFAULT_MAX_TOKENS = 8192
 const DEFAULT_TIMEOUT_SECONDS = 240
 
@@ -52,6 +55,11 @@ const DEFAULT_CHAT_REASONING: ReasoningEffort = 'low'
 const SETTING_KEYS = [
   'model1Name',
   'chatModelName',
+  // Per-function master models: main answer vs. background tasks.
+  'masterModelName',
+  'masterBackgroundModelName',
+  // Legacy key kept as a fallback for masterBackground (was the portrait model).
+  'portraitModelName',
   'llmTimeoutSeconds',
   'llmMaxTokens',
   // Per-endpoint reasoning settings (preferred).
@@ -118,13 +126,25 @@ function resolveModelForEndpoint(
   settingsMap: Record<string, string | undefined>
 ): string {
   if (endpoint === 'master') {
-    // Master keeps its distinct env-var chain but also honors model1Name from
-    // AdminSetting if no env override is set.
+    // Admin-configured master model wins (so the admin page is authoritative);
+    // then the legacy env-var chain; then model1Name; then default.
     return (
+      settingsMap.masterModelName ||
       process.env.MASTER_MODEL ||
       process.env.OPENROUTER_MODEL ||
       settingsMap.model1Name ||
       DEFAULT_MASTER_MODEL
+    )
+  }
+  if (endpoint === 'masterBackground') {
+    // Background tasks (summarization / portrait extraction). Admin key wins,
+    // then the legacy PORTRAIT_MODEL env + portraitModelName key for backward
+    // compatibility, then a cheap default.
+    return (
+      settingsMap.masterBackgroundModelName ||
+      process.env.PORTRAIT_MODEL ||
+      settingsMap.portraitModelName ||
+      DEFAULT_MASTER_BACKGROUND_MODEL
     )
   }
   if (endpoint === 'chat') {
@@ -197,6 +217,7 @@ export async function resolveLLMConfig(opts: ResolveOptions): Promise<LLMConfig>
 export const LLM_DEFAULTS = {
   MODEL: DEFAULT_MODEL,
   MASTER_MODEL: DEFAULT_MASTER_MODEL,
+  MASTER_BACKGROUND_MODEL: DEFAULT_MASTER_BACKGROUND_MODEL,
   MAX_TOKENS: DEFAULT_MAX_TOKENS,
   TIMEOUT_SECONDS: DEFAULT_TIMEOUT_SECONDS,
   DIVINATION_REASONING: DEFAULT_DIVINATION_REASONING,

@@ -30,8 +30,8 @@ npm run build              # next build (standalone output for Docker)
 npm start                  # next start
 npm run lint               # next lint (ESLint)
 npm run db:generate        # prisma generate
-npm run db:migrate         # prisma migrate dev (interactive)
-npm run db:push            # prisma db push (no migration)
+npm run db:migrate         # prisma migrate dev (interactive) — the correct way to change schema
+npm run db:push            # prisma db push — ⚠️ AVOID on dev/prod (drifts migration history); local-throwaway only
 npx vitest                 # run unit tests
 npx tsc --noEmit           # typecheck (no dedicated script)
 ./tests/run_tests.sh       # shell integration test suite
@@ -133,7 +133,7 @@ Global chat agent that reads the user's divination state and redirects to the UI
 
 **System prompt composer** (`systemPrompt/`): `buildMasterSystemPrompt()` assembles persona (loaded once from `divination-refs/master.md`) + capability catalog (generated from the tool registry, so it can't drift) + skills catalog (language-aware) + dynamic context (lang, current datetime, optional legacy portrait). The stable prefix benefits from Anthropic's 5-min prompt cache across turns.
 
-**Skills** (`skills/`): composite workflows the master follows as recipes. Each skill is a typed `SkillDef` with id, zh/en names, description, prerequisites, and a prose recipe that explicitly lists the tool calls in order. Current skills: `bazi_hepan` (八字合盘 compatibility), `gua_ming_hu_can` (卦命互参 oracle×destiny cross-reference). **Adding a skill is one new file + one registry entry**, zero changes to tools or routes.
+**Skills** (`skills/`): composite workflows the master follows as recipes. Each skill is a typed `SkillDef` with id, zh/en names, description, prerequisites, trigger cues, and a prose recipe that explicitly lists the tool calls in order; `buildSkillsCatalog()` injects them into the system prompt. Two shapes — **synthesis** (`bazi_hepan` 八字合盤, `xing_ming_he_can` 星命合參, `gua_ming_hu_can` 卦命互參) and **applied technique** (`ze_ri` 擇日, `ying_qi` 應期推算, `kai_yun` 開運調理, `feng_shui_tiao_li` 風水調理建議). **Adding a skill is one new file + one registry entry** in `skills/index.ts`, zero changes to tools or routes. The §Skills section of `divination-refs/master.md` frames when/how the master reaches for them.
 
 **Master UI** (`src/components/master/`): global persistent chat widget mounted at the root layout. Two shapes:
 - **Collapsed** — bottom input bar on every page; shows a "waiting for your reading..." status when `pendingReading` is set.
@@ -250,6 +250,7 @@ Key files:
 
 ## Conventions
 
+- **Database changes — always use Prisma Migrate; never `db push` on dev/prod.** Edit `prisma/schema.prisma`, then `npx prisma migrate dev --name <desc>` (creates a migration file — **commit it with the code**). Prod applies pending migrations automatically via `migrate deploy` in `start.js`. **Do not run `prisma db push`** against the dev or prod DB: it mutates the schema without recording a migration, silently drifting the history (this already happened once — see the recovery + **one-time prod reconciliation runbook** in `docs/prisma-migrations-recovery.md`, required reading before the next prod deploy). Sanity check anytime with `npx prisma migrate status` (should say "up to date"); if `migrate dev` ever wants to **reset the DB**, stop — you've drifted, don't confirm.
 - TypeScript strict mode is on.
 - No Prettier config — rely on ESLint via `next lint`.
 - Vitest tests colocated under `src/lib/__tests__/`, `src/lib/llm/__tests__/`, `src/app/api/divination/handlers/__tests__/`, and `src/app/api/divination/schemas/__tests__/`.

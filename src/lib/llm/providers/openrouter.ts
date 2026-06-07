@@ -14,6 +14,7 @@ const X_TITLE_BY_ENDPOINT: Record<Endpoint, string> = {
   divination: 'Xuanji Divination',
   chat: 'Xuanji Chat',
   master: 'Xuanji Master',
+  masterBackground: 'Xuanji Master (background)',
 }
 
 export interface OpenRouterClientOptions {

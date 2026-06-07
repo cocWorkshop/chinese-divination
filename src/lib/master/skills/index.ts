@@ -12,8 +12,20 @@ import type { SkillDef } from './_types'
 import { baziHepanSkill } from './baziHepan'
 import { guaMingHuCanSkill } from './guaMingHuCan'
 import { xingMingHeCanSkill } from './xingMingHeCan'
+import { zeRiSkill } from './zeRi'
+import { yingQiSkill } from './yingQi'
+import { kaiYunSkill } from './kaiYun'
+import { fengShuiTiaoLiSkill } from './fengShuiTiaoLi'
 
-export const skills: readonly SkillDef[] = [baziHepanSkill, guaMingHuCanSkill, xingMingHeCanSkill]
+export const skills: readonly SkillDef[] = [
+  baziHepanSkill,
+  guaMingHuCanSkill,
+  xingMingHeCanSkill,
+  zeRiSkill,
+  yingQiSkill,
+  kaiYunSkill,
+  fengShuiTiaoLiSkill,
+]
 
 export function getSkill(id: string): SkillDef | undefined {
   return skills.find((s) => s.id === id)

@@ -17,7 +17,7 @@ describe('buildMasterSystemPrompt', () => {
     expect(prompt).toContain('Available tools') // catalog
     expect(prompt).toContain('Available skills') // skills catalog
     expect(prompt).toContain('bazi_hepan') // a skill id
-    expect(prompt).toContain('Current session') // context block
+    expect(prompt).toContain('Current moment') // context block
     expect(prompt).toContain('Language: zh-TW')
   })
 

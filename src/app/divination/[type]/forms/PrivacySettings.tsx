@@ -1,0 +1,91 @@
+'use client'
+
+import { useDivination } from '../DivinationContext'
+import { T } from '../constants'
+
+/**
+ * Privacy controls — "save to history" and (bazi/ziwei) "save birth info
+ * to profile". Collapsed by default to reduce form length. Shown to
+ * everyone; the auth check happens on submit.
+ */
+export default function PrivacySettings() {
+  const {
+    type, lang,
+    saveHistory, setSaveHistory,
+    saveProfile, setSaveProfile,
+  } = useDivination()
+
+  return (
+    <details className="border border-gold/20 rounded-xl bg-navy-900/50 group">
+      <summary className="px-4 py-3 cursor-pointer list-none flex items-center justify-between text-white/60 text-xs font-semibold uppercase tracking-wider hover:text-white/80 transition-colors">
+        <span>{T(lang, '🔒 隱私設置', '🔒 Privacy Settings')}</span>
+        <span className="text-gold/40 group-open:rotate-180 transition-transform">▼</span>
+      </summary>
+      <div className="px-4 pb-4 space-y-3">
+
+      {/* Save to History */}
+      <label className="flex items-start gap-3 cursor-pointer group">
+        <div className="relative mt-0.5 flex-shrink-0">
+          <input
+            type="checkbox"
+            checked={saveHistory}
+            onChange={e => setSaveHistory(e.target.checked)}
+            className="sr-only"
+          />
+          <div
+            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+              saveHistory ? 'bg-gold border-gold' : 'bg-transparent border-white/30 group-hover:border-gold/50'
+            }`}
+          >
+            {saveHistory && <svg className="w-3 h-3 text-navy-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+          </div>
+        </div>
+        <div>
+          <p className="text-white/80 text-sm font-medium leading-tight">
+            {T(lang, '儲存到歷史記錄', 'Save to reading history')}
+          </p>
+          <p className="text-white/40 text-xs mt-0.5">
+            {T(lang, '允許儲存本次解卦結果，可在「歷史」中查看', 'Store this reading in your history for future reference')}
+          </p>
+        </div>
+      </label>
+
+      {/* Save profile info — only for types with personal birth data */}
+      {['bazi', 'ziwei'].includes(type) && (
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className="relative mt-0.5 flex-shrink-0">
+            <input
+              type="checkbox"
+              checked={saveProfile}
+              onChange={e => setSaveProfile(e.target.checked)}
+              className="sr-only"
+            />
+            <div
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                saveProfile ? 'bg-gold border-gold' : 'bg-transparent border-white/30 group-hover:border-gold/50'
+              }`}
+            >
+              {saveProfile && <svg className="w-3 h-3 text-navy-950" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+            </div>
+          </div>
+          <div>
+            <p className="text-white/80 text-sm font-medium leading-tight">
+              {T(lang, '儲存生辰資訊到我的資料', 'Save birth info to my profile')}
+            </p>
+            <p className="text-white/40 text-xs mt-0.5">
+              {T(lang, '將出生日期、時辰、出生地、性別儲存至個人資料，下次自動填充', 'Store birth date, hour, place & gender in your profile for auto-fill next time')}
+            </p>
+          </div>
+        </label>
+      )}
+
+      {(!saveHistory && !saveProfile) && (
+        <p className="text-amber-400/70 text-xs flex items-center gap-1">
+          <span>⚠️</span>
+          {T(lang, '本次占卜結果不會被儲存，請自行記錄', 'This reading will not be stored anywhere. Please note it down if needed.')}
+        </p>
+      )}
+      </div>
+    </details>
+  )
+}
