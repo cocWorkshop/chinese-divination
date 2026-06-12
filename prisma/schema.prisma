@@ -408,6 +408,14 @@ model MasterSession {
   userId           String   @unique
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   totalCreditsUsed Int      @default(0)
+  /// DEPRECATED — legacy single-blob chat transcript from before the master-memory
+  /// redesign. Replaced by MasterChatMessage rows. Kept (not dropped) by owner
+  /// decision 2026-06-12 so the prod reconciliation stays fully additive and the
+  /// old prod blobs remain readable in place. Never read or written by current code.
+  messages         String?  @db.Text
+  /// DEPRECATED — legacy personalization blob. Replaced by UserPortrait /
+  /// UserPortraitHistory. Same keep-don't-drop decision as `messages` above.
+  portrait         String?  @db.Text
   /// Last-seen client timezone offset (Date.getTimezoneOffset() minutes; UTC+8 → -480).
   /// Timezone fallback for server-initiated turns (check-ins / reflections).
   tzOffsetMin      Int?

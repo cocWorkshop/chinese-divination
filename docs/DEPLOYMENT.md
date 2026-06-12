@@ -37,16 +37,23 @@ Optional knobs are all documented in `.env.example`. Two worth knowing:
 
 ## 3. ONE-TIME pre-deploy gate (prod DB reconciliation + fail-fast start)
 
+> **Owner decision 2026-06-12:** the deprecated `MasterSession.messages`/`portrait`
+> columns are KEPT (re-declared in schema.prisma as deprecated, migration
+> `restore_deprecated_mastersession_columns`). The reconciliation delta is therefore
+> **fully additive — no statement destroys data** (the only `DROP`s are
+> `DROP NOT NULL` constraint relaxations). The backup remains recommended as
+> standard practice but is no longer guarding any destructive step.
+
 Run together with me (the steps are interactive by agreement), or follow
 `docs/prisma-migrations-recovery.md` §"One-time PROD reconciliation":
 
-1. **Backup (on the server):**
+1. **Backup (on the server, recommended):**
    `pg_dump "postgresql://postgres:<pw>@localhost:5432/divination_db" > divination_db_backup_$(date +%Y%m%d).sql`
-2. **Regenerate the delta** (it has grown since the audit — now also includes
-   `LlmLog.requestId` and `Reading.creditsHeld`):
+2. **Regenerate the delta** (now includes `LlmLog.requestId`, `Reading.creditsHeld`,
+   `FamilyMember.relationDetail`, the funnel columns, and the 4 master-memory tables):
    `npx prisma migrate diff --from-url "<PROD_URL>" --to-schema-datamodel ./prisma/schema.prisma --script > prod_delta.sql`
-3. **Review the SQL** (the only destructive part is dropping the two deprecated
-   `MasterSession.messages/portrait` columns — backup-only recovery).
+3. **Review the SQL** (expect only ADD COLUMN / CREATE TABLE / CREATE INDEX /
+   ADD CONSTRAINT / DROP NOT NULL — if any `DROP COLUMN` or `DROP TABLE` appears, STOP).
 4. **Apply:** `DATABASE_URL="<PROD_URL>" npx prisma db execute --file ./prod_delta.sql --schema ./prisma/schema.prisma`
 5. **Record migrations as applied** (bookkeeping only): for each migration that
    `DATABASE_URL="<PROD_URL>" npx prisma migrate status` lists as not applied:
