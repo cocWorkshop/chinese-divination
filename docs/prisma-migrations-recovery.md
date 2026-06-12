@@ -1,6 +1,14 @@
 # Prisma migrations — drift recovery & prod deploy runbook
 
-_Last updated: 2026-06-07_
+_Last updated: 2026-06-12_
+
+> ✅ **RESOLVED 2026-06-12:** prod (`divination_db`) was reconciled — fully
+> additive delta applied (owner kept the deprecated `MasterSession.messages`/
+> `portrait` columns; they're re-declared in schema.prisma as deprecated), all
+> 33 migrations recorded, `migrate status` → "Database schema is up to date!"
+> on BOTH dev and prod. `start.js` now FAILS FAST on migration errors (exit 1)
+> instead of swallowing them. The runbook below is kept for history and for the
+> general recovery procedures.
 
 ## TL;DR
 
