@@ -4,6 +4,7 @@ import { useState, useRef, type Dispatch, type SetStateAction } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { reportError, catchAndReport } from '@/lib/errorReporter'
+import { publish } from '@/lib/events'
 import { mutateAtPath } from '../lib/mutateAtPath'
 import {
   T,
@@ -163,9 +164,7 @@ export function useDivinationStream(deps: StreamDeps) {
     // new reading into context. MUST fire on every success path — including the
     // polling fallbacks below, which previously left the master stuck waiting.
     const notifyReadingComplete = (id: string | null) => {
-      if (id && typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('xuanji:readingComplete', { detail: { readingId: id, type } }))
-      }
+      if (id) publish('xuanji:readingComplete', { readingId: id, type })
     }
 
     try {

@@ -5,13 +5,14 @@ export const maxDuration = 600
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkCredits, deductCredits } from '@/lib/rateLimit'
+import { checkCredits } from '@/lib/rateLimit'
 import { completeLLM, streamLLM, resolveLLMConfig } from '@/lib/llm'
 import type { LLMConfig } from '@/lib/llm'
-import { selectHandler, buildHandlerSchema, validateHandlerOutput, type DivinationContext } from './handlers'
-import { hasRenderableContent } from './schemas/_validate'
+import { selectHandler, buildHandlerSchema, type DivinationContext } from './handlers'
 import { buildSystemPrompt } from './handlers/_systemPrompt'
-import { parseJsonFromLLMOutput, PARSE_FAILED_KEY } from './handlers/_jsonParse'
+import { finalizeDivination } from './_finalize'
+import { markFailed } from '@/lib/readings/lifecycle'
+import { sseResponse } from '@/lib/sse'
 
 // Ask the provider for JSON-constrained decoding (OpenAI-style response_format,
 // forwarded by OpenRouter). Prevents the malformed-JSON class at the source;
@@ -69,16 +70,18 @@ export async function POST(req: NextRequest) {
     // alongside their own type/inputData to (a) bypass the credit check entirely
     // and (b) overwrite the victim's reading (IDOR). Require: owned by the caller
     // AND still pending (so a completed reading can't be replayed for a free run).
+    let holdAmount = 0 // credits held at /init (0 = legacy deduct-on-success flow)
     if (preCreatedReadingId) {
       const row = await prisma.reading.findFirst({
         where: { id: preCreatedReadingId, userId },
-        select: { type: true, inputData: true, status: true },
+        select: { type: true, inputData: true, status: true, creditsHeld: true },
       })
       if (!row || row.status !== 'pending') {
         return NextResponse.json({ error: 'Reading not found' }, { status: 404 })
       }
       type = type ?? row.type
       inputData = inputData ?? row.inputData
+      holdAmount = row.creditsHeld
     }
 
     if (!type || !inputData) {
@@ -282,7 +285,7 @@ export async function POST(req: NextRequest) {
 
     if (!llmConfig.isLocalProxy && !process.env.OPENROUTER_API_KEY) {
       if (pendingReadingId) {
-        await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'AI service not configured' } }).catch(() => {})
+        await markFailed(pendingReadingId, { reason: 'AI service not configured' })
       }
       return NextResponse.json(
         { error: language !== 'en' ? '🔧 玄機尚未啟動，請聯繫管理員配置並重啟。' : '🔧 The oracle is not set up yet. Please contact admin to configure and restart.' },
@@ -327,6 +330,7 @@ export async function POST(req: NextRequest) {
         apiStart,
         preLlmMs,
         llmStart,
+        holdAmount,
       })
     }
 
@@ -352,7 +356,7 @@ export async function POST(req: NextRequest) {
       log.error({ err: apiErr, type, model: modelName }, 'llm call failed')
       const err = apiErr as { status?: number; message?: string }
       if (pendingReadingId) {
-        await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: err?.message || 'LLM error' } }).catch(() => {})
+        await markFailed(pendingReadingId, { reason: err?.message || 'LLM error' })
       }
       if (llmConfig.isLocalProxy) {
         return NextResponse.json(
@@ -375,100 +379,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: friendlyError }, { status: 502 })
     }
 
-    // Parse + merge + validate.
-    const structuredResult = parseJsonFromLLMOutput(resultText, type)
-
-    // Hard reject #1: JSON parse + repair both failed entirely. The
-    // fallback used to inject rawText into `sections.overview` to "make
-    // something renderable", but that fooled the permissive validation
-    // path into saving the bad payload — surfacing as raw JSON on the
-    // result page. We now refuse the turn outright, no save, no credit
-    // deduction. Skip merge + Zod for this case (there's no real shape).
-    if (structuredResult[PARSE_FAILED_KEY] === true) {
-      log.error({ type, model: modelName, latencyMs: Date.now() - llmStart, rawLen: resultText.length }, 'llm output unparseable')
-      if (pendingReadingId) {
-        await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'LLM JSON parse failed', llmRawOutput: resultText } }).catch(() => {})
-      }
-      const errMsg = language !== 'en'
-        ? '🔧 玄機解讀格式異常，您的機緣未扣除。請重新嘗試，若持續異常請聯繫管理員。'
-        : '🔧 The oracle produced an unexpected format — your Karma was not deducted. Please try again, or contact admin if the issue persists.'
-      return NextResponse.json({ error: errMsg }, { status: 502 })
-    }
-
-    if (chart && handler.merge) {
-      handler.merge(structuredResult, chart, ctx)
-    }
-    const validation = validateHandlerOutput(handler, structuredResult)
-    if (!validation.success) {
-      log.error({ type, model: modelName, latencyMs: Date.now() - llmStart, issues: validation.issues }, 'zod validation issues')
-      // Hard-reject #2: structurally empty output — nothing renderable in
-      // sections or interpretation. This catches LLM responses that parsed
-      // as valid JSON but produced nothing usable (e.g. `{}`, only metadata,
-      // or sections whose values are all empty strings).
-      if (!hasRenderableContent(structuredResult)) {
-        if (pendingReadingId) {
-          await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'Invalid LLM output format', llmRawOutput: resultText } }).catch(() => {})
-        }
-        const errMsg = language !== 'en'
-          ? '🔧 玄機解讀格式異常，您的機緣未扣除。請重新嘗試，若持續異常請聯繫管理員。'
-          : '🔧 The oracle produced an unexpected format — your Karma was not deducted. Please try again, or contact admin if the issue persists.'
-        return NextResponse.json({ error: errMsg }, { status: 502 })
-      }
-    }
-
-    const resultToStore = JSON.stringify(structuredResult)
-    const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
-
-    // CRITICAL: Save + deduct credits immediately so they complete even if client disconnects.
-    const postOps: Promise<unknown>[] = [deductCredits(userId, type)]
-    let savedReading: Record<string, unknown> | null = null
-    if (shouldSaveHistory && pendingReadingId) {
-      postOps.push(
-        prisma.reading.update({
-          where: { id: pendingReadingId },
-          data: {
-            status: 'completed',
-            result: resultToStore,
-            llmPrompt: llmPromptStr,
-            llmRawOutput: resultText,
-          },
-        }).then(r => { savedReading = r })
-      )
-    }
-    if (shouldSaveProfile && (type === 'bazi' || type === 'ziwei')) {
-      const profileUpdate: Record<string, string | number | null> = {}
-      if (inputData.birthDate) profileUpdate.birthDate = inputData.birthDate
-      if (inputData.birthTime) profileUpdate.birthTime = inputData.birthTime
-      if (inputData.birthPlace) profileUpdate.birthPlace = inputData.birthPlace
-      if (inputData.gender) profileUpdate.gender = inputData.gender
-      if (inputData.timeMode) profileUpdate.timeMode = inputData.timeMode
-      if (inputData.exactTime) profileUpdate.exactTime = inputData.exactTime
-      if (inputData.lunarToggle) profileUpdate.calendarType = inputData.lunarToggle
-      if (inputData.birthEnvironment) profileUpdate.birthEnvironment = inputData.birthEnvironment
-      if (inputData.birthLat != null) profileUpdate.birthLat = inputData.birthLat
-      if (inputData.birthLng != null) profileUpdate.birthLng = inputData.birthLng
-      if (Object.keys(profileUpdate).length > 0) {
-        if (targetType === 'family' && resolvedFamilyMemberId) {
-          postOps.push(prisma.familyMember.update({ where: { id: resolvedFamilyMemberId }, data: profileUpdate }))
-        } else {
-          postOps.push(prisma.user.update({ where: { id: userId }, data: profileUpdate }))
-        }
-      }
-    }
-
-    const postStart = Date.now()
-    await Promise.all(postOps)
-    const postLlmMs = Date.now() - postStart
-    const totalMs = Date.now() - apiStart
-    log.info({ type, totalMs, preMs: preLlmMs, llmMs: postStart - llmStart, postMs: postLlmMs, userId }, 'reading completed')
-
-    if (savedReading) {
-      return NextResponse.json({ reading: Object.assign({}, savedReading, { result: resultToStore }), saved: true })
-    }
-    return NextResponse.json({
-      reading: { id: null, result: resultToStore, type, createdAt: new Date() },
-      saved: false,
+    // Parse + merge + validate + save + settle credits — the single shared
+    // pipeline (also used by the streaming path). See _finalize.ts.
+    const llmMs = Date.now() - llmStart
+    const outcome = await finalizeDivination({
+      rawText: resultText, type, language, modelName, handler, chart, ctx,
+      userId, pendingReadingId, shouldSaveHistory, shouldSaveProfile,
+      resolvedFamilyMemberId, targetType, inputData, systemPrompt, userMessage,
+      llmStart, holdAmount, log,
     })
+    if (!outcome.ok) {
+      return NextResponse.json({ error: outcome.errMsg }, { status: outcome.status })
+    }
+
+    const totalMs = Date.now() - apiStart
+    log.info({ type, totalMs, preMs: preLlmMs, llmMs, postMs: outcome.postLlmMs, userId }, 'reading completed')
+    return NextResponse.json({ reading: outcome.reading, saved: outcome.saved })
   } catch (e) {
     const totalMs = Date.now() - apiStart
     log.error({ err: e, totalMs }, 'divination request failed')
@@ -520,26 +446,17 @@ function runStreamingDivination(args: {
   apiStart: number
   preLlmMs: number
   llmStart: number
+  holdAmount: number
   log: RequestLogger
 }): Response {
   const {
     userId, type, language, modelName, llmConfig, systemPrompt, userMessage,
     chart, handler, ctx, pendingReadingId, shouldSaveHistory, shouldSaveProfile,
     resolvedFamilyMemberId, targetType, inputData, apiStart, preLlmMs, llmStart,
-    log,
+    holdAmount, log,
   } = args
 
-  const encoder = new TextEncoder()
-  const stream = new ReadableStream({
-    async start(controller) {
-      const send = (data: unknown) => {
-        try {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
-        } catch {
-          /* controller may already be closed */
-        }
-      }
-
+  return sseResponse(async ({ send, heartbeat: sendHeartbeat, close }) => {
       // Defensive: any unhandled exception inside the streaming flow used
       // to silently close the controller, leaving the client without a
       // `done` or `error` event (and thus rendering as "request timed
@@ -585,9 +502,7 @@ function runStreamingDivination(args: {
       // Keep-alive: send an SSE comment every 15s to prevent proxies /
       // browsers from closing the connection during long reasoning phases
       // where no content tokens are produced.
-      const heartbeat = setInterval(() => {
-        try { controller.enqueue(encoder.encode(': heartbeat\n\n')) } catch { /* closed */ }
-      }, 15_000)
+      const heartbeat = setInterval(sendHeartbeat, 15_000)
 
       try {
         for await (const chunk of streamLLM({
@@ -614,123 +529,43 @@ function runStreamingDivination(args: {
         log.error({ err: apiErr, type, model: modelName, phase: 'stream' }, 'llm call failed')
         const err = apiErr as { status?: number; message?: string }
         if (pendingReadingId) {
-          await prisma.reading.update({
-            where: { id: pendingReadingId },
-            data: { status: 'failed', result: err?.message || 'LLM error' },
-          }).catch(() => {})
+          await markFailed(pendingReadingId, { reason: err?.message || 'LLM error' })
         }
         const friendlyError = language !== 'en'
           ? '🔧 玄機暫時出了點小故障，您的機緣未扣除。請稍後再試。'
           : '🔧 The oracle encountered a hiccup — your Karma was not deducted.'
         send({ type: 'error', error: friendlyError, status: err?.status === 429 ? 429 : 502 })
-        try { controller.close() } catch { /* already closed */ }
+        close()
         return
       }
       clearInterval(heartbeat)
 
-      // ─── After-stream: parse + merge + validate + save ──────────────
-      // The streaming parser was for UX only — for the FINAL go/no-go
-      // decision we re-parse via parseJsonFromLLMOutput (which has repair
-      // logic for truncated JSON, code-fence stripping, etc.). The
-      // streaming parser is stricter than this repair step, so a
-      // streaming parser error does NOT imply the document is
-      // unrecoverable — we just log it for observability.
+      // ─── After-stream: the same shared pipeline as the blocking path ──
+      // The streaming parser was for UX only — the FINAL go/no-go decision
+      // happens inside finalizeDivination (which re-parses with the full
+      // repair ladder). A streaming parser error therefore does NOT imply
+      // the document is unrecoverable — just log it for observability.
       if (parseError) {
         log.warn({ parseError, phase: 'stream' }, 'streaming parser error (final parse will repair)')
       }
-      const structuredResult = parseJsonFromLLMOutput(accumulatedRaw, type)
-
-      if (structuredResult[PARSE_FAILED_KEY] === true) {
-        log.error({ type, model: modelName, latencyMs: Date.now() - llmStart, rawLen: accumulatedRaw.length, phase: 'stream' }, 'llm output unparseable')
-        if (pendingReadingId) {
-          await prisma.reading.update({
-            where: { id: pendingReadingId },
-            data: { status: 'failed', result: 'LLM JSON parse failed', llmRawOutput: accumulatedRaw },
-          }).catch(() => {})
-        }
-        const errMsg = language !== 'en'
-          ? '🔧 玄機解讀格式異常，您的機緣未扣除。請重新嘗試。'
-          : '🔧 The oracle produced an unexpected format — your Karma was not deducted.'
-        send({ type: 'error', error: errMsg, status: 502 })
-        controller.close()
+      const llmMs = Date.now() - llmStart
+      const outcome = await finalizeDivination({
+        rawText: accumulatedRaw, type, language, modelName, handler, chart, ctx,
+        userId, pendingReadingId, shouldSaveHistory, shouldSaveProfile,
+        resolvedFamilyMemberId, targetType, inputData, systemPrompt, userMessage,
+        llmStart, holdAmount, log, phase: 'stream',
+      })
+      if (!outcome.ok) {
+        send({ type: 'error', error: outcome.errMsg, status: outcome.status })
+        close()
         return
       }
 
-      if (chart && handler.merge) {
-        handler.merge(structuredResult, chart, ctx)
-      }
-      const validation = validateHandlerOutput(handler, structuredResult)
-      if (!validation.success) {
-        log.error({ type, model: modelName, latencyMs: Date.now() - llmStart, issues: validation.issues, phase: 'stream' }, 'zod validation issues')
-        // Same gate as the blocking path: only content-bearing sections /
-        // interpretation count (empty-string sections used to slip through).
-        if (!hasRenderableContent(structuredResult)) {
-          if (pendingReadingId) {
-            await prisma.reading.update({
-              where: { id: pendingReadingId },
-              data: { status: 'failed', result: 'Invalid LLM output format', llmRawOutput: accumulatedRaw },
-            }).catch(() => {})
-          }
-          const errMsg = language !== 'en'
-            ? '🔧 玄機解讀格式異常，您的機緣未扣除。請重新嘗試。'
-            : '🔧 The oracle produced an unexpected format — your Karma was not deducted.'
-          send({ type: 'error', error: errMsg, status: 502 })
-          controller.close()
-          return
-        }
-      }
-
-      const resultToStore = JSON.stringify(structuredResult)
-      const llmPromptStr = `[SYSTEM]\n${systemPrompt}\n\n[USER]\n${userMessage}`
-
-      const postOps: Promise<unknown>[] = [deductCredits(userId, type)]
-      let savedReading: Record<string, unknown> | null = null
-      if (shouldSaveHistory && pendingReadingId) {
-        postOps.push(
-          prisma.reading.update({
-            where: { id: pendingReadingId },
-            data: {
-              status: 'completed',
-              result: resultToStore,
-              llmPrompt: llmPromptStr,
-              llmRawOutput: accumulatedRaw,
-            },
-          }).then((r) => { savedReading = r as Record<string, unknown> })
-        )
-      }
-      if (shouldSaveProfile && (type === 'bazi' || type === 'ziwei')) {
-        const profileUpdate: Record<string, string | number | null> = {}
-        const data = inputData as Record<string, unknown>
-        if (typeof data.birthDate === 'string') profileUpdate.birthDate = data.birthDate
-        if (typeof data.birthTime === 'string') profileUpdate.birthTime = data.birthTime
-        if (typeof data.birthPlace === 'string') profileUpdate.birthPlace = data.birthPlace
-        if (typeof data.gender === 'string') profileUpdate.gender = data.gender
-        if (typeof data.timeMode === 'string') profileUpdate.timeMode = data.timeMode
-        if (typeof data.exactTime === 'string') profileUpdate.exactTime = data.exactTime
-        if (typeof data.lunarToggle === 'string') profileUpdate.calendarType = data.lunarToggle
-        if (typeof data.birthEnvironment === 'string') profileUpdate.birthEnvironment = data.birthEnvironment
-        if (data.birthLat != null) profileUpdate.birthLat = data.birthLat as number
-        if (data.birthLng != null) profileUpdate.birthLng = data.birthLng as number
-        if (Object.keys(profileUpdate).length > 0) {
-          if (targetType === 'family' && resolvedFamilyMemberId) {
-            postOps.push(prisma.familyMember.update({ where: { id: resolvedFamilyMemberId }, data: profileUpdate }))
-          } else {
-            postOps.push(prisma.user.update({ where: { id: userId }, data: profileUpdate }))
-          }
-        }
-      }
-
-      const postStart = Date.now()
-      await Promise.all(postOps)
-      const postLlmMs = Date.now() - postStart
       const totalMs = Date.now() - apiStart
-      log.info({ type, totalMs, preMs: preLlmMs, llmMs: postStart - llmStart, postMs: postLlmMs, userId, phase: 'stream' }, 'reading completed')
+      log.info({ type, totalMs, preMs: preLlmMs, llmMs, postMs: outcome.postLlmMs, userId, phase: 'stream' }, 'reading completed')
 
-      const reading = savedReading
-        ? Object.assign({}, savedReading, { result: resultToStore })
-        : { id: null, result: resultToStore, type, createdAt: new Date() }
-      send({ type: 'done', reading, saved: !!savedReading })
-      try { controller.close() } catch { /* already closed */ }
+      send({ type: 'done', reading: outcome.reading, saved: outcome.saved })
+      close()
 
       } catch (unexpectedErr) {
         // Top-level safety net. Log the error, but only mark reading as
@@ -740,29 +575,18 @@ function runStreamingDivination(args: {
         log.error({ err: unexpectedErr, phase: 'stream' }, 'unexpected error in stream lifecycle')
         Sentry.captureException(unexpectedErr, { tags: { requestId: log.requestId, endpoint: 'divination' } })
         if (pendingReadingId) {
-          // Check current status before overwriting — don't clobber a completed reading
-          const current = await prisma.reading.findUnique({ where: { id: pendingReadingId }, select: { status: true } }).catch(() => null)
-          if (current?.status !== 'completed') {
-            await prisma.reading.update({
-              where: { id: pendingReadingId },
-              data: { status: 'failed', result: (unexpectedErr instanceof Error ? unexpectedErr.message : 'Internal stream error') },
-            }).catch(() => {})
-          }
+          // markFailed never clobbers a completed reading (the DB save happens
+          // before send('done'), so an SSE-delivery failure after save leaves
+          // the completed row — and its kept hold — untouched).
+          await markFailed(pendingReadingId, {
+            reason: unexpectedErr instanceof Error ? unexpectedErr.message : 'Internal stream error',
+          })
         }
         const errMsg = language !== 'en'
           ? '🔧 玄機解讀過程出現異常，您的機緣未扣除。請重新嘗試。'
           : '🔧 The oracle hit an internal error — your Karma was not deducted. Please retry.'
         send({ type: 'error', error: errMsg, status: 500 })
-        try { controller.close() } catch { /* already closed */ }
+        close()
       }
-    },
-  })
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-    },
   })
 }

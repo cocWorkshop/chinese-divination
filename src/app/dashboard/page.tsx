@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { publish } from '@/lib/events'
 import YinYangIcon from '@/components/YinYangIcon'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
@@ -207,7 +208,7 @@ export default function DashboardPage() {
       // Notify the master chat widget so its greeting (命盤 — 八字、紫微…)
       // refreshes immediately. Without this, the widget would keep showing
       // the deleted chart type until the next expand-triggered refetch.
-      window.dispatchEvent(new CustomEvent('xuanji:readingsChanged'))
+      publish('xuanji:readingsChanged')
     } catch {
       toast.error(lang === 'en' ? 'Delete failed, please try again' : '刪除失敗，請稍後再試')
     } finally {

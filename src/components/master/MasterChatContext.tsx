@@ -28,6 +28,7 @@ import {
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
+import { publish, subscribe } from '@/lib/events'
 import { splitBubbles, BUBBLE_MARKER } from '@/lib/master/bubbleStream'
 import { pickOpener } from '@/lib/master/greetings'
 import {
@@ -36,6 +37,10 @@ import {
   type DetectableMsg,
 } from '@/lib/master/activationDetect'
 import type { CheckinHint } from '@/lib/master/turnEngine'
+
+// Activation-resume thresholds (module-level: stable across renders).
+const CTA_AGED_THRESHOLD_MS = 30 * 60 * 1000 // CTA pending past this → ask user
+const LONG_GAP_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000 // >14 days → long_gap_resume
 
 // ---------------------------------------------------------------------------
 // Message shapes used inside the widget transcript
@@ -272,8 +277,6 @@ export function MasterChatProvider({ children }: ProviderProps) {
   // they collapse + re-expand the widget within minutes.
   const proactiveLastFiredRef = useRef<number>(0)
   const PROACTIVE_COOLDOWN_MS = 5 * 60 * 1000  // 5 min between checkin attempts
-  const CTA_AGED_THRESHOLD_MS = 30 * 60 * 1000 // CTA pending past this → ask user
-  const LONG_GAP_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000  // >14 days → long_gap_resume
 
   // Idle reflection — fires when the user has been silent in the EXPANDED
   // chat for ~90s after the master's last reply. At most ONCE per silent
@@ -410,7 +413,9 @@ export function MasterChatProvider({ children }: ProviderProps) {
     } catch {
       setHistoryLoaded(true)
     }
-  }, [enabled])
+    // `lang` is read inside (readingCompleteNoteText) — including it also means
+    // a language switch re-renders stored completion notes in the new language.
+  }, [enabled, lang])
 
   useEffect(() => {
     loadHistory()
@@ -464,9 +469,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
   // pattern — a window event is the simplest cross-component notification.
   useEffect(() => {
     if (!enabled) return
-    const handler = () => { loadHistory() }
-    window.addEventListener('xuanji:readingsChanged', handler)
-    return () => window.removeEventListener('xuanji:readingsChanged', handler)
+    return subscribe('xuanji:readingsChanged', () => { loadHistory() })
   }, [enabled, loadHistory])
 
   // ── Core: actually POST + parse the SSE stream ───────────────────────────
@@ -1029,15 +1032,10 @@ export function MasterChatProvider({ children }: ProviderProps) {
   // portrait page (and any other caller) and mirror the value here.
   useEffect(() => {
     if (!enabled) return
-
-    const handler = (ev: Event) => {
-      const detail = (ev as CustomEvent<{ enabled: boolean }>).detail
-      if (!detail || typeof detail.enabled !== 'boolean') return
+    return subscribe('xuanji:portraitEnabledChanged', (detail) => {
+      if (typeof detail?.enabled !== 'boolean') return
       setPortraitEnabledState(detail.enabled)
-    }
-
-    window.addEventListener('xuanji:portraitEnabledChanged', handler as EventListener)
-    return () => window.removeEventListener('xuanji:portraitEnabledChanged', handler as EventListener)
+    })
   }, [enabled])
 
   // ── Reading completion handoff ────────────────────────────────────────────
@@ -1069,8 +1067,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
       other: { zh: '占卜', en: 'Reading' },
     }
 
-    const handler = (ev: Event) => {
-      const detail = (ev as CustomEvent<{ readingId: string; type: string }>).detail
+    const handler = (detail: { readingId: string; type: string }) => {
       if (!detail) return
       if (pendingReading && pendingReading.type === detail.type) {
         setPendingReading(null)
@@ -1141,8 +1138,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
       }
     }
 
-    window.addEventListener('xuanji:readingComplete', handler as EventListener)
-    return () => window.removeEventListener('xuanji:readingComplete', handler as EventListener)
+    return subscribe('xuanji:readingComplete', handler)
   }, [enabled, pendingReading, runTurn, lang])
 
   // ── Cancel pending CTA — user reversal flow ──────────────────────────────
@@ -1222,9 +1218,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
       // /profile/portrait page's 暫停／啟用 toggle) so their local state
       // stays in sync with the DB — same cross-component sync pattern the
       // portrait page uses when IT toggles.
-      window.dispatchEvent(
-        new CustomEvent('xuanji:portraitEnabledChanged', { detail: { enabled: next } }),
-      )
+      publish('xuanji:portraitEnabledChanged', { enabled: next })
     } catch {
       /* ignore — local state already reflects the intent */
     }

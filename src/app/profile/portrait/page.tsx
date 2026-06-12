@@ -16,6 +16,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
+import { publish, subscribe } from '@/lib/events'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
 
@@ -155,13 +156,10 @@ export default function PortraitPage() {
   // accepting/declining the gate would leave this page's button stale until a
   // reload. Listens to the same event the page's own toggle dispatches.
   useEffect(() => {
-    const handler = (ev: Event) => {
-      const detail = (ev as CustomEvent<{ enabled: boolean }>).detail
-      if (!detail || typeof detail.enabled !== 'boolean') return
+    return subscribe('xuanji:portraitEnabledChanged', (detail) => {
+      if (typeof detail?.enabled !== 'boolean') return
       setPortraitEnabled(detail.enabled)
-    }
-    window.addEventListener('xuanji:portraitEnabledChanged', handler as EventListener)
-    return () => window.removeEventListener('xuanji:portraitEnabledChanged', handler as EventListener)
+    })
   }, [])
 
   const handleSave = async () => {
@@ -207,9 +205,7 @@ export default function PortraitPage() {
       // Notify the master chat widget so its memory-gate state refreshes without
       // waiting for the next page load. Without this, pausing memory here would
       // not block the master widget until the user reloads.
-      window.dispatchEvent(
-        new CustomEvent('xuanji:portraitEnabledChanged', { detail: { enabled: next } }),
-      )
+      publish('xuanji:portraitEnabledChanged', { enabled: next })
       toast.success(
         next
           ? T(lang, '記憶功能已啟用', 'Memory enabled')
@@ -262,7 +258,7 @@ export default function PortraitPage() {
       // the active one, its in-memory transcript / greeting state needs to
       // refresh. Reuses the readings-change event since both trigger
       // loadHistory() in MasterChatContext.
-      window.dispatchEvent(new CustomEvent('xuanji:readingsChanged'))
+      publish('xuanji:readingsChanged')
     } catch {
       toast.error(T(lang, '刪除失敗', 'Delete failed'))
     } finally {

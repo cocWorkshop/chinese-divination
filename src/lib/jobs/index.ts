@@ -13,10 +13,12 @@
 
 import { logger } from '../logger'
 import { runLogRetention } from './logRetention'
+import { cleanupStaleReadings } from '../readings/lifecycle'
 
-const DAY_MS = 24 * 60 * 60 * 1000
-// First run shortly after boot (lets migrations/warmup settle), then daily.
-const STARTUP_DELAY_MS = 5 * 60 * 1000
+const MINUTE_MS = 60 * 1000
+const DAY_MS = 24 * 60 * MINUTE_MS
+// First run shortly after boot (lets migrations/warmup settle), then on interval.
+const STARTUP_DELAY_MS = 5 * MINUTE_MS
 
 let started = false
 
@@ -28,6 +30,9 @@ interface JobDef {
 
 const JOBS: JobDef[] = [
   { name: 'logRetention', run: runLogRetention, intervalMs: DAY_MS },
+  // Fails + refunds pending readings stuck >15 min (was a fire-and-forget
+  // side effect inside /api/divination/init).
+  { name: 'staleReadings', run: cleanupStaleReadings, intervalMs: 10 * MINUTE_MS },
 ]
 
 export function startJobs(): void {

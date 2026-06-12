@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 interface ReadingFB {
   id: string
@@ -38,7 +38,7 @@ export default function AdminFeedbackPage() {
   const [minRating, setMinRating] = useState('')
   const [maxRating, setMaxRating] = useState('')
 
-  const fetchSite = (p: number) => {
+  const fetchSite = useCallback((p: number) => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(p), limit: '30' })
     if (minRating) params.set('minRating', minRating)
@@ -47,9 +47,9 @@ export default function AdminFeedbackPage() {
       .then(r => r.json())
       .then(data => { setSiteFBs(data.feedbacks || []); setSiteTotal(data.total || 0); setSitePage(data.page || 1) })
       .finally(() => setLoading(false))
-  }
+  }, [minRating, maxRating])
 
-  const fetchReading = (p: number) => {
+  const fetchReading = useCallback((p: number) => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(p), limit: '30', sort })
     if (minRating) params.set('minRating', minRating)
@@ -58,12 +58,12 @@ export default function AdminFeedbackPage() {
       .then(r => r.json())
       .then(data => { setReadingFBs(data.feedbacks || []); setReadingTotal(data.total || 0); setReadingPage(data.page || 1) })
       .finally(() => setLoading(false))
-  }
+  }, [sort, minRating, maxRating])
 
   useEffect(() => {
     if (tab === 'site') fetchSite(1)
     else fetchReading(1)
-  }, [tab, sort, minRating, maxRating])
+  }, [tab, fetchSite, fetchReading])
 
   const totalPages = Math.ceil((tab === 'site' ? siteTotal : readingTotal) / 30)
   const currentPage = tab === 'site' ? sitePage : readingPage

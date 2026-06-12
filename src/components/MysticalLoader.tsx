@@ -101,7 +101,9 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
     return () => clearInterval(interval)
   }, [quotes.length])
 
-  // Elapsed timer for progress bar
+  // Elapsed timer for progress bar. `startTime` in the deps restarts the
+  // interval with the new anchor if the parent passes a different start —
+  // correct behavior (the old code kept counting from the stale anchor).
   useEffect(() => {
     if (variant !== 'divination') return
     const start = startTime || Date.now()
@@ -110,7 +112,7 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
       setElapsed(Math.floor((Date.now() - start) / 1000))
     }, 1000)
     return () => clearInterval(interval)
-  }, [variant])
+  }, [variant, startTime])
 
   if (variant === 'chat') {
     return (

@@ -108,6 +108,7 @@ model Reading {
   chatMessages    String?     @db.Text  // JSON array of {role, content, timestamp} chat messages
   rating         Int?          // 1-5 star rating (denormalized from ReadingFeedback)
   shareToken     String?       @unique
+  creditsHeld    Int           @default(0) // credits deducted at /init (the "hold"); refunded by markFailed/cleanupStale on failure
   deletedAt      DateTime?
   createdAt      DateTime      @default(now())
   feedbacks       ReadingFeedback[]

@@ -100,7 +100,9 @@ export function useDivinationInit({
         }
       })
       .catch(catchAndReport('/api/init'))
-  }, [session, type, profileLoaded, lang])
+    // refs + useState setters are identity-stable — listing them satisfies
+    // exhaustive-deps without changing when the effect runs.
+  }, [session, type, profileLoaded, lang, paramsHydratedRef, selfProfileRef, setBirthLat, setBirthLng, setForm])
 
   return {
     credits, setCredits,

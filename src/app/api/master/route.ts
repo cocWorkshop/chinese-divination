@@ -26,6 +26,7 @@ import { runMasterTurn, type EngineEvent, type CheckinHint } from '@/lib/master/
 import { SolarDay, SolarTime } from 'tyme4ts'
 import { FUNNEL_COOKIE_NAME, verifyFunnelToken } from '@/lib/funnelSession'
 import { createRequestLogger, logger } from '@/lib/logger'
+import { sseResponse } from '@/lib/sse'
 import * as Sentry from '@sentry/nextjs'
 
 /**
@@ -315,41 +316,27 @@ export async function POST(req: NextRequest) {
     // Pipe the engine's event stream to SSE. The engine handles errors by
     // yielding `{ type: 'error' }` — the route never sees a thrown exception
     // from the streaming loop.
-    const encoder = new TextEncoder()
-    const stream = new ReadableStream({
-      async start(controller) {
-        const send = (event: EngineEvent) => {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`))
+    return sseResponse(async ({ send, close }) => {
+      try {
+        for await (const event of runMasterTurn({
+          userId,
+          sessionId: sessionId!,
+          isCheckin,
+          checkinHint,
+          isReflection,
+          systemPrompt,
+          initialMessages,
+          model,
+          toolCtx,
+          masterSessionPk: masterSession!.id,
+          lang,
+          requestId: log.requestId,
+        })) {
+          send(event satisfies EngineEvent)
         }
-        try {
-          for await (const event of runMasterTurn({
-            userId,
-            sessionId: sessionId!,
-            isCheckin,
-            checkinHint,
-            isReflection,
-            systemPrompt,
-            initialMessages,
-            model,
-            toolCtx,
-            masterSessionPk: masterSession!.id,
-            lang,
-            requestId: log.requestId,
-          })) {
-            send(event)
-          }
-        } finally {
-          controller.close()
-        }
-      },
-    })
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
+      } finally {
+        close()
+      }
     })
   } catch (err) {
     log.error({ err }, 'master turn failed')

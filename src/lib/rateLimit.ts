@@ -102,6 +102,50 @@ export async function deductCredits(userId: string, type: string): Promise<boole
   return false
 }
 
+/**
+ * Atomically deduct the cost of `type` as a HOLD and return the amount held,
+ * so the caller can record it (Reading.creditsHeld) for exact refunds.
+ *
+ * Same atomic guarantee as deductCredits (single guarded UPDATE — concurrent
+ * holds against one balance can never over-deduct); the only difference is
+ * the amount is returned. Admin users hold 0 (they are never charged).
+ *
+ * Returns { held: false } on insufficient balance.
+ */
+export async function holdCredits(
+  userId: string,
+  type: string
+): Promise<{ held: boolean; amount: number }> {
+  const cost = await getCost(type)
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } })
+  if (user?.isAdmin || cost <= 0) {
+    // Track usage like deductCredits does, but nothing to hold/refund.
+    await prisma.user.update({
+      where: { id: userId },
+      data: { usageDivination: { increment: 1 } },
+    }).catch(() => {})
+    return { held: true, amount: 0 }
+  }
+  const result = await prisma.user.updateMany({
+    where: { id: userId, credits: { gte: cost } },
+    data: {
+      credits: { decrement: cost },
+      usageDivination: { increment: 1 },
+    },
+  })
+  if (result.count === 0) return { held: false, amount: 0 }
+  const updated = await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } })
+  await logCreditChange({
+    userId,
+    action: 'deduct',
+    amount: -cost,
+    balance: updated?.credits ?? 0,
+    source: `divination:${type}`,
+    note: 'hold@init',
+  })
+  return { held: true, amount: cost }
+}
+
 // Legacy wrappers for backward compatibility during migration
 export async function checkDivinationCredits(userId: string): Promise<{ allowed: boolean; remaining: number }> {
   const r = await checkCredits(userId, 'bazi')
