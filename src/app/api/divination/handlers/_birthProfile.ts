@@ -34,15 +34,26 @@ export function extractBirthInputs(inputData: Record<string, unknown>): BirthInp
   let lunarOriginal: string | undefined
 
   if (lunarToggle === 'lunar' && rawBirthDate) {
-    try {
-      const [y, m, d] = rawBirthDate.split('-').map(Number)
-      const lunarDate = Lunar.fromYmd(y, m, d)
-      const solarDate = lunarDate.getSolar()
-      solarBirthDate = `${solarDate.getYear()}-${String(solarDate.getMonth()).padStart(2, '0')}-${String(solarDate.getDay()).padStart(2, '0')}`
-      lunarOriginal = rawBirthDate
-      console.log(`Lunar ${rawBirthDate} → Solar ${solarBirthDate}`)
-    } catch (lunarErr) {
-      console.error('Lunar conversion failed:', lunarErr)
+    const [y, m, d] = rawBirthDate.split('-').map(Number)
+    if (![y, m, d].every(Number.isFinite)) {
+      // Malformed lunar date → don't feed it downstream as a solar date.
+      console.error('Lunar conversion skipped: malformed date', rawBirthDate)
+      solarBirthDate = undefined
+    } else {
+      try {
+        const lunarDate = Lunar.fromYmd(y, m, d)
+        const solarDate = lunarDate.getSolar()
+        solarBirthDate = `${solarDate.getYear()}-${String(solarDate.getMonth()).padStart(2, '0')}-${String(solarDate.getDay()).padStart(2, '0')}`
+        lunarOriginal = rawBirthDate
+        console.log(`Lunar ${rawBirthDate} → Solar ${solarBirthDate}`)
+      } catch (lunarErr) {
+        // On failure, leave solarBirthDate UNSET rather than falling back to the
+        // raw lunar string — feeding a lunar date to the solar calculators
+        // produced a silently-wrong chart. Unset makes hasBirthDateTime() false,
+        // so the handler declines and the route uses the generic fallback.
+        console.error('Lunar conversion failed:', lunarErr)
+        solarBirthDate = undefined
+      }
     }
   }
 

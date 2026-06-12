@@ -9,8 +9,17 @@ import { checkCredits, deductCredits } from '@/lib/rateLimit'
 import { completeLLM, streamLLM, resolveLLMConfig } from '@/lib/llm'
 import type { LLMConfig } from '@/lib/llm'
 import { selectHandler, buildHandlerSchema, validateHandlerOutput, type DivinationContext } from './handlers'
+import { hasRenderableContent } from './schemas/_validate'
 import { buildSystemPrompt } from './handlers/_systemPrompt'
 import { parseJsonFromLLMOutput, PARSE_FAILED_KEY } from './handlers/_jsonParse'
+
+// Ask the provider for JSON-constrained decoding (OpenAI-style response_format,
+// forwarded by OpenRouter). Prevents the malformed-JSON class at the source;
+// the parse/repair ladder stays as defense-in-depth. Providers that reject the
+// param trigger one automatic retry without it (see lib/llm), so this is safe
+// to default ON. Escape hatch: DIVINATION_JSON_MODE=off.
+const DIVINATION_RESPONSE_FORMAT: { type: 'json_object' } | undefined =
+  process.env.DIVINATION_JSON_MODE === 'off' ? undefined : { type: 'json_object' }
 import { StreamingJsonParser, type ParserEvent } from './handlers/_streamingJsonParser'
 import { FUNNEL_COOKIE_NAME, verifyFunnelToken } from '@/lib/funnelSession'
 
@@ -47,17 +56,20 @@ export async function POST(req: NextRequest) {
     } = body
     const targetType = rawTargetType === 'family' ? 'family' : 'self'
 
-    // Funnel View 3 calls this with only `readingId` — the Reading row was
-    // pre-created by /api/start/init with the inputs. Hydrate type +
-    // inputData from the row when they're missing from the body. Ownership
-    // is checked: the row must belong to the authenticated (or funnel-
-    // tentative) user before we use its data.
-    if (preCreatedReadingId && (!type || !inputData)) {
+    // A pre-created `readingId` (normal flow via /api/divination/init, and the ad
+    // funnel View 3) lets this request skip the credit + maintenance gates (init
+    // already enforced them) and targets that row for the final write. It MUST
+    // therefore be validated EVERY time it's present — not only when type/inputData
+    // are absent. Otherwise a caller could pass an arbitrary or another user's id
+    // alongside their own type/inputData to (a) bypass the credit check entirely
+    // and (b) overwrite the victim's reading (IDOR). Require: owned by the caller
+    // AND still pending (so a completed reading can't be replayed for a free run).
+    if (preCreatedReadingId) {
       const row = await prisma.reading.findFirst({
         where: { id: preCreatedReadingId, userId },
-        select: { type: true, inputData: true },
+        select: { type: true, inputData: true, status: true },
       })
-      if (!row) {
+      if (!row || row.status !== 'pending') {
         return NextResponse.json({ error: 'Reading not found' }, { status: 404 })
       }
       type = type ?? row.type
@@ -326,6 +338,7 @@ export async function POST(req: NextRequest) {
         maxTokens: llmConfig.maxTokens,
         timeoutMs: llmConfig.timeoutMs,
         reasoningEffort: llmConfig.reasoningEffort,
+        responseFormat: DIVINATION_RESPONSE_FORMAT,
       })
       resultText = result.content
     } catch (apiErr: unknown) {
@@ -381,12 +394,11 @@ export async function POST(req: NextRequest) {
     const validation = validateHandlerOutput(handler, structuredResult)
     if (!validation.success) {
       console.error(`[divination] Zod validation issues type=${type} model=${modelName} latency=${Date.now() - llmStart}ms`, validation.issues)
-      // Hard-reject #2: structurally empty output (no sections AND no
-      // interpretation). This catches LLM responses that parsed as valid
-      // JSON but produced nothing renderable (e.g. `{}` or only metadata).
-      const hasSections = structuredResult.sections && typeof structuredResult.sections === 'object' && Object.keys(structuredResult.sections as object).length >= 1
-      const hasInterpretation = !!structuredResult.interpretation
-      if (!hasSections && !hasInterpretation) {
+      // Hard-reject #2: structurally empty output — nothing renderable in
+      // sections or interpretation. This catches LLM responses that parsed
+      // as valid JSON but produced nothing usable (e.g. `{}`, only metadata,
+      // or sections whose values are all empty strings).
+      if (!hasRenderableContent(structuredResult)) {
         if (pendingReadingId) {
           await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'Invalid LLM output format', llmRawOutput: resultText } }).catch(() => {})
         }
@@ -578,6 +590,7 @@ function runStreamingDivination(args: {
           maxTokens: llmConfig.maxTokens,
           timeoutMs: llmConfig.timeoutMs,
           reasoningEffort: llmConfig.reasoningEffort,
+          responseFormat: DIVINATION_RESPONSE_FORMAT,
         })) {
           if (chunk.type === 'content') {
             accumulatedRaw += chunk.text
@@ -638,10 +651,9 @@ function runStreamingDivination(args: {
       const validation = validateHandlerOutput(handler, structuredResult)
       if (!validation.success) {
         console.error(`[divination/stream] Zod validation issues type=${type} model=${modelName} latency=${Date.now() - llmStart}ms`, validation.issues)
-        const sectionsObj = structuredResult.sections as Record<string, unknown> | undefined
-        const hasSections = sectionsObj && typeof sectionsObj === 'object' && Object.keys(sectionsObj).length >= 1
-        const hasInterpretation = !!structuredResult.interpretation
-        if (!hasSections && !hasInterpretation) {
+        // Same gate as the blocking path: only content-bearing sections /
+        // interpretation count (empty-string sections used to slip through).
+        if (!hasRenderableContent(structuredResult)) {
           if (pendingReadingId) {
             await prisma.reading.update({
               where: { id: pendingReadingId },

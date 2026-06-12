@@ -137,4 +137,15 @@ describe('calculateMeihua', () => {
       expect(late.lunarDay).not.toBe(sameEarly.lunarDay)
     }
   })
+
+  // Regression: 卦象 lines are stored bottom→top. A prior bug stored them
+  // top→bottom, scrambling 互卦/变卦 (本卦 name survived but 互/变 were wrong).
+  it('builds correct 互卦 / 变卦 from bottom→top lines', () => {
+    const m = calculateMeihua('2026-04-27', 'wu')
+    expect(m.benGua.name).toBe('风雷益')
+    expect(m.benGua.lines).toEqual([1, 0, 0, 0, 1, 1]) // 震(下)[1,0,0] + 巽(上)[0,1,1]
+    expect(m.huGua.name).toBe('山地剥')                  // 互卦 of 益
+    expect(m.changingLine).toBe(4)
+    expect(m.bianGua.name).toBe('天雷无妄')              // 益 动四爻 → 无妄
+  })
 })

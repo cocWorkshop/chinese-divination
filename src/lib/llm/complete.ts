@@ -82,6 +82,7 @@ export async function completeLLM(
     let content = ''
     let reasoningText: string | undefined
     let usage: Usage | undefined
+    let finishReason: string | undefined
 
     if (cfg.isLocalProxy) {
       // Local Claude CLI proxy does not understand the OpenRouter `reasoning`
@@ -109,8 +110,6 @@ export async function completeLLM(
         else req.signal.addEventListener('abort', onExternalAbort, { once: true })
       }
       try {
-        // OpenAI SDK types don't know about OpenRouter's `reasoning` param;
-        // spread it in and cast the whole body.
         // The OpenAI SDK types don't know about OpenRouter's `reasoning`
         // param; we build the well-typed body, then spread `reasoning` via a
         // cast on the whole create() call so we don't lose the non-stream
@@ -119,17 +118,40 @@ export async function completeLLM(
           model: cfg.model,
           max_tokens: cfg.maxTokens,
           messages: toOpenAIMessages(req.systemPrompt, req.messages),
+          ...(req.responseFormat ? { response_format: req.responseFormat } : {}),
         }
         const body = {
           ...baseBody,
           ...buildReasoningParam(cfg.reasoningEffort),
         } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming
-        const completion = await client.chat.completions.create(
-          body,
-          { signal: controller.signal as AbortSignal }
-        )
-        const msg = completion.choices[0]?.message
+        let completion: OpenAI.Chat.Completions.ChatCompletion
+        try {
+          completion = await client.chat.completions.create(
+            body,
+            { signal: controller.signal as AbortSignal }
+          )
+        } catch (firstErr) {
+          // Some OpenRouter providers reject `response_format` as an invalid
+          // parameter (400/404/422). Enabling JSON mode must never break a
+          // request that would otherwise succeed — retry ONCE without it.
+          // Deliberately NOT retried: 401/402/403 (auth/payment — doomed),
+          // 408/429 (timeout/rate-limit — an instant retry only adds load and
+          // the param isn't the problem), 5xx, aborts.
+          const status = (firstErr as { status?: number })?.status
+          const isParamRejection = status === 400 || status === 404 || status === 422
+          if (!req.responseFormat || !isParamRejection) throw firstErr
+          console.warn(`[llm] response_format rejected (status=${status}) model=${cfg.model} endpoint=${req.endpoint} — retrying without it`)
+          const { response_format: _unused, ...bodyWithoutRF } = body as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming & { response_format?: unknown }
+          void _unused
+          completion = await client.chat.completions.create(
+            bodyWithoutRF as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming,
+            { signal: controller.signal as AbortSignal }
+          )
+        }
+        const choice = completion.choices[0]
+        const msg = choice?.message
         content = msg?.content || ''
+        finishReason = choice?.finish_reason ?? undefined
         // Reasoning tokens come back in a separate `message.reasoning` field
         // on OpenRouter — capture for logging, do NOT merge into content.
         reasoningText = extractReasoningText(msg)
@@ -144,6 +166,13 @@ export async function completeLLM(
         clearTimeout(timeoutId)
         if (req.signal) req.signal.removeEventListener('abort', onExternalAbort)
       }
+    }
+
+    // 'length' = output truncated by max_tokens. Downstream sees broken/partial
+    // JSON that the repair ladder will try to salvage — but the real fix is a
+    // bigger token budget, so make the root cause loud and greppable.
+    if (finishReason === 'length') {
+      console.warn(`[llm] finish_reason=length (output truncated by max_tokens=${cfg.maxTokens}) endpoint=${req.endpoint} model=${cfg.model} — consider raising the token budget`)
     }
 
     const outputPreview = reasoningText
@@ -165,7 +194,7 @@ export async function completeLLM(
       systemPrompt: systemPromptPreview,
     })
 
-    return { content, model: cfg.model, usage, reasoning: reasoningText }
+    return { content, model: cfg.model, usage, reasoning: reasoningText, finishReason }
   } catch (err) {
     const e = err as { message?: string; status?: number }
     await logLlmCall({

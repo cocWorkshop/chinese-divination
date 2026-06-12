@@ -61,29 +61,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     return NextResponse.json({ error: 'no_account', message: '找不到此電郵對應的帳戶，請先註冊' }, { status: 404 })
   }
 
-  // Apply credits
+  // Apply credits atomically. The conditional `status: 'sent'` updateMany is the
+  // real guard: it flips sent→claimed for exactly one of any concurrent requests,
+  // so the compensation can't be granted twice by firing parallel claims. The
+  // grant runs in the same transaction, so a failed grant rolls the flip back.
   const totalCompCredits = comp.bonusModel1 + comp.bonusChat
-  const updatedUser = await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      divinationCredits: { increment: comp.bonusModel1 },
-      chatCredits: { increment: comp.bonusChat },
-      credits: { increment: totalCompCredits },
-    },
-    select: { credits: true },
+  let newBalance: number | null = null
+  await prisma.$transaction(async (tx) => {
+    const claim = await tx.compensation.updateMany({
+      where: { id: comp.id, status: 'sent' },
+      data: { status: 'claimed', claimedAt: new Date(), userId: user.id },
+    })
+    if (claim.count === 0) return // raced / already claimed
+    const updated = await tx.user.update({
+      where: { id: user.id },
+      data: {
+        divinationCredits: { increment: comp.bonusModel1 },
+        chatCredits: { increment: comp.bonusChat },
+        credits: { increment: totalCompCredits },
+      },
+      select: { credits: true },
+    })
+    newBalance = updated.credits
   })
 
-  // Mark claimed
-  await prisma.compensation.update({
-    where: { id: comp.id },
-    data: { status: 'claimed', claimedAt: new Date(), userId: user.id },
-  })
+  if (newBalance === null) {
+    return NextResponse.json({ error: 'claimed', message: '此補償已領取' }, { status: 400 })
+  }
 
-  logCreditChange({
+  await logCreditChange({
     userId: user.id,
     action: 'grant_compensation',
     amount: totalCompCredits,
-    balance: updatedUser.credits,
+    balance: newBalance,
     source: `compensation:${comp.id}`,
     note: comp.reason,
   })

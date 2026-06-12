@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-// Short URL-safe token generator
+import crypto from 'crypto'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -21,10 +21,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ token: reading.shareToken })
   }
 
-  // Generate short 8-char URL-safe token
+  // Generate a short URL-safe token. The page it unlocks is unauthenticated and
+  // exposes the reading + birth PII, so use a CSPRNG (not Math.random) and 12
+  // chars (~71 bits) to make the token unguessable.
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  const bytes = crypto.randomBytes(12)
   let token = ''
-  for (let i = 0; i < 8; i++) token += chars[Math.floor(Math.random() * chars.length)]
+  for (let i = 0; i < 12; i++) token += chars[bytes[i] % chars.length]
   await prisma.reading.update({
     where: { id },
     data: { shareToken: token },

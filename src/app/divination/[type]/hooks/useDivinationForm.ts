@@ -73,10 +73,23 @@ export function useDivinationForm(type: string, lang: string) {
     const formKeys = [
       'birthDate', 'birthTime', 'exactTime', 'timeMode', 'birthPlace',
       'gender', 'question',
+      // Event-type fields — used by the failed-reading retry flow, which
+      // re-seeds the form from the original reading's inputData.
+      'readingDateTime', 'direction', 'yearBuilt', 'ownerInfo', 'hexagram',
     ] as const
     for (const k of formKeys) {
       const v = searchParams.get(k)
       if (v) updates[k] = v
+    }
+    // Cast-line fields hold JSON arrays that CoinCastPanel JSON.parses during
+    // render — only hydrate values that actually parse, so a hand-crafted URL
+    // can't crash the form.
+    for (const k of ['liuyaoLines', 'ichingLines'] as const) {
+      const v = searchParams.get(k)
+      if (!v) continue
+      try {
+        if (Array.isArray(JSON.parse(v))) updates[k] = v
+      } catch { /* skip malformed */ }
     }
     // calendarType → lunarToggle field
     const ct = searchParams.get('calendarType')
@@ -121,7 +134,9 @@ export function useDivinationForm(type: string, lang: string) {
     }
 
     if (Object.keys(updates).length > 0 || target) {
-      toast(T(lang, '已從玄機大師對話中自動填入資訊', 'Fields pre-filled from Master Xuanji'), { icon: '✨', duration: 3000 })
+      // Generic wording — hydration is used by both the Master CTA flow and
+      // the failed-reading retry flow.
+      toast(T(lang, '已自動填入先前資訊', 'Fields pre-filled'), { icon: '✨', duration: 3000 })
     }
   }, [searchParams, lang])
 

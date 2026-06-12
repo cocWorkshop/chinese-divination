@@ -306,6 +306,11 @@ export function calculateBazi(
   let solarMinute = 0
   let trueSolarTimeInfo: BaziChart['trueSolarTime'] | undefined
   let addOneDay = false
+  // In exact mode this holds the true-solar-time-corrected moment, whose own
+  // calendar date is authoritative (it already accounts for DST rollback and
+  // midnight crossing). tyme4ts rolls the 日柱 at 23:00 per the 问真 convention,
+  // so we must NOT add a day on top — that previously double-rolled the day.
+  let exactDate: Date | null = null
 
   if (exactTime) {
     const [exactHour, exactMinute] = exactTime.split(':').map(Number)
@@ -334,11 +339,7 @@ export function calculateBazi(
     const originalShichen = getShichen(originalDate)
     const shichenChanged = correctedShichen.branch !== originalShichen.branch
 
-    const correctedHour = correctedDate.getHours()
-    if (correctedHour >= 23) {
-      addOneDay = true
-    }
-
+    exactDate = correctedDate
     actualBranch = correctedShichen.branch
     solarHour = correctedDate.getHours()
     solarMinute = correctedDate.getMinutes()
@@ -368,10 +369,14 @@ export function calculateBazi(
     }
   }
 
-  // Apply day adjustment for late zi hour
-  const adjustedDate = addOneDay
-    ? new Date(year, month - 1, day + 1)
-    : new Date(year, month - 1, day)
+  // Final calendar date handed to tyme4ts. Exact mode uses the corrected moment's
+  // own date; fuzzy mode applies the 晚子时 (zi_late) day advance, which pairs with
+  // solarHour 0 so tyme4ts lands on the next day's 子时 (问真).
+  const adjustedDate = exactDate
+    ? exactDate
+    : (addOneDay
+        ? new Date(year, month - 1, day + 1)
+        : new Date(year, month - 1, day))
   const finalYear = adjustedDate.getFullYear()
   const finalMonth = adjustedDate.getMonth() + 1
   const finalDay = adjustedDate.getDate()
@@ -527,15 +532,22 @@ export function calculateBazi(
   const startAge = qiYunYears + qiYunMonths / 12
   let startAgeLabel = `${qiYunYears}歲`
   if (qiYunMonths > 0) startAgeLabel += `${qiYunMonths}個月`
-  const startTime = childLimit.getStartTime()
-  const qiYunStartYear = startTime.getYear()
-  const qiYunStartMonth = startTime.getMonth()
+  // tyme4ts: getStartTime() is the BIRTH moment, getEndTime() is when the luck
+  // cycles actually begin (起运). The 起运 year/month/date must come from
+  // getEndTime() — using getStartTime() showed the birth date, contradicting
+  // startAgeLabel (which is years later).
+  const qiYunStartTime = childLimit.getEndTime()
+  const qiYunStartYear = qiYunStartTime.getYear()
+  const qiYunStartMonth = qiYunStartTime.getMonth()
 
   // Get nearest jie qi info from the start/end times
   const birthSolarDay = SolarDay.fromYmd(finalYear, finalMonth, finalDay)
   const termDay = birthSolarDay.getTermDay()
   const nearestJieQiName = termDay.toString()
-  const daysDiff = Math.round((qiYunYears * 365 + qiYunMonths * 30 + qiYunDays) / 3 * 10) / 10
+  // Days from birth to the relevant 节气 (3 days ≈ 1 year of 起运 age; 1 day ≈ 4
+  // months; the day component of the age maps back at 1/120 day each). The old
+  // formula converted the age to days and divided by 3 — off by ~120×.
+  const daysDiff = Math.round((qiYunYears * 3 + qiYunMonths / 4 + qiYunDays / 120) * 10) / 10
 
   const qiYun: QiYunInfo = {
     direction: daYunDirection,
@@ -544,7 +556,7 @@ export function calculateBazi(
     startYear: qiYunStartYear,
     startMonth: qiYunStartMonth,
     nearestJieQi: nearestJieQiName,
-    nearestJieQiDate: `${startTime.getYear()}-${String(startTime.getMonth()).padStart(2, '0')}-${String(startTime.getDay()).padStart(2, '0')}`,
+    nearestJieQiDate: `${qiYunStartTime.getYear()}-${String(qiYunStartTime.getMonth()).padStart(2, '0')}-${String(qiYunStartTime.getDay()).padStart(2, '0')}`,
     daysDiff,
   }
 
@@ -1184,12 +1196,13 @@ function calculateShenShaPerPillar(
   const hy = hongyanMap[dayStem]
   if (hy) addToPillar(hy, { name: '红艳煞', description: '异性缘重，感情丰富' })
 
-  // 灾煞
+  // 灾煞 — the branch that CLASHES the 三合 cardinal (i.e. opposite the 将星).
+  // 申子辰→午, 寅午戌→子, 巳酉丑→卯, 亥卯未→酉. (Was mistakenly a copy of 将星.)
   const zaishaMap: Record<string, string> = {
-    '寅': '午', '午': '午', '戌': '午',
-    '申': '子', '子': '子', '辰': '子',
-    '巳': '酉', '酉': '酉', '丑': '酉',
-    '亥': '卯', '卯': '卯', '未': '卯',
+    '寅': '子', '午': '子', '戌': '子',
+    '申': '午', '子': '午', '辰': '午',
+    '巳': '卯', '酉': '卯', '丑': '卯',
+    '亥': '酉', '卯': '酉', '未': '酉',
   }
   const zs = zaishaMap[yearBranch]
   if (zs) addToPillar(zs, { name: '灾煞', description: '注意灾祸，宜防范' })

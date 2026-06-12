@@ -50,4 +50,55 @@ describe('parseJsonFromLLMOutput', () => {
     const out = parseJsonFromLLMOutput(raw, 'iching')
     expect(out.type).toBe('iching')
   })
+
+  it('repairs array string elements missing their OPENING quote (real qimen failure 2026-06-12)', () => {
+    // Condensed from reading cmqa6heeo00049mpkvpeuc3ey: the LLM dropped the
+    // opening quote of every element in keyAdvice/suggestedQuestions, which
+    // hard-rejected an otherwise complete reading.
+    const raw = `{
+  "type": "qimen",
+  "sections": {
+    "situation": "當前陽遁六局芒種時，值符天蓬星落艮宮。"
+  },
+  "outcome": "中",
+  "keyAdvice": [
+    開盤後若急漲可視為兌宮假象，宜減倉鎖利，勿追高。",
+    關注乾宮西北方位是否出現逆勢機會，但只宜小單試探。"
+  ],
+  "suggestedQuestions": [
+    兌宮三奇得使表面吉，但病星玄武暗藏何種陷阱？",
+    值符杜門門迫空亡，大盤策略該如何避實擊虛？"
+  ]
+}`
+    const out = parseJsonFromLLMOutput(raw, 'qimen')
+    expect(out[PARSE_FAILED_KEY]).toBeUndefined()
+    expect((out.sections as Record<string, string>).situation).toContain('值符天蓬星')
+    expect(out.keyAdvice).toEqual([
+      '開盤後若急漲可視為兌宮假象，宜減倉鎖利，勿追高。',
+      '關注乾宮西北方位是否出現逆勢機會，但只宜小單試探。',
+    ])
+    expect(out.suggestedQuestions).toHaveLength(2)
+  })
+
+  it('repairs trailing commas and single-quoted strings', () => {
+    const raw = `{"sections": {'overview': 'hello',}, "outcome": "吉",}`
+    const out = parseJsonFromLLMOutput(raw, 'meihua')
+    expect(out[PARSE_FAILED_KEY]).toBeUndefined()
+    expect((out.sections as Record<string, string>).overview).toBe('hello')
+  })
+
+  it('repairs unescaped newlines inside string values', () => {
+    const raw = '{"interpretation": "第一行\n第二行", "outcome": "吉"}'
+    const out = parseJsonFromLLMOutput(raw, 'liuyao')
+    expect(out[PARSE_FAILED_KEY]).toBeUndefined()
+    expect(out.interpretation).toContain('第二行')
+  })
+
+  it('still rejects pure prose even though jsonrepair would coerce it to a JSON string', () => {
+    // jsonrepair('some prose') yields '"some prose"' — a valid JSON *string*.
+    // The object-shape guard must reject it so the route hard-rejects instead
+    // of saving a garbage reading.
+    const out = parseJsonFromLLMOutput('抱歉，我無法生成此次解讀。', 'bazi')
+    expect(out[PARSE_FAILED_KEY]).toBe(true)
+  })
 })

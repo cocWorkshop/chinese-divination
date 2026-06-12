@@ -60,8 +60,10 @@ export async function POST(req: NextRequest) {
 
     if (chatReadingId) {
       try {
-        const reading = await prisma.reading.findUnique({
-          where: { id: chatReadingId },
+        // Scope to the caller — otherwise any user could pass another user's
+        // readingId and have their birth/family PII pulled into the prompt (IDOR).
+        const reading = await prisma.reading.findFirst({
+          where: { id: chatReadingId, userId: session.user.id, deletedAt: null },
           select: { inputData: true, targetType: true, familyMemberId: true, familyMember: { select: { name: true, relation: true } } },
         })
         if (reading?.inputData) {

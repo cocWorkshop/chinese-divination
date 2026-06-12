@@ -19,44 +19,51 @@ export async function POST(req: NextRequest) {
   const bonusSetting = await prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } })
   const bonus = parseInt(bonusSetting?.value ?? '5')
 
-  const ops = [
-    prisma.shareLink.update({
-      where: { code },
+  // Atomic claim: the conditional `used: false` updateMany is the real guard.
+  // Concurrent requests for the same code race on this single row write — only
+  // the one that flips false→true (count === 1) grants credits, so the bonus
+  // can't be duplicated by firing N parallel claims.
+  let result: { claimerCredits: number; sharerCredits: number } | null = null
+  await prisma.$transaction(async (tx) => {
+    const claim = await tx.shareLink.updateMany({
+      where: { code, used: false },
       data: { used: true, usedBy: session.user.id, usedAt: new Date() },
-    }),
-    prisma.user.update({
+    })
+    if (claim.count === 0) return // already claimed by a concurrent/previous request
+    const claimer = await tx.user.update({
       where: { id: session.user.id },
       data: { credits: { increment: bonus } },
-    }),
-    prisma.user.update({
+      select: { credits: true },
+    })
+    const sharer = await tx.user.update({
       where: { id: link.userId },
       data: { credits: { increment: bonus } },
+      select: { credits: true },
+    })
+    result = { claimerCredits: claimer.credits, sharerCredits: sharer.credits }
+  })
+
+  if (!result) return NextResponse.json({ error: 'Already claimed' }, { status: 409 })
+  const granted: { claimerCredits: number; sharerCredits: number } = result
+
+  await Promise.all([
+    logCreditChange({
+      userId: session.user.id,
+      action: 'grant_share',
+      amount: bonus,
+      balance: granted.claimerCredits,
+      source: `share:${code}`,
+      note: 'claimer',
     }),
-  ]
-
-  await prisma.$transaction(ops)
-
-  // Log credit changes for both users
-  const [claimer, sharer] = await Promise.all([
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { credits: true } }),
-    prisma.user.findUnique({ where: { id: link.userId }, select: { credits: true } }),
+    logCreditChange({
+      userId: link.userId,
+      action: 'grant_share',
+      amount: bonus,
+      balance: granted.sharerCredits,
+      source: `share:${code}`,
+      note: 'sharer',
+    }),
   ])
-  logCreditChange({
-    userId: session.user.id,
-    action: 'grant_share',
-    amount: bonus,
-    balance: claimer?.credits ?? 0,
-    source: `share:${code}`,
-    note: 'claimer',
-  })
-  logCreditChange({
-    userId: link.userId,
-    action: 'grant_share',
-    amount: bonus,
-    balance: sharer?.credits ?? 0,
-    source: `share:${code}`,
-    note: 'sharer',
-  })
 
   return NextResponse.json({ success: true, credits: bonus })
 }

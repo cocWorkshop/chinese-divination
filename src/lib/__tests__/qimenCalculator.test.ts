@@ -151,15 +151,25 @@ describe('calculateQimen', () => {
 // as 青龙返首 did when gated on the impossible 地盘甲).
 describe('calculateQimen — value-level regression', () => {
   it('known cast 2024-06-01 12:00 → exact 干支 / 節氣 / 局 / 值符值使', () => {
+    // Wall-clock is interpreted as China civil time and the 干支 follow the 问真
+    // convention (verified against lunar-typescript's *Exact* methods). These are
+    // timezone-independent — the result is identical whatever TZ the server runs in.
     const c = calculateQimen(new Date('2024-06-01T12:00:00'))
     expect(c.year).toBe('甲辰')
     expect(c.month).toBe('己巳')
-    expect(c.day).toBe('丁酉')
-    expect(c.hour).toBe('丙午')      // 丁日午時 = 丙午 (五鼠遁)
+    expect(c.day).toBe('丙申')
+    expect(c.hour).toBe('甲午')      // 丙日午時 = 甲午 (五鼠遁: 丙辛从戊起)
     expect(c.solarTerm).toBe('小满')
     expect(c.roundLabel).toBe('阳遁8局')
-    expect(c.zhiFu).toBe('天冲星')
-    expect(c.zhiShi).toBe('伤门')
+    expect(c.zhiFu).toBe('天芮星')
+    expect(c.zhiShi).toBe('死门')
+  })
+
+  it('晚子时 (23:00–23:59) rolls 日柱/時柱 to the next day per 问真', () => {
+    // 2024-06-15 23:30 → 子时 belongs to 2024-06-16; 日柱 辛亥, 時柱 戊子.
+    const c = calculateQimen(new Date('2024-06-15T23:30:00'))
+    expect(c.day).toBe('辛亥')
+    expect(c.hour).toBe('戊子')
   })
 
   it('甲 never appears on the heaven/earth plate (hidden as 戊/旬首)', () => {
@@ -192,10 +202,10 @@ describe('calculateQimen — value-level regression', () => {
 
   it('derives 值符/值使落宮 + 旬空 + 驛馬 for 2024-06-01 12:00', () => {
     const c = calculateQimen(new Date('2024-06-01T12:00:00'))
-    expect(c.zhiFuPalace).toBe('乾宫')                 // 值符天冲星 落 乾6
-    expect(c.zhiShiPalace).toMatch(/宫$/)              // 值使伤门 sits in a palace
-    expect(c.voidBranches).toEqual(['寅', '卯'])        // 丙午 ∈ 甲辰旬 → 旬空 寅卯
-    expect(c.voidPalaces).toEqual(expect.arrayContaining(['艮宫', '震宫']))
+    expect(c.zhiFuPalace).toBe('坤宫')                 // 值符天芮星 落 坤2
+    expect(c.zhiShiPalace).toMatch(/宫$/)              // 值使死门 sits in a palace
+    expect(c.voidBranches).toEqual(['辰', '巳'])        // 甲午時 ∈ 甲午旬 → 旬空 辰巳
+    expect(c.voidPalaces).toEqual(['巽宫'])             // 辰巳 落 巽4
     expect(c.horseBranch).toBe('申')                   // 午 ∈ 寅午戌 → 馬在申
     expect(c.horsePalace).toBe('坤宫')                 // 申 落 坤2
   })

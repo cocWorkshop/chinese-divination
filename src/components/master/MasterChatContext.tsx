@@ -387,11 +387,16 @@ export function MasterChatProvider({ children }: ProviderProps) {
             expanded.push({ ...m, kind: m.kind ?? 'text' })
           }
         }
-        setMessages(expanded)
+        // Never replace the transcript while a turn is streaming — the expand /
+        // readingsChanged refreshes fire on the CTA→reading handoff exactly when
+        // runTurn is mid-stream, and clobbering `messages` here drops the
+        // in-flight assistant bubble (and the reply gets appended to a stale row).
+        // Hints/disclosure/portrait below are safe to refresh regardless.
+        if (!sendingRef.current) setMessages(expanded)
       } else {
         // Fresh load with empty messages (e.g. after a soft reset) — clear
-        // any stale local state.
-        setMessages([])
+        // any stale local state (but not mid-stream, per above).
+        if (!sendingRef.current) setMessages([])
       }
       setGreetingHints({
         hasReadings: data.hasReadings ?? false,
@@ -520,6 +525,10 @@ export function MasterChatProvider({ children }: ProviderProps) {
           setMessages((prev) => [...prev, ...cards])
         })
       }
+
+      // Set when the stream errors out: recover by reloading server history once
+      // this turn settles (see finally) rather than re-POSTing — see catch.
+      let needsReloadRecovery = false
 
       try {
         abortRef.current = new AbortController()
@@ -688,48 +697,21 @@ export function MasterChatProvider({ children }: ProviderProps) {
         }
       } catch (e) {
         if ((e as Error).name !== 'AbortError') {
-          // Show friendly "thinking" message and auto-retry once
-          setMessages((prev) => {
-            const updated = [...prev]
-            updated[updated.length - 1] = {
-              ...assistantMsg,
-              content: lang === 'en' ? 'Let me think again...' : '讓我再想想……',
-            }
-            return updated
-          })
-
-          // Auto-retry after a brief pause
-          await new Promise(r => setTimeout(r, 2000))
-          try {
-            abortRef.current = new AbortController()
-            const retryRes = await fetch('/api/master', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ...payload, clientTime: new Date().toISOString(), tzOffsetMin: new Date().getTimezoneOffset() }),
-              signal: abortRef.current.signal,
-            })
-            if (retryRes.ok) {
-              // Retry succeeded — process the stream normally
-              // (simplified: just show a success message since full stream parsing is complex to duplicate)
-              const retryData = await retryRes.text()
-              if (retryData.includes('"content"')) {
-                // Got content — reload history to show the full response
-                await loadHistory()
-                return
-              }
-            }
-          } catch {
-            // Retry also failed
-          }
-
-          // Final failure message
+          // The connection dropped. The server may have already persisted the
+          // user turn and finished (or still be finishing) the reply. Do NOT
+          // re-POST the same payload — that appends the user rows again and
+          // re-runs the LLM, double-charging credits. Instead recover by
+          // reloading server history once this turn settles (finally block),
+          // which surfaces the real reply if it landed and otherwise leaves the
+          // user free to retry manually.
+          needsReloadRecovery = true
           setMessages((prev) => {
             const updated = [...prev]
             updated[updated.length - 1] = {
               ...assistantMsg,
               content: lang === 'en'
-                ? 'My connection to the celestial realm has been disrupted. Please try again in a moment.'
-                : '玄機與天機的連結暫時中斷了。\n\n稍後再試，老夫在此恭候。',
+                ? 'My connection to the celestial realm flickered — recovering…'
+                : '玄機與天機的連結閃了一下，正在恢復……',
             }
             return updated
           })
@@ -749,9 +731,13 @@ export function MasterChatProvider({ children }: ProviderProps) {
         // flushPendingSends uses this when the user interrupts so the
         // follow-up runTurn fires AFTER the old one's state has settled.
         resolveTurn()
+        // Error recovery: now that sendingRef is cleared, reload server history
+        // so a server-completed-but-disconnected turn surfaces its real reply.
+        // (loadHistory no-ops the message replacement while sendingRef is set.)
+        if (needsReloadRecovery) void loadHistory()
       }
     },
-    [enabled, lang],
+    [enabled, lang, loadHistory],
   )
 
   // Flush the pending-sends queue: POST whatever the user has typed during

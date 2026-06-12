@@ -19,6 +19,7 @@
  *   - never deducted from user credits (infrastructure cost)
  */
 
+import { jsonrepair } from 'jsonrepair'
 import { completeLLM, resolveLLMConfig, clearLLMSettingsCache } from '@/lib/llm'
 import { prisma } from '../prisma'
 import {
@@ -169,7 +170,15 @@ export function parseExtractorOutput(raw: string): Portrait | null {
     try {
       parsed = JSON.parse(match[0])
     } catch {
-      return null
+      // Last resort: jsonrepair handles the common LLM malformations (missing
+      // quotes, trailing commas, unescaped newlines). Safe here because every
+      // field below is individually whitelist-validated, so a mis-repair can't
+      // inject anything the Portrait shape doesn't allow.
+      try {
+        parsed = JSON.parse(jsonrepair(match[0]))
+      } catch {
+        return null
+      }
     }
   }
 
@@ -278,6 +287,9 @@ export async function maybeExtractPortrait(
       systemPrompt: EXTRACTION_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
       model,
+      // Extractor output is pure JSON — ask the provider to constrain it
+      // (auto-falls back without the param on providers that reject it).
+      responseFormat: { type: 'json_object' },
     })
 
     const parsed = parseExtractorOutput(result.content || '')

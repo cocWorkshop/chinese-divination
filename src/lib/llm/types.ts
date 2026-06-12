@@ -74,6 +74,15 @@ export interface CompletionRequest {
    * Pass 'off' to fully disable reasoning for this single call.
    */
   reasoningEffort?: ReasoningEffort
+  /**
+   * Ask the provider to constrain output to valid JSON (OpenAI-style
+   * `response_format`). Forwarded to OpenRouter; providers that reject the
+   * parameter trigger ONE automatic retry without it (see complete/stream),
+   * so enabling this can never make a request fail that would otherwise
+   * succeed. Ignored by the local Claude proxy. Only meaningful when the
+   * prompt itself demands JSON (the divination prompts do).
+   */
+  responseFormat?: { type: 'json_object' }
   /** External abort signal merged with the internal timeout signal. */
   signal?: AbortSignal
 }
@@ -84,6 +93,12 @@ export interface CompletionResult {
   usage?: Usage
   /** Raw reasoning / extended-thinking text returned by the model, if any. */
   reasoning?: string
+  /**
+   * Provider finish reason ('stop', 'length', …). 'length' means the output
+   * was TRUNCATED by max_tokens — callers seeing truncated JSON should fix
+   * the token budget, not the parser.
+   */
+  finishReason?: string
 }
 
 export type StreamChunk =

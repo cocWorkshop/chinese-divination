@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // @ts-expect-error taobi has no type definitions
 import TaobiModule from 'taobi'
+import { Solar } from 'lunar-typescript'
 
 const { TheArtOfBecomingInvisible } = TaobiModule
 
@@ -186,8 +187,8 @@ function detectPatterns(palaces: QimenPalace[]): QimenPattern[] {
       // ── 仪奇格 (天盘干 + 地盘干) ──
       if (h === '戊' && e === '丙') push('青龙返首', 'auspicious', '大吉格，万事如意，利于谋事、出行、求官')      // 戊(代甲)+丙
       if (h === '丙' && e === '戊') push('飞鸟跌穴', 'auspicious', '大吉格，喜从天降、谋望遂心、利求财')          // 丙+戊
-      if (h === '戊' && e === '辛') push('龙逃走', 'inauspicious', '不利格，主走失、逃避、计划受阻')              // 戊(代甲)+辛
-      if (h === '辛' && e === '戊') push('虎猖狂', 'inauspicious', '凶格，主强人作乱、客欺主、有损失')            // 辛+戊(代甲)
+      if (h === '乙' && e === '辛') push('青龙逃走', 'inauspicious', '不利格，主走失、逃避、计划受阻')            // 烟波钓叟歌：乙加辛
+      if (h === '辛' && e === '乙') push('白虎猖狂', 'inauspicious', '凶格，主强人作乱、客欺主、有损失')          // 烟波钓叟歌：辛加乙
 
       // ── 庚格 (六仪凶格) ──  庚加癸=大格 / 庚加壬=小格 / 庚加己=刑格 / 庚加庚=战格
       if (h === '庚') {
@@ -222,12 +223,12 @@ function detectPatterns(palaces: QimenPalace[]): QimenPattern[] {
   for (const p of palaces) {
     if (p.number === 5) continue
     const palaceEl = PALACE_ELEMENT[p.number]
-    // 门迫: 宫克门
+    // 门迫: 门克宫 (门克其所落之宫 → 门受迫). 宫克门 = 门受制，是另一回事。
     const doorEl = DOOR_ELEMENT[p.door]
-    if (doorEl && palaceEl && OVERCOMES[palaceEl] === doorEl) {
+    if (doorEl && palaceEl && OVERCOMES[doorEl] === palaceEl) {
       patterns.push({
         name: '门迫', type: 'inauspicious', palace: p.name,
-        description: `${p.door}(${doorEl})被${p.name}(${palaceEl})所克，门的力量被压制`,
+        description: `${p.door}(${doorEl})克${p.name}(${palaceEl})，门克宫为迫，主强求生变、欲速不达`,
       })
     }
     // 星迫: 宫克星 (less common, some schools use)
@@ -236,97 +237,140 @@ function detectPatterns(palaces: QimenPalace[]): QimenPattern[] {
   return patterns
 }
 
-function stemBranchFromIndex(index: number): string {
-  return STEMS[index % 10] + BRANCHES[index % 12]
+// 问真 four pillars from wall-clock components. Day rolls at 23:00 (晚子时算明天)
+// per the project-wide convention — lunar-typescript's *Exact* methods, driven
+// purely by the integer components, are deterministic and timezone-independent.
+function wenZhenPillars(y: number, mo: number, d: number, h: number, mi: number) {
+  const lunar = Solar.fromYmdHms(y, mo, d, h, mi, 0).getLunar()
+  return {
+    year: lunar.getYearInGanZhiExact(),   // 立春 boundary
+    month: lunar.getMonthInGanZhiExact(), // 节气 boundary
+    day: lunar.getDayInGanZhiExact(),     // 23:00 → 次日
+    hour: lunar.getTimeInGanZhi(),
+  }
 }
 
 export function calculateQimen(dateTime: Date): QimenChart {
-  const taobi = new TheArtOfBecomingInvisible(dateTime)
-  const canvas = taobi.getCanvas()
+  // The user's intended wall-clock. The input Date was parsed from a naive
+  // datetime-local string in the *current* process TZ, so local getters here
+  // round-trip the wall clock regardless of what that TZ is.
+  const y = dateTime.getFullYear()
+  const mo = dateTime.getMonth() + 1
+  const d = dateTime.getDate()
+  const h = dateTime.getHours()
+  const mi = dateTime.getMinutes()
 
-  const cal = taobi.calendar
-  const yearGZ = stemBranchFromIndex(cal.year.index)
-  const monthGZ = stemBranchFromIndex(cal.month.index)
-  const dayGZ = stemBranchFromIndex(cal.date.index)
-  const hourGZ = stemBranchFromIndex(cal.hour.index)
+  // Authoritative 干支 four pillars (问真). Computed from the integer wall-clock,
+  // so they never depend on server timezone. taobi's own pillars are NOT used
+  // for display: its 月柱 uses a non-standard formula and its 日柱/时柱 roll at
+  // midnight rather than 23:00.
+  const wz = wenZhenPillars(y, mo, d, h, mi)
 
-  const solarTerm = taobi.getSolarTerms(true) as string
-  const round = taobi.round as number
-  const roundLabel = round > 0 ? `阳遁${round}局` : `阴遁${Math.abs(round)}局`
-
-  const zhiFu = taobi.getSymbol(true) as string
-  const zhiShiIndex = taobi.getMandate() as number
-  const zhiShi = DOOR_ARR[zhiShiIndex] || `第${zhiShiIndex}门`
-
-  // Parse the 3x3 canvas into palace objects
-  const palaces: QimenPalace[] = []
-  const grid: (QimenPalace | null)[][] = [[], [], []]
-
-  for (let row = 0; row < 3; row++) {
-    for (let col = 0; col < 3; col++) {
-      const cell = canvas[row][col]
-      const layoutInfo = PALACE_LAYOUT[row][col]
-
-      // cell structure: [[divinity,"",""], [door,"",heavenStem], [star,"palaceName",earthStem]]
-      const divinity = cell[0][0] || ''
-      const door = cell[1][0] || ''
-      // The 寄宫 stacks two stars and their two heaven stems (e.g. "天芮星,天禽星"
-      // / "丙,己"). Keep BOTH — normalize the separator to 、. Previously `star`
-      // dropped the 2nd (lost 天禽) and `heavenStem` leaked the raw "丙,己" into
-      // the LLM/renderer AND broke equality checks in detectPatterns.
-      const heavenStem = (cell[1][2] || '').replace(/[,，]/g, '、')
-      const star = (cell[2][0] || '').replace(/[,，]/g, '、')
-      const earthStem = cell[2][2] || ''
-
-      const palace: QimenPalace = {
-        name: `${layoutInfo.name}${layoutInfo.num === 5 ? '五' : ''}宫`,
-        number: layoutInfo.num,
-        direction: layoutInfo.direction,
-        star: star,
-        door: door,
-        divinity: divinity,
-        heavenStem: heavenStem,
-        earthStem: earthStem,
-      }
-
-      palaces.push(palace)
-      grid[row].push(palace)
+  // taobi's 9-palace engine mixes local-time (干支) and UTC (黄经) getters, so it
+  // is only self-consistent under Asia/Shanghai (verified: day/hour pillars match
+  // 问真 100% across 2023–2027 only in that TZ). calculateQimen is synchronous —
+  // no await — so scoping the TZ override around the taobi call is concurrency-
+  // safe: no other request's JS can interleave during this synchronous block.
+  const prevTZ = process.env.TZ
+  process.env.TZ = 'Asia/Shanghai'
+  try {
+    // 晚子时 (23:00–23:59): the plate must use the NEXT day's 子时 (问真). Shift the
+    // moment fed to taobi to next-day 00:mm so its 旬首/值符/值使/日干支 roll over to
+    // match the 问真 pillars above.
+    let ey = y, em = mo, ed = d, eh = h
+    if (h === 23) {
+      const nd = new Date(y, mo - 1, d)
+      nd.setDate(nd.getDate() + 1)
+      ey = nd.getFullYear(); em = nd.getMonth() + 1; ed = nd.getDate(); eh = 0
     }
-  }
 
-  const patterns = detectPatterns(palaces)
+    const taobi = new TheArtOfBecomingInvisible(new Date(ey, em - 1, ed, eh, mi))
+    const canvas = taobi.getCanvas()
+    const cal = taobi.calendar
 
-  // ─── Derived key positions ───────────────────────────────────────────
-  const palaceName = (num: number) => palaces.find(p => p.number === num)?.name || ''
-  const hourCycleIndex = cal.hour.index as number
-  // 值符落宫 / 值使落宫: locate the palace currently holding the 值符 star / 值使 door.
-  const zhiFuPalace = palaces.find(p => p.star.includes(zhiFu))?.name || ''
-  const zhiShiPalace = palaces.find(p => p.door === zhiShi)?.name || ''
-  // 旬空 (空亡): from the hour's 旬 (六甲旬 index) → 地支 → 宫.
-  const voidBranches = XUN_KONG[Math.floor(hourCycleIndex / 10)] || []
-  const voidPalaces = Array.from(new Set(voidBranches.map(b => BRANCH_PALACE[b]).filter(Boolean))).map(palaceName)
-  // 驿马 (马星): from the hour 地支 三合局 → 地支 → 宫.
-  const horseBranch = HORSE_BY_BRANCH[BRANCHES[hourCycleIndex % 12]] || ''
-  const horsePalace = horseBranch && BRANCH_PALACE[horseBranch] ? palaceName(BRANCH_PALACE[horseBranch]) : ''
+    const solarTerm = taobi.getSolarTerms(true) as string
+    const round = taobi.round as number
+    const roundLabel = round > 0 ? `阳遁${round}局` : `阴遁${Math.abs(round)}局`
 
-  return {
-    year: yearGZ,
-    month: monthGZ,
-    day: dayGZ,
-    hour: hourGZ,
-    solarTerm,
-    round,
-    roundLabel,
-    zhiFu,
-    zhiShi,
-    zhiFuPalace,
-    zhiShiPalace,
-    voidBranches,
-    voidPalaces,
-    horseBranch,
-    horsePalace,
-    palaces,
-    grid,
-    patterns,
+    const zhiFu = taobi.getSymbol(true) as string
+    const zhiShiIndex = taobi.getMandate() as number
+    const zhiShi = DOOR_ARR[zhiShiIndex] || `第${zhiShiIndex}门`
+
+    // Parse the 3x3 canvas into palace objects
+    const palaces: QimenPalace[] = []
+    const grid: (QimenPalace | null)[][] = [[], [], []]
+
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const cell = canvas[row][col]
+        const layoutInfo = PALACE_LAYOUT[row][col]
+
+        // cell structure: [[divinity,"",""], [door,"",heavenStem], [star,"palaceName",earthStem]]
+        const divinity = cell[0][0] || ''
+        const door = cell[1][0] || ''
+        // The 寄宫 stacks two stars and their two heaven stems (e.g. "天芮星,天禽星"
+        // / "丙,己"). Keep BOTH — normalize the separator to 、. Previously `star`
+        // dropped the 2nd (lost 天禽) and `heavenStem` leaked the raw "丙,己" into
+        // the LLM/renderer AND broke equality checks in detectPatterns.
+        const heavenStem = (cell[1][2] || '').replace(/[,，]/g, '、')
+        const star = (cell[2][0] || '').replace(/[,，]/g, '、')
+        const earthStem = cell[2][2] || ''
+
+        const palace: QimenPalace = {
+          name: `${layoutInfo.name}${layoutInfo.num === 5 ? '五' : ''}宫`,
+          number: layoutInfo.num,
+          direction: layoutInfo.direction,
+          star: star,
+          door: door,
+          divinity: divinity,
+          heavenStem: heavenStem,
+          earthStem: earthStem,
+        }
+
+        palaces.push(palace)
+        grid[row].push(palace)
+      }
+    }
+
+    const patterns = detectPatterns(palaces)
+
+    // ─── Derived key positions ───────────────────────────────────────────
+    const palaceName = (num: number) => palaces.find(p => p.number === num)?.name || ''
+    // Under Shanghai TZ + the 晚子时 shift, taobi's hour 60-cycle index equals the
+    // 问真 hour pillar, so 旬空 / 驿马 derived from it are consistent with display.
+    const hourCycleIndex = cal.hour.index as number
+    // 值符落宫 / 值使落宫: locate the palace currently holding the 值符 star / 值使 door.
+    const zhiFuPalace = palaces.find(p => p.star.includes(zhiFu))?.name || ''
+    const zhiShiPalace = palaces.find(p => p.door === zhiShi)?.name || ''
+    // 旬空 (空亡): from the hour's 旬 (六甲旬 index) → 地支 → 宫.
+    const voidBranches = XUN_KONG[Math.floor(hourCycleIndex / 10)] || []
+    const voidPalaces = Array.from(new Set(voidBranches.map(b => BRANCH_PALACE[b]).filter(Boolean))).map(palaceName)
+    // 驿马 (马星): from the hour 地支 三合局 → 地支 → 宫.
+    const horseBranch = HORSE_BY_BRANCH[BRANCHES[hourCycleIndex % 12]] || ''
+    const horsePalace = horseBranch && BRANCH_PALACE[horseBranch] ? palaceName(BRANCH_PALACE[horseBranch]) : ''
+
+    return {
+      year: wz.year,
+      month: wz.month,
+      day: wz.day,
+      hour: wz.hour,
+      solarTerm,
+      round,
+      roundLabel,
+      zhiFu,
+      zhiShi,
+      zhiFuPalace,
+      zhiShiPalace,
+      voidBranches,
+      voidPalaces,
+      horseBranch,
+      horsePalace,
+      palaces,
+      grid,
+      patterns,
+    }
+  } finally {
+    if (prevTZ === undefined) delete process.env.TZ
+    else process.env.TZ = prevTZ
   }
 }

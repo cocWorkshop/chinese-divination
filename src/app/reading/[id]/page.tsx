@@ -47,11 +47,20 @@ interface Reading {
   language: string
   createdAt: string
   targetType?: string
+  familyMemberId?: string | null
   familyMember?: { relation: string; name: string | null } | null
   rating?: number | null
   shareToken?: string | null
   inputData?: Record<string, unknown>
 }
+
+// inputData keys carried into the retry URL — must stay in sync with the
+// query-param hydration whitelist in useDivinationForm.ts.
+const RETRY_CARRY_KEYS = [
+  'birthDate', 'birthTime', 'exactTime', 'timeMode', 'birthPlace', 'gender',
+  'question', 'readingDateTime', 'direction', 'yearBuilt', 'ownerInfo',
+  'hexagram', 'liuyaoLines', 'ichingLines',
+] as const
 
 export default function ReadingDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -101,10 +110,26 @@ export default function ReadingDetailPage() {
 
   const retryReading = async () => {
     if (!reading) return
+    // Carry the failed reading's original inputs into the form via the same
+    // query-param hydration the Master CTA flow uses — one click re-runs the
+    // identical request instead of dropping the user on a blank form.
+    const params = new URLSearchParams()
+    const data = reading.inputData ?? {}
+    for (const k of RETRY_CARRY_KEYS) {
+      const v = data[k]
+      if (typeof v === 'string' && v) params.set(k, v)
+    }
+    if (typeof data.lunarToggle === 'string' && data.lunarToggle) params.set('calendarType', data.lunarToggle)
+    if (!params.get('question') && reading.question) params.set('question', reading.question)
+    if (reading.targetType === 'family' && reading.familyMemberId) {
+      params.set('target', 'family')
+      params.set('familyMemberId', reading.familyMemberId)
+    }
     try {
       await fetch(`/api/readings/${reading.id}`, { method: 'DELETE' })
     } catch { /* navigate regardless */ }
-    router.push(`/divination/${reading.type}`)
+    const qs = params.toString()
+    router.push(`/divination/${reading.type}${qs ? `?${qs}` : ''}`)
   }
 
   if (status === 'loading' || loading) {

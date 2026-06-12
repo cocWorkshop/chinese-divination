@@ -4,16 +4,22 @@
  * LLMs sometimes wrap JSON in ```json fences, prepend an explanation paragraph,
  * leave trailing prose, or produce mismatched braces.  This helper is forgiving:
  * it strips code fences, trims to the outermost { … } brace pair, then
- * JSON.parses.  When the first parse fails it tries brace-rebalancing before
- * giving up.
+ * JSON.parses.  When the first parse fails it tries our targeted repairs
+ * (premature root-close, truncation), then the general-purpose `jsonrepair`
+ * library (missing/unbalanced quotes, single quotes, trailing commas,
+ * unescaped newlines, …) before giving up. Real-world trigger for the
+ * jsonrepair pass: array string elements emitted WITHOUT their opening quote
+ * (`[\n  文字…",`), which discarded an otherwise-complete paid reading.
  *
- * On hard parse failure (cleaning + repair both failed), returns a marker
+ * On hard parse failure (cleaning + both repairs failed), returns a marker
  * shape `{ __parseFailed: true, ... }` that the route hard-rejects. We
  * deliberately do NOT inject the raw text into `sections.overview` here —
  * doing so used to fool the route's permissive hard-reject check into
  * saving the bad payload, which then surfaced as raw JSON on the result
  * page. The route looks for `__parseFailed` and bails before saving.
  */
+
+import { jsonrepair } from 'jsonrepair'
 
 /** Marker exported so the route + tests can recognize a failed-parse fallback. */
 export const PARSE_FAILED_KEY = '__parseFailed'
@@ -46,10 +52,26 @@ export function parseJsonFromLLMOutput(
     try {
       const fixed = repairJson(cleaned)
       if (fixed !== cleaned) {
-        return JSON.parse(fixed) as Record<string, unknown>
+        const parsed = JSON.parse(fixed) as Record<string, unknown>
+        // Observability: a silent repair means the model emitted broken JSON.
+        // Track which rung fired so model-quality drift shows up in logs
+        // BEFORE outputs degrade into hard failures.
+        console.warn(`[jsonParse] repaired pass=targeted type=${type} rawLen=${rawText.length}`)
+        return parsed
       }
     } catch { /* fall through */ }
-    // Repair also failed — emit the explicit parseFailed marker. The raw
+    // Targeted repairs failed — run the general-purpose jsonrepair pass
+    // (missing opening quotes, single quotes, trailing commas, unescaped
+    // control chars, …). Guard the result: jsonrepair will happily "repair"
+    // plain prose into a JSON *string*, so only accept a plain object.
+    try {
+      const parsed = JSON.parse(jsonrepair(cleaned)) as unknown
+      if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        console.warn(`[jsonParse] repaired pass=jsonrepair type=${type} rawLen=${rawText.length}`)
+        return parsed as Record<string, unknown>
+      }
+    } catch { /* fall through */ }
+    // All repairs failed — emit the explicit parseFailed marker. The raw
     // text is still attached for log forensics / DB llmRawOutput, but is
     // intentionally NOT placed under any field the renderer would display.
     return { [PARSE_FAILED_KEY]: true, type, rawText }

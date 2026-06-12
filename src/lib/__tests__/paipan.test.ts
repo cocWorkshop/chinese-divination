@@ -237,6 +237,18 @@ describe('BaZi - Early/Late Zi Hour (早晚子时)', () => {
     expect(lateChart.hourPillar.branch).toBe('子')
   })
 
+  it('exact-time 23:30 rolls the 日柱 once (问真) — no double-roll', () => {
+    // Regression: exact mode used to add a day AND pass hour 23 to tyme4ts (which
+    // also rolls at 23:00), landing 1–2 days late. 2024-06-15 23:30 in 北京 stays
+    // at 23:xx after true-solar-time correction, so 子时 belongs to 2024-06-16.
+    const chart = calculateBazi('2024-06-15', 'zi', '北京', 'male', '23:30')
+    expect(p(chart.dayPillar)).toBe('辛亥')   // 2024-06-16 日柱
+    expect(p(chart.hourPillar)).toBe('戊子')  // 辛日子时 = 戊子 (丙辛从戊起)
+    // Exact 23:30 and fuzzy zi_late must agree on the day pillar.
+    const fuzzy = calculateBazi('2024-06-15', 'zi_late', '未知', 'male')
+    expect(p(chart.dayPillar)).toBe(p(fuzzy.dayPillar))
+  })
+
   it('zi_early 2024-01-15 vs zi_late 2024-01-14: should have same day pillar', () => {
     // 子时 00:00 on Jan 15 = zi_early of Jan 15
     // 子时 23:00 on Jan 14 = zi_late of Jan 14

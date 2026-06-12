@@ -120,16 +120,37 @@ export async function* streamLLM(
       max_tokens: cfg.maxTokens,
       messages: toOpenAIMessages(req.systemPrompt, req.messages),
       ...(req.tools ? { tools: req.tools as unknown as OpenAI.Chat.Completions.ChatCompletionTool[] } : {}),
+      ...(req.responseFormat ? { response_format: req.responseFormat } : {}),
       stream: true,
     }
     const body = {
       ...baseBody,
       ...buildReasoningParam(cfg.reasoningEffort),
     } as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming
-    const completion = await client.chat.completions.create(
-      body,
-      { signal: controller.signal as AbortSignal }
-    )
+    let completion: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>
+    try {
+      completion = await client.chat.completions.create(
+        body,
+        { signal: controller.signal as AbortSignal }
+      )
+    } catch (firstErr) {
+      // Some OpenRouter providers reject `response_format` as an invalid
+      // parameter (400/404/422). The rejection happens BEFORE any chunk is
+      // streamed, so retrying once without the param is safe (no partial
+      // output was emitted). Deliberately NOT retried: 401/402/403
+      // (auth/payment — doomed), 408/429 (timeout/rate-limit — an instant
+      // retry only adds load and the param isn't the problem), 5xx, aborts.
+      const status = (firstErr as { status?: number })?.status
+      const isParamRejection = status === 400 || status === 404 || status === 422
+      if (!req.responseFormat || !isParamRejection) throw firstErr
+      console.warn(`[llm] response_format rejected (status=${status}) model=${cfg.model} endpoint=${req.endpoint} — retrying without it`)
+      const { response_format: _unused, ...bodyWithoutRF } = body as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming & { response_format?: unknown }
+      void _unused
+      completion = await client.chat.completions.create(
+        bodyWithoutRF as OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming,
+        { signal: controller.signal as AbortSignal }
+      )
+    }
 
     for await (const chunk of completion) {
       const choice = chunk.choices[0]
@@ -177,6 +198,13 @@ export async function* streamLLM(
           totalTokens: chunkUsage.total_tokens,
         }
       }
+    }
+
+    // 'length' = output truncated by max_tokens. Downstream sees broken/partial
+    // JSON that the repair ladder will try to salvage — but the real fix is a
+    // bigger token budget, so make the root cause loud and greppable.
+    if (finishReason === 'length') {
+      console.warn(`[llm] finish_reason=length (output truncated by max_tokens=${cfg.maxTokens}) endpoint=${req.endpoint} model=${cfg.model} — consider raising the token budget`)
     }
 
     yield { type: 'done', finishReason, usage }

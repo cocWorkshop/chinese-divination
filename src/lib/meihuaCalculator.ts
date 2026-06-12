@@ -48,10 +48,11 @@ const BRANCH_ORDER: Record<string, number> = {
   '午': 7, '未': 8, '申': 9, '酉': 10, '戌': 11, '亥': 12,
 }
 
-// Lines for each trigram (from bottom to top): 1=yang, 0=yin
+// Lines for each trigram, ordered bottom → top: 1=yang(⚊), 0=yin(⚋).
+// e.g. 兑 ☱ has a broken top line → [1,1,0]; 震 ☳ a solid bottom line → [1,0,0].
 const GUA_LINES: Record<string, number[]> = {
-  '乾': [1, 1, 1], '兑': [0, 1, 1], '离': [1, 0, 1], '震': [0, 0, 1],
-  '巽': [1, 1, 0], '坎': [0, 1, 0], '艮': [1, 0, 0], '坤': [0, 0, 0],
+  '乾': [1, 1, 1], '兑': [1, 1, 0], '离': [1, 0, 1], '震': [1, 0, 0],
+  '巽': [0, 1, 1], '坎': [0, 1, 0], '艮': [0, 0, 1], '坤': [0, 0, 0],
 }
 
 // Lines to trigram name (reverse lookup)

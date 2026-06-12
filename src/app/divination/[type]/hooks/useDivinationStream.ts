@@ -158,6 +158,16 @@ export function useDivinationStream(deps: StreamDeps) {
     //
     // Polling-by-id fallback retained for cases where SSE truly fails
     // (Cloudflare 524, network drop) — same recovery as before.
+    // Notify the global Xuanji Master widget that a reading just completed, so it
+    // releases its "reading in progress" state, swaps the CTA card, and pulls the
+    // new reading into context. MUST fire on every success path — including the
+    // polling fallbacks below, which previously left the master stuck waiting.
+    const notifyReadingComplete = (id: string | null) => {
+      if (id && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('xuanji:readingComplete', { detail: { readingId: id, type } }))
+      }
+    }
+
     try {
       const fetchController = new AbortController()
       abortRef.current = fetchController
@@ -197,9 +207,7 @@ export function useDivinationStream(deps: StreamDeps) {
           setResultType(type)
           const savedId = data.reading.id || pendingReadingId || null
           setReadingId(savedId)
-          if (savedId && typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('xuanji:readingComplete', { detail: { readingId: savedId, type } }))
-          }
+          notifyReadingComplete(savedId)
           if (data.cached) {
             toast.success(T(lang, '已使用之前的八字分析結果', 'Using cached BaZi analysis'), { icon: '📦' })
           }
@@ -214,6 +222,7 @@ export function useDivinationStream(deps: StreamDeps) {
             setResult(found.result)
             setResultType(type)
             setReadingId(found.id)
+            notifyReadingComplete(found.id)
             toast.success(T(lang, '結果已就緒', 'Result ready!'))
             fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
           } else {
@@ -318,9 +327,7 @@ export function useDivinationStream(deps: StreamDeps) {
         setResult(finalReading.result)
         const savedId = finalReading.id || pendingReadingId || null
         setReadingId(savedId)
-        if (savedId && typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('xuanji:readingComplete', { detail: { readingId: savedId, type } }))
-        }
+        notifyReadingComplete(savedId)
         fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
       } else if (pendingReadingId) {
         // Stream ended without `done` event — fall back to polling.
@@ -328,6 +335,7 @@ export function useDivinationStream(deps: StreamDeps) {
         if (found && found.status === 'completed') {
           setResult(found.result)
           setReadingId(found.id)
+          notifyReadingComplete(found.id)
           toast.success(T(lang, '結果已就緒', 'Result ready!'))
           fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
         } else {
@@ -345,6 +353,7 @@ export function useDivinationStream(deps: StreamDeps) {
           setResult(found.result)
           setResultType(type)
           setReadingId(found.id)
+          notifyReadingComplete(found.id)
           toast.success(T(lang, '結果已就緒', 'Result ready!'))
           fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
         } else {
