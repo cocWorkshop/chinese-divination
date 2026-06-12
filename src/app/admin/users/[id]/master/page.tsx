@@ -445,7 +445,7 @@ export default function MasterDebugPage() {
                 <span style={{ color: 'var(--text-muted)' }}>{new Date(entry.createdAt).toLocaleString()}</span>
                 <span>{entry.adminEmail ?? entry.adminUserId}</span>
                 <span style={{ color: 'var(--gold)' }}>{entry.action}</span>
-                {entry.reason && <span style={{ color: 'var(--text-muted)' }}>"{entry.reason}"</span>}
+                {entry.reason && <span style={{ color: 'var(--text-muted)' }}>“{entry.reason}”</span>}
               </div>
             ))}
           </div>

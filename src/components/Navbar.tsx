@@ -134,6 +134,9 @@ export default function Navbar() {
             <button
               onClick={toggleTheme}
               className="px-2 py-1 rounded border border-gold/40 text-gold/80 hover:border-gold hover:text-gold text-sm transition-colors"
+              aria-label={theme === 'dark'
+                ? (lang === 'zh-TW' ? '切換為淺色模式' : 'Switch to light mode')
+                : (lang === 'zh-TW' ? '切換為深色模式' : 'Switch to dark mode')}
               title={theme === 'dark'
                 ? (lang === 'zh-TW' ? '切換為淺色模式' : 'Switch to light mode')
                 : (lang === 'zh-TW' ? '切換為深色模式' : 'Switch to dark mode')}
@@ -145,6 +148,7 @@ export default function Navbar() {
             <button
               onClick={() => setLang(lang === 'zh-TW' ? 'en' : 'zh-TW')}
               className="px-3 py-1 rounded border border-gold/40 text-gold/80 hover:border-gold hover:text-gold text-sm transition-colors"
+              aria-label={lang === 'zh-TW' ? 'Switch to English' : '切換為繁體中文'}
             >
               {lang === 'zh-TW' ? 'EN' : '繁'}
             </button>
@@ -154,6 +158,8 @@ export default function Navbar() {
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2 text-white/80 hover:text-gold transition-colors"
+                  aria-label={lang === 'zh-TW' ? '用戶選單' : 'User menu'}
+                  aria-expanded={userMenuOpen}
                 >
                   <span className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold">
                     {session.user?.name?.[0] || session.user?.email?.[0] || '?'}
@@ -209,6 +215,10 @@ export default function Navbar() {
             ref={mobileToggleRef}
             className="lg:hidden text-white/80 hover:text-gold"
             onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen
+              ? (lang === 'zh-TW' ? '關閉選單' : 'Close menu')
+              : (lang === 'zh-TW' ? '開啟選單' : 'Open menu')}
+            aria-expanded={menuOpen}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {menuOpen ? (

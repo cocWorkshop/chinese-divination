@@ -34,6 +34,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Keep <html lang> in sync for screen readers / translators / SEO. The
+  // server renders a static default (zh-TW); the user's actual choice only
+  // exists client-side (localStorage), so an effect is the honest sync point.
+  useEffect(() => {
+    document.documentElement.lang = lang === 'en' ? 'en' : 'zh-TW'
+  }, [lang])
+
   const setLang = (l: Lang) => {
     setLangState(l)
     localStorage.setItem('lang', l)

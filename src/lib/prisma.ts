@@ -1,3 +1,6 @@
+// Side-effect import: validates required env vars once per server process
+// (fail-fast in production, warn in dev) before any DB access is possible.
+import '@/lib/env'
 import { PrismaClient } from '@prisma/client'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
