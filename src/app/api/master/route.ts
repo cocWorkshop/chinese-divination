@@ -25,6 +25,8 @@ import { renderPersonalizedPrompt } from '@/lib/master/personalizedPrompt'
 import { runMasterTurn, type EngineEvent, type CheckinHint } from '@/lib/master/turnEngine'
 import { SolarDay, SolarTime } from 'tyme4ts'
 import { FUNNEL_COOKIE_NAME, verifyFunnelToken } from '@/lib/funnelSession'
+import { createRequestLogger, logger } from '@/lib/logger'
+import * as Sentry from '@sentry/nextjs'
 
 /**
  * Resolve the inactivity threshold (hours) after which an active master chat
@@ -71,6 +73,7 @@ function getTemporalContext(): { dayGanZhi: string; jieQi: string; yearGanZhi: s
 // event to the SSE response.
 // ---------------------------------------------------------------------------
 export async function POST(req: NextRequest) {
+  const log = createRequestLogger('master')
   try {
     // Auth: prefer NextAuth session, fall back to funnel cookie for
     // tentative users walking through View 4 (master demo) of the /start
@@ -300,7 +303,7 @@ export async function POST(req: NextRequest) {
     })
     const initialMessages: Message[] = compressed.messages
     if (compressed.summarized) {
-      console.log(`[master] history compressed (~${compressed.estimatedTokens} tokens)`)
+      log.info({ estimatedTokens: compressed.estimatedTokens }, 'history compressed')
     }
 
     // Deduct credit before streaming (matches prior behaviour).
@@ -331,6 +334,7 @@ export async function POST(req: NextRequest) {
             toolCtx,
             masterSessionPk: masterSession!.id,
             lang,
+            requestId: log.requestId,
           })) {
             send(event)
           }
@@ -348,7 +352,8 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (err) {
-    console.error('[master] error:', err)
+    log.error({ err }, 'master turn failed')
+    Sentry.captureException(err, { tags: { requestId: log.requestId, endpoint: 'master' } })
     return jsonError('Internal server error', 500)
   }
 }
@@ -446,7 +451,7 @@ export async function GET() {
       portraitEnabled: userFlags?.portraitEnabled ?? true,
     })
   } catch (err) {
-    console.error('[master] GET error:', err)
+    logger.error({ err, endpoint: 'master', method: 'GET' }, 'master history load failed')
     return jsonError('Internal server error', 500)
   }
 }
@@ -481,7 +486,7 @@ export async function DELETE() {
 
     return jsonResponse({ success: true })
   } catch (err) {
-    console.error('[master] DELETE error:', err)
+    logger.error({ err, endpoint: 'master', method: 'DELETE' }, 'master memory delete failed')
     return jsonError('Internal server error', 500)
   }
 }

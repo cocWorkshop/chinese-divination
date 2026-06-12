@@ -83,6 +83,11 @@ export interface CompletionRequest {
    * prompt itself demands JSON (the divination prompts do).
    */
   responseFormat?: { type: 'json_object' }
+  /**
+   * Request-correlation id from createRequestLogger() — written to the LlmLog
+   * row so one id ties together the route's JSON logs and the DB log.
+   */
+  requestId?: string
   /** External abort signal merged with the internal timeout signal. */
   signal?: AbortSignal
 }

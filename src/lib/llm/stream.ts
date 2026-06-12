@@ -215,6 +215,7 @@ export async function* streamLLM(
 
     await logLlmCall({
       userId: req.userId ?? null,
+      requestId: req.requestId,
       endpoint: req.endpoint,
       model: cfg.model,
       modelTier: 'model1',
@@ -249,6 +250,7 @@ export async function* streamLLM(
     const errorMessage = (e?.message || 'Unknown LLM stream error') + detail
     await logLlmCall({
       userId: req.userId ?? null,
+      requestId: req.requestId,
       endpoint: req.endpoint,
       model: cfg.model,
       modelTier: 'model1',

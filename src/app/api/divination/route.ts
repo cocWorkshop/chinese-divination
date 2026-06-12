@@ -22,6 +22,8 @@ const DIVINATION_RESPONSE_FORMAT: { type: 'json_object' } | undefined =
   process.env.DIVINATION_JSON_MODE === 'off' ? undefined : { type: 'json_object' }
 import { StreamingJsonParser, type ParserEvent } from './handlers/_streamingJsonParser'
 import { FUNNEL_COOKIE_NAME, verifyFunnelToken } from '@/lib/funnelSession'
+import { createRequestLogger, type RequestLogger } from '@/lib/logger'
+import * as Sentry from '@sentry/nextjs'
 
 const RELATION_LABELS: Record<string, string> = {
   spouse: '配偶', father: '父亲', mother: '母亲', son: '儿子', daughter: '女儿',
@@ -30,6 +32,9 @@ const RELATION_LABELS: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   const apiStart = Date.now()
+  // One requestId for this request's whole life: every JSON log line below
+  // and the LlmLog DB row carry it, so a single id reconstructs the flow.
+  const log = createRequestLogger('divination')
   try {
     // Auth: prefer NextAuth session (regular logged-in users), fall back
     // to the /start funnel session cookie (tentative users walking through
@@ -249,7 +254,7 @@ export async function POST(req: NextRequest) {
             merged = true
           }
         } catch (mergeErr) {
-          console.error('[divination/paipan] seed-merge failed:', mergeErr)
+          log.error({ err: mergeErr, phase: 'paipan' }, 'seed-merge failed')
         }
       }
       if (!merged && chart && handler.chartKey) {
@@ -306,6 +311,7 @@ export async function POST(req: NextRequest) {
         type,
         language,
         modelName,
+        log,
         llmConfig,
         systemPrompt,
         userMessage,
@@ -339,10 +345,11 @@ export async function POST(req: NextRequest) {
         timeoutMs: llmConfig.timeoutMs,
         reasoningEffort: llmConfig.reasoningEffort,
         responseFormat: DIVINATION_RESPONSE_FORMAT,
+        requestId: log.requestId,
       })
       resultText = result.content
     } catch (apiErr: unknown) {
-      console.error('LLM call failed:', apiErr)
+      log.error({ err: apiErr, type, model: modelName }, 'llm call failed')
       const err = apiErr as { status?: number; message?: string }
       if (pendingReadingId) {
         await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: err?.message || 'LLM error' } }).catch(() => {})
@@ -378,7 +385,7 @@ export async function POST(req: NextRequest) {
     // result page. We now refuse the turn outright, no save, no credit
     // deduction. Skip merge + Zod for this case (there's no real shape).
     if (structuredResult[PARSE_FAILED_KEY] === true) {
-      console.error(`[divination] LLM output unparseable type=${type} model=${modelName} latency=${Date.now() - llmStart}ms (raw len=${resultText.length})`)
+      log.error({ type, model: modelName, latencyMs: Date.now() - llmStart, rawLen: resultText.length }, 'llm output unparseable')
       if (pendingReadingId) {
         await prisma.reading.update({ where: { id: pendingReadingId }, data: { status: 'failed', result: 'LLM JSON parse failed', llmRawOutput: resultText } }).catch(() => {})
       }
@@ -393,7 +400,7 @@ export async function POST(req: NextRequest) {
     }
     const validation = validateHandlerOutput(handler, structuredResult)
     if (!validation.success) {
-      console.error(`[divination] Zod validation issues type=${type} model=${modelName} latency=${Date.now() - llmStart}ms`, validation.issues)
+      log.error({ type, model: modelName, latencyMs: Date.now() - llmStart, issues: validation.issues }, 'zod validation issues')
       // Hard-reject #2: structurally empty output — nothing renderable in
       // sections or interpretation. This catches LLM responses that parsed
       // as valid JSON but produced nothing usable (e.g. `{}`, only metadata,
@@ -453,7 +460,7 @@ export async function POST(req: NextRequest) {
     await Promise.all(postOps)
     const postLlmMs = Date.now() - postStart
     const totalMs = Date.now() - apiStart
-    console.log(`[divination] type=${type} total=${totalMs}ms pre=${preLlmMs}ms llm=${postStart - llmStart}ms post=${postLlmMs}ms user=${userId}`)
+    log.info({ type, totalMs, preMs: preLlmMs, llmMs: postStart - llmStart, postMs: postLlmMs, userId }, 'reading completed')
 
     if (savedReading) {
       return NextResponse.json({ reading: Object.assign({}, savedReading, { result: resultToStore }), saved: true })
@@ -464,7 +471,8 @@ export async function POST(req: NextRequest) {
     })
   } catch (e) {
     const totalMs = Date.now() - apiStart
-    console.error(`[divination] ERROR total=${totalMs}ms`, e)
+    log.error({ err: e, totalMs }, 'divination request failed')
+    Sentry.captureException(e, { tags: { requestId: log.requestId, endpoint: 'divination' } })
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
@@ -512,11 +520,13 @@ function runStreamingDivination(args: {
   apiStart: number
   preLlmMs: number
   llmStart: number
+  log: RequestLogger
 }): Response {
   const {
     userId, type, language, modelName, llmConfig, systemPrompt, userMessage,
     chart, handler, ctx, pendingReadingId, shouldSaveHistory, shouldSaveProfile,
     resolvedFamilyMemberId, targetType, inputData, apiStart, preLlmMs, llmStart,
+    log,
   } = args
 
   const encoder = new TextEncoder()
@@ -550,7 +560,7 @@ function runStreamingDivination(args: {
       if (chart && handler.merge) {
         const seed: Record<string, unknown> = { type, version: 2 }
         try { handler.merge(seed, chart, ctx) } catch (mergeErr) {
-          console.error('[divination/stream] seed-merge failed:', mergeErr)
+          log.error({ err: mergeErr, phase: 'stream' }, 'seed-merge failed')
         }
         send({ type: 'chart_ready', seed })
       } else if (chart && handler.chartKey) {
@@ -591,6 +601,7 @@ function runStreamingDivination(args: {
           timeoutMs: llmConfig.timeoutMs,
           reasoningEffort: llmConfig.reasoningEffort,
           responseFormat: DIVINATION_RESPONSE_FORMAT,
+          requestId: log.requestId,
         })) {
           if (chunk.type === 'content') {
             accumulatedRaw += chunk.text
@@ -600,7 +611,7 @@ function runStreamingDivination(args: {
         parser.end(onParserEvent)
       } catch (apiErr: unknown) {
         clearInterval(heartbeat)
-        console.error('[divination/stream] LLM call failed:', apiErr)
+        log.error({ err: apiErr, type, model: modelName, phase: 'stream' }, 'llm call failed')
         const err = apiErr as { status?: number; message?: string }
         if (pendingReadingId) {
           await prisma.reading.update({
@@ -625,12 +636,12 @@ function runStreamingDivination(args: {
       // streaming parser error does NOT imply the document is
       // unrecoverable — we just log it for observability.
       if (parseError) {
-        console.warn(`[divination/stream] streaming parser error (will rely on parseJsonFromLLMOutput repair): ${parseError}`)
+        log.warn({ parseError, phase: 'stream' }, 'streaming parser error (final parse will repair)')
       }
       const structuredResult = parseJsonFromLLMOutput(accumulatedRaw, type)
 
       if (structuredResult[PARSE_FAILED_KEY] === true) {
-        console.error(`[divination/stream] LLM output unparseable type=${type} model=${modelName} latency=${Date.now() - llmStart}ms (raw len=${accumulatedRaw.length})`)
+        log.error({ type, model: modelName, latencyMs: Date.now() - llmStart, rawLen: accumulatedRaw.length, phase: 'stream' }, 'llm output unparseable')
         if (pendingReadingId) {
           await prisma.reading.update({
             where: { id: pendingReadingId },
@@ -650,7 +661,7 @@ function runStreamingDivination(args: {
       }
       const validation = validateHandlerOutput(handler, structuredResult)
       if (!validation.success) {
-        console.error(`[divination/stream] Zod validation issues type=${type} model=${modelName} latency=${Date.now() - llmStart}ms`, validation.issues)
+        log.error({ type, model: modelName, latencyMs: Date.now() - llmStart, issues: validation.issues, phase: 'stream' }, 'zod validation issues')
         // Same gate as the blocking path: only content-bearing sections /
         // interpretation count (empty-string sections used to slip through).
         if (!hasRenderableContent(structuredResult)) {
@@ -713,7 +724,7 @@ function runStreamingDivination(args: {
       await Promise.all(postOps)
       const postLlmMs = Date.now() - postStart
       const totalMs = Date.now() - apiStart
-      console.log(`[divination/stream] type=${type} total=${totalMs}ms pre=${preLlmMs}ms llm=${postStart - llmStart}ms post=${postLlmMs}ms user=${userId}`)
+      log.info({ type, totalMs, preMs: preLlmMs, llmMs: postStart - llmStart, postMs: postLlmMs, userId, phase: 'stream' }, 'reading completed')
 
       const reading = savedReading
         ? Object.assign({}, savedReading, { result: resultToStore })
@@ -726,7 +737,8 @@ function runStreamingDivination(args: {
         // failed if it hasn't already been saved as completed (the DB save
         // happens before send('done'), so if only the SSE delivery fails
         // due to a closed controller, the reading is already completed).
-        console.error('[divination/stream] unexpected error in stream lifecycle:', unexpectedErr)
+        log.error({ err: unexpectedErr, phase: 'stream' }, 'unexpected error in stream lifecycle')
+        Sentry.captureException(unexpectedErr, { tags: { requestId: log.requestId, endpoint: 'divination' } })
         if (pendingReadingId) {
           // Check current status before overwriting — don't clobber a completed reading
           const current = await prisma.reading.findUnique({ where: { id: pendingReadingId }, select: { status: true } }).catch(() => null)

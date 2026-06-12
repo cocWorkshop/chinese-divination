@@ -1,7 +1,34 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+
+// Boundary validation for create/update. Field shapes only — the
+// relation==='other' ⇒ relationDetail cross-field rule stays in
+// validateRelationDetail() below.
+const memberFieldsSchema = z.object({
+  relation: z.string().min(1).max(50),
+  relationDetail: z.string().max(100).nullish(),
+  name: z.string().max(100).nullish(),
+  birthDate: z.string().max(20).nullish(),
+  birthTime: z.string().max(20).nullish(),
+  birthPlace: z.string().max(200).nullish(),
+  gender: z.enum(['male', 'female']).or(z.literal('')).nullish(),
+  calendarType: z.enum(['solar', 'lunar']).or(z.literal('')).nullish(),
+  timeMode: z.enum(['fuzzy', 'precise']).or(z.literal('')).nullish(),
+  exactTime: z.string().max(10).nullish(),
+  birthLat: z.number().min(-90).max(90).nullish(),
+  birthLng: z.number().min(-180).max(180).nullish(),
+  birthEnvironment: z.string().max(500).nullish(),
+})
+
+function invalidInput(error: z.ZodError): NextResponse {
+  return NextResponse.json(
+    { error: 'Invalid input', issues: error.issues.map(i => `${i.path.join('.')}: ${i.message}`) },
+    { status: 400 }
+  )
+}
 
 /**
  * Validate relationDetail cross-field rule: required when relation === 'other'.
@@ -43,14 +70,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
+  const parsed = memberFieldsSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) return invalidInput(parsed.error)
   const {
     relation, relationDetail, name, birthDate, birthTime, birthPlace, gender,
     calendarType, timeMode, exactTime, birthLat, birthLng, birthEnvironment,
-  } = body
-  if (!relation) {
-    return NextResponse.json({ error: 'Relation is required' }, { status: 400 })
-  }
+  } = parsed.data
   const detailErr = validateRelationDetail(relation, relationDetail)
   if (detailErr) return detailErr
 
@@ -82,14 +107,12 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
+  const parsed = memberFieldsSchema.extend({ id: z.string().min(1) }).safeParse(await req.json().catch(() => null))
+  if (!parsed.success) return invalidInput(parsed.error)
   const {
     id, relation, relationDetail, name, birthDate, birthTime, birthPlace, gender,
     calendarType, timeMode, exactTime, birthLat, birthLng, birthEnvironment,
-  } = body
-  if (!id) {
-    return NextResponse.json({ error: 'ID is required' }, { status: 400 })
-  }
+  } = parsed.data
   const detailErr = validateRelationDetail(relation, relationDetail)
   if (detailErr) return detailErr
 

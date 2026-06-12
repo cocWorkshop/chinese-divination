@@ -198,6 +198,7 @@ model LlmLog {
   inputPreview  String?  @db.Text // user message (full)
   outputPreview String?  @db.Text // LLM response (full)
   systemPrompt  String?  @db.Text // system prompt (full)
+  requestId     String?  // correlates with the JSON request logs (pino)
   createdAt     DateTime @default(now())
 
   @@index([userId])

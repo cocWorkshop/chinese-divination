@@ -14,6 +14,8 @@ interface LlmLogEntry {
   inputPreview?: string
   outputPreview?: string
   systemPrompt?: string
+  /** Correlates this row with the JSON request logs (src/lib/logger.ts). */
+  requestId?: string
 }
 
 export async function logLlmCall(entry: LlmLogEntry): Promise<void> {
@@ -33,6 +35,7 @@ export async function logLlmCall(entry: LlmLogEntry): Promise<void> {
         inputPreview: entry.inputPreview || null,
         outputPreview: entry.outputPreview || null,
         systemPrompt: entry.systemPrompt || null,
+        requestId: entry.requestId || null,
       },
     })
   } catch (err) {

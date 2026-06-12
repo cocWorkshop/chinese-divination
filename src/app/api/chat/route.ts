@@ -6,8 +6,11 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { completeLLM } from '@/lib/llm'
 import { checkCredits, deductCredits } from '@/lib/rateLimit'
+import { createRequestLogger } from '@/lib/logger'
+import * as Sentry from '@sentry/nextjs'
 
 export async function POST(req: NextRequest) {
+  const log = createRequestLogger('chat')
   try {
     const session = await auth()
     if (!session?.user?.id) {
@@ -386,6 +389,7 @@ ${familyRefZh}`
       userId: session.user.id,
       systemPrompt,
       messages,
+      requestId: log.requestId,
     })
 
     if (!reply) {
@@ -420,7 +424,8 @@ ${familyRefZh}`
     })
   } catch (e: unknown) {
     const err = e as Error
-    console.error('Chat route error:', err?.message, err?.stack)
+    log.error({ err }, 'chat request failed')
+    Sentry.captureException(err, { tags: { requestId: log.requestId, endpoint: 'chat' } })
     // Note: LLM call failures are already logged by completeLLM() into LlmLog.
     return NextResponse.json({ error: '🔧 玄機暫時無法運轉，請稍後再試。若持續異常，請聯繫管理員重啟玄機。\n🔧 The oracle is temporarily unavailable. Please try again later, or contact admin to restart.' }, { status: 500 })
   }

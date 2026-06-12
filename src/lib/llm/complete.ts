@@ -181,6 +181,7 @@ export async function completeLLM(
 
     await logLlmCall({
       userId: req.userId ?? null,
+      requestId: req.requestId,
       endpoint: req.endpoint,
       model: cfg.model,
       modelTier: 'model1',
@@ -199,6 +200,7 @@ export async function completeLLM(
     const e = err as { message?: string; status?: number }
     await logLlmCall({
       userId: req.userId ?? null,
+      requestId: req.requestId,
       endpoint: req.endpoint,
       model: cfg.model,
       modelTier: 'model1',

@@ -88,6 +88,8 @@ export interface RunTurnInput {
   /** Primary key of the user's MasterSession row (for the credit-counter bump). */
   masterSessionPk: string
   lang: 'zh-TW' | 'en'
+  /** Request-correlation id (src/lib/logger.ts) — threaded into LlmLog rows. */
+  requestId?: string
 }
 
 /** Hard cap on tool-calling iterations (runaway guard, not the primary limit — the dedupe cache is). */
@@ -168,6 +170,7 @@ export async function* runMasterTurn(
         messages: currentMessages,
         tools: masterToolRegistry.toolDefs(),
         model: input.model,
+        requestId: input.requestId,
       })) {
         if (chunk.type === 'content') {
           contentChunk += chunk.text
@@ -282,6 +285,7 @@ export async function* runMasterTurn(
         systemPrompt: input.systemPrompt,
         messages: currentMessages,
         model: input.model,
+        requestId: input.requestId,
         // No `tools` — forces prose.
       })) {
         if (chunk.type === 'content') {

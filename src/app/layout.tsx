@@ -16,6 +16,7 @@ import NotificationPopup from '@/components/NotificationPopup'
 import NativeInitializer from '@/components/NativeInitializer'
 import InstallPrompt from '@/components/InstallPrompt'
 import ScrollToTop from '@/components/ScrollToTop'
+import SentryClientInit from '@/components/SentryClientInit'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -115,7 +116,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh" suppressHydrationWarning>
+    <html lang="zh-TW" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('theme')||'dark';document.documentElement.className=t}catch(e){document.documentElement.className='dark'}})()` }} />
         <script
@@ -168,6 +169,7 @@ export default function RootLayout({
               {children}
             </main>
 
+            <SentryClientInit />
             <NativeInitializer />
             <NotificationPopup />
             <InstallPrompt />
