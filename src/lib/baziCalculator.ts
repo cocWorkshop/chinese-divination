@@ -1019,31 +1019,38 @@ function calculateShenShaPerPillar(
     }
   }
 
-  // 国印贵人
+  // 国印贵人 — stem-based (mainstream-default alignment 2026-06-12; the old
+  // branch→branch(+8) table matched no recognized rule). Checked from BOTH the
+  // year stem and the day stem, per the standard usage.
   const guoyinMap: Record<string, string> = {
-    '寅': '戌', '卯': '亥', '辰': '子', '巳': '丑',
-    '午': '寅', '未': '卯', '申': '辰', '酉': '巳',
-    '戌': '午', '亥': '未', '子': '申', '丑': '酉',
+    '甲': '戌', '乙': '亥', '丙': '丑', '丁': '寅', '戊': '丑',
+    '己': '寅', '庚': '辰', '辛': '巳', '壬': '未', '癸': '申',
   }
-  const gy = guoyinMap[yearBranch]
-  if (gy) addToPillar(gy, { name: '国印贵人', description: '掌权印信，利于仕途' })
+  const guoyinRefs = yearStem === dayStem ? [yearStem] : [yearStem, dayStem]
+  for (const refStem of guoyinRefs) {
+    const gy = guoyinMap[refStem]
+    if (gy) addToPillar(gy, { name: '国印贵人', description: '掌权印信，利于仕途' })
+  }
 
-  // 德秀贵人
+  // 德秀贵人 — grouped by the month branch's 三合局 (mainstream-default
+  // alignment 2026-06-12; the old table grouped adjacent branches, deviating
+  // in 8 of 12 months): 寅午戌月→丙丁, 申子辰月→壬癸, 巳酉丑月→庚辛, 亥卯未月→甲乙.
   const dexiuMap: Record<string, string[]> = {
-    '寅': ['丙','丁'], '卯': ['丙','丁'], '辰': ['戊','癸'],
-    '巳': ['庚','辛'], '午': ['庚','辛'], '未': ['壬','癸'],
-    '申': ['壬','癸'], '酉': ['甲','乙'], '戌': ['甲','乙'],
-    '亥': ['甲','乙'], '子': ['丙','丁'], '丑': ['戊','己'],
+    '寅': ['丙','丁'], '午': ['丙','丁'], '戌': ['丙','丁'],
+    '申': ['壬','癸'], '子': ['壬','癸'], '辰': ['壬','癸'],
+    '巳': ['庚','辛'], '酉': ['庚','辛'], '丑': ['庚','辛'],
+    '亥': ['甲','乙'], '卯': ['甲','乙'], '未': ['甲','乙'],
   }
   if ((dexiuMap[monthBranch] || []).includes(dayStem)) {
     result.day.push({ name: '德秀贵人', description: '秀气端庄，聪慧有德' })
   }
 
-  // 天德合
+  // 天德合 — 四仲月 (卯/午/酉/子) deliberately ABSENT (mainstream-default
+  // alignment 2026-06-12): in those months the 天德 itself is a branch, not a
+  // stem, so there is no stem to 合. The old table invented stems for them.
   const tiandeheMap: Record<string, string> = {
-    '寅': '壬', '卯': '癸', '辰': '丁', '巳': '丙',
-    '午': '甲', '未': '己', '申': '戊', '酉': '辛',
-    '戌': '辛', '亥': '庚', '子': '庚', '丑': '乙',
+    '寅': '壬', '辰': '丁', '巳': '丙', '未': '己',
+    '申': '戊', '戌': '辛', '亥': '庚', '丑': '乙',
   }
   const tdh = tiandeheMap[monthBranch]
   if (tdh) addToPillarByStem(tdh, { name: '天德合', description: '天德合，化灾解厄' })
@@ -1181,15 +1188,18 @@ function calculateShenShaPerPillar(
     result.day.push({ name: '九丑日', description: '桃花纠纷，感情宜谨慎' })
   }
 
-  // 八专日
-  const bazhuanDays = ['甲寅','乙卯','己未','丁未','庚申','辛酉','壬子','癸亥']
+  // 八专日 — classical list (mainstream-default alignment 2026-06-12:
+  // 壬子/癸亥 replaced by 癸丑/戊戌 per the standard 甲寅乙卯丁未己未庚申辛酉癸丑戊戌).
+  const bazhuanDays = ['甲寅','乙卯','丁未','己未','庚申','辛酉','癸丑','戊戌']
   if (bazhuanDays.includes(dayStem + dayBranch)) {
     result.day.push({ name: '八专日', description: '夫妻之道需经营' })
   }
 
   // 红艳煞
+  // 红艳煞 — 乙→申 per the verse 「甲乙午申」 (mainstream-default alignment
+  // 2026-06-12; the old table had 乙→午).
   const hongyanMap: Record<string, string> = {
-    '甲': '午', '乙': '午', '丙': '寅', '丁': '未',
+    '甲': '午', '乙': '申', '丙': '寅', '丁': '未',
     '戊': '辰', '己': '辰', '庚': '戌', '辛': '酉',
     '壬': '子', '癸': '申',
   }

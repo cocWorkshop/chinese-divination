@@ -1,5 +1,15 @@
 # Deferred Evaluation Tasks
 
+> **STATUS UPDATE 2026-06-12 — both tasks decided and executed:**
+> **Task A (school tables):** owner chose **mainstream defaults**; all items below
+> were aligned (bazi 国印/德秀/天德合/红艳/八专; qimen 三奇得門 rename, 天遁/人遁/
+> 玉女守门 classical conditions, 入墓 tables per 阴阳长生; ziwei 明珠出海/日月并明
+> classical definitions). Value-level tests: `src/lib/__tests__/mainstreamAlignment.test.ts`.
+> **Task B:** B1 (rate limiting) remains trigger-gated per the architecture plan;
+> B2 decided — helpful auth messages KEPT (enumeration accepted as UX trade-off),
+> the `authorize()` timing side-channel fixed with dummy-bcrypt equalizers.
+> The body below is kept as the historical analysis.
+
 Two areas were intentionally left out of the 2026-06-10 audit/fix pass because they
 need a **decision** rather than an objective bug fix. This document captures the
 full context so they can be evaluated later without re-deriving anything.

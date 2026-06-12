@@ -159,39 +159,44 @@ function detect紫府同宫(chart: ZiweiChart): DetectedPattern | null {
   return null
 }
 
+// 日月并明 — classical definition (mainstream-default alignment 2026-06-12):
+// 安命丑宫，太阳在巳、太阴在酉，日月庙旺三合拱照命宫。The old check only
+// looked at the two stars' brightness and ignored the 命宫 entirely, so it
+// fired on charts where 日/月 had no relation to the life palace.
 function detect日月并明(chart: ZiweiChart): DetectedPattern | null {
+  const soul = getSoulPalace(chart)
   const sunPalace = findStarPalace(chart.palaces, '太阳')
   const moonPalace = findStarPalace(chart.palaces, '太阴')
-  if (!sunPalace || !moonPalace) return null
+  if (!soul || !sunPalace || !moonPalace) return null
 
-  // 太阳在巳午为庙旺，太阴在酉戌为庙旺
-  const sunBright = ['巳', '午'].includes(sunPalace.earthlyBranch)
-  const moonBright = ['酉', '戌'].includes(moonPalace.earthlyBranch)
-
-  if (sunBright && moonBright) {
+  if (soul.earthlyBranch === '丑' && sunPalace.earthlyBranch === '巳' && moonPalace.earthlyBranch === '酉') {
     return {
       name: '日月并明',
       level: '上格',
-      description: '太阳在' + sunPalace.earthlyBranch + '宫庙旺，太阴在' + moonPalace.earthlyBranch + '宫庙旺，日月各居旺地，文武双全',
+      description: '命宫在丑，太阳在巳宫、太阴在酉宫，日月庙旺拱照命垣，文武双全、贵显之格',
       involvedStars: ['太阳', '太阴'],
-      involvedPalaces: [sunPalace.name, moonPalace.name],
+      involvedPalaces: [soul.name, sunPalace.name, moonPalace.name],
     }
   }
   return null
 }
 
+// 明珠出海 — classical definition (mainstream-default alignment 2026-06-12):
+// 安命未宫无主星（借对宫），太阳在卯、太阴在亥，三合拱照命宫。The old check
+// (太阳辰 + 太阴戌) was actually a 日月并明 variant and ignored the 命宫.
 function detect明珠出海(chart: ZiweiChart): DetectedPattern | null {
+  const soul = getSoulPalace(chart)
   const sunPalace = findStarPalace(chart.palaces, '太阳')
   const moonPalace = findStarPalace(chart.palaces, '太阴')
-  if (!sunPalace || !moonPalace) return null
+  if (!soul || !sunPalace || !moonPalace) return null
 
-  if (sunPalace.earthlyBranch === '辰' && moonPalace.earthlyBranch === '戌') {
+  if (soul.earthlyBranch === '未' && sunPalace.earthlyBranch === '卯' && moonPalace.earthlyBranch === '亥') {
     return {
       name: '明珠出海',
       level: '上格',
-      description: '太阳在辰宫、太阴在戌宫，日月各安其位，光辉照命，大吉之格',
+      description: '命宫在未，太阳在卯宫、太阴在亥宫，日月三合拱命，明珠出海，先难后易、大器晚成之贵格',
       involvedStars: ['太阳', '太阴'],
-      involvedPalaces: [sunPalace.name, moonPalace.name],
+      involvedPalaces: [soul.name, sunPalace.name, moonPalace.name],
     }
   }
   return null

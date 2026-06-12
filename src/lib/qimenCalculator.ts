@@ -117,10 +117,22 @@ const HORSE_BY_BRANCH: Record<string, string> = {
   '亥': '巳', '卯': '巳', '未': '巳',
 }
 
+// 天干入墓宫 — 阴阳长生十二宫 scheme (mainstream-default per owner decision
+// 2026-06-12; exported for value-level tests):
+//   阳干: 丙戊墓戌→乾6, 庚墓丑→艮8, 壬墓辰→巽4
+//   阴干: 乙墓戌→乾6, 丁己墓丑→艮8, 辛墓辰→巽4, 癸墓未→坤2
+// 三奇 (乙丙丁) report as 三奇入墓; 六仪 report as 天干入墓.
+export const SAN_QI_TOMB_PALACE: Record<string, number> = {
+  '乙': 6, '丙': 6, '丁': 8,
+}
+export const LIU_YI_TOMB_PALACE: Record<string, number> = {
+  '戊': 6, '己': 8, '庚': 8, '辛': 4, '壬': 4, '癸': 2,
+}
+
 /**
  * Detect Qimen patterns (格局) from the calculated chart.
  */
-function detectPatterns(palaces: QimenPalace[]): QimenPattern[] {
+function detectPatterns(palaces: QimenPalace[], zhiShi?: string): QimenPattern[] {
   const patterns: QimenPattern[] = []
   const palaceByNum = new Map<number, QimenPalace>()
   for (const p of palaces) palaceByNum.set(p.number, p)
@@ -169,12 +181,6 @@ function detectPatterns(palaces: QimenPalace[]): QimenPattern[] {
   // test EACH so 格局 sitting there aren't silently missed.
   const sanQi = ['乙', '丙', '丁']
   const jiMen = ['开门', '休门', '生门']
-  // 天干墓库宫 (五行墓库 → 后天宫位): 木墓未→坤2, 火墓戌→乾6, 金墓丑→艮8, 水/土墓辰→巽4.
-  const stemTombs: Record<string, number> = {
-    '乙': 2, '丁': 2, '丙': 6, '壬': 4, '癸': 4,
-    '庚': 8, '辛': 8,   // 金墓在丑→艮8  (corrected: was mis-set to 坤2)
-    '戊': 4, '己': 4,
-  }
   for (const p of palaces) {
     if (p.number === 5) continue
     const e = p.earthStem
@@ -198,24 +204,26 @@ function detectPatterns(palaces: QimenPalace[]): QimenPattern[] {
         else if (e === '庚') push('战格', 'inauspicious', '凶格，两金相争，主争斗、冲突')
       }
 
-      // ── 三奇得使: 乙丙丁临开休生三吉门 ──
-      if (sanQi.includes(h) && jiMen.includes(p.door)) push('三奇得使', 'auspicious', `${h}奇临${p.door}，吉格，利于谋事、求官、出行`)
+      // ── 三奇得門: 乙丙丁临开休生三吉门 ──
+      // (Renamed from 三奇得使 — that is a DIFFERENT rule involving the 值使/六甲;
+      //  this condition is the classical 得門. Mainstream-default decision 2026-06-12.)
+      if (sanQi.includes(h) && jiMen.includes(p.door)) push('三奇得門', 'auspicious', `${h}奇临${p.door}，吉格，利于谋事、求官、出行`)
 
-      // ── 三遁 (天/地/人遁) ──
-      if (h === '丙' && e === '戊' && p.door === '生门') push('天遁', 'auspicious', '大吉格，天助之格，利于祈福、上书、迁徙')
+      // ── 三遁 (天/地/人遁) — classical conditions ──
+      // 天遁: 生门 + 丙奇 临 六丁;  地遁: 开门 + 乙奇 临 六己;
+      // 人遁: 休门 + 丁奇 + 太阴(八神).
+      if (h === '丙' && e === '丁' && p.door === '生门') push('天遁', 'auspicious', '大吉格，天助之格，利于祈福、上书、迁徙')
       if (h === '乙' && e === '己' && p.door === '开门') push('地遁', 'auspicious', '大吉格，地助之格，利于藏形、遁迹、营建')
-      if (h === '丁' && e === '己' && p.door === '休门') push('人遁', 'auspicious', '大吉格，人助之格，利于求贵、见人、婚姻')
+      if (h === '丁' && p.door === '休门' && p.divinity === '太阴') push('人遁', 'auspicious', '大吉格，人助之格，利于求贵、见人、婚姻')
 
-      // ── 玉女守门 ──
-      if (h === '丁' && e === '己' && p.door === '开门') push('玉女守门', 'auspicious', '吉格，利于求婚、见贵人、暗中行事')
+      // ── 玉女守门: 丁奇临值使门 ──
+      if (h === '丁' && zhiShi && p.door === zhiShi) push('玉女守门', 'auspicious', '吉格，利于求婚、见贵人、暗中行事')
 
-      // ── 三奇入墓 ──  (NOTE: palace mapping is school-variant — kept from the
-      //     original; verify against your reference before relying on it.)
-      if ((h === '乙' && p.number === 6) || (h === '丙' && p.number === 6) || (h === '丁' && p.number === 2))
+      // ── 三奇入墓 / 六仪入墓 (阴阳长生 scheme — see table comments) ──
+      if (SAN_QI_TOMB_PALACE[h] === p.number)
         push('三奇入墓', 'inauspicious', `${h}奇入墓于${p.name}，主昏暗不明、事情受阻`)
-
-      // ── 六仪入墓 (非三奇之干临其墓库宫) ──
-      if (stemTombs[h] === p.number && !sanQi.includes(h)) push('天干入墓', 'inauspicious', `${h}入墓于${p.name}，主事情受阻、不得出头`)
+      if (LIU_YI_TOMB_PALACE[h] === p.number)
+        push('天干入墓', 'inauspicious', `${h}入墓于${p.name}，主事情受阻、不得出头`)
     }
   }
 
@@ -332,7 +340,7 @@ export function calculateQimen(dateTime: Date): QimenChart {
       }
     }
 
-    const patterns = detectPatterns(palaces)
+    const patterns = detectPatterns(palaces, zhiShi)
 
     // ─── Derived key positions ───────────────────────────────────────────
     const palaceName = (num: number) => palaces.find(p => p.number === num)?.name || ''
