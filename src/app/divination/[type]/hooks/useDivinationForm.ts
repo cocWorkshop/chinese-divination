@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { POPULAR_CITIES } from '@/lib/cities'
 import { T, type DivinationFormState, type SelfProfile } from '../constants'
+import { shouldHydrateFromQuery } from './queryHydration'
 
 /**
  * Owns all form-field state for the divination flow plus the one-time
@@ -109,12 +110,17 @@ export function useDivinationForm(type: string, lang: string) {
     return () => clearTimeout(t)
   }, [form, draftKey])
 
-  // Query-param hydration — runs once on mount. Used by the master's
-  // prefill_divination_form tool to seed the form when the user is
-  // redirected here from a CTA card in the Xuanji Master chat.
+  // Query-param hydration. Used by the master's prefill_divination_form tool
+  // (CTA card) and the failed-reading retry flow. Re-runs whenever the query
+  // string CHANGES — not just once — so a repeat CTA navigation to the SAME
+  // /divination/[type] route (e.g. already viewing a ziwei result, master
+  // emits another ziwei CTA) re-seeds the form instead of being blocked by a
+  // one-time guard. The CTA carries a `_cta` nonce so the query always differs.
+  const lastHydratedQueryRef = useRef<string>('')
   useEffect(() => {
-    if (paramsHydratedRef.current) return
-    if (!searchParams || searchParams.toString() === '') return
+    const qs = searchParams?.toString() ?? ''
+    if (!shouldHydrateFromQuery(lastHydratedQueryRef.current, qs)) return
+    lastHydratedQueryRef.current = qs
     paramsHydratedRef.current = true
 
     const updates: Record<string, string> = {}

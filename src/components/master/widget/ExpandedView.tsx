@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useMasterChat, type MasterMsg } from '../MasterChatContext'
 import { useLang } from '@/components/LanguageContext'
 import { renderGreeting } from '@/lib/master/greetings'
+import { withCtaNonce } from '@/lib/master/ctaNav'
 import MessageBubble from './MessageBubble'
 import type { GateIntent } from './CollapsedBar'
 
@@ -154,7 +155,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
   const handleCtaClick = (msg: MasterMsg) => {
     if (!msg.ctaPayload) return
     setShape('collapsed')
-    router.push(msg.ctaPayload.url)
+    router.push(withCtaNonce(msg.ctaPayload.url))
   }
 
   const handleReadingCardClick = (url: string) => {

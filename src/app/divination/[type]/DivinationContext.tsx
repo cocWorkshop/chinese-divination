@@ -1,7 +1,7 @@
 'use client'
 
-import { createContext, useContext, type ReactNode } from 'react'
-import { useParams } from 'next/navigation'
+import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useLang } from '@/components/LanguageContext'
 import { typeInfo } from './constants'
@@ -73,6 +73,26 @@ export function DivinationProvider({ children }: { children: ReactNode }) {
     llmTimeoutMs: init.llmTimeoutMs,
     setCredits: init.setCredits,
   })
+
+  // Repeat-CTA reset: when the Xuanji Master emits another CTA for the SAME
+  // /divination/[type] the user is already viewing a result on, router.push is
+  // a same-route no-op for the flow — so the result keeps showing and the form
+  // never re-appears. Watch the query string (CTAs carry a `_cta` nonce so it
+  // always changes) and, if a result / in-flight stream is showing, reset back
+  // to the form stage. The form's own hydration effect re-seeds the fields.
+  const searchParams = useSearchParams()
+  const streamRef = useRef(stream)
+  streamRef.current = stream
+  const prevQueryRef = useRef<string | null>(null)
+  useEffect(() => {
+    const qs = searchParams?.toString() ?? ''
+    const prev = prevQueryRef.current
+    prevQueryRef.current = qs
+    if (prev === null) return // first mount — fresh page, nothing to reset
+    if (qs === '' || qs === prev) return // no new prefill navigation
+    const s = streamRef.current
+    if (s.result || s.hasLLMContent || s.streaming || s.loading) s.resetToForm()
+  }, [searchParams])
 
   const handleMemberSelect = (memberId: string) => {
     formState.setSelectedMemberId(memberId)
