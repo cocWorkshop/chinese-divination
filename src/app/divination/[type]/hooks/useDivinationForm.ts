@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { POPULAR_CITIES } from '@/lib/cities'
 import { T, type DivinationFormState, type SelfProfile } from '../constants'
+import { shouldHydrateFromQuery } from './queryHydration'
 
 /**
  * Owns all form-field state for the divination flow plus the one-time
@@ -118,8 +119,7 @@ export function useDivinationForm(type: string, lang: string) {
   const lastHydratedQueryRef = useRef<string>('')
   useEffect(() => {
     const qs = searchParams?.toString() ?? ''
-    if (qs === '') return
-    if (lastHydratedQueryRef.current === qs) return // same query already applied
+    if (!shouldHydrateFromQuery(lastHydratedQueryRef.current, qs)) return
     lastHydratedQueryRef.current = qs
     paramsHydratedRef.current = true
 
