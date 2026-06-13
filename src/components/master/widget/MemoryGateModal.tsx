@@ -72,8 +72,8 @@ export default function MemoryGateModal({ visible, isEn, onResolve }: Props) {
                 </h3>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary, #d0d0d0)' }}>
                   {isEn
-                    ? 'Master Xuanji remembers your preferences and reading context for better advice. You can view or delete this memory anytime in your profile.'
-                    : '玄機大師會記住你的偏好和命盤背景，提供更精準的建議。你可以隨時在個人資料中查看或刪除記憶。'}
+                    ? 'Master Xuanji remembers your preferences and reading context for better advice. You can manage the memory function anytime in your profile.'
+                    : '玄機大師會記住你的偏好和命盤背景，提供更精準的建議。你可以隨時在個人資料中管理記憶功能。'}
                 </p>
               </div>
             </div>
