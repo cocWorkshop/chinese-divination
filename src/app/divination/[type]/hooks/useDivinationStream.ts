@@ -165,6 +165,9 @@ export function useDivinationStream(deps: StreamDeps) {
     // polling fallbacks below, which previously left the master stuck waiting.
     const notifyReadingComplete = (id: string | null) => {
       if (id) publish('xuanji:readingComplete', { readingId: id, type })
+      // The reading saved — the autosaved form draft has served its purpose
+      // (see useDivinationForm's draft restore/autosave pair).
+      try { localStorage.removeItem(`divinationDraft:${type}`) } catch { /* non-fatal */ }
     }
 
     try {

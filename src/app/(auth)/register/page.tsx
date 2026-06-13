@@ -147,13 +147,13 @@ function RegisterInner() {
             <button
               onClick={handleResend}
               disabled={resending}
-              className="px-5 py-2 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-sm disabled:opacity-50"
+              className="px-5 py-2.5 min-h-[44px] border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-sm disabled:opacity-50"
             >
               {resending ? '...' : (lang === 'zh-TW' ? '📧 重新發送' : '📧 Resend')}
             </button>
             <Link
               href="/login"
-              className="px-5 py-2 bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light transition-colors text-sm"
+              className="px-5 py-2.5 min-h-[44px] bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light transition-colors text-sm"
             >
               {lang === 'zh-TW' ? '🔑 前往登入' : '🔑 Go to Login'}
             </Link>

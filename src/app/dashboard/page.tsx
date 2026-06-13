@@ -187,13 +187,26 @@ export default function DashboardPage() {
           const data = await res.json()
           if (data.reading?.status !== 'pending') {
             setReadings(prev => prev.map(r => r.id === pr.id ? { ...r, ...data.reading } : r))
+            // Surface the transition — the user may be looking elsewhere on
+            // this page and would otherwise only notice the badge change.
+            if (data.reading?.status === 'completed') {
+              toast.success(
+                lang === 'en' ? 'Your reading is ready — tap it to view.' : '您的解讀已完成 — 點擊卡片查看。',
+                { duration: 5000 },
+              )
+            } else if (data.reading?.status === 'failed') {
+              toast.error(
+                lang === 'en' ? 'A reading failed to generate. Karma was refunded.' : '有一筆解讀生成失敗，機緣已退還。',
+                { duration: 5000 },
+              )
+            }
           }
         } catch { /* ignore */ }
       }
     }, 15000)
 
     return () => clearInterval(interval)
-  }, [readings])
+  }, [readings, lang])
 
   const deleteReading = async (id: string) => {
     // Mark as deleting so the card shows a loading overlay while the request
@@ -297,6 +310,17 @@ export default function DashboardPage() {
         <div className="glass-card rounded-2xl p-12 text-center text-white/50">
           <div className="mb-4"><YinYangIcon size={48} /></div>
           <p>{lang === 'zh-TW' ? '還沒有占卜記錄' : 'No readings yet'}</p>
+          <p className="text-sm mt-2 text-white/40">
+            {lang === 'zh-TW' ? '從一次八字或易經占卜開始，探索您的命盤。' : 'Start with a BaZi or I Ching reading to explore your chart.'}
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push('/divination')}
+            className="mt-5 px-6 py-2.5 rounded-lg font-medium text-sm transition-all hover:opacity-90"
+            style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}
+          >
+            {lang === 'zh-TW' ? '開始占卜 →' : 'Start a reading →'}
+          </button>
         </div>
       ) : (
         <div className="space-y-4">

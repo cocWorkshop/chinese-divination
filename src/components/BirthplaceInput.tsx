@@ -3,9 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLang } from './LanguageContext'
 import { POPULAR_CITIES, type CityPreset } from '@/lib/cities'
-
-const T = (lang: string, zhTW: string, en: string) =>
-  lang === 'en' ? en : zhTW
+import { T } from '@/lib/i18n'
 
 interface NominatimResult {
   place_id: number
@@ -21,19 +19,29 @@ interface BirthplaceInputProps {
   className?: string
   placeholder?: string
   onSouthernHemisphere?: (isSouth: boolean) => void
+  /** Optional id forwarded to the underlying <input> so an external <label htmlFor> can associate with it. */
+  inputId?: string
 }
 
-export default function BirthplaceInput({ value, onChange, onLatLngChange, className, placeholder, onSouthernHemisphere }: BirthplaceInputProps) {
+export default function BirthplaceInput({ value, onChange, onLatLngChange, className, placeholder, onSouthernHemisphere, inputId }: BirthplaceInputProps) {
   const { lang } = useLang()
   const [results, setResults] = useState<NominatimResult[]>([])
   const [presetResults, setPresetResults] = useState<CityPreset[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [searchError, setSearchError] = useState(false)
+  // A completed online search returned nothing AND no preset matched —
+  // the "city not found" dead end. Instead of silently showing nothing we
+  // offer popular cities plus a "use my text as-is" escape hatch.
+  const [noResults, setNoResults] = useState(false)
   const [isSouthern, setIsSouthern] = useState(false)
+  // Keyboard-highlighted option index over the flat options list (presets
+  // then nominatim results). -1 = nothing highlighted.
+  const [activeIndex, setActiveIndex] = useState(-1)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const listboxId = useRef(`birthplace-listbox-${Math.random().toString(36).slice(2, 8)}`).current
 
   // Filter preset cities by query
   const filterPresets = useCallback((query: string): CityPreset[] => {
@@ -68,13 +76,16 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
       clearTimeout(timeoutId)
       const data: NominatimResult[] = await res.json()
       setResults(data)
-      setShowDropdown(data.length > 0 || presets.length > 0)
+      const empty = data.length === 0 && presets.length === 0
+      setNoResults(empty)
+      setShowDropdown(data.length > 0 || presets.length > 0 || empty)
       setSearchError(false)
     } catch (e) {
       if ((e as Error).name !== 'AbortError') {
         setSearchError(true)
         setResults([])
       }
+      setNoResults(false)
       // Still show presets even when API fails
       setShowDropdown(presets.length > 0)
     } finally {
@@ -84,6 +95,7 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
 
   const handleInput = (val: string) => {
     onChange(val)
+    setNoResults(false) // re-evaluated when the debounced search completes
     // Show presets immediately while typing
     const presets = filterPresets(val)
     setPresetResults(presets)
@@ -96,10 +108,20 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
   const handleSelect = (displayName: string, lat: number, lon: number) => {
     onChange(displayName)
     setShowDropdown(false)
+    setNoResults(false)
     onLatLngChange?.(lat, lon)
     const south = lat < 0
     setIsSouthern(south)
     onSouthernHemisphere?.(south)
+  }
+
+  // "Use my text as-is" — keeps the typed place name with NO coordinates.
+  // Fuzzy-time charts don't need them; precise mode will still ask for a
+  // geocodable place at submit time.
+  const handleUseAsIs = () => {
+    setShowDropdown(false)
+    setNoResults(false)
+    onLatLngChange?.(null, null)
   }
 
   const handleSelectNominatim = (item: NominatimResult) => {
@@ -110,6 +132,19 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
     const displayName = lang === 'en' ? city.name_en : city.name_zh
     handleSelect(displayName, city.lat, city.lon)
   }
+
+  // Reset keyboard highlight whenever the option set or dropdown visibility
+  // changes; keep the active option scrolled into view as it moves.
+  useEffect(() => {
+    setActiveIndex(-1)
+  }, [presetResults, results, showDropdown])
+
+  useEffect(() => {
+    if (activeIndex < 0) return
+    const opt = flatOptions[activeIndex]
+    if (opt) document.getElementById(`${listboxId}-${opt.id}`)?.scrollIntoView({ block: 'nearest' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -123,13 +158,57 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
 
   const hasResults = presetResults.length > 0 || results.length > 0
 
+  // Flat list of selectable options in render order — presets first, then
+  // nominatim results — so ArrowUp/Down can walk one index across both groups.
+  const flatOptions: Array<{ id: string; select: () => void }> = [
+    ...presetResults.map((c) => ({
+      id: `preset-${c.name_en}`,
+      select: () => handleSelectPreset(c),
+    })),
+    ...results.map((r) => ({
+      id: `nominatim-${r.place_id}`,
+      select: () => handleSelectNominatim(r),
+    })),
+  ]
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showDropdown || flatOptions.length === 0) {
+      if (e.key === 'Escape') setShowDropdown(false)
+      return
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex((i) => (i + 1) % flatOptions.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex((i) => (i <= 0 ? flatOptions.length - 1 : i - 1))
+    } else if (e.key === 'Enter') {
+      if (activeIndex >= 0 && activeIndex < flatOptions.length) {
+        e.preventDefault()
+        flatOptions[activeIndex].select()
+        setActiveIndex(-1)
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setShowDropdown(false)
+      setActiveIndex(-1)
+    }
+  }
+
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
         <input
+          id={inputId}
           type="text"
+          role="combobox"
+          aria-expanded={showDropdown && hasResults}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={activeIndex >= 0 && flatOptions[activeIndex] ? `${listboxId}-${flatOptions[activeIndex].id}` : undefined}
           value={value}
           onChange={e => handleInput(e.target.value)}
+          onKeyDown={handleKeyDown}
           onFocus={() => {
             if (hasResults) setShowDropdown(true)
             // Show all presets when focused with empty input
@@ -150,7 +229,7 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
 
       {/* Error message */}
       {searchError && (
-        <p className="mt-1 text-amber-400 dark:text-amber-400 light:text-amber-600 text-xs flex items-center gap-1">
+        <p role="status" className="mt-1 text-amber-400 dark:text-amber-400 light:text-amber-600 text-xs flex items-center gap-1">
           <span>⚠️</span>
           {T(lang, '在線搜尋失敗，請從常用城市中選擇或重試', 'Online search failed, please select from popular cities or retry')}
         </p>
@@ -158,18 +237,27 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
 
       {/* Dropdown */}
       {showDropdown && (presetResults.length > 0 || results.length > 0) && (
-        <ul className="absolute z-50 w-full mt-1 bg-navy-800 dark:bg-navy-800 light:bg-white border border-gold/20 dark:border-gold/20 light:border-[#e8dcc8] rounded-lg shadow-xl max-h-60 overflow-y-auto">
+        <ul
+          id={listboxId}
+          role="listbox"
+          aria-label={T(lang, '城市搜尋結果', 'City search results')}
+          className="absolute z-50 w-full mt-1 bg-navy-800 dark:bg-navy-800 light:bg-white border border-gold/20 dark:border-gold/20 light:border-[#e8dcc8] rounded-lg shadow-xl max-h-60 overflow-y-auto"
+        >
           {/* Preset cities */}
           {presetResults.length > 0 && (
             <>
-              <li className="px-4 py-1.5 text-xs text-white/40 dark:text-white/40 light:text-[#8b7355] bg-navy-900/50 dark:bg-navy-900/50 light:bg-[#f9f5ec] sticky top-0">
+              <li role="presentation" className="px-4 py-1.5 text-xs text-white/40 dark:text-white/40 light:text-[#8b7355] bg-navy-900/50 dark:bg-navy-900/50 light:bg-[#f9f5ec] sticky top-0">
                 {T(lang, '常用城市', 'Popular Cities')}
               </li>
-              {presetResults.map(c => (
+              {presetResults.map((c, idx) => (
                 <li
                   key={`preset-${c.name_en}`}
+                  id={`${listboxId}-preset-${c.name_en}`}
+                  role="option"
+                  aria-selected={activeIndex === idx}
                   onClick={() => handleSelectPreset(c)}
-                  className="px-4 py-2.5 cursor-pointer text-sm text-white/80 dark:text-white/80 light:text-[#2d1f0e] hover:bg-gold/10 dark:hover:bg-gold/10 light:hover:bg-[#f5f0e0] transition-colors border-b border-white/5 dark:border-white/5 light:border-[#e8dcc8]/50 last:border-0"
+                  onMouseEnter={() => setActiveIndex(idx)}
+                  className={`px-4 py-2.5 cursor-pointer text-sm text-white/80 dark:text-white/80 light:text-[#2d1f0e] transition-colors border-b border-white/5 dark:border-white/5 light:border-[#e8dcc8]/50 last:border-0 ${activeIndex === idx ? 'bg-gold/10 light:bg-[#f5f0e0]' : ''}`}
                 >
                   {lang === 'en' ? c.name_en : `${c.name_zh} (${c.name_en})`}
                 </li>
@@ -179,25 +267,63 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
           {/* Nominatim results */}
           {results.length > 0 && (
             <>
-              <li className="px-4 py-1.5 text-xs text-white/40 dark:text-white/40 light:text-[#8b7355] bg-navy-900/50 dark:bg-navy-900/50 light:bg-[#f9f5ec] sticky top-0">
+              <li role="presentation" className="px-4 py-1.5 text-xs text-white/40 dark:text-white/40 light:text-[#8b7355] bg-navy-900/50 dark:bg-navy-900/50 light:bg-[#f9f5ec] sticky top-0">
                 {T(lang, '搜尋結果', 'Search Results')}
               </li>
-              {results.map(r => (
-                <li
-                  key={r.place_id}
-                  onClick={() => handleSelectNominatim(r)}
-                  className="px-4 py-2.5 cursor-pointer text-sm text-white/80 dark:text-white/80 light:text-[#2d1f0e] hover:bg-gold/10 dark:hover:bg-gold/10 light:hover:bg-[#f5f0e0] transition-colors border-b border-white/5 dark:border-white/5 light:border-[#e8dcc8]/50 last:border-0"
-                >
-                  {r.display_name}
-                </li>
-              ))}
+              {results.map((r, idx) => {
+                const flatIdx = presetResults.length + idx
+                return (
+                  <li
+                    key={r.place_id}
+                    id={`${listboxId}-nominatim-${r.place_id}`}
+                    role="option"
+                    aria-selected={activeIndex === flatIdx}
+                    onClick={() => handleSelectNominatim(r)}
+                    onMouseEnter={() => setActiveIndex(flatIdx)}
+                    className={`px-4 py-2.5 cursor-pointer text-sm text-white/80 dark:text-white/80 light:text-[#2d1f0e] transition-colors border-b border-white/5 dark:border-white/5 light:border-[#e8dcc8]/50 last:border-0 ${activeIndex === flatIdx ? 'bg-gold/10 light:bg-[#f5f0e0]' : ''}`}
+                  >
+                    {r.display_name}
+                  </li>
+                )
+              })}
             </>
           )}
         </ul>
       )}
 
+      {/* "City not found" fallback panel — popular cities + use-as-is escape hatch */}
+      {showDropdown && noResults && value.trim().length >= 2 && (
+        <div
+          className="absolute z-50 w-full mt-1 bg-navy-800 dark:bg-navy-800 light:bg-white border border-gold/20 dark:border-gold/20 light:border-[#e8dcc8] rounded-lg shadow-xl max-h-60 overflow-y-auto"
+        >
+          <p role="status" className="px-4 py-2 text-xs text-amber-400 dark:text-amber-400 light:text-amber-600">
+            {T(lang, `找不到「${value.trim()}」— 可改試拼音/英文名，或：`, `No match for "${value.trim()}" — try another spelling, or:`)}
+          </p>
+          <button
+            type="button"
+            onClick={handleUseAsIs}
+            className="w-full text-left px-4 py-2.5 text-sm text-white/80 dark:text-white/80 light:text-[#2d1f0e] hover:bg-gold/10 light:hover:bg-[#f5f0e0] transition-colors border-b border-white/5 dark:border-white/5 light:border-[#e8dcc8]/50"
+          >
+            {T(lang, `直接使用「${value.trim()}」（無座標，僅供參考）`, `Use "${value.trim()}" as typed (no coordinates — reduced precision)`)}
+          </button>
+          <p className="px-4 py-1.5 text-xs text-white/40 dark:text-white/40 light:text-[#8b7355] bg-navy-900/50 dark:bg-navy-900/50 light:bg-[#f9f5ec]">
+            {T(lang, '或從常用城市選擇：', 'Or pick a popular city:')}
+          </p>
+          {POPULAR_CITIES.slice(0, 5).map((c) => (
+            <button
+              key={`fallback-${c.name_en}`}
+              type="button"
+              onClick={() => handleSelectPreset(c)}
+              className="w-full text-left px-4 py-2.5 text-sm text-white/80 dark:text-white/80 light:text-[#2d1f0e] hover:bg-gold/10 light:hover:bg-[#f5f0e0] transition-colors border-b border-white/5 dark:border-white/5 light:border-[#e8dcc8]/50 last:border-0"
+            >
+              {lang === 'en' ? c.name_en : `${c.name_zh} (${c.name_en})`}
+            </button>
+          ))}
+        </div>
+      )}
+
       {isSouthern && (
-        <p className="mt-1.5 text-amber-400 dark:text-amber-400 light:text-amber-600 text-xs flex items-center gap-1">
+        <p role="status" className="mt-1.5 text-amber-400 dark:text-amber-400 light:text-amber-600 text-xs flex items-center gap-1">
           <span>⚠️</span>
           {T(lang, '暫不支持南半球出生地的八字排盤', 'Southern hemisphere birth charts are not yet supported')}
         </p>

@@ -13,6 +13,7 @@
  * matches user mental model from WeChat / iMessage previews.
  */
 
+import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useMasterChat } from '../MasterChatContext'
@@ -23,6 +24,8 @@ export type GateIntent = { kind: 'open' } | { kind: 'send'; message: string }
 interface Props {
   needsMemoryGate: boolean
   onRequestGate: (intent: GateIntent) => void
+  /** Reclaim keyboard focus on mount — set when the user just collapsed the expanded view. */
+  focusOnMount?: boolean
 }
 
 const typeLabels: Record<string, { 'zh-TW': string; en: string }> = {
@@ -51,11 +54,17 @@ const readingNoun: Record<string, { 'zh-TW': string; en: string }> = {
   other: { 'zh-TW': '卦象', en: 'reading' },
 }
 
-export default function CollapsedBar({ needsMemoryGate, onRequestGate }: Props) {
+export default function CollapsedBar({ needsMemoryGate, onRequestGate, focusOnMount }: Props) {
   const { lang } = useLang()
   const isEn = lang === 'en'
   const { setShape, pendingReading, widgetOpener, cancelPendingReading } = useMasterChat()
   const router = useRouter()
+  const primaryRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (focusOnMount) primaryRef.current?.focus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleExpand = () => {
     if (needsMemoryGate) {
@@ -104,6 +113,7 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate }: Props) 
           // by laying them out as siblings inside a flex container.
           <div className="px-4 sm:px-5 lg:px-5 h-14 flex items-center gap-3">
             <button
+              ref={primaryRef}
               type="button"
               onClick={() => router.push(pendingReading.url)}
               className="flex-1 flex items-center gap-3 text-left transition-opacity hover:opacity-80 min-w-0"
@@ -159,6 +169,7 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate }: Props) 
         )
       })() : (
         <button
+          ref={primaryRef}
           type="button"
           onClick={handleExpand}
           className="w-full px-4 sm:px-5 lg:px-5 h-14 flex items-center gap-3 text-left group"

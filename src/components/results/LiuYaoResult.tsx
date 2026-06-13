@@ -8,8 +8,7 @@ import SectionDrawer from './SectionDrawer'
 import StreamingSection from './StreamingSection'
 import PersonInfoHeader from './PersonInfoHeader'
 import type { DivinationResultProps, LiuYaoData, HexagramData } from '@/types/divination'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 const elementColor: Record<string, string> = {
   '金': 'text-gray-300', '木': 'text-green-400', '水': 'text-blue-400',

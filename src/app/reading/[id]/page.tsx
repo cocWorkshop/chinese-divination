@@ -38,6 +38,51 @@ const typeIcons: Record<string, string> = {
   liuyao: '🪙', meihua: '🌸', fengshui: '🏯', other: '📖',
 }
 
+/**
+ * Map the technical failure reason stored in Reading.result (written by
+ * markFailed — see src/lib/readings/lifecycle.ts and api/divination) to a
+ * user-facing cause + advice, so repeated failures are diagnosable instead
+ * of an anonymous "failed".
+ */
+function describeFailure(reason: string | undefined, lang: string): { cause: string; advice: string } {
+  const en = lang === 'en'
+  const r = (reason || '').toLowerCase()
+  if (r.includes('timed out') || r.includes('timeout')) {
+    return {
+      cause: en ? 'The analysis timed out.' : '分析超時。',
+      advice: en
+        ? 'This usually happens under heavy load. Retrying now typically succeeds.'
+        : '通常是伺服器繁忙所致，立即重試通常可成功。',
+    }
+  }
+  if (r.includes('rate') || r.includes('overloaded') || r.includes('busy') || r.includes('429')) {
+    return {
+      cause: en ? 'The AI service was temporarily busy.' : 'AI 服務暫時繁忙。',
+      advice: en ? 'Please wait a minute and retry.' : '請稍候一分鐘再重試。',
+    }
+  }
+  if (r.includes('json parse') || r.includes('output format')) {
+    return {
+      cause: en ? 'The AI returned an unreadable result.' : 'AI 回傳的結果格式異常。',
+      advice: en
+        ? 'This is a transient AI glitch — retrying usually fixes it.'
+        : '這是偶發的 AI 輸出問題，重試通常即可解決。',
+    }
+  }
+  if (r.includes('not configured')) {
+    return {
+      cause: en ? 'The divination service is misconfigured.' : '占卜服務配置異常。',
+      advice: en
+        ? 'Retrying will not help — please contact support if this persists.'
+        : '重試無法解決，若持續發生請聯繫客服。',
+    }
+  }
+  return {
+    cause: en ? 'An unexpected error interrupted the reading.' : '解讀過程發生未預期的錯誤。',
+    advice: en ? 'Please try again. If it keeps failing, contact support.' : '請重新嘗試；若持續失敗請聯繫客服。',
+  }
+}
+
 interface Reading {
   id: string
   type: string
@@ -210,8 +255,16 @@ export default function ReadingDetailPage() {
             <div className="glass-card rounded-2xl text-center py-12 text-red-300">
               <p className="text-2xl mb-2">⚠️</p>
               <p>{lang === 'en' ? 'This reading failed to generate.' : '解讀生成失敗'}</p>
+              {(() => {
+                const { cause, advice } = describeFailure(reading.result, lang)
+                return (
+                  <p className="text-sm text-white/50 mt-2 max-w-sm mx-auto leading-relaxed">
+                    {cause} {advice}
+                  </p>
+                )
+              })()}
               <p className="text-sm text-white/40 mt-1">
-                {lang === 'en' ? 'Your Karma was not deducted. Please try again.' : '機緣未被扣除，請重新嘗試。'}
+                {lang === 'en' ? 'Your Karma was not deducted.' : '機緣未被扣除。'}
               </p>
               <button
                 onClick={retryReading}

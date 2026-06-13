@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from './LanguageContext'
+import { T } from '@/lib/i18n'
 
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 const DISMISS_KEY = 'pwa-install-dismissed'
 
 interface BeforeInstallPromptEvent extends Event {

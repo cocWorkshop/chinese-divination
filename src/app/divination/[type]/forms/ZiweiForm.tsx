@@ -16,8 +16,8 @@ export default function ZiweiForm() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <CalendarToggle layoutId="ziweiCalendarToggle" />
           <div>
-            <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
-            <input type="date" className={inputCls} value={form.birthDate} onChange={e => setField('birthDate', e.target.value)} required />
+            <label htmlFor="ziwei-birth-date" className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+            <input id="ziwei-birth-date" type="date" className={inputCls} value={form.birthDate} onChange={e => setField('birthDate', e.target.value)} required />
           </div>
         </div>
 
@@ -27,16 +27,17 @@ export default function ZiweiForm() {
         {/* Gender + Birthplace */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
-            <select className={inputCls} value={form.gender} onChange={e => setField('gender', e.target.value)} required>
+            <label htmlFor="ziwei-gender" className={labelCls}>{T(lang, '性別', 'Gender')}</label>
+            <select id="ziwei-gender" className={inputCls} value={form.gender} onChange={e => setField('gender', e.target.value)} required>
               <option value="">{T(lang, '請選擇', 'Select')}</option>
               <option value="male">{T(lang, '男', 'Male')}</option>
               <option value="female">{T(lang, '女', 'Female')}</option>
             </select>
           </div>
           <div>
-            <label className={labelCls}>{T(lang, '出生地（可選）', 'Birthplace (optional)')}</label>
+            <label htmlFor="ziwei-birth-place" className={labelCls}>{T(lang, '出生地（可選）', 'Birthplace (optional)')}</label>
             <BirthplaceInput
+              inputId="ziwei-birth-place"
               value={form.birthPlace}
               onChange={v => setField('birthPlace', v)}
               onLatLngChange={(lat, lng) => { setBirthLat(lat); setBirthLng(lng) }}
@@ -49,8 +50,9 @@ export default function ZiweiForm() {
 
         {/* Birth environment */}
         <div>
-          <label className={labelCls}>{T(lang, '出生地環境（可選）', 'Birth Environment (optional)')}</label>
+          <label htmlFor="ziwei-birth-env" className={labelCls}>{T(lang, '出生地環境（可選）', 'Birth Environment (optional)')}</label>
           <input
+            id="ziwei-birth-env"
             type="text"
             className={inputCls}
             value={form.birthEnvironment}

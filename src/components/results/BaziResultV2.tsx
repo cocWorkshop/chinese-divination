@@ -9,6 +9,7 @@ import PersonInfoHeader from './PersonInfoHeader'
 import SectionDrawer from './SectionDrawer'
 import { useDragScroll } from '@/hooks/useDragScroll'
 import type { DivinationResultProps, BaziDataV2, ShenShaEntry, LiuNianEntry } from '@/types/divination'
+import { T } from '@/lib/i18n'
 
 const STEM_ELEMENT_MAP: Record<string, string> = {
   '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
@@ -39,8 +40,6 @@ const sectionsList = [
   { key: 'wealth', label: '財運', en: 'Wealth', icon: '💰' },
   { key: 'health', label: '健康', en: 'Health', icon: '🌿' },
 ]
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 export default function BaziResultV2({ data, isShared, rawResult, readingId, chatMessages, subjectName, birthInfo, createdAt, streaming }: DivinationResultProps) {
   const d = data as unknown as BaziDataV2

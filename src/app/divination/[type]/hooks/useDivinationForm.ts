@@ -52,14 +52,62 @@ export function useDivinationForm(type: string, lang: string) {
   // the master's CTA card. Used to prevent /api/init's profile auto-fill
   // from clobbering hydrated values (especially when target=family).
   const paramsHydratedRef = useRef(false)
+  // True after the user has actually typed/selected something — gates the
+  // draft autosave so the initial (empty / profile-auto-filled) state never
+  // overwrites a stored draft.
+  const userEditedRef = useRef(false)
+  const draftKey = `divinationDraft:${type}`
 
-  const setField = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const setField = (k: string, v: string) => {
+    userEditedRef.current = true
+    setForm(f => ({ ...f, [k]: v }))
+  }
 
   // Reset the cast (used by 重新起卦 button on iching panel).
   const resetIchingCast = () => {
     setField('ichingLines', '')
     setField('hexagram', '')
   }
+
+  // Draft restore — runs once on mount, BEFORE query-param hydration is
+  // considered (params win: CTA prefill / retry carry explicit intent).
+  // Drafts are written by the debounced autosave below and cleared on
+  // successful submission (useDivinationStream) — so an abandoned tab or a
+  // mid-form crash no longer costs the user their inputs.
+  useEffect(() => {
+    if (searchParams && searchParams.toString() !== '') return
+    try {
+      const raw = localStorage.getItem(draftKey)
+      if (!raw) return
+      const saved = JSON.parse(raw) as { ts?: number; form?: Partial<DivinationFormState> }
+      if (!saved?.form || Date.now() - (saved.ts || 0) > 24 * 3600 * 1000) {
+        localStorage.removeItem(draftKey)
+        return
+      }
+      // readingDateTime intentionally NOT restored — a stale event time is
+      // worse than the fresh "now" default for event-based casts.
+      const updates: Record<string, string> = {}
+      for (const [k, v] of Object.entries(saved.form)) {
+        if (k !== 'readingDateTime' && typeof v === 'string' && v) updates[k] = v
+      }
+      if (Object.keys(updates).length === 0) return
+      setForm(f => ({ ...f, ...updates }))
+      paramsHydratedRef.current = true // keep /api/init auto-fill from clobbering the draft
+      toast(T(lang, '已恢復未完成的表單草稿', 'Restored your unfinished draft'), { icon: '📝', duration: 3000 })
+    } catch { /* corrupt draft — ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Debounced draft autosave — only after a real user edit.
+  useEffect(() => {
+    if (!userEditedRef.current) return
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify({ ts: Date.now(), form }))
+      } catch { /* storage full / private mode — non-fatal */ }
+    }, 800)
+    return () => clearTimeout(t)
+  }, [form, draftKey])
 
   // Query-param hydration — runs once on mount. Used by the master's
   // prefill_divination_form tool to seed the form when the user is

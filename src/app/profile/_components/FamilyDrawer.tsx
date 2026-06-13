@@ -9,8 +9,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import BirthplaceInput from '@/components/BirthplaceInput'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 const relationPresets = [
   { value: 'spouse', zh: '配偶', en: 'Spouse' },

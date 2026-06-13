@@ -5,8 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useLang } from './LanguageContext'
 import Link from 'next/link'
 import { catchAndReport } from '@/lib/errorReporter'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 interface NotificationItem {
   id: string

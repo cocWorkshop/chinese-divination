@@ -6,9 +6,9 @@ import { useSearchParams } from 'next/navigation'
 import { useLang } from '@/components/LanguageContext'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 import { CREDIT_PACKS, type PackId } from '@/lib/creditPacks'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 export default function SubscribePage() {
   const { data: session } = useSession()
@@ -52,9 +52,11 @@ export default function SubscribePage() {
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
+        return
       }
+      toast.error(data.error || T(lang, '無法開啟付款頁面，請稍後再試。', 'Could not open the payment page. Please try again later.'))
     } catch {
-      // ignore
+      toast.error(T(lang, '無法連接付款服務，請檢查網路後再試。', 'Could not reach the payment service. Please check your connection and try again.'))
     }
     setLoadingPack(null)
   }

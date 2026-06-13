@@ -10,6 +10,7 @@ import BirthplaceInput from '@/components/BirthplaceInput'
 import { catchAndReport } from '@/lib/errorReporter'
 import FamilyTab from './_tabs/FamilyTab'
 import type { FamilyMemberData } from './_components/FamilyDrawer'
+import { T, formatDate } from '@/lib/i18n'
 
 const relationPresets = [
   { value: 'spouse', zh: '配偶', en: 'Spouse' },
@@ -55,9 +56,6 @@ const shichen = [
   { value: 'hai',  zh: '亥時 (21:00-23:00)', en: 'Hai (21:00-23:00)' },
   { value: 'zi_late', zh: '晚子時 (23:00-00:00)', en: 'Late Zi (23:00-00:00)' },
 ]
-
-const T = (lang: string, zhTW: string, en: string) =>
-  lang === 'en' ? en : zhTW
 
 type TabKey = 'personal' | 'family' | 'credits' | 'account'
 
@@ -937,7 +935,7 @@ export default function ProfilePage() {
                       <div key={fb.id} className="rounded-lg px-4 py-3 border border-gold/5 bg-navy-900/50">
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-gold text-xs">{fb.rating ? '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating) : ''}</span>
-                          <span className="text-white/30 text-xs">{new Date(fb.createdAt).toLocaleDateString()}</span>
+                          <span className="text-white/30 text-xs">{formatDate(fb.createdAt, lang)}</span>
                         </div>
                         <p className="text-white/60 text-sm">{fb.feedback}</p>
                       </div>

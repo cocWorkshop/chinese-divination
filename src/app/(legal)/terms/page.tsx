@@ -2,8 +2,7 @@
 
 import { useLang } from '@/components/LanguageContext'
 import Link from 'next/link'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 const TERMS_VERSION = '1.0'
 const EFFECTIVE_DATE = '2026-03-20'

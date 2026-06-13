@@ -5,10 +5,9 @@ import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
+import { T } from '@/lib/i18n'
 
 const XuanjiChat = dynamic(() => import('./XuanjiChat'), { ssr: false })
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 interface XuanjiChatCardProps {
   readingResult: string

@@ -11,8 +11,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
-
-const T = (lang: string, zhTW: string, en: string) => (lang === 'en' ? en : zhTW)
+import { T } from '@/lib/i18n'
 
 interface Props {
   open: boolean

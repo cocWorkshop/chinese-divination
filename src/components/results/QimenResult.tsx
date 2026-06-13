@@ -10,8 +10,7 @@ import SectionDrawer from './SectionDrawer'
 import StreamingSection from './StreamingSection'
 import PersonInfoHeader from './PersonInfoHeader'
 import type { DivinationResultProps, QimenData, QimenPalace } from '@/types/divination'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 const outcomeColor: Record<string, string> = {
   '大吉': 'text-green-300 border-green-300/40 bg-green-300/10',

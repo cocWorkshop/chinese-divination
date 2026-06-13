@@ -9,8 +9,7 @@ import SectionDrawer from './SectionDrawer'
 import StreamingSection from './StreamingSection'
 import PersonInfoHeader from './PersonInfoHeader'
 import type { DivinationResultProps, IChingData } from '@/types/divination'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 const outcomeColor: Record<string, string> = {
   '大吉': 'text-jade border-jade/40 bg-jade/10',

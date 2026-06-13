@@ -158,6 +158,13 @@ interface MasterChatContextValue {
   loading: boolean
   toolStatus: ToolStatus | null
   pendingReading: { type: string; url: string; subjectName?: string } | null
+  /**
+   * Epoch ms when the interrupt rate-limit window clears, or null when not
+   * rate-limited. Set when a mid-stream interrupt is DROPPED because the
+   * user exceeded the cap — the UI shows a persistent cooldown notice
+   * (the dropped messages were already rendered as bubbles but never sent).
+   */
+  interruptCooldownUntil: number | null
   greetingHints: GreetingHints
   /** Whether the user has seen the master memory first-use disclosure modal. */
   disclosureSeen: boolean
@@ -232,6 +239,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
   const [loading, setLoading] = useState(false)
   const [toolStatus, setToolStatus] = useState<ToolStatus | null>(null)
   const [pendingReading, setPendingReading] = useState<{ type: string; url: string; subjectName?: string } | null>(null)
+  const [interruptCooldownUntil, setInterruptCooldownUntil] = useState<number | null>(null)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [greetingHints, setGreetingHints] = useState<GreetingHints>({
     hasReadings: false,
@@ -775,6 +783,15 @@ export function MasterChatProvider({ children }: ProviderProps) {
       )
       if (interruptHistoryRef.current.length >= MAX_INTERRUPTS_PER_WINDOW) {
         pendingSendsRef.current = []
+        // The dropped messages are already on screen as user bubbles, so a
+        // transient toast alone reads as "sent". Expose when the window
+        // clears so the expanded view can show a persistent cooldown notice
+        // until then (self-clears shortly after expiry).
+        const clearsAt = interruptHistoryRef.current[0] + INTERRUPT_WINDOW_MS
+        setInterruptCooldownUntil(clearsAt)
+        setTimeout(() => {
+          setInterruptCooldownUntil((cur) => (cur !== null && Date.now() >= cur ? null : cur))
+        }, Math.max(0, clearsAt - now) + 250)
         toast.error(
           lang === 'en'
             ? 'Too many interruptions — please let the current reply finish.'
@@ -1246,12 +1263,14 @@ export function MasterChatProvider({ children }: ProviderProps) {
       setPortraitEnabled,
       historyLoaded,
       widgetOpener,
+      interruptCooldownUntil,
     }),
     [
       enabled, shape, toggleShape, messages, loading, toolStatus, pendingReading,
       greetingHints, disclosureSeen, portraitEnabled,
       sendMessage, notifyTyping, cancelPendingReading, startNewSession, clearSession,
       markDisclosureSeen, setPortraitEnabled, historyLoaded, widgetOpener,
+      interruptCooldownUntil,
     ],
   )
 

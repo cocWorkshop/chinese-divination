@@ -11,8 +11,8 @@ export default function LiuYaoForm() {
     <>
       <FormSection title={`🔮 ${T(lang, '占問', 'Inquiry')}`}>
         <div>
-          <label className={labelCls}>{T(lang, '您的問題', 'Your Question')}</label>
-          <textarea className={inputCls + ' h-24 resize-none'} value={form.question} onChange={e => setField('question', e.target.value)} required placeholder={T(lang, '心中默念所問之事，一事一占，問題越具體越好...', 'Focus on one specific question...')} />
+          <label htmlFor="liuyao-question" className={labelCls}>{T(lang, '您的問題', 'Your Question')}</label>
+          <textarea id="liuyao-question" className={inputCls + ' h-24 resize-none'} value={form.question} onChange={e => setField('question', e.target.value)} required placeholder={T(lang, '心中默念所問之事，一事一占，問題越具體越好...', 'Focus on one specific question...')} />
         </div>
       </FormSection>
       <CoinCastPanel

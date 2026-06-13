@@ -16,8 +16,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import SectionDrawer from './SectionDrawer'
 import { useLang } from '../LanguageContext'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 interface StreamingSectionProps {
   /** Section icon (emoji). */

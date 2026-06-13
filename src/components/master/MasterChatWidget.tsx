@@ -21,7 +21,7 @@
  * (the provider's `enabled` flag gates the render).
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useMasterChat } from './MasterChatContext'
 import { useLang } from '@/components/LanguageContext'
@@ -53,6 +53,15 @@ export default function MasterChatWidget() {
   const needsMemoryGate = !portraitEnabled || !disclosureSeen
   const [gateIntent, setGateIntent] = useState<GateIntent | null>(null)
   const gateVisible = needsMemoryGate && gateIntent !== null
+
+  // Track shape transitions so the collapsed trigger (FAB / bar) can reclaim
+  // keyboard focus when the user dismisses the expanded overlay — but NOT on
+  // initial page load, where stealing focus would be hostile.
+  const prevShapeRef = useRef(shape)
+  const returnedFromExpanded = prevShapeRef.current === 'expanded' && shape === 'collapsed'
+  useEffect(() => {
+    prevShapeRef.current = shape
+  }, [shape])
 
   // Hide the widget entirely on auth pages — the collapsed bar's input field
   // creates false affordance on pages whose single job is "log in".
@@ -89,12 +98,12 @@ export default function MasterChatWidget() {
         // informative full-width bar is reserved for the active-reading
         // handoff (pendingReading), where its return-to-form text matters.
         pendingReading ? (
-          <CollapsedBar needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} />
+          <CollapsedBar needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} focusOnMount={returnedFromExpanded} />
         ) : (
-          <MasterFab needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} />
+          <MasterFab needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} focusOnMount={returnedFromExpanded} />
         )
       ) : (
-        <ExpandedView needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} />
+        <ExpandedView needsMemoryGate={needsMemoryGate} gateVisible={gateVisible} onRequestGate={setGateIntent} />
       )}
       <MemoryGateModal
         visible={gateVisible}

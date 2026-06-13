@@ -1,6 +1,7 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import { useMasterChat } from '../MasterChatContext'
 import type { GateIntent } from './CollapsedBar'
@@ -8,6 +9,8 @@ import type { GateIntent } from './CollapsedBar'
 interface Props {
   needsMemoryGate: boolean
   onRequestGate: (intent: GateIntent) => void
+  /** Reclaim keyboard focus on mount — set when the user just collapsed the expanded view. */
+  focusOnMount?: boolean
 }
 
 /**
@@ -19,10 +22,20 @@ interface Props {
  * The informative full-width bar (CollapsedBar) is still used while a reading
  * is being read (pendingReading) — see MasterChatWidget.
  */
-export default function MasterFab({ needsMemoryGate, onRequestGate }: Props) {
+export default function MasterFab({ needsMemoryGate, onRequestGate, focusOnMount }: Props) {
   const { lang } = useLang()
   const isEn = lang === 'en'
   const { setShape, widgetOpener } = useMasterChat()
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  // The infinite breathing glow is decorative — drop it entirely under
+  // reduce-motion (MotionConfig only suppresses transform/layout animations,
+  // not boxShadow keyframe loops).
+  const reduceMotion = useReducedMotion()
+
+  useEffect(() => {
+    if (focusOnMount) buttonRef.current?.focus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleOpen = () => {
     if (needsMemoryGate) {
@@ -46,22 +59,27 @@ export default function MasterFab({ needsMemoryGate, onRequestGate }: Props) {
       </div>
 
       <motion.button
+        ref={buttonRef}
         type="button"
         onClick={handleOpen}
         initial={{ scale: 0, opacity: 0 }}
         animate={{
           scale: 1,
           opacity: 1,
-          boxShadow: [
-            '0 0 0 0 rgba(212,168,83,0.45)',
-            '0 0 0 12px rgba(212,168,83,0)',
-            '0 0 0 0 rgba(212,168,83,0)',
-          ],
+          ...(reduceMotion
+            ? {}
+            : {
+                boxShadow: [
+                  '0 0 0 0 rgba(212,168,83,0.45)',
+                  '0 0 0 12px rgba(212,168,83,0)',
+                  '0 0 0 0 rgba(212,168,83,0)',
+                ],
+              }),
         }}
         transition={{
           scale: { type: 'spring', stiffness: 260, damping: 20 },
           opacity: { duration: 0.3 },
-          boxShadow: { repeat: Infinity, duration: 2.4, ease: 'easeOut' },
+          ...(reduceMotion ? {} : { boxShadow: { repeat: Infinity, duration: 2.4, ease: 'easeOut' } }),
         }}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.94 }}

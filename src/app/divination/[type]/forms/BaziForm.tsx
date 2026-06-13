@@ -18,8 +18,8 @@ export default function BaziForm() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <CalendarToggle layoutId="calendarToggle" />
           <div>
-            <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
-            <input type="date" className={inputCls} value={form.birthDate} onChange={e => setField('birthDate', e.target.value)} required />
+            <label htmlFor="bazi-birth-date" className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
+            <input id="bazi-birth-date" type="date" className={inputCls} value={form.birthDate} onChange={e => setField('birthDate', e.target.value)} required />
           </div>
         </div>
 
@@ -29,20 +29,21 @@ export default function BaziForm() {
         {/* Gender + Birthplace side by side */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>{T(lang, '性別', 'Gender')}</label>
-            <select className={inputCls} value={form.gender} onChange={e => setField('gender', e.target.value)} required>
+            <label htmlFor="bazi-gender" className={labelCls}>{T(lang, '性別', 'Gender')}</label>
+            <select id="bazi-gender" className={inputCls} value={form.gender} onChange={e => setField('gender', e.target.value)} required>
               <option value="">{T(lang, '請選擇', 'Select')}</option>
               <option value="male">{T(lang, '男', 'Male')}</option>
               <option value="female">{T(lang, '女', 'Female')}</option>
             </select>
           </div>
           <div>
-            <label className={labelCls}>
+            <label htmlFor="bazi-birth-place" className={labelCls}>
               {T(lang, '出生地', 'Birthplace')}
               {form.timeMode === 'precise' && <span className="text-gold ml-1">*</span>}
               {form.timeMode === 'fuzzy' && <span className="text-white/40 ml-1">{T(lang, '（可選）', '(optional)')}</span>}
             </label>
             <BirthplaceInput
+              inputId="bazi-birth-place"
               value={form.birthPlace}
               onChange={v => setField('birthPlace', v)}
               onLatLngChange={(lat, lng) => { setBirthLat(lat); setBirthLng(lng) }}
@@ -55,8 +56,9 @@ export default function BaziForm() {
 
         {/* Birth environment */}
         <div>
-          <label className={labelCls}>{T(lang, '出生地環境（可選）', 'Birth Environment (optional)')}</label>
+          <label htmlFor="bazi-birth-env" className={labelCls}>{T(lang, '出生地環境（可選）', 'Birth Environment (optional)')}</label>
           <input
+            id="bazi-birth-env"
             type="text"
             className={inputCls}
             value={form.birthEnvironment}

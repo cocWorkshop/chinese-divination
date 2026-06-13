@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar'
 import { MasterChatProvider } from '@/components/master/MasterChatContext'
 import MasterChatWidget from '@/components/master/MasterChatWidget'
 import ThemeProvider from '@/components/ThemeProvider'
+import MotionProvider from '@/components/MotionProvider'
 import ConsentPopup from '@/components/ConsentPopup'
 import CookieBanner from '@/components/CookieBanner'
 import Footer from '@/components/Footer'
@@ -160,6 +161,7 @@ export default function RootLayout({
         <SessionProvider>
           <LanguageProvider>
             <ThemeProvider>
+            <MotionProvider>
             <MasterChatProvider>
             <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-gold focus:text-navy-950 focus:rounded-lg focus:text-sm focus:font-medium">
               Skip to content
@@ -189,6 +191,7 @@ export default function RootLayout({
               }}
             />
             </MasterChatProvider>
+            </MotionProvider>
           </ThemeProvider>
           </LanguageProvider>
         </SessionProvider>

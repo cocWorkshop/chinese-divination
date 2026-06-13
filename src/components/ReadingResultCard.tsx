@@ -5,8 +5,7 @@ import ResultRenderer from '@/components/results/ResultRenderer'
 import ReadingFeedback from '@/components/ReadingFeedback'
 import ShareResultButton from '@/components/ShareResultButton'
 import FlameBorderStyle from '@/components/FlameBorderStyle'
-
-const T = (lang: string, zh: string, en: string) => (lang === 'en' ? en : zh)
+import { T } from '@/lib/i18n'
 
 const typeLabels: Record<string, { 'zh-TW': string; en: string }> = {
   bazi: { 'zh-TW': '八字命理', en: 'BaZi' },

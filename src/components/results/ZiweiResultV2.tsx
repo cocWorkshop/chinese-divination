@@ -10,6 +10,7 @@ import PersonInfoHeader from './PersonInfoHeader'
 import SectionDrawer from './SectionDrawer'
 import { useDragScroll } from '@/hooks/useDragScroll'
 import type { DivinationResultProps } from '@/types/divination'
+import { T } from '@/lib/i18n'
 
 // Reuse color maps from V1
 const STEM_ELEMENT_MAP: Record<string, string> = {
@@ -42,7 +43,6 @@ const sectionsList = [
   { key: 'family', label: '六親', en: 'Family', icon: '👨‍👩‍👧‍👦' },
 ]
 
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyData = Record<string, any>

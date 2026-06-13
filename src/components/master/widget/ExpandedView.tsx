@@ -22,10 +22,11 @@ import type { GateIntent } from './CollapsedBar'
 
 interface Props {
   needsMemoryGate: boolean
+  gateVisible: boolean
   onRequestGate: (intent: GateIntent) => void
 }
 
-export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) {
+export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGate }: Props) {
   const { lang } = useLang()
   const isEn = lang === 'en'
   const {
@@ -38,6 +39,7 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
     startNewSession,
     widgetOpener,
     notifyTyping,
+    interruptCooldownUntil,
   } = useMasterChat()
 
   const [input, setInput] = useState('')
@@ -91,6 +93,19 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
     setTimeout(() => inputRef.current?.focus(), 100)
   }, [])
 
+  // Escape collapses the overlay (standard modal dismissal). Document-level
+  // so it works regardless of where focus sits; skipped while the memory
+  // gate modal is up so Escape doesn't dismiss the view underneath it.
+  useEffect(() => {
+    const onKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape' && !gateVisible) {
+        setShape('collapsed')
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [gateVisible, setShape])
+
   const handleSend = (text?: string) => {
     const msg = (text ?? input).trim()
     if (!msg || loading) return
@@ -111,6 +126,23 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
       handleSend()
     }
   }
+
+  // Live countdown for the interrupt rate-limit cooldown. The provider drops
+  // over-cap interrupts after they were already rendered as bubbles, so a
+  // persistent notice (not just the one-shot toast) is the only honest signal
+  // that the last message never reached the master.
+  const [cooldownLeft, setCooldownLeft] = useState(0)
+  useEffect(() => {
+    if (!interruptCooldownUntil) {
+      setCooldownLeft(0)
+      return
+    }
+    const tick = () =>
+      setCooldownLeft(Math.max(0, Math.ceil((interruptCooldownUntil - Date.now()) / 1000)))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [interruptCooldownUntil])
 
   const handleScroll = () => {
     const el = scrollRef.current
@@ -141,6 +173,7 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div
           className="absolute inset-0"
@@ -154,6 +187,9 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
           transition={{ type: 'spring', stiffness: 220, damping: 24 }}
           className="relative w-full max-w-[100vw] h-full sm:h-[85vh] sm:max-w-2xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden shadow-2xl"
           style={{ border: '1px solid var(--card-border)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={isEn ? 'Master Xuanji chat' : '玄機大師對話'}
         >
           <div className="absolute inset-0" style={{ backgroundColor: 'var(--bg-primary)', opacity: 0.98 }} />
 
@@ -179,6 +215,7 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
                 className="text-[10px] px-2 py-0.5 rounded-full transition-colors hover:bg-[rgba(212,175,55,0.08)]"
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--card-border)' }}
                 title={isEn ? 'Memory settings' : '記憶設定'}
+                aria-label={isEn ? 'Memory settings' : '記憶設定'}
               >
                 {isEn ? 'Memory' : '記憶'}
               </button>
@@ -189,6 +226,7 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
                 className="flex items-center gap-1.5 px-3 h-8 rounded-full text-xs transition-colors hover:bg-[rgba(212,175,55,0.08)]"
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--card-border)' }}
                 title={isEn ? 'Start a new chat' : '開始新對話'}
+                aria-label={isEn ? 'Start a new chat' : '開始新對話'}
               >
                 <span aria-hidden>🌙</span>
                 <span>{isEn ? 'New chat' : '新對話'}</span>
@@ -197,7 +235,7 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
                 onClick={() => setShape('collapsed')}
                 className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-lg"
                 style={{ color: 'var(--text-muted)' }}
-                aria-label="Collapse"
+                aria-label={isEn ? 'Close chat' : '收合對話'}
               >
                 ✕
               </button>
@@ -259,6 +297,7 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
                   exit={{ opacity: 0, y: -4 }}
                   transition={{ duration: 0.3 }}
                   className="flex justify-start"
+                  role="status"
                 >
                   <div className="rounded-2xl px-4 py-3" style={{ border: '1px solid var(--border-gold)', background: 'var(--accent-bg)' }}>
                     <div className="flex items-center gap-3">
@@ -281,6 +320,26 @@ export default function ExpandedView({ needsMemoryGate, onRequestGate }: Props) 
 
           {/* Input row */}
           <div className="relative px-4 sm:px-5 py-3" style={{ borderTop: '1px solid var(--card-border)' }}>
+            <AnimatePresence>
+              {cooldownLeft > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  role="status"
+                  className="mb-2 px-3 py-2 rounded-lg text-xs leading-relaxed"
+                  style={{
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--card-border)',
+                    background: 'var(--accent-bg)',
+                  }}
+                >
+                  {isEn
+                    ? `Your last message wasn't sent — too many interruptions. Let the current reply finish, or try again in ~${cooldownLeft}s.`
+                    : `剛才的訊息未送出 — 打斷過於頻繁。請等當前回應結束，或約 ${cooldownLeft} 秒後再試。`}
+                </motion.div>
+              )}
+            </AnimatePresence>
             <div className="flex gap-2 items-end">
               <textarea
                 ref={inputRef}

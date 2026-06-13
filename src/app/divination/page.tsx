@@ -1,13 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import StarField from '@/components/StarField'
-
-const T = (lang: string, zhTW: string, en: string) =>
-  lang === 'en' ? en : zhTW
+import { T } from '@/lib/i18n'
 
 interface VisibilityItem {
   type: string
@@ -47,7 +45,6 @@ interface WelcomeItem {
 
 export default function DivinationPage() {
   const { lang } = useLang()
-  const router = useRouter()
   const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
   const [welcomeMessages, setWelcomeMessages] = useState<WelcomeItem[]>([])
   const [welcomeIndex, setWelcomeIndex] = useState(0)
@@ -93,10 +90,6 @@ export default function DivinationPage() {
         setVisibleServices(Object.entries(serviceMap).map(([type, info]) => ({ id: getRouteId(type), ...info })))
       })
   }, [])
-
-  const handleClick = (svcId: string, _e: React.MouseEvent) => {
-    router.push(`/divination/${svcId}`)
-  }
 
   return (
     <div className="relative flex-1 bg-navy-950">
@@ -151,6 +144,7 @@ export default function DivinationPage() {
                       <button
                         key={i}
                         onClick={() => setWelcomeIndex(i)}
+                        aria-label={lang === 'en' ? `Show message ${i + 1}` : `顯示第 ${i + 1} 則訊息`}
                         className="w-1.5 h-1.5 rounded-full transition-all duration-300"
                         style={{ backgroundColor: i === welcomeIndex ? 'var(--gold)' : 'var(--text-muted)', opacity: i === welcomeIndex ? 1 : 0.3 }}
                       />
@@ -168,9 +162,9 @@ export default function DivinationPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + i * 0.08 }}
                 >
-                  <div
-                    onClick={(e) => handleClick(svc.id, e)}
-                    className="glass-card rounded-2xl p-5 sm:p-6 h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+                  <Link
+                    href={`/divination/${svc.id}`}
+                    className="glass-card rounded-2xl p-5 sm:p-6 h-full w-full text-left block hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
                     style={{ borderColor: 'var(--card-border)', background: categoryColors[svc.id] || undefined }}
                   >
                     {svc.id === "bazi" && (
@@ -196,7 +190,7 @@ export default function DivinationPage() {
 
                     {/* Subtle hover glow */}
                     <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ boxShadow: 'inset 0 0 30px rgba(212,168,83,0.05)' }} />
-                  </div>
+                  </Link>
                 </motion.div>
               ))}
             </div>

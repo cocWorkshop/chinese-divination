@@ -5,8 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useLang } from './LanguageContext'
 import toast from 'react-hot-toast'
 import { catchAndReport } from '@/lib/errorReporter'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 const TYPE_ICONS: Record<string, string> = {
   info: '\u{1F4E2}',

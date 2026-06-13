@@ -42,7 +42,8 @@ docs/
 
 | 文檔 | 狀態 |
 |---|---|
-| [hci-audit-2026-04-27.md](planning/hci-audit-2026-04-27.md) | 25 條 HCI 優化提案 — P0/P1 已全部實作，P2 大部分完成 |
+| [uix-hci-audit-2026-06-12.md](planning/uix-hci-audit-2026-06-12.md) | 系統性 UIX/HCI audit v2 — W0–W5 已實作（見 docs/changes/2026-06-12-uix-w0~w5）；遺留：axe 實測、FCM push、master history 分頁 |
+| [hci-audit-2026-04-27.md](planning/hci-audit-2026-04-27.md) | 25 條 HCI 優化提案 — P0/P1 已全部實作，P2 大部分完成（剩餘項已併入 06-12 audit） |
 | [divination-skill-roadmap-2026-04-27.md](planning/divination-skill-roadmap-2026-04-27.md) | Master skill 擴充 roadmap — Tier 1 已實作（合盤 + 卦命互參） |
 | [activation-resume-design-2026-04-27.md](planning/activation-resume-design-2026-04-27.md) | Master 激活續接機制 — 已實作（4 種 hint 變體） |
 

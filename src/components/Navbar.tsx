@@ -210,10 +210,28 @@ export default function Navbar() {
             )}
           </div>
 
+          {/* Compact tablet nav (768–1023px) — the three core destinations
+              stay visible instead of vanishing into the hamburger; everything
+              else (share/wiki/toggles/account) remains in the menu. */}
+          <div className="hidden md:flex lg:hidden items-center gap-4 mr-2">
+            <Link href="/divination" className="text-sm text-white/80 hover:text-gold transition-colors">
+              {lang === 'en' ? 'Divination' : '占卜'}
+            </Link>
+            {session && (
+              <Link href="/dashboard" className="text-sm text-white/80 hover:text-gold transition-colors">
+                {lang === 'zh-TW' ? '歷史' : 'History'}
+              </Link>
+            )}
+            <Link href="/subscribe" className="text-sm text-white/80 hover:text-gold transition-colors">
+              {lang === 'en' ? 'Karma Shop' : '機緣商店'}
+            </Link>
+            <NotificationBell />
+          </div>
+
           {/* Mobile hamburger */}
           <button
             ref={mobileToggleRef}
-            className="lg:hidden text-white/80 hover:text-gold"
+            className="lg:hidden text-white/80 hover:text-gold min-h-[44px] min-w-[44px] flex items-center justify-center"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label={menuOpen
               ? (lang === 'zh-TW' ? '關閉選單' : 'Close menu')
@@ -234,30 +252,30 @@ export default function Navbar() {
       {/* Mobile menu */}
       {menuOpen && (
         <div ref={mobileMenuRef} className="lg:hidden border-t px-4 py-4 flex flex-col gap-3" style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-gold)' }}>
-          <Link href="/divination" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+          <Link href="/divination" className="text-white/80 hover:text-gold py-1.5" onClick={() => setMenuOpen(false)}>
             {lang === 'en' ? 'Divination' : '占卜'}
           </Link>
           {session && (
-            <Link href="/dashboard" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+            <Link href="/dashboard" className="text-white/80 hover:text-gold py-1.5" onClick={() => setMenuOpen(false)}>
               {lang === 'zh-TW' ? '歷史' : 'History'}
             </Link>
           )}
-          <Link href="/subscribe" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+          <Link href="/subscribe" className="text-white/80 hover:text-gold py-1.5" onClick={() => setMenuOpen(false)}>
             {lang === 'en' ? 'Karma Shop' : '機緣商店'}
           </Link>
           {session && (
-            <button onClick={() => { handleShare(); setMenuOpen(false) }} className="text-left text-white/80 hover:text-gold">
+            <button onClick={() => { handleShare(); setMenuOpen(false) }} className="text-left text-white/80 hover:text-gold py-1.5">
               {lang === 'en' ? '🔗 Share for Karma' : '🔗 分享賺機緣'}
             </button>
           )}
           {showWiki && (
-            <Link href="/wiki" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+            <Link href="/wiki" className="text-white/80 hover:text-gold py-1.5" onClick={() => setMenuOpen(false)}>
               {lang === 'en' ? '📚 Wiki' : '📚 知識庫'}
             </Link>
           )}
           <button
             onClick={() => { toggleTheme(); setMenuOpen(false) }}
-            className="text-left text-gold/80 hover:text-gold"
+            className="text-left text-gold/80 hover:text-gold py-1.5"
           >
             {theme === 'dark'
               ? (lang === 'zh-TW' ? '☀️ 淺色模式' : '☀️ Light Mode')
@@ -265,30 +283,30 @@ export default function Navbar() {
           </button>
           <button
             onClick={() => setLang(lang === 'zh-TW' ? 'en' : 'zh-TW')}
-            className="text-left text-gold/80 hover:text-gold"
+            className="text-left text-gold/80 hover:text-gold py-1.5"
           >
             {lang === 'zh-TW' ? 'Switch to English' : '切換到繁體中文'}
           </button>
           {session && (
-            <Link href="/profile" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+            <Link href="/profile" className="text-white/80 hover:text-gold py-1.5" onClick={() => setMenuOpen(false)}>
               {lang === 'zh-TW' ? '個人資料' : 'Profile'}
             </Link>
           )}
           {session && (
-            <button onClick={() => { setFeedbackOpen(true); setMenuOpen(false) }} className="text-left text-white/80 hover:text-gold">
+            <button onClick={() => { setFeedbackOpen(true); setMenuOpen(false) }} className="text-left text-white/80 hover:text-gold py-1.5">
               {lang === 'zh-TW' ? '意見反饋' : 'Feedback'}
             </button>
           )}
           {session ? (
-            <button onClick={() => fetch('/api/auth/logout', { method: 'POST' }).finally(() => signOut({ redirect: false }).then(() => window.location.href = '/'))} className="text-left text-white/80 hover:text-gold">
+            <button onClick={() => fetch('/api/auth/logout', { method: 'POST' }).finally(() => signOut({ redirect: false }).then(() => window.location.href = '/'))} className="text-left text-white/80 hover:text-gold py-1.5">
               {lang === 'zh-TW' ? '登出' : 'Sign Out'}
             </button>
           ) : (
             <>
-              <Link href="/login" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+              <Link href="/login" className="text-white/80 hover:text-gold py-1.5" onClick={() => setMenuOpen(false)}>
                 {lang === 'zh-TW' ? '登入' : 'Login'}
               </Link>
-              <Link href="/register" className="text-white/80 hover:text-gold" onClick={() => setMenuOpen(false)}>
+              <Link href="/register" className="text-white/80 hover:text-gold py-1.5" onClick={() => setMenuOpen(false)}>
                 {lang === 'zh-TW' ? '註冊' : 'Register'}
               </Link>
             </>

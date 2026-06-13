@@ -9,10 +9,14 @@ import { useDivination } from '../DivinationContext'
  * long) reasoning phase so the user isn't staring at empty placeholders.
  */
 export default function GeneratingState() {
-  const { type, streamStartTime } = useDivination()
+  const { type, streamStartTime, resetToForm } = useDivination()
   return (
     <div className="flex-1 flex flex-col">
-      <LoadingOracle divinationType={type} startTime={streamStartTime || undefined} />
+      <LoadingOracle
+        divinationType={type}
+        startTime={streamStartTime || undefined}
+        onCancel={resetToForm}
+      />
     </div>
   )
 }

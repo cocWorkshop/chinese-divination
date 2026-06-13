@@ -4,8 +4,8 @@ import { useState, useMemo } from 'react'
 import { useLang } from '@/components/LanguageContext'
 import toast from 'react-hot-toast'
 import FamilyDrawer, { type FamilyMemberData } from '../_components/FamilyDrawer'
+import { T } from '@/lib/i18n'
 
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 const PAGE_SIZE = 5
 
 const relationLabels: Record<string, { zh: string; en: string }> = {

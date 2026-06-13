@@ -13,7 +13,7 @@ export default function CalendarToggle({ layoutId }: { layoutId: string }) {
   const { form, setField, lang } = useDivination()
   return (
     <div>
-      <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
+      <span className={labelCls}>{T(lang, '曆法', 'Calendar')}</span>
       <div className="flex rounded-full border border-gold/30 overflow-hidden bg-navy-800 w-fit">
         {([['solar', '公曆', 'Solar'], ['lunar', '農曆', 'Lunar']] as const).map(([val, zh, en]) => (
           <motion.button

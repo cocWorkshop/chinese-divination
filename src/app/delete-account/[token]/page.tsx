@@ -5,9 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { motion } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
-
-const T = (lang: string, zhTW: string, en: string) =>
-  lang === 'en' ? en : zhTW
+import { T, formatDate } from '@/lib/i18n'
 
 type Status = 'loading' | 'valid' | 'invalid' | 'expired' | 'confirming' | 'deleted' | 'error'
 
@@ -222,7 +220,7 @@ export default function DeleteAccountPage() {
             </div>
             <div className="flex justify-between">
               <span style={{ color: 'var(--text-muted)' }}>{T(lang, '註冊日期', 'Registered')}</span>
-              <span style={{ color: 'var(--text-primary)' }}>{new Date(createdAt).toLocaleDateString()}</span>
+              <span style={{ color: 'var(--text-primary)' }}>{formatDate(createdAt, lang)}</span>
             </div>
           </div>
         </div>

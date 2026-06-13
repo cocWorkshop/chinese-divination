@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import type { DivinationResultProps, ZiweiData, ZiweiPalaceData, ZiweiStar } from '@/types/divination'
+import { T } from '@/lib/i18n'
 
 const mutagenColor: Record<string, string> = {
   '禄': 'text-green-400',
@@ -103,8 +104,6 @@ function findPalace(palaces: Record<string, ZiweiPalaceData>, canonicalName: str
   }
   return undefined
 }
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 const sectionTabs = [
   { key: 'overview', label: '總覽', en: 'Overview' },
@@ -308,8 +307,18 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
               return (
                 <div
                   key={`${row}-${col}`}
+                  role={palaceName ? 'button' : undefined}
+                  tabIndex={palaceName ? 0 : undefined}
+                  aria-pressed={palaceName ? selectedPalace === palaceName : undefined}
+                  aria-label={palaceName ? palaceLabel(palaceName, lang) : undefined}
                   onClick={() => palaceName && setSelectedPalace(selectedPalace === palaceName ? null : palaceName)}
-                  className={`bg-navy-950/90 p-1 sm:p-2 cursor-pointer transition-all hover:bg-gold/5 min-h-[70px] sm:min-h-[90px] ${
+                  onKeyDown={(e) => {
+                    if (palaceName && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault()
+                      setSelectedPalace(selectedPalace === palaceName ? null : palaceName)
+                    }
+                  }}
+                  className={`bg-navy-950/90 p-1 sm:p-2 cursor-pointer transition-all hover:bg-gold/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-gold/60 min-h-[70px] sm:min-h-[90px] ${
                     selectedPalace === palaceName ? 'ring-1 ring-gold/50' : ''
                   } ${isSoul ? 'border-l-2 border-l-gold/40' : ''}`}
                 >

@@ -69,9 +69,15 @@ interface MysticalLoaderProps {
   variant?: 'divination' | 'chat' | 'page'
   divinationType?: string
   startTime?: number  // Unix timestamp (ms) for elapsed timer — defaults to Date.now() on mount
+  /**
+   * When provided, a "cancel and return to the form" affordance appears after
+   * 5 minutes of waiting (form inputs are preserved by the caller). Omit on
+   * surfaces where cancelling has no meaning (e.g. polling a pending reading).
+   */
+  onCancel?: () => void
 }
 
-export default function MysticalLoader({ lang, variant = 'divination', divinationType, startTime }: MysticalLoaderProps) {
+export default function MysticalLoader({ lang, variant = 'divination', divinationType, startTime, onCancel }: MysticalLoaderProps) {
   const [quoteIndex, setQuoteIndex] = useState(0)
   const quotes = lang === 'en' ? divinationQuotes.en : divinationQuotes['zh-TW']
   const [elapsed, setElapsed] = useState(0)
@@ -116,7 +122,7 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
 
   if (variant === 'chat') {
     return (
-      <div className="flex items-center gap-2 py-2">
+      <div className="flex items-center gap-2 py-2" role="status">
         <motion.div className="flex gap-1">
           {[0, 1, 2].map(i => (
             <motion.div
@@ -134,7 +140,7 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
 
   if (variant === 'page') {
     return (
-      <div className="flex flex-col items-center justify-center py-12 gap-4">
+      <div className="flex flex-col items-center justify-center py-12 gap-4" role="status">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
@@ -154,6 +160,7 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1.2, ease: 'easeOut' }}
+      role="status"
     >
       {/* Rotating Bagua / Yin-Yang — adaptive size.
           `vmin` scales with the smaller of viewport width/height so it
@@ -269,7 +276,23 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
       {/* Progress bar */}
       {(() => {
         const stages = getProgressStages(lang, divinationType)
-        const current = [...stages].reverse().find(s => elapsed >= s.at) || stages[0]
+        let current = [...stages].reverse().find(s => elapsed >= s.at) || stages[0]
+        if (elapsed >= 180) {
+          // Past 3 minutes the stage table is exhausted. Don't park the bar at
+          // a frozen 95% — creep asymptotically toward 99% across the 600s
+          // server ceiling, and switch to an elapsed-aware label that updates
+          // each minute so the user can see the page is alive.
+          const minutes = Math.floor(elapsed / 60)
+          const pct = Math.min(99, 95 + ((elapsed - 180) / 420) * 4)
+          current = {
+            at: 180,
+            pct,
+            label:
+              lang === 'en'
+                ? `Deep reasoning in progress (${minutes} min) — complex charts can take up to 10 minutes`
+                : `深度推理中（已 ${minutes} 分鐘）— 複雜命盤最長可能需要 10 分鐘`,
+          }
+        }
         return (
           <motion.div
             className="w-full max-w-xs mx-auto"
@@ -319,6 +342,21 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
             ? 'Analysis is taking longer than usual. Your reading is still being processed — please stay on this page.'
             : '分析時間比平常長，您的解讀仍在處理中 — 請留在此頁面。'}
         </motion.p>
+      )}
+
+      {/* Cancel & return — after 5 minutes the wait may be a hung call; give
+          the user a way out. The caller preserves the filled form. */}
+      {onCancel && elapsed >= 300 && (
+        <motion.button
+          type="button"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={onCancel}
+          className="mt-2 px-4 py-2 rounded-lg text-xs transition-colors hover:bg-gold/10"
+          style={{ color: 'var(--gold)', border: '1px solid var(--border-gold)' }}
+        >
+          {lang === 'en' ? 'Cancel and return to the form (your inputs are kept)' : '取消並返回表單（已填資料會保留）'}
+        </motion.button>
       )}
     </motion.div>
   )

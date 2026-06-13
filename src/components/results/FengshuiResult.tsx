@@ -9,8 +9,7 @@ import SectionDrawer from './SectionDrawer'
 import StreamingSection from './StreamingSection'
 import PersonInfoHeader from './PersonInfoHeader'
 import type { DivinationResultProps, FengshuiData } from '@/types/divination'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 const energyColor: Record<string, string> = {
   '旺': 'bg-green-400', '平': 'bg-yellow-400', '衰': 'bg-orange-400', '煞': 'bg-red-500',

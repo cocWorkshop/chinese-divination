@@ -11,8 +11,8 @@ export default function IChingForm() {
     <>
       <FormSection title={`🔮 ${T(lang, '占問', 'Inquiry')}`}>
         <div>
-          <label className={labelCls}>{T(lang, '您的問題', 'Your Question')}</label>
-          <textarea className={inputCls + ' h-24 resize-none'} value={form.question} onChange={e => setField('question', e.target.value)} required placeholder={T(lang, '請詳述您想詢問的事情...', 'Describe your question in detail...')} />
+          <label htmlFor="iching-question" className={labelCls}>{T(lang, '您的問題', 'Your Question')}</label>
+          <textarea id="iching-question" className={inputCls + ' h-24 resize-none'} value={form.question} onChange={e => setField('question', e.target.value)} required placeholder={T(lang, '請詳述您想詢問的事情...', 'Describe your question in detail...')} />
         </div>
       </FormSection>
       <CoinCastPanel

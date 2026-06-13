@@ -208,7 +208,11 @@ export default function MessageBubble({
           </div>
         ) : (
           loading && (
-            <span className="inline-flex gap-1">
+            <span
+              className="inline-flex gap-1"
+              role="status"
+              aria-label={isEn ? 'Master is typing' : '大師正在輸入'}
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_infinite]" />
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_0.2s_infinite]" />
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_0.4s_infinite]" />

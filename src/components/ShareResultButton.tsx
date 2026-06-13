@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 async function copyToClipboard(text: string): Promise<boolean> {
   try {

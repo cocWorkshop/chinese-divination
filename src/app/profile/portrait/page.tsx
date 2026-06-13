@@ -19,8 +19,7 @@ import toast from 'react-hot-toast'
 import { publish, subscribe } from '@/lib/events'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
-
-const T = (lang: string, zh: string, en: string) => (lang === 'en' ? en : zh)
+import { T } from '@/lib/i18n'
 
 interface PortraitData {
   version: number

@@ -69,8 +69,7 @@ export const typeInfo: Record<string, { zhName: string; twName: string; enName: 
 }
 
 // Helper for bilingual text
-export const T = (lang: string, zhTW: string, en: string) =>
-  lang === 'en' ? en : zhTW
+export { T } from '@/lib/i18n'
 
 // Shared form control styles
 export const inputCls = "w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
