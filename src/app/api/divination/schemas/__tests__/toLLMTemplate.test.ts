@@ -179,6 +179,17 @@ describe('schemaToLLMTemplate', () => {
     const luckyInfo = template.luckyInfo as Record<string, unknown>
     expect(luckyInfo).not.toHaveProperty('numbers')
     expect(luckyInfo).toHaveProperty('colors')
+    // Regression: keyPredictions must show its {age,event,basis} structure with
+    // the per-field instructions — NOT a bare `[]` (the empty-default bug that
+    // left 關鍵預測 blank because the LLM had no shape to fill).
+    expect(Array.isArray(template.keyPredictions)).toBe(true)
+    expect((template.keyPredictions as unknown[]).length).toBeGreaterThan(0)
+    const kp = (template.keyPredictions as unknown[])[0] as Record<string, unknown>
+    expect(kp).toHaveProperty('age')
+    expect(kp).toHaveProperty('event')
+    expect(kp).toHaveProperty('basis')
+    expect(typeof kp.event).toBe('string')
+    expect((kp.event as string).length).toBeGreaterThan(0)
   })
 
   it('ziwei schema matches original', () => {

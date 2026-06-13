@@ -143,11 +143,17 @@ export const baziSchemaV2 = z.object({
 
   daYunAnalysis: z.array(daYunEntrySchema).describe('逐步大运精批（共8步），每步含主题、互动、关键流年、建议'),
 
+  // .optional() — NOT .default([]). An empty-array default makes
+  // schemaToLLMTemplate emit a literal `[]`, hiding the per-field instructions
+  // below, so the LLM produced nothing and 關鍵預測 rendered empty. .optional()
+  // lets the template walker descend and show the {age,event,basis} shape while
+  // still tolerating omission (no false validation failure; renderer guards on
+  // length).
   keyPredictions: z.array(z.object({
     age: z.string().describe('格式："36歲（2024年）" 或 "46-50歲（2034-2038年）"，如果覆盖当前年份加"當前"如"38歲（2026年，當前）"'),
     event: z.string().describe('具体事件描述'),
     basis: z.string().describe('命理依据（十神+大运+流年干支）'),
-  })).describe('3-5个关键人生节点预测，从大运/流年中提炼最重要的转折点').default([]),
+  })).describe('3-5个关键人生节点预测，从大运/流年中提炼最重要的转折点').optional(),
 
   keyAdvice: z.array(z.string()).default(['建议一', '建议二', '建议三']),
   luckyInfo: z.object({
