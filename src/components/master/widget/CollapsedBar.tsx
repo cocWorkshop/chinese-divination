@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useMasterChat } from '../MasterChatContext'
 import { useLang } from '@/components/LanguageContext'
+import { withCtaNonce } from '@/lib/master/ctaNav'
 
 export type GateIntent = { kind: 'open' } | { kind: 'send'; message: string }
 
@@ -115,7 +116,7 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate, focusOnMo
             <button
               ref={primaryRef}
               type="button"
-              onClick={() => router.push(pendingReading.url)}
+              onClick={() => router.push(withCtaNonce(pendingReading.url))}
               className="flex-1 flex items-center gap-3 text-left transition-opacity hover:opacity-80 min-w-0"
               title={isEn ? 'Tap to return to the divination form' : '點擊返回占卜表單'}
             >
