@@ -1,0 +1,48 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - navigation [ref=e3]:
+    - generic [ref=e5]:
+      - link "玄機AI" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e7]:
+        - link "占卜" [ref=e8] [cursor=pointer]:
+          - /url: /divination
+        - link "機緣商店" [ref=e9] [cursor=pointer]:
+          - /url: /subscribe
+        - button "☀️" [ref=e10] [cursor=pointer]
+        - button "EN" [ref=e11] [cursor=pointer]
+        - generic [ref=e12]:
+          - link "登入" [ref=e13] [cursor=pointer]:
+            - /url: /login
+          - link "註冊" [ref=e14] [cursor=pointer]:
+            - /url: /register
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - heading "玄機" [level=1] [ref=e20]
+            - paragraph [ref=e21]: 古法智慧，現代傳承
+            - paragraph [ref=e22]: 融匯八字、易經、紫微、奇門、風水等傳統預測學，以AI智慧為您解讀命運玄機
+          - generic [ref=e23]:
+            - link "開始占卜" [ref=e24] [cursor=pointer]:
+              - /url: /divination
+            - link "免費註冊" [ref=e25] [cursor=pointer]:
+              - /url: /register
+        - img [ref=e27]
+      - generic [ref=e29]:
+        - heading "六大命理體系" [level=2] [ref=e30]
+        - paragraph [ref=e31]: 千年傳承，AI解讀
+      - generic [ref=e33]:
+        - img [ref=e35]
+        - heading "關於玄機" [level=2] [ref=e42]
+        - paragraph [ref=e43]: 玄機融合中國傳統命理學與現代AI技術，提供專業、深入的命理分析。我們傳承數千年的預測智慧，以現代語言為您解讀生命的玄機。
+        - paragraph [ref=e44]: 僅供參考，不構成任何決策建議
+  - contentinfo [ref=e45]:
+    - link "隱私政策" [ref=e46] [cursor=pointer]:
+      - /url: /privacy
+    - text: ·
+    - link "用戶協議" [ref=e47] [cursor=pointer]:
+      - /url: /terms
+    - text: ·
+    - generic [ref=e48]: © 2026 玄機

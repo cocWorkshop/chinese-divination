@@ -1,8 +1,7 @@
 'use client'
 
 import { useLang } from '@/components/LanguageContext'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 export default function Footer() {
   const { lang } = useLang()

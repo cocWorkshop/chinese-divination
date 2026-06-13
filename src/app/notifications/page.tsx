@@ -5,8 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useLang } from '@/components/LanguageContext'
 import { catchAndReport } from '@/lib/errorReporter'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 interface Notification {
   id: string
@@ -114,12 +113,21 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={n.id}
-                  className="rounded-xl overflow-hidden transition-all cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isExpanded}
+                  className="rounded-xl overflow-hidden transition-all cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-gold/60"
                   style={{
                     backgroundColor: 'var(--bg-surface)',
                     border: `1px solid ${n.read ? 'var(--border-color)' : 'var(--border-gold)'}`,
                   }}
                   onClick={() => handleExpand(n.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleExpand(n.id)
+                    }
+                  }}
                 >
                   <div className="px-4 py-3 flex items-start gap-3">
                     <span className="text-xl flex-shrink-0 mt-0.5">{config.icon}</span>

@@ -1,5 +1,4 @@
 import { astro } from 'iztro'
-import { Solar } from 'lunar-typescript'
 
 // Map pinyin shichen names to iztro timeIndex (0-12)
 const SHICHEN_TO_TIME_INDEX: Record<string, number> = {
@@ -9,6 +8,20 @@ const SHICHEN_TO_TIME_INDEX: Record<string, number> = {
   '子': 0, '丑': 1, '寅': 2, '卯': 3,
   '辰': 4, '巳': 5, '午': 6, '未': 7,
   '申': 8, '酉': 9, '戌': 10, '亥': 11,
+}
+
+// 天干 → 四化 mapping table (standard)
+const SIHUA_TABLE: Record<string, [string, string, string, string]> = {
+  '甲': ['廉贞', '破军', '武曲', '太阳'],
+  '乙': ['天机', '天梁', '紫微', '太阴'],
+  '丙': ['天同', '天机', '文昌', '廉贞'],
+  '丁': ['太阴', '天同', '天机', '巨门'],
+  '戊': ['贪狼', '太阴', '右弼', '天机'],
+  '己': ['武曲', '贪狼', '天梁', '文曲'],
+  '庚': ['太阳', '武曲', '太阴', '天同'],
+  '辛': ['巨门', '太阳', '文曲', '文昌'],
+  '壬': ['天梁', '紫微', '左辅', '武曲'],
+  '癸': ['破军', '巨门', '太阴', '贪狼'],
 }
 
 export interface ZiweiStar {
@@ -31,11 +44,27 @@ export interface ZiweiPalace {
   ages: number[]
 }
 
+export interface ZiweiLiuNianEntry {
+  year: number
+  age: number
+  earthlyBranch: string       // 流年地支 (determines 流年命宫 position)
+  yearlyMutagen: string[]     // [禄星, 权星, 科星, 忌星] names
+  huaLuPalace: string         // 化禄落在哪个宫
+  huaJiPalace: string         // 化忌落在哪个宫
+  isLucky: boolean | null     // green/red/neutral
+}
+
+export interface ZiweiDecadalSiHua {
+  heavenlyStem: string
+  earthlyBranch: string
+  range: number[]
+  mutagen: [string, string, string, string]  // [禄星, 权星, 科星, 忌星]
+}
+
 export interface ZiweiChart {
   // Basic info
   solarDate: string
   lunarDate: string
-  chineseDate: string
   time: string
   timeRange: string
   zodiac: string
@@ -51,7 +80,14 @@ export interface ZiweiChart {
   palaces: ZiweiPalace[]
   // Four transformations summary
   siHua: { star: string; type: string; palace: string }[]
+  // 大限四化 per decade
+  decadalSiHua?: ZiweiDecadalSiHua[]
+  // 流年
+  liuNian?: ZiweiLiuNianEntry[]
 }
+
+// Key natal palaces for isLucky determination
+const KEY_PALACES = ['命宫', '财帛', '官禄', '夫妻']
 
 export function calculateZiwei(
   solarBirthDate: string,  // 'YYYY-MM-DD'
@@ -101,7 +137,7 @@ export function calculateZiwei(
       isBodyPalace: palace.isBodyPalace,
       changsheng12: palace.changsheng12,
       decadal: {
-        range: palace.decadal?.range || [],
+        range: palace.decadal?.range?.length === 2 ? palace.decadal.range : [0, 0],
         heavenlyStem: palace.decadal?.heavenlyStem || '',
         earthlyBranch: palace.decadal?.earthlyBranch || '',
       },
@@ -121,20 +157,80 @@ export function calculateZiwei(
     }
   }
 
+  // Compute 大限四化 per decade
+  const decadalSiHua: ZiweiDecadalSiHua[] = palaces.map(p => {
+    const stem = p.decadal.heavenlyStem
+    const table = SIHUA_TABLE[stem]
+    return {
+      heavenlyStem: stem,
+      earthlyBranch: p.decadal.earthlyBranch,
+      range: p.decadal.range,
+      mutagen: table || ['', '', '', ''],
+    }
+  }).filter(d => d.range[0] > 0 || d.range[1] > 0) // filter out invalid decades
+    .sort((a, b) => a.range[0] - b.range[0])
+
+  // Compute 流年 using iztro horoscope API
+  const currentYear = new Date().getFullYear()
+  const birthYear = y
+  const liuNian: ZiweiLiuNianEntry[] = []
+
+  // Compute 80 years for UI timeline
+  for (let i = 0; i < 80; i++) {
+    const targetYear = birthYear + 1 + i  // age 1 to 80
+    const age = targetYear - birthYear
+    try {
+      const h = chart.horoscope(`${targetYear}-6-15`)  // mid-year date
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const yearly = h.yearly as any
+      if (!yearly) continue
+
+      const yearlyMutagen: string[] = yearly.mutagen || []
+      const earthlyBranch: string = yearly.earthlyBranch || ''
+
+      // Determine which palaces get 化禄 and 化忌
+      // yearly.palaceNames is the re-ordered palace list for this year
+      // index 0 = 命宫 position for this year
+      const palaceNames: string[] = yearly.palaceNames || []
+      const yearStem = yearly.heavenlyStem || ''
+      const table = SIHUA_TABLE[yearStem]
+
+      let huaLuPalace = ''
+      let huaJiPalace = ''
+
+      if (table) {
+        // Find which natal palace the 化禄星 and 化忌星 sit in
+        const luStar = table[0]
+        const jiStar = table[3]
+        for (const p of palaces) {
+          const allNames = [...p.majorStars, ...p.minorStars, ...p.adjectiveStars].map(s => s.name)
+          if (allNames.includes(luStar) && !huaLuPalace) huaLuPalace = p.name
+          if (allNames.includes(jiStar) && !huaJiPalace) huaJiPalace = p.name
+        }
+      }
+
+      // isLucky: green if 化禄 hits key palace, red if 化忌 hits key palace
+      let isLucky: boolean | null = null
+      if (KEY_PALACES.includes(huaJiPalace)) isLucky = false
+      else if (KEY_PALACES.includes(huaLuPalace)) isLucky = true
+
+      liuNian.push({
+        year: targetYear,
+        age,
+        earthlyBranch,
+        yearlyMutagen,
+        huaLuPalace,
+        huaJiPalace,
+        isLucky,
+      })
+    } catch {
+      // Skip years that fail (e.g., out of range)
+    }
+  }
+
   return {
     solarDate: chart.solarDate,
     lunarDate: chart.lunarDate,
-    // Compute four pillars (四柱) using lunar-typescript for correct solar-term-based month pillar
-    // (iztro's chart.chineseDate uses lunar month which is incorrect for 月柱)
-    chineseDate: (() => {
-      // For zi hour (timeIndex 0): use hour 0 (early zi) on the given date
-      // The caller is responsible for adding 1 day for zi_late before calling this function
-      const solarHour = timeIndex === 0 ? 0 : timeIndex * 2 - 1
-      const solar = Solar.fromYmdHms(y, m, d, solarHour, 0, 0)
-      const lunar = solar.getLunar()
-      const ec = lunar.getEightChar()
-      return `${ec.getYear()} ${ec.getMonth()} ${ec.getDay()} ${ec.getTime()}`
-    })(),
     time: chart.time,
     timeRange: chart.timeRange,
     zodiac: chart.zodiac,
@@ -147,5 +243,7 @@ export function calculateZiwei(
     earthlyBranchOfBodyPalace: chart.earthlyBranchOfBodyPalace,
     palaces,
     siHua,
+    decadalSiHua,
+    liuNian,
   }
 }

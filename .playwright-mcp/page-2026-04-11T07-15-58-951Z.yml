@@ -1,0 +1,350 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]: 玄機AI XuanJi - Free AI Chinese Divination | BaZi, I Ching, Zi Wei Dou Shu
+  - navigation [ref=e3]:
+    - generic [ref=e5]:
+      - link "玄機AI" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e7]:
+        - link "Divination" [ref=e8] [cursor=pointer]:
+          - /url: /divination
+        - link "History" [ref=e118] [cursor=pointer]:
+          - /url: /dashboard
+        - link "Karma Shop" [ref=e9] [cursor=pointer]:
+          - /url: /subscribe
+        - button "🔗 Share for Karma" [ref=e119] [cursor=pointer]
+        - button "Notifications" [ref=e121] [cursor=pointer]:
+          - img [ref=e122]
+        - button "☀️" [ref=e10] [cursor=pointer]
+        - button "繁" [ref=e11] [cursor=pointer]
+        - button "e" [ref=e124] [cursor=pointer]:
+          - generic [ref=e125]: e
+  - main [ref=e15]:
+    - generic [ref=e128]:
+      - heading "Choose Your Oracle" [level=1] [ref=e130]
+      - generic [ref=e131]:
+        - generic [ref=e482]: 🌙 Weekend vibes! Zi Wei Dou Shu was the imperial court's secret — emperors used star charts to guide dynasties. Let AI decode your star chart today!
+        - generic [ref=e133]:
+          - button [ref=e134] [cursor=pointer]
+          - button [ref=e135] [cursor=pointer]
+          - button [ref=e136] [cursor=pointer]
+      - generic [ref=e137]:
+        - generic [ref=e139] [cursor=pointer]:
+          - generic [ref=e140]: Popular
+          - generic [ref=e141]: 🏛️
+          - heading "BaZi (Four Pillars)" [level=2] [ref=e142]
+          - paragraph [ref=e143]: Analyze destiny through birth date and time — career, wealth, relationships and personality
+        - generic [ref=e145] [cursor=pointer]:
+          - generic [ref=e146]: ⭐
+          - heading "Zi Wei Dou Shu" [level=2] [ref=e147]
+          - paragraph [ref=e148]: Birth chart of stars across 12 palaces — a comprehensive life analysis system
+        - generic [ref=e150] [cursor=pointer]:
+          - generic [ref=e151]: 🪙
+          - heading "Liu Yao Divination" [level=2] [ref=e152]
+          - paragraph [ref=e153]: Cast hexagrams with coins, analyze six lines with six relatives for precise event prediction
+        - generic [ref=e155] [cursor=pointer]:
+          - generic [ref=e156]: 🧭
+          - heading "Qi Men Dun Jia" [level=2] [ref=e157]
+          - paragraph [ref=e158]: Advanced divination for timing decisions, choosing directions, and strategic planning
+        - generic [ref=e160] [cursor=pointer]:
+          - generic [ref=e161]: 🏯
+          - heading "Feng Shui" [level=2] [ref=e162]
+          - paragraph [ref=e163]: Analyze your home or office layout to optimize energy flow and improve luck
+        - generic [ref=e165] [cursor=pointer]:
+          - generic [ref=e166]: 🌸
+          - heading "Plum Blossom" [level=2] [ref=e167]
+          - paragraph [ref=e168]: Plum Blossom numerology for precise event prediction
+  - button "💬" [ref=e169] [cursor=pointer]
+  - contentinfo [ref=e45]:
+    - link "Privacy Policy" [ref=e46] [cursor=pointer]:
+      - /url: /privacy
+    - text: ·
+    - link "Terms of Service" [ref=e47] [cursor=pointer]:
+      - /url: /terms
+    - text: ·
+    - generic [ref=e48]: © 2026 Chinese-divination
+  - generic [ref=e180]:
+    - generic [ref=e182]:
+      - generic [ref=e184]: Master Xuanji
+      - button "Collapse" [ref=e185] [cursor=pointer]: ✕
+    - generic [ref=e186]:
+      - generic [ref=e188]:
+        - paragraph [ref=e189]: 我的八字如何？
+        - paragraph [ref=e190]: 20:56
+      - generic [ref=e192]:
+        - paragraph [ref=e194]: 若方便告知您的生辰資訊，例如出生日期、時辰及性別，我可以為您排一下八字，看看其中的奧秘。
+        - paragraph [ref=e195]: 20:56
+      - generic [ref=e197]:
+        - paragraph [ref=e198]: 1988年8月7日
+        - paragraph [ref=e199]: 20:56
+      - generic [ref=e201]:
+        - paragraph [ref=e203]: 請問您的出生時間以及性別，以便我進一步為您排八字。
+        - paragraph [ref=e204]: 20:56
+      - generic [ref=e206]:
+        - paragraph [ref=e207]: 晚上10点，男
+        - paragraph [ref=e208]: 20:56
+      - generic [ref=e210]:
+        - generic [ref=e211]:
+          - paragraph [ref=e212]: 您的八字排列如下：
+          - paragraph [ref=e213]:
+            - strong [ref=e214]: 年柱
+            - text: ：戊辰（大林木），其中隱藏着偏财、劫财、正印。
+          - list [ref=e215]:
+            - listitem [ref=e216]:
+              - strong [ref=e217]: 神煞
+              - text: ：華蓋，代表聰慧孤高，利於藝術和宗教。
+          - paragraph [ref=e218]:
+            - strong [ref=e219]: 月柱
+            - text: ：己未（天上火），隱藏着正财、傷官、劫财。
+          - list [ref=e220]:
+            - listitem [ref=e221]:
+              - strong [ref=e222]: 神煞
+              - text: ：天乙貴人及天、月德合，均代表逢凶化吉，貴人相助。
+          - paragraph [ref=e223]:
+            - strong [ref=e224]: 日柱
+            - text: ：甲午（砂石金），隱藏着比肩、傷官、正财。
+          - list [ref=e225]:
+            - listitem [ref=e226]:
+              - strong [ref=e227]: 神煞
+              - text: ：太極貴人、天德、月德、紅艷煞和天醫，顯示出良好的醫療或養生氣質及感情豐富。
+          - paragraph [ref=e228]:
+            - strong [ref=e229]: 時柱
+            - text: ：甲子（海中金），內含比肩和正印。
+          - list [ref=e230]:
+            - listitem [ref=e231]:
+              - strong [ref=e232]: 神煞
+              - text: ：國印貴人、將星及太極貴人，顯示您可能有領導才能及賢德。
+          - paragraph [ref=e233]:
+            - strong [ref=e234]: 日主天干
+            - text: 為甲木，中和偏強，五行屬性以「木」為用神，這表示您可以考慮跟木相關的事業或活動來助運。
+          - paragraph [ref=e235]: 您的大運是由庚申（石榴木）開始，自0歲起步，每10年轉換一次，依此類推。
+          - paragraph [ref=e236]: 若您有想探討的具體問題或方向，歡迎告知，我可以為您進一步分析及解答。
+        - paragraph [ref=e237]: 20:56
+      - generic [ref=e244]:
+        - paragraph [ref=e245]: 我最近对未来有些迷茫，想了解一下自己的命运走向，你能帮我看看吗？
+        - paragraph [ref=e246]: 03:01
+      - generic [ref=e248]:
+        - paragraph [ref=e250]: 400 Provider returned error
+        - paragraph [ref=e251]: 03:01
+      - generic [ref=e258]:
+        - paragraph [ref=e259]: 再帮我看看运势
+        - paragraph [ref=e260]: 03:09
+      - generic [ref=e262]:
+        - paragraph [ref=e264]: 400 Provider returned error
+        - paragraph [ref=e265]: 03:09
+      - generic [ref=e272]:
+        - paragraph [ref=e273]: 帮我看看最近的运势如何
+        - paragraph [ref=e274]: 03:11
+      - paragraph [ref=e281]: 03:11
+      - generic [ref=e298]:
+        - paragraph [ref=e299]: 我想看看2026年的运势
+        - paragraph [ref=e300]: 03:14
+      - generic [ref=e302]:
+        - generic [ref=e309]:
+          - paragraph [ref=e310]:
+            - text: 看你
+            - strong [ref=e311]: 2026年
+            - text: ，整體屬於一句話：
+          - paragraph [ref=e312]:
+            - strong [ref=e313]: 是「轉運、定盤、把事情落地」的一年，偏吉，但壓力也明顯增加。
+          - heading "先看命盤根基" [level=3] [ref=e314]
+          - paragraph [ref=e315]:
+            - text: 你的八字日主是
+            - strong [ref=e316]: 乙木
+            - text: ，而且是
+            - strong [ref=e317]: 身弱
+            - text: 。原局金氣重，月柱
+            - strong [ref=e318]: 辛酉七殺當令
+            - text: ，所以你的人生一直不是鬆鬆散散型，而是比較容易處在責任、規則、競爭之中。
+            - text: 好在命盤裡有
+            - strong [ref=e319]: 雙亥水
+            - text: 生扶日主，所以遇到合適的運，反而能在壓力裡把能力磨出來。
+          - paragraph [ref=e320]:
+            - text: 你的命盤喜
+            - strong [ref=e321]: 木、水
+            - text: ，這一點很關鍵。
+          - separator [ref=e322]
+          - heading "2026年的整體氣象" [level=2] [ref=e323]
+          - paragraph [ref=e324]:
+            - text: 2026年是
+            - strong [ref=e325]: 乙丑年
+            - text: ，而你流年顯示這年是：
+          - list [ref=e326]:
+            - listitem [ref=e327]:
+              - strong [ref=e328]: 比肩
+              - text: 年
+            - listitem [ref=e329]:
+              - code [ref=e330]: isLucky = true
+            - listitem [ref=e331]:
+              - text: 同時你也正式進入
+              - strong [ref=e332]: 乙丑大運（38—47歲）
+          - paragraph [ref=e333]: 這就表示：
+          - heading "1. 2026不是單純一年，而是「新十年開局」" [level=3] [ref=e334]
+          - paragraph [ref=e335]:
+            - text: 大運和流年同柱，都是
+            - strong [ref=e336]: 乙丑
+            - text: ，這種情況轉折感會很強。
+            - text: 通常會表現在：
+          - list [ref=e337]:
+            - listitem [ref=e338]: 工作定位改變
+            - listitem [ref=e339]: 住居、城市、部門、合作模式調整
+            - listitem [ref=e340]: 家庭責任變重
+            - listitem [ref=e341]: 開始更重視資產、現金流、房子、父母、婚姻這類現實問題
+          - paragraph [ref=e342]:
+            - text: 所以這一年不是「爆衝型發財年」，而是
+            - strong [ref=e343]: 重新站位、重新定規則的一年
+            - text: 。
+          - separator [ref=e344]
+          - heading "事業運" [level=2] [ref=e345]
+          - paragraph [ref=e346]:
+            - strong [ref=e347]: 事業運偏穩中有升，但更像“立住腳跟”，不是輕鬆暴衝。
+          - paragraph [ref=e348]:
+            - text: 依你的
+            - code [ref=e349]: daYunAnalysis
+            - text: ，乙丑大運的主題是：
+          - list [ref=e350]:
+            - listitem [ref=e351]: 比肩透出：自我主張變強，競爭者也增加
+            - listitem [ref=e352]: 丑中藏財、印、殺：現實責任浮上來，尤其是工作穩定、收入結構、家庭資產配置
+          - heading "這代表什麼？" [level=3] [ref=e353]
+          - list [ref=e354]:
+            - listitem [ref=e355]:
+              - text: 如果你目前正處於換工作、升職、轉部門、自己做、談合作的階段，
+              - strong [ref=e356]: 2026很適合定下來
+            - listitem [ref=e357]:
+              - text: 但不是靠運氣贏，而是靠
+              - strong [ref=e358]: 專業、耐心、規則感
+            - listitem [ref=e359]:
+              - text: 比肩年也意味著：
+              - strong [ref=e360]: 同輩競爭、同行比較、利益分配問題會變明顯
+          - heading "建議" [level=3] [ref=e361]
+          - list [ref=e362]:
+            - listitem [ref=e363]: 適合穩紮穩打爭取位置
+            - listitem [ref=e364]: 適合重新整理職涯方向
+            - listitem [ref=e365]: 不適合情緒化離職、臨時拍腦袋創業
+            - listitem [ref=e366]: 合作與分潤一定要寫清楚
+          - separator [ref=e367]
+          - heading "財運" [level=2] [ref=e368]
+          - paragraph [ref=e369]:
+            - strong [ref=e370]: 財運有機會，但重點是“守與管”，不是冒進。
+          - paragraph [ref=e371]:
+            - text: 因為你身弱，財星太重時反而容易壓身。
+            - text: 而乙丑運本身會把
+            - strong [ref=e372]: 現金流、房產、家庭支出、長期責任
+            - text: 推上檯面。
+          - heading "2026財運特徵" [level=3] [ref=e373]
+          - list [ref=e374]:
+            - listitem [ref=e375]:
+              - text: 不是沒錢進來，而是
+              - strong [ref=e376]: 錢會跟責任一起來
+            - listitem [ref=e377]:
+              - text: 容易出現：
+              - list [ref=e378]:
+                - listitem [ref=e379]: 買房/租房/搬家
+                - listitem [ref=e380]: 家庭支出增加
+                - listitem [ref=e381]: 父母或孩子相關花費
+                - listitem [ref=e382]: 工作上有更穩定但更辛苦的收入模式
+          - heading "建議" [level=3] [ref=e383]
+          - list [ref=e384]:
+            - listitem [ref=e385]: 適合做長期規劃
+            - listitem [ref=e386]: 適合存量管理、資產配置
+            - listitem [ref=e387]: 不宜高風險投機
+            - listitem [ref=e388]: 特別忌朋友義氣投資、口頭合作
+          - separator [ref=e389]
+          - heading "感情與家庭" [level=2] [ref=e390]
+          - paragraph [ref=e391]:
+            - strong [ref=e392]: 2026很像“關係進入現實層面”的一年。
+          - paragraph [ref=e393]:
+            - text: 乙丑大運本身就會把婚姻、家庭、責任、住居安排推上來。
+            - text: 如果你有伴侶，這年多半會討論更實際的問題：
+          - list [ref=e394]:
+            - listitem [ref=e395]: 結婚
+            - listitem [ref=e396]: 生育
+            - listitem [ref=e397]: 買房
+            - listitem [ref=e398]: 居住安排
+            - listitem [ref=e399]: 財務分工
+          - paragraph [ref=e400]:
+            - text: 如果你單身，這年遇到的人未必是最浪漫型，但比較可能是
+            - strong [ref=e401]: 能談未來、談現實的人
+            - text: 。
+          - heading "注意點" [level=3] [ref=e402]
+          - paragraph [ref=e403]:
+            - text: 你命盤原局有
+            - strong [ref=e404]: 亥亥自刑
+            - text: ，這表示你容易自己想太多、內耗，尤其一到關係和未來議題，就容易反覆思量。
+            - text: 所以2026在感情上不是大凶，而是：
+          - paragraph [ref=e405]:
+            - strong [ref=e406]: 你要少一點悶著想，多一點直接溝通。
+          - separator [ref=e407]
+          - heading "健康與狀態" [level=2] [ref=e408]
+          - paragraph [ref=e409]: 2026不是大病符號很重的一年，但因為你本命就是容易壓力內化的人，所以要注意：
+          - list [ref=e410]:
+            - listitem [ref=e411]: 睡眠
+            - listitem [ref=e412]: 焦慮
+            - listitem [ref=e413]: 腸胃
+            - listitem [ref=e414]: 肝膽代謝
+            - listitem [ref=e415]: 長期疲勞
+          - paragraph [ref=e416]:
+            - text: 尤其是新大運開啟時，人很容易表面沒事，實際上精神一直繃著。
+            - text: 所以這年最怕的不是外部打擊，而是
+            - strong [ref=e417]: 自己把自己耗住
+            - text: 。
+          - separator [ref=e418]
+          - heading "2026年一句句拆解" [level=2] [ref=e419]
+          - heading "有利的部分" [level=3] [ref=e420]
+          - list [ref=e421]:
+            - listitem [ref=e422]:
+              - text: 流年是
+              - strong [ref=e423]: 乙丑
+              - text: ，屬於你的吉年標記
+            - listitem [ref=e424]:
+              - text: 喜神方向裡有
+              - strong [ref=e425]: 木、水
+              - text: ，而乙木能扶助你
+            - listitem [ref=e426]: 新大運開啟，適合重新定方向
+            - listitem [ref=e427]: 適合穩職位、穩收入、穩家庭基礎
+          - heading "要防的部分" [level=3] [ref=e428]
+          - list [ref=e429]:
+            - listitem [ref=e430]: 比肩重，競爭、人際利益糾葛增加
+            - listitem [ref=e431]: 家庭與現實責任變重
+            - listitem [ref=e432]: 容易想自己扛太多
+            - listitem [ref=e433]: 財務上不宜衝動擴張
+          - separator [ref=e434]
+          - heading "給你最實際的建議" [level=2] [ref=e435]
+          - list [ref=e436]:
+            - listitem [ref=e437]:
+              - paragraph [ref=e438]:
+                - strong [ref=e439]: 2026先立基礎，不急著豪賭。
+                - text: 這年適合定方向、定職位、定規則。
+            - listitem [ref=e440]:
+              - paragraph [ref=e441]:
+                - strong [ref=e442]: 所有合作講制度，不講感情。
+                - text: 你命裡比肩、劫財動時，最怕利益不清。
+            - listitem [ref=e443]:
+              - paragraph [ref=e444]:
+                - strong [ref=e445]: 把錢管好，比賺快錢更重要。
+                - text: 2026是能慢慢穩起來的一年，不是投機年。
+            - listitem [ref=e446]:
+              - paragraph [ref=e447]:
+                - strong [ref=e448]: 家庭與住居問題宜提早安排。
+                - text: 這年很可能會碰到相關決策，越早規劃越順。
+          - separator [ref=e449]
+          - paragraph [ref=e450]: 如果你願意，我下一步可以直接幫你細看：
+          - list [ref=e451]:
+            - listitem [ref=e452]:
+              - strong [ref=e453]: 2026事業運
+            - listitem [ref=e454]:
+              - strong [ref=e455]: 2026財運
+            - listitem [ref=e456]:
+              - strong [ref=e457]: 2026感情運
+          - paragraph [ref=e458]: 你选一个，我继续往下拆。
+        - paragraph [ref=e307]: 03:14
+      - generic [ref=e467]:
+        - paragraph [ref=e468]: 我想帮我爸爸算一个八字，他1955年4月12日早上8点出生在上海
+        - paragraph [ref=e469]: 03:15
+      - paragraph [ref=e476]: 03:15
+      - generic [ref=e478]:
+        - generic [ref=e479]: 八字命理
+        - paragraph [ref=e480]: 需要你的八字命理結果來繼續分析。點擊打開占卜表單 — 已知的資訊已自動填入。
+        - button "開始八字命理 →" [ref=e481] [cursor=pointer]
+    - generic [ref=e239]:
+      - textbox "Ask the Master..." [ref=e240]
+      - button "Send" [disabled] [ref=e241]

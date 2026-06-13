@@ -15,6 +15,12 @@ function LoginInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const refCode = searchParams.get('ref') || ''
+  // `next` lets callers (e.g. the divination form's logged-out CTAs) bounce
+  // the user back to where they came from after sign-in. Constrained to
+  // same-origin relative paths to prevent an open-redirect — anything that
+  // looks like a protocol or `//host` is dropped silently.
+  const rawNext = searchParams.get('next')
+  const safeNext = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -55,7 +61,8 @@ function LoginInner() {
       if (res?.error) {
         setError(lang === 'zh-TW' ? '登入失敗，請重試' : 'Login failed, please try again')
       } else {
-        router.push(refCode ? `/share/${refCode}` : '/divination')
+        // Priority: ref share-link > caller-supplied next > /divination default
+        router.push(refCode ? `/share/${refCode}` : (safeNext ?? '/divination'))
       }
     } catch {
       setLoading(false)

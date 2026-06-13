@@ -11,3 +11,9 @@ node_modules
 
 # Agent
 AGENT_TASK.md
+
+
+.playwright-mcp
+.claude/worktreestsconfig.tsbuildinfo
+prod_delta.sql
+.claude/

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// Check if existing bazi readings exist for given birth data + target
+// Check if existing bazi/ziwei readings exist for given birth data + target
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
 
   const { type, targetType, familyMemberId, inputData } = await req.json()
 
-  // Only check cache for bazi
-  if (type !== 'bazi') {
+  // Only check cache for birth-profile based types
+  if (type !== 'bazi' && type !== 'ziwei') {
     return NextResponse.json({ hasExisting: false })
   }
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   // Build query
   const where: Record<string, unknown> = {
     userId: session.user.id,
-    type: 'bazi',
+    type,
     targetType: targetType || 'self',
     deletedAt: null,
   }
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     where.familyMemberId = null
   }
 
-  // Find all undeleted bazi readings for this target
+  // Find all undeleted readings of this type for this target
   const readings = await prisma.reading.findMany({
     where,
     orderBy: { createdAt: 'desc' },
@@ -48,7 +48,8 @@ export async function POST(req: NextRequest) {
     return (
       input.birthDate === inputData.birthDate &&
       input.birthTime === inputData.birthTime &&
-      input.gender === inputData.gender
+      input.gender === inputData.gender &&
+      (input.birthPlace || '') === (inputData.birthPlace || '')
     )
   })
 

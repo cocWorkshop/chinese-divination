@@ -6,8 +6,7 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useLang } from '@/components/LanguageContext'
 import { catchAndReport } from '@/lib/errorReporter'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 export default function ConsentPopup() {
   const { data: session } = useSession()

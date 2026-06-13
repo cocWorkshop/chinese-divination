@@ -1,0 +1,39 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "prisma: generate + migrate",
+      "dependsOrder": "sequence",
+      "dependsOn": ["prisma: generate", "prisma: migrate deploy"],
+      "problemMatcher": []
+    },
+    {
+      "label": "prisma: generate",
+      "type": "shell",
+      "command": "node",
+      "args": ["node_modules/prisma/build/index.js", "generate"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "prisma: migrate deploy",
+      "type": "shell",
+      "command": "node",
+      "args": ["node_modules/prisma/build/index.js", "migrate", "deploy"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

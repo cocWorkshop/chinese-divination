@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from './LanguageContext'
 import toast from 'react-hot-toast'
 import { reportError } from '@/lib/errorReporter'
-
-const T = (lang: string, zhTW: string, en: string) => lang === 'en' ? en : zhTW
+import { T } from '@/lib/i18n'
 
 const ratingLabels: Record<number, { zh: string; en: string; emoji: string }> = {
   1: { zh: '不太準確', en: 'Inaccurate', emoji: '😕' },

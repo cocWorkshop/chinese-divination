@@ -3,12 +3,15 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import YinYangIcon from '@/components/YinYangIcon'
+import { useLang } from '@/components/LanguageContext'
 
 type GiftStatus = 'loading' | 'ready' | 'already_claimed' | 'expired' | 'exhausted' | 'invalid' | 'claiming' | 'success' | 'error' | 'need_login'
 
 export default function GiftClaimPage() {
   const { code } = useParams<{ code: string }>()
   const router = useRouter()
+  const { lang } = useLang()
+  const isEn = lang === 'en'
   const [status, setStatus] = useState<GiftStatus>('loading')
   const [credits, setCredits] = useState(0)
   const [note, setNote] = useState('')
@@ -51,27 +54,40 @@ export default function GiftClaimPage() {
       } else if (data.error === 'unauthorized') {
         setStatus('need_login')
       } else {
-        setErrorMsg(data.message || '領取失敗')
+        setErrorMsg(data.message || (isEn ? 'Claim failed' : '領取失敗'))
         setStatus('error')
       }
     } catch {
-      setErrorMsg('網絡錯誤，請重試')
+      setErrorMsg(isEn ? 'Network error, please try again' : '網絡錯誤，請重試')
       setStatus('error')
     }
   }
 
-  const statusConfig: Record<string, { icon: string; title: string; desc: string; color: string }> = {
-    loading: { icon: '⏳', title: '加載中...', desc: '', color: 'text-white/60' },
-    ready: { icon: '🎁', title: `領取 ${credits} 機緣`, desc: note || '點擊下方按鈕領取您的機緣點數', color: 'text-gold' },
-    claiming: { icon: '⏳', title: '領取中...', desc: '請稍候', color: 'text-white/60' },
-    success: { icon: '✨', title: `成功領取 ${credits} 機緣！`, desc: '機緣已添加到您的帳戶', color: 'text-green-400' },
-    already_claimed: { icon: '✅', title: '已領取', desc: '您已領取過此禮品', color: 'text-blue-400' },
-    expired: { icon: '⏰', title: '已過期', desc: '此連結已過期', color: 'text-red-400' },
-    exhausted: { icon: '📭', title: '已領完', desc: '此禮品已被領完', color: 'text-orange-400' },
-    invalid: { icon: '❌', title: '無效連結', desc: '此連結不存在或已失效', color: 'text-red-400' },
-    need_login: { icon: '🔒', title: '請先登入', desc: '登入後即可領取機緣', color: 'text-yellow-400' },
-    error: { icon: '⚠️', title: '領取失敗', desc: errorMsg, color: 'text-red-400' },
-  }
+  const statusConfig: Record<string, { icon: string; title: string; desc: string; color: string }> = isEn
+    ? {
+        loading: { icon: '⏳', title: 'Loading...', desc: '', color: 'text-white/60' },
+        ready: { icon: '🎁', title: `Claim ${credits} Karma`, desc: note || 'Tap the button to claim your Karma', color: 'text-gold' },
+        claiming: { icon: '⏳', title: 'Claiming...', desc: 'Please wait', color: 'text-white/60' },
+        success: { icon: '✨', title: `Claimed ${credits} Karma!`, desc: 'Karma added to your account', color: 'text-green-400' },
+        already_claimed: { icon: '✅', title: 'Already claimed', desc: 'You have already claimed this gift', color: 'text-blue-400' },
+        expired: { icon: '⏰', title: 'Expired', desc: 'This link has expired', color: 'text-red-400' },
+        exhausted: { icon: '📭', title: 'All claimed', desc: 'This gift has been fully claimed', color: 'text-orange-400' },
+        invalid: { icon: '❌', title: 'Invalid link', desc: 'This link does not exist or has expired', color: 'text-red-400' },
+        need_login: { icon: '🔒', title: 'Please log in', desc: 'Log in to claim your Karma', color: 'text-yellow-400' },
+        error: { icon: '⚠️', title: 'Claim failed', desc: errorMsg, color: 'text-red-400' },
+      }
+    : {
+        loading: { icon: '⏳', title: '加載中...', desc: '', color: 'text-white/60' },
+        ready: { icon: '🎁', title: `領取 ${credits} 機緣`, desc: note || '點擊下方按鈕領取您的機緣點數', color: 'text-gold' },
+        claiming: { icon: '⏳', title: '領取中...', desc: '請稍候', color: 'text-white/60' },
+        success: { icon: '✨', title: `成功領取 ${credits} 機緣！`, desc: '機緣已添加到您的帳戶', color: 'text-green-400' },
+        already_claimed: { icon: '✅', title: '已領取', desc: '您已領取過此禮品', color: 'text-blue-400' },
+        expired: { icon: '⏰', title: '已過期', desc: '此連結已過期', color: 'text-red-400' },
+        exhausted: { icon: '📭', title: '已領完', desc: '此禮品已被領完', color: 'text-orange-400' },
+        invalid: { icon: '❌', title: '無效連結', desc: '此連結不存在或已失效', color: 'text-red-400' },
+        need_login: { icon: '🔒', title: '請先登入', desc: '登入後即可領取機緣', color: 'text-yellow-400' },
+        error: { icon: '⚠️', title: '領取失敗', desc: errorMsg, color: 'text-red-400' },
+      }
 
   const cfg = statusConfig[status] || statusConfig.invalid
 
@@ -88,7 +104,7 @@ export default function GiftClaimPage() {
 
         {maxClaims > 0 && (status === 'ready' || status === 'already_claimed' || status === 'exhausted') && (
           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            已領取 {claimCount} / {maxClaims}
+            {isEn ? `Claimed ${claimCount} / ${maxClaims}` : `已領取 ${claimCount} / ${maxClaims}`}
           </p>
         )}
 
@@ -96,7 +112,7 @@ export default function GiftClaimPage() {
           <button onClick={handleClaim}
             className="w-full py-3 rounded-xl font-medium text-sm transition-all"
             style={{ backgroundColor: 'var(--gold)', color: '#000' }}>
-            🎁 立即領取
+            {isEn ? '🎁 Claim now' : '🎁 立即領取'}
           </button>
         )}
 
@@ -104,7 +120,7 @@ export default function GiftClaimPage() {
           <button onClick={() => router.push(`/login?callbackUrl=/gift/${code}`)}
             className="w-full py-3 rounded-xl font-medium text-sm transition-all"
             style={{ backgroundColor: 'var(--gold)', color: '#000' }}>
-            🔑 前往登入
+            {isEn ? '🔑 Log in' : '🔑 前往登入'}
           </button>
         )}
 
@@ -112,7 +128,7 @@ export default function GiftClaimPage() {
           <button onClick={() => router.push('/')}
             className="w-full py-3 rounded-xl font-medium text-sm transition-all"
             style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--gold)', border: '1px solid var(--card-border)' }}>
-            🏠 返回首頁
+            {isEn ? '🏠 Back to home' : '🏠 返回首頁'}
           </button>
         )}
       </div>

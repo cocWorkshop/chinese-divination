@@ -17,9 +17,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Rating must be 1-5' }, { status: 400 })
     }
 
-    // Verify reading exists
+    // Verify the reading exists AND belongs to the caller. Without the userId
+    // scope, any user could rate/annotate another user's reading and overwrite
+    // the denormalized rating shown on it (IDOR / analytics poisoning).
     const reading = await prisma.reading.findFirst({
-      where: { id, deletedAt: null },
+      where: { id, userId: session.user.id, deletedAt: null },
       select: { id: true },
     })
     if (!reading) {

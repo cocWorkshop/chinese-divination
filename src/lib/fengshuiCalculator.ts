@@ -44,9 +44,10 @@ interface DirectionInfo {
   gua: string
   luoshuNum: number
   element: string
-  yinYang: boolean // true=阳, false=阴 (地元龙)
+  yinYang: boolean // 天元龙 阴阳: true=阳, false=阴
 }
 
+// yinYang = the 阴阳 of each trigram's 天元龙 mountain (子午卯酉 = 阴; 乾坤艮巽 = 阳).
 const DIR_INFO: Record<string, DirectionInfo> = {
   N:      { position: 'N',      positionZh: '北',   gua: '坎', luoshuNum: 1, element: '水', yinYang: false }, // 子=阴
   NE:     { position: 'NE',     positionZh: '东北', gua: '艮', luoshuNum: 8, element: '土', yinYang: true  }, // 艮=阳
@@ -149,12 +150,22 @@ function flyStars(centerStar: number, forward: boolean): Record<string, number> 
   return result
 }
 
-/** Determine if flying should be forward (顺飞) or reverse (逆飞)
- * Rule: check the yin/yang of the sitting/facing direction's 地元龙.
- * Yang (阳) → forward fly (顺飞), Yin (阴) → reverse fly (逆飞)
+/** Determine if a 山星/向星 plate flies forward (顺飞) or reverse (逆飞).
+ *
+ * Correct 玄空 下卦 rule: the star that enters the centre belongs to a 本宫 trigram
+ * (its Luo-shu home). Because this app models facing at the trigram level, the
+ * relevant mountain is that trigram's 天元龙 (子午卯酉乾坤艮巽), whose 阴阳 decides
+ * 顺(阳)/逆(阴). When the entering star is 5 (中宫 — no 本宫), it borrows the 阴阳 of
+ * the sitting/facing mountain itself.
+ *
+ * The previous version used the fixed 阴阳 of the sitting/facing DIRECTION, which
+ * inverted the 山盘/向盘 (and hence 旺山旺向/上山下水 verdicts) whenever the centre
+ * star's home trigram had the opposite 阴阳 — e.g. 八运子山午向 came out 旺山旺向
+ * instead of the correct 双星到向.
  */
-function isForwardFly(targetDir: string): boolean {
-  return DIR_INFO[targetDir].yinYang
+function isForwardFly(centerStar: number, targetDir: string): boolean {
+  const homeDir = centerStar === 5 ? targetDir : NUM_TO_DIR[centerStar]
+  return DIR_INFO[homeDir].yinYang
 }
 
 // ============ Main Calculator ============
@@ -175,14 +186,15 @@ export function calculateFlyingStars(options: {
   // Step 1: Base plate (运盘) - period star enters center
   const basePlate = flyStars(period, true) // always forward
 
-  // Step 2: Mountain star plate (山星盘)
-  const mountainCenter = basePlate[sittingDir] // star at sitting position in base plate
-  const mountainForward = isForwardFly(sittingDir)
+  // Step 2: Mountain star plate (山星盘) — centre = base star at the sitting palace,
+  // 顺/逆 by that star's 本宫 天元龙 (5 → borrows the sitting mountain's 阴阳).
+  const mountainCenter = basePlate[sittingDir]
+  const mountainForward = isForwardFly(mountainCenter, sittingDir)
   const mountainPlate = flyStars(mountainCenter, mountainForward)
 
-  // Step 3: Water/facing star plate (向星盘)
-  const waterCenter = basePlate[facingDir] // star at facing position in base plate
-  const waterForward = isForwardFly(facingDir)
+  // Step 3: Water/facing star plate (向星盘) — centre = base star at the facing palace.
+  const waterCenter = basePlate[facingDir]
+  const waterForward = isForwardFly(waterCenter, facingDir)
   const waterPlate = flyStars(waterCenter, waterForward)
 
   // Build palaces

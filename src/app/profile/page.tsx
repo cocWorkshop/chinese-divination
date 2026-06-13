@@ -8,6 +8,9 @@ import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
 import BirthplaceInput from '@/components/BirthplaceInput'
 import { catchAndReport } from '@/lib/errorReporter'
+import FamilyTab from './_tabs/FamilyTab'
+import type { FamilyMemberData } from './_components/FamilyDrawer'
+import { T, formatDate } from '@/lib/i18n'
 
 const relationPresets = [
   { value: 'spouse', zh: '配偶', en: 'Spouse' },
@@ -24,6 +27,7 @@ const relationPresets = [
 interface FamilyMember {
   id: string
   relation: string
+  relationDetail: string | null
   name: string | null
   birthDate: string | null
   birthTime: string | null
@@ -38,23 +42,20 @@ interface FamilyMember {
 }
 
 const shichen = [
-  { value: 'zi_early', label: '早子時  00:00 – 01:00' },
-  { value: 'chou', label: '丑時  01:00 – 03:00' },
-  { value: 'yin',  label: '寅時  03:00 – 05:00' },
-  { value: 'mao',  label: '卯時  05:00 – 07:00' },
-  { value: 'chen', label: '辰時  07:00 – 09:00' },
-  { value: 'si',   label: '巳時  09:00 – 11:00' },
-  { value: 'wu',   label: '午時  11:00 – 13:00' },
-  { value: 'wei',  label: '未時  13:00 – 15:00' },
-  { value: 'shen', label: '申時  15:00 – 17:00' },
-  { value: 'you',  label: '酉時  17:00 – 19:00' },
-  { value: 'xu',   label: '戌時  19:00 – 21:00' },
-  { value: 'hai',  label: '亥時  21:00 – 23:00' },
-  { value: 'zi_late', label: '晚子時  23:00 – 00:00' },
+  { value: 'zi_early', zh: '早子時 (00:00-01:00)', en: 'Early Zi (00:00-01:00)' },
+  { value: 'chou', zh: '丑時 (01:00-03:00)', en: 'Chou (01:00-03:00)' },
+  { value: 'yin',  zh: '寅時 (03:00-05:00)', en: 'Yin (03:00-05:00)' },
+  { value: 'mao',  zh: '卯時 (05:00-07:00)', en: 'Mao (05:00-07:00)' },
+  { value: 'chen', zh: '辰時 (07:00-09:00)', en: 'Chen (07:00-09:00)' },
+  { value: 'si',   zh: '巳時 (09:00-11:00)', en: 'Si (09:00-11:00)' },
+  { value: 'wu',   zh: '午時 (11:00-13:00)', en: 'Wu (11:00-13:00)' },
+  { value: 'wei',  zh: '未時 (13:00-15:00)', en: 'Wei (13:00-15:00)' },
+  { value: 'shen', zh: '申時 (15:00-17:00)', en: 'Shen (15:00-17:00)' },
+  { value: 'you',  zh: '酉時 (17:00-19:00)', en: 'You (17:00-19:00)' },
+  { value: 'xu',   zh: '戌時 (19:00-21:00)', en: 'Xu (19:00-21:00)' },
+  { value: 'hai',  zh: '亥時 (21:00-23:00)', en: 'Hai (21:00-23:00)' },
+  { value: 'zi_late', zh: '晚子時 (23:00-00:00)', en: 'Late Zi (23:00-00:00)' },
 ]
-
-const T = (lang: string, zhTW: string, en: string) =>
-  lang === 'en' ? en : zhTW
 
 type TabKey = 'personal' | 'family' | 'credits' | 'account'
 
@@ -87,12 +88,14 @@ export default function ProfilePage() {
   const [editingMember, setEditingMember] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<FamilyMember>>({})
   const [addingMember, setAddingMember] = useState(false)
-  const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', calendarType: 'solar', timeMode: 'fuzzy', exactTime: '', birthLat: null, birthLng: null, birthEnvironment: '' })
+  const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', relationDetail: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', calendarType: 'solar', timeMode: 'fuzzy', exactTime: '', birthLat: null, birthLng: null, birthEnvironment: '' })
   const [credits, setCredits] = useState<{ credits: number } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteEmailSent, setDeleteEmailSent] = useState(false)
+  const [showDeleteMemoryConfirm, setShowDeleteMemoryConfirm] = useState(false)
+  const [deleteMemoryLoading, setDeleteMemoryLoading] = useState(false)
   const [familySearch, setFamilySearch] = useState('')
   const [familyPage, setFamilyPage] = useState(0)
   const [creditLogs, setCreditLogs] = useState<{ id: string; action: string; amount: number; balance: number; source: string; note: string | null; createdAt: string }[]>([])
@@ -127,6 +130,23 @@ export default function ProfilePage() {
       setDeleteLoading(false)
     }
   }, [deletePassword, lang])
+
+  const handleDeleteMemory = useCallback(async () => {
+    setDeleteMemoryLoading(true)
+    try {
+      const res = await fetch('/api/profile/portrait', { method: 'DELETE' })
+      if (res.ok) {
+        toast.success(T(lang, '大師記憶已刪除', 'Master memory deleted'))
+        setShowDeleteMemoryConfirm(false)
+      } else {
+        toast.error(T(lang, '刪除失敗', 'Delete failed'))
+      }
+    } catch {
+      toast.error(T(lang, '操作失敗', 'Operation failed'))
+    } finally {
+      setDeleteMemoryLoading(false)
+    }
+  }, [lang])
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login')
@@ -169,6 +189,7 @@ export default function ProfilePage() {
       const searchable = [
         m.name,
         m.relation,
+        m.relationDetail,
         relationLabel?.zh,
         relationLabel?.en,
       ].filter(Boolean).join(' ').toLowerCase()
@@ -183,23 +204,37 @@ export default function ProfilePage() {
 
   const addFamilyMember = async () => {
     if (!newMember.relation) { toast.error(T(lang, '請選擇關係', 'Please select relationship')); return }
+    if (newMember.relation === 'other' && !newMember.relationDetail?.trim()) {
+      toast.error(T(lang, '「其他」關係必須填寫具體關係', "Please specify 'other' relationship"))
+      return
+    }
     const res = await fetch('/api/family-members', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newMember) })
     if (res.ok) {
       const { member } = await res.json()
       setFamilyMembers(prev => [...prev, member])
-      setNewMember({ relation: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '' })
+      setNewMember({ relation: '', relationDetail: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '' })
       setAddingMember(false)
       toast.success(T(lang, '已新增', 'Added'))
+    } else {
+      const err = await res.json().catch(() => ({ error: 'Error' }))
+      toast.error(err.error || 'Error')
     }
   }
 
   const updateFamilyMember = async (id: string) => {
+    if (editForm.relation === 'other' && !editForm.relationDetail?.trim()) {
+      toast.error(T(lang, '「其他」關係必須填寫具體關係', "Please specify 'other' relationship"))
+      return
+    }
     const res = await fetch('/api/family-members', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...editForm }) })
     if (res.ok) {
       const { member } = await res.json()
       setFamilyMembers(prev => prev.map(m => m.id === id ? member : m))
       setEditingMember(null)
       toast.success(T(lang, '已更新', 'Updated'))
+    } else {
+      const err = await res.json().catch(() => ({ error: 'Error' }))
+      toast.error(err.error || 'Error')
     }
   }
 
@@ -267,8 +302,9 @@ export default function ProfilePage() {
                 : 'bg-navy-800/50 text-white/50 hover:text-white/70 hover:bg-navy-800'
             }`}
           >
-            <span className="block sm:inline">{tab.icon}</span>{' '}
-            <span className="hidden sm:inline">{T(lang, tab.zh, tab.en)}</span>
+            <span className="block text-base sm:text-sm sm:inline">{tab.icon}</span>
+            <span className="block text-[11px] leading-tight sm:hidden">{T(lang, tab.zh, tab.en).split(/[\s/]/)[0]}</span>
+            <span className="hidden sm:inline"> {T(lang, tab.zh, tab.en)}</span>
           </button>
         ))}
       </div>
@@ -356,7 +392,7 @@ export default function ProfilePage() {
                   ) : (
                     <select className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))}>
                       <option value="">{T(lang, '請選擇', 'Select')}</option>
-                      {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                      {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
                     </select>
                   )}
                 </div>
@@ -396,8 +432,17 @@ export default function ProfilePage() {
         </form>
       )}
 
-      {/* ========== Family Members Tab ========== */}
+      {/* ========== Family Members Tab (extracted) ========== */}
       {activeTab === 'family' && (
+        <FamilyTab
+          members={familyMembers as FamilyMemberData[]}
+          onMembersChange={(updated) => setFamilyMembers(updated as typeof familyMembers)}
+        />
+      )}
+
+      {/* Old family tab removed — now handled by FamilyTab component */}
+      {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+      {false && (
         <div className="glass-card rounded-2xl">
           <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
             <div className="flex items-center gap-3">
@@ -448,6 +493,22 @@ export default function ProfilePage() {
                         <input type="text" className={inputCls} value={editForm.name || ''} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
                       </div>
                     </div>
+                    {editForm.relation === 'other' && (
+                      <div>
+                        <label className={labelCls}>
+                          {T(lang, '具體關係', 'Specific Relationship')}
+                          <span className="text-red-400 ml-1">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className={inputCls}
+                          value={editForm.relationDetail || ''}
+                          onChange={e => setEditForm(f => ({ ...f, relationDetail: e.target.value }))}
+                          placeholder={T(lang, '例：岳父、合作夥伴', 'e.g. father-in-law, business partner')}
+                          required
+                        />
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
@@ -490,7 +551,7 @@ export default function ProfilePage() {
                         ) : (
                           <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
                             <option value="">{T(lang, '請選擇', 'Select')}</option>
-                            {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                            {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
                           </select>
                         )}
                       </div>
@@ -532,7 +593,9 @@ export default function ProfilePage() {
                       </div>
                       <div>
                         <p className="font-medium text-sm text-gold">
-                          {relationPresets.find(r => r.value === member.relation)?.[lang === 'en' ? 'en' : 'zh'] || member.relation}
+                          {member.relation === 'other' && member.relationDetail
+                            ? member.relationDetail
+                            : relationPresets.find(r => r.value === member.relation)?.[lang === 'en' ? 'en' : 'zh'] || member.relation}
                           {member.name ? ` — ${member.name}` : ''}
                         </p>
                         <p className="text-white/40 text-xs mt-0.5">
@@ -541,7 +604,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '', calendarType: member.calendarType || 'solar', timeMode: member.timeMode || 'fuzzy', exactTime: member.exactTime || '', birthLat: member.birthLat ?? null, birthLng: member.birthLng ?? null, birthEnvironment: member.birthEnvironment || '' }) }}
+                      <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, relationDetail: member.relationDetail || '', name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '', calendarType: member.calendarType || 'solar', timeMode: member.timeMode || 'fuzzy', exactTime: member.exactTime || '', birthLat: member.birthLat ?? null, birthLng: member.birthLng ?? null, birthEnvironment: member.birthEnvironment || '' }) }}
                         className="text-white/30 hover:text-gold text-sm transition-colors">✏️</button>
                       <button type="button" onClick={() => deleteFamilyMember(member.id)}
                         className="text-white/30 hover:text-red-400 text-sm transition-colors">✕</button>
@@ -589,6 +652,22 @@ export default function ProfilePage() {
                     <input type="text" className={inputCls} value={newMember.name || ''} onChange={e => setNewMember(f => ({ ...f, name: e.target.value }))} />
                   </div>
                 </div>
+                {newMember.relation === 'other' && (
+                  <div>
+                    <label className={labelCls}>
+                      {T(lang, '具體關係', 'Specific Relationship')}
+                      <span className="text-red-400 ml-1">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className={inputCls}
+                      value={newMember.relationDetail || ''}
+                      onChange={e => setNewMember(f => ({ ...f, relationDetail: e.target.value }))}
+                      placeholder={T(lang, '例：岳父、合作夥伴', 'e.g. father-in-law, business partner')}
+                      required
+                    />
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>{T(lang, '曆法', 'Calendar')}</label>
@@ -631,7 +710,7 @@ export default function ProfilePage() {
                     ) : (
                       <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
                         <option value="">{T(lang, '請選擇', 'Select')}</option>
-                        {shichen.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
                       </select>
                     )}
                   </div>
@@ -840,7 +919,7 @@ export default function ProfilePage() {
                           setTimeout(() => { setFbSent(false); setFbRating(0); setFbText('') }, 3000)
                           fetch('/api/site-feedback').then(r => r.json()).then(data => setFbHistory(data.feedbacks || [])).catch(catchAndReport('/api/site-feedback'))
                         }
-                      } catch { toast.error('Error') }
+                      } catch { toast.error(T(lang, '提交失敗', 'Submission failed')) }
                       setFbSending(false)
                     }}
                     className="px-5 py-2.5 rounded-xl font-medium text-sm bg-gold text-navy-950 hover:bg-gold-light transition-colors disabled:opacity-40">
@@ -856,7 +935,7 @@ export default function ProfilePage() {
                       <div key={fb.id} className="rounded-lg px-4 py-3 border border-gold/5 bg-navy-900/50">
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-gold text-xs">{fb.rating ? '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating) : ''}</span>
-                          <span className="text-white/30 text-xs">{new Date(fb.createdAt).toLocaleDateString()}</span>
+                          <span className="text-white/30 text-xs">{formatDate(fb.createdAt, lang)}</span>
                         </div>
                         <p className="text-white/60 text-sm">{fb.feedback}</p>
                       </div>
@@ -899,6 +978,64 @@ export default function ProfilePage() {
                   {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '更新密碼', 'Update Password')}
                 </button>
               </form>
+            </div>
+          </div>
+
+          {/* Master Memory Card */}
+          <div className="glass-card rounded-2xl">
+            <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+              <span className="text-lg">🧙</span>
+              <h2 className="text-lg font-serif text-gold">{T(lang, '大師記憶', 'Master Memory')}</h2>
+            </div>
+            <div className="p-4 sm:p-6">
+              <p className="text-sm text-white/50 mb-4">
+                {T(lang,
+                  '玄機大師在對話中記下的主題與偏好。您可前往記憶設定頁面查看、編輯或暫停，也可在此永久刪除。刪除後不影響您的占卜歷史與個人檔案。',
+                  "Topics and preferences Master Xuanji has noted from your conversations. You can view, edit, or pause them on the memory settings page, or permanently delete them here. Deletion does not affect your reading history or profile."
+                )}
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="/profile/portrait"
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 border border-gold/15 text-white/70"
+                >
+                  📝 {T(lang, '記憶設定', 'Memory Settings')}
+                </a>
+                <button
+                  onClick={() => setShowDeleteMemoryConfirm(true)}
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-red-500/10"
+                  style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
+                >
+                  🗑️ {T(lang, '刪除所有記憶', 'Delete All Memory')}
+                </button>
+              </div>
+
+              {showDeleteMemoryConfirm && (
+                <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                  <p className="text-sm mb-3" style={{ color: '#fca5a5' }}>
+                    ⚠️ {T(lang,
+                      '這將永久刪除大師對您的所有記憶與歷史版本。無法復原。',
+                      'This will permanently delete all memory the Master has of you, including all history versions. Cannot be undone.'
+                    )}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDeleteMemory}
+                      disabled={deleteMemoryLoading}
+                      className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors"
+                      style={{ backgroundColor: '#dc2626' }}
+                    >
+                      {deleteMemoryLoading ? '...' : T(lang, '確認刪除', 'Confirm delete')}
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteMemoryConfirm(false)}
+                      className="px-3 py-2 rounded-lg text-sm text-white/40 hover:text-white/60 transition-colors"
+                    >
+                      {T(lang, '取消', 'Cancel')}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

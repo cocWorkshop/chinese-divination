@@ -9,6 +9,25 @@ export interface DivinationResultProps {
   readingId?: string | null
   readingType?: string
   chatMessages?: ChatMsg[]
+  subjectName?: string | null
+  birthInfo?: {
+    birthDate?: string
+    birthTime?: string
+    gender?: string
+    calendarType?: string
+    birthPlace?: string
+    exactTime?: string
+  } | null
+  createdAt?: string
+  /**
+   * True while a partial-result SSE stream is still arriving. Renderers
+   * use it to:
+   *   - show typing-dot placeholders for fields not yet populated
+   *   - keep the result panel mounted so partial sections animate in
+   *   - skip features that need the final saved reading id (sharing, etc.)
+   * Becomes false the moment the server sends `done`.
+   */
+  streaming?: boolean
 }
 
 export interface ChatMsg {
@@ -66,6 +85,70 @@ export interface BaziData {
   paipanOnly?: boolean
 }
 
+// ─── BaziResult V2 Types ───
+
+export interface DaYunKeyYear {
+  year: number
+  ganZhi: string
+  event: string
+}
+
+export interface DaYunAnalysisEntry {
+  stem: string; branch: string
+  startAge: number; endAge: number; startYear: number; endYear: number
+  theme: string
+  interactions: string
+  keyYears: DaYunKeyYear[]
+  advice: string
+}
+
+export interface BaziDataV2 {
+  version: 2
+  pillars: { year: Pillar; month: Pillar; day: Pillar; hour: Pillar }
+  dayMaster: { stem: string; element: string; yinYang?: string; strength: string; strengthLabel: string }
+  fiveElements: { metal: number; wood: number; water: number; fire: number; earth: number }
+  luckyElements: string[]
+  avoidElements: string[]
+  formation?: { name: string; analysis: string }
+  seasonalNote?: string
+  sections: { overview: string; career: string; marriage: string; wealth: string; health: string }
+  daYunAnalysis?: DaYunAnalysisEntry[]
+  branchAnalysis?: string
+  sectionSummaries?: { career?: string; marriage?: string; wealth?: string; health?: string }
+  keyPredictions?: { age: string; event: string; basis: string }[]
+  keyAdvice: string[]
+  luckyInfo: { colors: string[]; directions: string[] }
+  shenSha?: ShenShaEntry[]
+  trueSolarTime?: TrueSolarTimeInfo
+  daYun?: DaYunEntry[]
+  xiaoYun?: XiaoYunEntry[]
+  qiYun?: QiYunInfo
+  paipanOnly?: boolean
+  branchRelationships?: {
+    clashes: { branch1: string; pillar1: string; branch2: string; pillar2: string }[]
+    combines: { branch1: string; pillar1: string; branch2: string; pillar2: string; result: string }[]
+    harms: { branch1: string; pillar1: string; branch2: string; pillar2: string }[]
+    punishments: { branches: string[]; pillars: string[]; type: string }[]
+    triCombines?: { branches: string[]; pillars: string[]; element: string; kind: 'full' | 'half' | 'gong' }[]
+    threeWayMeets?: { branches: string[]; pillars: string[]; element: string; direction: string; kind: 'full' | 'half' }[]
+  }
+  liuNian?: LiuNianEntry[]
+  hideHeavenStemDay?: { stem: string; type: string }
+  fetalOrigin?: string
+  ownSign?: string
+  bodySign?: string
+  // Pillar-shaped data for 命宫/身宫/胎元 (rendered as extra columns).
+  ownSignPillar?: Pillar
+  bodySignPillar?: Pillar
+  fetalOriginPillar?: Pillar
+}
+
+export interface LiuNianEntry {
+  stem: string; branch: string; nayin: string
+  age: number; year: number
+  tenGod: string; isLucky: boolean | null
+}
+
 // ─── ZiweiResult Types ───
 
 export interface ZiweiStar {
@@ -92,7 +175,7 @@ export interface ZiweiPalaceData {
 export interface ZiweiChartInfo {
   solarDate?: string
   lunarDate?: string
-  chineseDate?: string
+  chineseDate?: string  // removed in V2, kept for old readings backward compat
   time?: string
   timeRange?: string
   sign?: string
@@ -157,6 +240,12 @@ export interface QimenChartInfo {
   roundLabel?: string
   zhiFu?: string
   zhiShi?: string
+  zhiFuPalace?: string
+  zhiShiPalace?: string
+  voidBranches?: string[]
+  voidPalaces?: string[]
+  horseBranch?: string
+  horsePalace?: string
   palaces?: QimenPalace[]
   grid?: (QimenPalace | null)[][]
   patterns?: QimenPattern[]
@@ -236,15 +325,24 @@ export interface FengshuiData {
 
 // ─── IChingResult Types ───
 
+export interface IChingHexagram {
+  number: number; name: string; chineseName: string
+  upperTrigram: { name: string; symbol: string; element: string }
+  lowerTrigram: { name: string; symbol: string; element: string }
+  lines: number[]
+}
+
 export interface IChingData {
-  hexagram: {
-    number: number; name: string; chineseName: string
-    upperTrigram: { name: string; symbol: string; element: string }
-    lowerTrigram: { name: string; symbol: string; element: string }
-    lines: number[]
-  }
+  hexagram: IChingHexagram
+  /** 之卦 — only present when changing lines exist. */
+  variant?: IChingHexagram
+  /** Raw 6/7/8/9 line values from the cast (bottom-to-top). */
+  lineValues?: number[]
+  /** Position numbers (1-6) of changing lines. */
+  changingLineNumbers?: number[]
   judgment: string; image: string; interpretation: string
   changingLines: { position: number; text: string }[]
+  variantInsight?: string
   advice: string; outcome: string; keyPoints: string[]
 }
 

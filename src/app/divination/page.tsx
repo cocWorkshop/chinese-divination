@@ -2,17 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { DivinationIcon } from '@/components/DivinationIcons'
-import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
-import MasterEntry from '@/components/MasterEntry'
-import MasterChat from '@/components/MasterChat'
 import StarField from '@/components/StarField'
-
-const T = (lang: string, zhTW: string, en: string) =>
-  lang === 'en' ? en : zhTW
+import { T } from '@/lib/i18n'
 
 interface VisibilityItem {
   type: string
@@ -52,30 +45,10 @@ interface WelcomeItem {
 
 export default function DivinationPage() {
   const { lang } = useLang()
-  const { data: session } = useSession()
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
-  const [masterMode, setMasterMode] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [welcomeMessages, setWelcomeMessages] = useState<WelcomeItem[]>([])
   const [welcomeIndex, setWelcomeIndex] = useState(0)
-  const langShort = lang === 'en' ? 'en' : 'zh'
-
-  useEffect(() => {
-    if (session?.user) {
-      fetch('/api/profile')
-        .then(r => r.json())
-        .then(data => { if (data.isAdmin) setIsAdmin(true) })
-        .catch(() => {})
-    }
-  }, [session])
-
-  useEffect(() => {
-    if (searchParams.get('master') === 'true' && isAdmin) {
-      setMasterMode(true)
-    }
-  }, [searchParams, isAdmin])
+  const [costs, setCosts] = useState<Record<string, number>>({})
 
   useEffect(() => {
     fetch('/api/welcome')
@@ -100,7 +73,10 @@ export default function DivinationPage() {
   useEffect(() => {
     fetch('/api/divination/visibility')
       .then(r => r.json())
-      .then((items: VisibilityItem[]) => {
+      .then((items: (VisibilityItem & { cost?: number })[]) => {
+        const costMap: Record<string, number> = {}
+        items.forEach(item => { if (item.cost != null) costMap[item.type] = item.cost })
+        setCosts(costMap)
         const ordered = items
           .filter(item => item.visible && serviceMap[item.type])
           .sort((a, b) => a.order - b.order)
@@ -115,26 +91,12 @@ export default function DivinationPage() {
       })
   }, [])
 
-  const handleClick = (svcId: string, _e: React.MouseEvent) => {
-    router.push(`/divination/${svcId}`)
-  }
-
   return (
     <div className="relative flex-1 bg-navy-950">
       <StarField />
       <div className="relative z-10 py-8 sm:py-12 px-3 sm:px-4 max-w-6xl mx-auto">
       <AnimatePresence mode="wait">
-        {masterMode ? (
-          <motion.div
-            key="master-chat"
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
-          >
-            <MasterChat onClose={() => setMasterMode(false)} lang={langShort} />
-          </motion.div>
-        ) : (
+        {(
           <motion.div
             key="services-grid"
             initial={{ opacity: 0 }}
@@ -142,11 +104,12 @@ export default function DivinationPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Title — always at the top */}
+            {/* Title — hidden on mobile (the divination grid is self-explanatory
+                at small widths and the heading just eats vertical space). */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-6"
+              className="hidden sm:block text-center mb-6"
             >
               <h1 className="text-2xl sm:text-3xl font-serif" style={{ color: 'var(--gold)' }}>
                 {lang === 'zh-TW' ? '選擇占卜' : 'Choose Your Oracle'}
@@ -169,7 +132,7 @@ export default function DivinationPage() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="text-sm leading-relaxed flex-1 h-[4rem] sm:h-[2.5rem] flex items-center justify-center flex-wrap overflow-hidden"
+                    className="text-sm leading-relaxed flex-1 min-h-[2.5rem] flex items-center justify-center text-center px-2"
                     style={{ color: 'var(--text-secondary)' }}
                   >
                     {lang === 'en' ? welcomeMessages[welcomeIndex].en : welcomeMessages[welcomeIndex].zh}
@@ -181,6 +144,7 @@ export default function DivinationPage() {
                       <button
                         key={i}
                         onClick={() => setWelcomeIndex(i)}
+                        aria-label={lang === 'en' ? `Show message ${i + 1}` : `顯示第 ${i + 1} 則訊息`}
                         className="w-1.5 h-1.5 rounded-full transition-all duration-300"
                         style={{ backgroundColor: i === welcomeIndex ? 'var(--gold)' : 'var(--text-muted)', opacity: i === welcomeIndex ? 1 : 0.3 }}
                       />
@@ -198,9 +162,9 @@ export default function DivinationPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + i * 0.08 }}
                 >
-                  <div
-                    onClick={(e) => handleClick(svc.id, e)}
-                    className="glass-card rounded-2xl p-5 sm:p-6 h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+                  <Link
+                    href={`/divination/${svc.id}`}
+                    className="glass-card rounded-2xl p-5 sm:p-6 h-full w-full text-left block hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
                     style={{ borderColor: 'var(--card-border)', background: categoryColors[svc.id] || undefined }}
                   >
                     {svc.id === "bazi" && (
@@ -212,22 +176,25 @@ export default function DivinationPage() {
                     <h2 className="text-lg sm:text-xl font-serif mb-1.5 transition-colors group-hover:text-gold" style={{ color: 'var(--gold)' }}>
                       {lang === 'en' ? svc.enName : svc.twName}
                     </h2>
-                    <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-xs sm:text-sm leading-relaxed mb-2" style={{ color: 'var(--text-muted)' }}>
                       {lang === 'en' ? svc.enDesc : svc.twDesc}
                     </p>
+                    <div className="flex items-center justify-between">
+                      {costs[svc.id] != null && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.12)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                          ✨ {costs[svc.id]} {lang === 'en' ? 'pts' : '點'}
+                        </span>
+                      )}
+                      <span className="text-gold/30 group-hover:text-gold/60 transition-colors text-sm">→</span>
+                    </div>
 
                     {/* Subtle hover glow */}
                     <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ boxShadow: 'inset 0 0 30px rgba(212,168,83,0.05)' }} />
-                  </div>
+                  </Link>
                 </motion.div>
               ))}
             </div>
 
-            <MasterEntry
-              isAdmin={isAdmin}
-              onEnter={() => setMasterMode(true)}
-              lang={langShort}
-            />
           </motion.div>
         )}
       </AnimatePresence>

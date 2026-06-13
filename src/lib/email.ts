@@ -11,6 +11,27 @@ const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@chinese-divination.com'
 const BASE_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 const FEEDBACK_EMAIL = 'admin@chinese-divination.com'
 
+// Actionable email links (verify / reset / delete-account / claim) carry live
+// single-use tokens. The request-derived `origin` is attacker-controlled (Host /
+// Origin / Referer headers), so building links from it enables token exfiltration
+// → account takeover. Only honor an origin that exactly matches an allow-listed
+// host; otherwise fall back to the trusted server-configured BASE_URL.
+const ALLOWED_ORIGINS = new Set(
+  [BASE_URL, ...(process.env.ALLOWED_EMAIL_ORIGINS || '').split(',')]
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(s => { try { return new URL(s).origin } catch { return '' } })
+    .filter(Boolean)
+)
+function safeBaseUrl(origin?: string): string {
+  if (origin) {
+    try {
+      if (ALLOWED_ORIGINS.has(new URL(origin).origin)) return origin
+    } catch { /* malformed origin → fall through to BASE_URL */ }
+  }
+  return BASE_URL
+}
+
 export function generateToken(): string {
   return crypto.randomBytes(32).toString('hex')
 }
@@ -57,7 +78,7 @@ function greeting(isZh: boolean): string {
 
 // ─── Verification Email ───
 export async function sendVerificationEmail(email: string, token: string, lang: string = 'zh-TW', origin?: string) {
-  const baseUrl = origin || BASE_URL
+  const baseUrl = safeBaseUrl(origin)
   const verifyUrl = `${baseUrl}/verify-email?token=${token}`
   const isZh = lang !== 'en'
   
@@ -98,7 +119,7 @@ export async function sendVerificationEmail(email: string, token: string, lang: 
 
 // ─── Password Reset Email ───
 export async function sendPasswordResetEmail(email: string, token: string, lang: string = 'zh-TW', origin?: string) {
-  const baseUrl = origin || BASE_URL
+  const baseUrl = safeBaseUrl(origin)
   const resetUrl = `${baseUrl}/reset-password?token=${token}`
   const isZh = lang !== 'en'
 
@@ -137,7 +158,7 @@ export async function sendCompensationEmail(
   lang: string = 'zh-TW',
   origin?: string
 ) {
-  const baseUrl = origin || BASE_URL
+  const baseUrl = safeBaseUrl(origin)
   const claimUrl = `${baseUrl}/claim/${token}`
   const isZh = lang !== 'en'
 
@@ -183,7 +204,7 @@ export async function sendCompensationEmail(
 
 // ─── Delete Account Confirmation Email ───
 export async function sendDeleteConfirmationEmail(email: string, token: string, lang: string = 'zh-TW', origin?: string) {
-  const baseUrl = origin || BASE_URL
+  const baseUrl = safeBaseUrl(origin)
   const deleteUrl = `${baseUrl}/delete-account/${token}`
   const isZh = lang !== 'en'
 

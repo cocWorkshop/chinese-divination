@@ -25,7 +25,9 @@ interface AuthLogEntry {
 
 interface ReadingRow {
   id: string; type: string; modelTier: string; question: string | null
-  inputData: Record<string, string>; targetType: string; rating: number | null; createdAt: string
+  inputData: Record<string, string>; language: string; targetType: string
+  status: string; shareToken: string | null
+  rating: number | null; createdAt: string
   user: { id: string; name: string | null; email: string | null }
   familyMember: { name: string | null; relation: string } | null
 }
@@ -35,10 +37,35 @@ interface ReadingDetail {
   inputData: Record<string, unknown>; result: string
   calculationData: string | null; llmPrompt: string | null; llmRawOutput: string | null
   chatMessages: string | null
-  language: string; targetType: string; rating: number | null; createdAt: string
+  language: string; targetType: string
+  status: string; shareToken: string | null; deletedAt: string | null
+  rating: number | null; createdAt: string
   user: { id: string; name: string | null; email: string | null }
   familyMember: { name: string | null; relation: string } | null
   feedbacks: { rating: number | null; feedback: string | null; createdAt: string }[]
+}
+
+interface LlmLogMatch {
+  id: string
+  model: string
+  modelTier: string | null
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+  latencyMs: number
+  status: string
+  errorMessage: string | null
+  createdAt: string
+  /** Signed offset from the reading's createdAt; negative = log before reading. */
+  offsetMs: number
+}
+
+interface SchemaValidation {
+  parseable: boolean
+  schemaName: string
+  ok: boolean
+  issues: { path: string; message: string; code: string }[]
+  parseError?: string
 }
 
 interface LlmStats { totalCalls: number; totalTokens: number; avgLatencyMs: number; errorCount: number }
@@ -84,7 +111,10 @@ export default function AdminSystemLogs() {
   const [readingsTypeFilter, setReadingsTypeFilter] = useState('')
   const [readingsLoading, setReadingsLoading] = useState(true)
   const [readingDetail, setReadingDetail] = useState<ReadingDetail | null>(null)
-  const [readingDetailTab, setReadingDetailTab] = useState<'result' | 'input' | 'calculation' | 'llmPrompt' | 'llmOutput' | 'chat'>('result')
+  const [readingLlmLogs, setReadingLlmLogs] = useState<LlmLogMatch[]>([])
+  const [readingValidation, setReadingValidation] = useState<SchemaValidation | null>(null)
+  const [readingDetailTab, setReadingDetailTab] = useState<'result' | 'input' | 'calculation' | 'llmPrompt' | 'llmOutput' | 'chat' | 'validation' | 'raw'>('result')
+  const [resultViewMode, setResultViewMode] = useState<'rendered' | 'json'>('rendered')
 
   // Divination performance state
   interface DivReading {
@@ -168,7 +198,12 @@ export default function AdminSystemLogs() {
   const fetchReadingDetail = useCallback((id: string) => {
     fetch(`/api/admin/readings/${id}`)
       .then(r => r.json())
-      .then(d => { setReadingDetail(d.reading); setReadingDetailTab('result') })
+      .then(d => {
+        setReadingDetail(d.reading)
+        setReadingLlmLogs(d.llmLogs || [])
+        setReadingValidation(d.validation || null)
+        setReadingDetailTab('result')
+      })
   }, [])
 
   const fetchDivLogs = useCallback((p: number, type: string, status: string) => {
@@ -546,8 +581,16 @@ export default function AdminSystemLogs() {
           {readingDetail ? (
             /* Detail View */
             <div>
-              <button onClick={() => setReadingDetail(null)} className="text-gold/60 hover:text-gold text-sm mb-4">← 返回列表</button>
+              <div className="flex items-center justify-between mb-4 gap-3">
+                <button onClick={() => { setReadingDetail(null); setReadingLlmLogs([]); setReadingValidation(null) }} className="text-gold/60 hover:text-gold text-sm">← 返回列表</button>
+                <span className="text-white/40 text-xs font-mono truncate" title={readingDetail.id}>ID: {readingDetail.id}</span>
+              </div>
               <div className="glass-card rounded-xl p-4 border border-gold/20 mb-4">
+                {readingDetail.deletedAt && (
+                  <div className="mb-3 px-3 py-2 rounded-lg bg-red-500/15 border border-red-500/40 text-red-300 text-xs">
+                    ⚠ 已軟刪除（deletedAt = {new Date(readingDetail.deletedAt).toLocaleString('zh-TW')}）— 用戶側不可見，但保留於資料庫
+                  </div>
+                )}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="text-white/40 text-xs block">用戶</span>
@@ -573,12 +616,94 @@ export default function AdminSystemLogs() {
                     {readingDetail.rating && <span className="text-xs block mt-0.5">{'⭐'.repeat(readingDetail.rating)}</span>}
                   </div>
                 </div>
+                <div className="mt-3 pt-3 border-t border-gold/10 flex flex-wrap items-center gap-2 text-xs">
+                  <span
+                    className={`px-2 py-0.5 rounded-full font-medium ${
+                      readingDetail.status === 'completed' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                        : readingDetail.status === 'pending' ? 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30'
+                        : readingDetail.status === 'failed' ? 'bg-red-500/15 text-red-300 border border-red-500/30'
+                        : 'bg-white/10 text-white/60 border border-white/20'
+                    }`}
+                  >
+                    狀態：{readingDetail.status}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/60 border border-white/10">
+                    語言：{readingDetail.language}
+                  </span>
+                  {readingDetail.shareToken && (
+                    <span
+                      className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30 cursor-pointer hover:bg-blue-500/20 transition-colors font-mono"
+                      title="點擊複製分享連結"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/r/${readingDetail.shareToken}`)
+                      }}
+                    >
+                      🔗 share:{readingDetail.shareToken.slice(0, 8)}…
+                    </span>
+                  )}
+                  <span className="text-white/30 font-mono ml-auto" title={readingDetail.id}>
+                    {readingDetail.id.slice(0, 12)}…
+                  </span>
+                </div>
                 {readingDetail.question && (
                   <div className="mt-3 pt-3 border-t border-gold/10">
                     <span className="text-white/40 text-xs">問題：</span>
                     <span className="text-white/70 text-sm ml-1">{readingDetail.question}</span>
                   </div>
                 )}
+                {readingLlmLogs.length > 0 && (() => {
+                  // Closest match is index 0 (sorted by |Δt| ascending). Highlight it;
+                  // the rest are shown compactly so admins can spot multi-call turns.
+                  const primary = readingLlmLogs[0]
+                  const sign = primary.offsetMs >= 0 ? '+' : '−'
+                  const offsetSec = Math.round(Math.abs(primary.offsetMs) / 1000)
+                  return (
+                    <div className="mt-3 pt-3 border-t border-gold/10">
+                      <div className="text-white/40 text-xs mb-1.5">關聯 LLM 呼叫（依時間就近匹配）</div>
+                      <div className="flex flex-wrap gap-2 text-[11px]">
+                        <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 font-mono">
+                          {primary.model}
+                        </span>
+                        {primary.modelTier && (
+                          <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/60 border border-white/10">
+                            {primary.modelTier}
+                          </span>
+                        )}
+                        <span
+                          className={`px-2 py-0.5 rounded-full border ${
+                            primary.status === 'success'
+                              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                              : 'bg-red-500/15 text-red-300 border-red-500/30'
+                          }`}
+                        >
+                          {primary.status}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/70 border border-white/10">
+                          ⏱ {(primary.latencyMs / 1000).toFixed(1)}s
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/70 border border-white/10">
+                          🔢 {primary.totalTokens.toLocaleString()} tok
+                          <span className="text-white/40 ml-1">
+                            ({primary.promptTokens.toLocaleString()}↑ / {primary.completionTokens.toLocaleString()}↓)
+                          </span>
+                        </span>
+                        <span className="text-white/30 ml-1" title={`Reading createdAt offset: ${primary.offsetMs}ms`}>
+                          {sign}{offsetSec}s vs reading
+                        </span>
+                        {readingLlmLogs.length > 1 && (
+                          <span className="text-white/30">
+                            +{readingLlmLogs.length - 1} 其他 log 在窗口內
+                          </span>
+                        )}
+                      </div>
+                      {primary.errorMessage && (
+                        <div className="mt-1.5 text-xs text-red-300/80 font-mono">
+                          {primary.errorMessage}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
 
               <div className="flex gap-1 mb-4 flex-wrap">
@@ -589,6 +714,8 @@ export default function AdminSystemLogs() {
                   { key: 'llmPrompt' as const, label: '🤖 LLM輸入', available: !!readingDetail.llmPrompt },
                   { key: 'llmOutput' as const, label: '💬 LLM輸出', available: !!readingDetail.llmRawOutput },
                   { key: 'chat' as const, label: '☯ 玄機問答', available: !!readingDetail.chatMessages },
+                  { key: 'validation' as const, label: readingValidation && !readingValidation.ok && readingValidation.parseable ? `⚠ Schema (${readingValidation.issues.length})` : '✓ Schema 校驗', available: !!readingValidation },
+                  { key: 'raw' as const, label: '🗄 原始記錄', available: true },
                 ]).map(t => (
                   <button key={t.key} onClick={() => setReadingDetailTab(t.key)} disabled={!t.available}
                     className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
@@ -600,19 +727,104 @@ export default function AdminSystemLogs() {
 
               <div className="glass-card rounded-xl border border-gold/20 overflow-hidden">
                 {readingDetailTab === 'result' && (
-                  <div className="p-4"><ResultRenderer type={readingDetail.type} result={readingDetail.result} /></div>
+                  <div className="p-4">
+                    <div className="flex justify-end gap-1 mb-3">
+                      {(['rendered', 'json'] as const).map(m => (
+                        <button
+                          key={m}
+                          onClick={() => setResultViewMode(m)}
+                          className={`px-2.5 py-1 rounded-md text-[11px] transition-colors ${
+                            resultViewMode === m ? 'bg-gold/20 text-gold border border-gold/40' : 'text-white/40 border border-white/10 hover:text-white/70'
+                          }`}
+                        >
+                          {m === 'rendered' ? '渲染視圖' : 'Schema JSON（除錯用）'}
+                        </button>
+                      ))}
+                    </div>
+                    {resultViewMode === 'rendered' ? (
+                      <ResultRenderer type={readingDetail.type} result={readingDetail.result} />
+                    ) : (() => {
+                      try {
+                        const parsed = JSON.parse(readingDetail.result)
+                        const topKeys = Object.keys(parsed).sort()
+                        return (
+                          <>
+                            <div className="mb-3 text-[11px] text-white/40">
+                              <span className="text-white/60">頂層欄位（{topKeys.length}）：</span>
+                              <span className="font-mono ml-1">{topKeys.join(' · ')}</span>
+                            </div>
+                            <pre className="text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
+                              {JSON.stringify(parsed, null, 2)}
+                            </pre>
+                          </>
+                        )
+                      } catch {
+                        return (
+                          <pre className="text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
+                            {readingDetail.result}
+                          </pre>
+                        )
+                      }
+                    })()}
+                  </div>
                 )}
                 {readingDetailTab === 'input' && (
                   <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed">{JSON.stringify(readingDetail.inputData, null, 2)}</pre>
                 )}
-                {readingDetailTab === 'calculation' && readingDetail.calculationData && (
-                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{JSON.stringify(JSON.parse(readingDetail.calculationData), null, 2)}</pre>
-                )}
+                {readingDetailTab === 'calculation' && readingDetail.calculationData && (() => {
+                  let parsed: unknown
+                  try {
+                    parsed = JSON.parse(readingDetail.calculationData)
+                  } catch {
+                    return (
+                      <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
+                        {readingDetail.calculationData}
+                      </pre>
+                    )
+                  }
+                  // calculationData is typically `{ [chartKey]: chart }` — a thin
+                  // wrapper. Unwrap when it has exactly one object-valued key so
+                  // the keys list shows the chart's actual fields, not just the
+                  // wrapper name.
+                  let keysSource: Record<string, unknown> | null = null
+                  let wrapperKey: string | null = null
+                  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                    const obj = parsed as Record<string, unknown>
+                    const topKeys = Object.keys(obj)
+                    if (
+                      topKeys.length === 1 &&
+                      obj[topKeys[0]] &&
+                      typeof obj[topKeys[0]] === 'object' &&
+                      !Array.isArray(obj[topKeys[0]])
+                    ) {
+                      wrapperKey = topKeys[0]
+                      keysSource = obj[topKeys[0]] as Record<string, unknown>
+                    } else {
+                      keysSource = obj
+                    }
+                  }
+                  const keys = keysSource ? Object.keys(keysSource).sort() : []
+                  return (
+                    <div className="p-4">
+                      {keys.length > 0 && (
+                        <div className="mb-3 text-[11px] text-white/40">
+                          <span className="text-white/60">
+                            {wrapperKey ? `${wrapperKey} 內欄位（${keys.length}）：` : `頂層欄位（${keys.length}）：`}
+                          </span>
+                          <span className="font-mono ml-1 break-all">{keys.join(' · ')}</span>
+                        </div>
+                      )}
+                      <pre className="text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
+                        {JSON.stringify(parsed, null, 2)}
+                      </pre>
+                    </div>
+                  )
+                })()}
                 {readingDetailTab === 'llmPrompt' && readingDetail.llmPrompt && (
                   <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{readingDetail.llmPrompt}</pre>
                 )}
                 {readingDetailTab === 'llmOutput' && readingDetail.llmRawOutput && (
-                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{readingDetail.llmRawOutput}</pre>
+                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed">{readingDetail.llmRawOutput}</pre>
                 )}
                 {readingDetailTab === 'chat' && readingDetail.chatMessages && (() => {
                   try {
@@ -633,6 +845,73 @@ export default function AdminSystemLogs() {
                     )
                   } catch { return <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap">{readingDetail.chatMessages}</pre> }
                 })()}
+                {readingDetailTab === 'validation' && readingValidation && (
+                  <div className="p-4 space-y-3 max-h-[70vh] overflow-y-auto">
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <span className="text-white/40">Schema：</span>
+                      <span className="px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-mono">
+                        {readingValidation.schemaName}
+                      </span>
+                      {!readingValidation.parseable ? (
+                        <span className="px-2 py-0.5 rounded-full bg-red-500/15 text-red-300 border border-red-500/30">
+                          ✗ result 非 JSON — 無法校驗
+                        </span>
+                      ) : readingValidation.ok ? (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                          ✓ 通過 schema 校驗
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                          ⚠ {readingValidation.issues.length} 項問題
+                        </span>
+                      )}
+                    </div>
+
+                    {readingValidation.parseError && (
+                      <div className="text-red-300/80 text-xs font-mono p-2 rounded bg-red-500/5 border border-red-500/20">
+                        {readingValidation.parseError}
+                      </div>
+                    )}
+
+                    {readingValidation.parseable && readingValidation.ok && (
+                      <p className="text-white/50 text-sm">
+                        所有必填欄位皆存在且型別正確（passthrough 模式 — 額外欄位被保留，例如 calculator 注入的 pillars/dayMaster/daYun 等不算違規）。
+                      </p>
+                    )}
+
+                    {readingValidation.parseable && !readingValidation.ok && readingValidation.issues.length > 0 && (
+                      <div>
+                        <p className="text-white/40 text-[11px] mb-2">
+                          每一行對應 Zod 校驗發現的一個問題。<span className="text-white/60">path</span> 指出有問題的欄位（從 result 根節點起算），<span className="text-white/60">code</span> 指出 Zod 違規類別。
+                        </p>
+                        <div className="space-y-1.5">
+                          {readingValidation.issues.map((iss, i) => (
+                            <div
+                              key={i}
+                              className="flex items-start gap-2 text-xs p-2 rounded bg-amber-500/5 border border-amber-500/20"
+                            >
+                              <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 text-[10px] font-mono shrink-0 mt-0.5">
+                                {iss.code}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-amber-200 font-mono text-[11px] break-all">{iss.path}</div>
+                                <div className="text-white/60 text-[11px] mt-0.5">{iss.message}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {readingDetailTab === 'raw' && (
+                  <div className="p-4">
+                    <p className="text-white/40 text-[11px] mb-2">完整資料庫記錄 — 包含所有 Reading 欄位、user/familyMember 關聯、feedbacks。除錯用。</p>
+                    <pre className="text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
+                      {JSON.stringify(readingDetail, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </div>
 
               {readingDetail.feedbacks.length > 0 && (
@@ -680,10 +959,23 @@ export default function AdminSystemLogs() {
                       onClick={() => fetchReadingDetail(r.id)}
                       className="glass-card rounded-xl p-3 border border-gold/10 hover:border-gold/30 cursor-pointer transition-colors flex items-center gap-3 text-xs">
                       <span className="px-2 py-0.5 bg-gold/15 text-gold rounded-full">{r.type}</span>
+                      <span
+                        className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                          r.status === 'completed' ? 'bg-emerald-500/15 text-emerald-300'
+                            : r.status === 'pending' ? 'bg-yellow-500/15 text-yellow-300'
+                            : r.status === 'failed' ? 'bg-red-500/15 text-red-300'
+                            : 'bg-white/10 text-white/60'
+                        }`}
+                        title={`狀態：${r.status}`}
+                      >
+                        {r.status === 'completed' ? '✓' : r.status === 'pending' ? '⏳' : r.status === 'failed' ? '✗' : r.status}
+                      </span>
+                      <span className="text-white/30 text-[10px]">{r.language}</span>
                       <span className="text-white/70 flex-1 truncate">{r.user.name || r.user.email?.split('@')[0] || '—'}</span>
                       <span className="text-white/40">{r.targetType === 'family' && r.familyMember ? r.familyMember.relation : '本人'}</span>
                       <span className="text-white/40">{r.inputData?.birthDate || '—'} {r.inputData?.birthTime || ''}</span>
                       <span className="text-white/30">{r.modelTier === 'model2' ? '✨' : '○'}</span>
+                      <span className="text-white/30">{r.shareToken ? '🔗' : ''}</span>
                       <span className="text-white/30">{r.rating ? '⭐'.repeat(r.rating) : '—'}</span>
                       <span className="text-white/25">{new Date(r.createdAt).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>

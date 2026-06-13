@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
@@ -8,6 +9,13 @@ interface ChatMessage {
   content: string
   timestamp: string
 }
+
+// Envelope validation only (malformed JSON → clean 400; bounded array).
+// Per-message shape stays filter-based below — invalid entries are dropped,
+// not rejected, preserving the existing client contract.
+const chatBodySchema = z.object({
+  messages: z.array(z.unknown()).min(1).max(200),
+})
 
 /**
  * POST /api/readings/:id/chat
@@ -19,11 +27,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { messages } = await req.json() as { messages: ChatMessage[] }
-
-  if (!Array.isArray(messages) || messages.length === 0) {
+  const parsed = chatBodySchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
     return NextResponse.json({ error: 'Messages required' }, { status: 400 })
   }
+  const messages = parsed.data.messages as ChatMessage[]
 
   // Validate message format
   const validMessages = messages.filter(m =>

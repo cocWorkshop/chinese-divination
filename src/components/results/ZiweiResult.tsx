@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import type { DivinationResultProps, ZiweiData, ZiweiPalaceData, ZiweiStar } from '@/types/divination'
+import { T } from '@/lib/i18n'
 
 const mutagenColor: Record<string, string> = {
   '禄': 'text-green-400',
@@ -22,6 +23,7 @@ const brightnessColor: Record<string, string> = {
   '利': 'text-cyan-300',
   '平': 'text-white/60',
   '不': 'text-white/40',
+  '不得地': 'text-white/30',
   '闲': 'text-white/40',
   '陷': 'text-red-300',
 }
@@ -103,8 +105,6 @@ function findPalace(palaces: Record<string, ZiweiPalaceData>, canonicalName: str
   return undefined
 }
 
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
-
 const sectionTabs = [
   { key: 'overview', label: '總覽', en: 'Overview' },
   { key: 'personality', label: '性格', en: 'Personality' },
@@ -170,7 +170,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
   const selectedPalaceData = selectedPalace ? findPalace(palaces, selectedPalace) || palaces[selectedPalace] : null
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-hidden">
       {/* ═══ CHART DATA (Collapsible, default collapsed) ═══ */}
       <button onClick={() => setShowChart(!showChart)}
         className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
@@ -201,10 +201,12 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
               <span className="text-white/40">{T(lang, '農曆：', 'Lunar: ')}</span>
               <span className="text-white/80">{chart.lunarDate}</span>
             </div>
+            {chart.chineseDate && (
             <div>
               <span className="text-white/40">{T(lang, '干支：', 'Stems: ')}</span>
               <span className="text-white/80">{chart.chineseDate}</span>
             </div>
+            )}
             <div>
               <span className="text-white/40">{T(lang, '時辰：', 'Hour: ')}</span>
               <span className="text-white/80">{chart.time} ({chart.timeRange})</span>
@@ -305,8 +307,18 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
               return (
                 <div
                   key={`${row}-${col}`}
+                  role={palaceName ? 'button' : undefined}
+                  tabIndex={palaceName ? 0 : undefined}
+                  aria-pressed={palaceName ? selectedPalace === palaceName : undefined}
+                  aria-label={palaceName ? palaceLabel(palaceName, lang) : undefined}
                   onClick={() => palaceName && setSelectedPalace(selectedPalace === palaceName ? null : palaceName)}
-                  className={`bg-navy-950/90 p-1 sm:p-2 cursor-pointer transition-all hover:bg-gold/5 min-h-[70px] sm:min-h-[90px] ${
+                  onKeyDown={(e) => {
+                    if (palaceName && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault()
+                      setSelectedPalace(selectedPalace === palaceName ? null : palaceName)
+                    }
+                  }}
+                  className={`bg-navy-950/90 p-1 sm:p-2 cursor-pointer transition-all hover:bg-gold/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-gold/60 min-h-[70px] sm:min-h-[90px] ${
                     selectedPalace === palaceName ? 'ring-1 ring-gold/50' : ''
                   } ${isSoul ? 'border-l-2 border-l-gold/40' : ''}`}
                 >
@@ -446,12 +458,12 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
           {d.patterns.map((p, i) => (
             <span key={i} className="px-3 py-1 rounded-full text-xs font-medium"
               style={{
-                backgroundColor: p.level?.includes('上') ? 'rgba(234,179,8,0.2)' : p.level?.includes('下') ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)',
-                color: p.level?.includes('上') ? '#eab308' : p.level?.includes('下') ? '#ef4444' : '#3b82f6',
-                border: `1px solid ${p.level?.includes('上') ? 'rgba(234,179,8,0.3)' : p.level?.includes('下') ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'}`,
+                backgroundColor: p.level?.includes('上') ? 'rgba(234,179,8,0.2)' : (p.level?.includes('下') || p.level?.includes('凶')) ? 'rgba(239,68,68,0.2)' : 'rgba(59,130,246,0.2)',
+                color: p.level?.includes('上') ? '#eab308' : (p.level?.includes('下') || p.level?.includes('凶')) ? '#ef4444' : '#3b82f6',
+                border: `1px solid ${p.level?.includes('上') ? 'rgba(234,179,8,0.3)' : (p.level?.includes('下') || p.level?.includes('凶')) ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'}`,
               }}
               title={p.description}>
-              {p.level?.includes('上') ? '🏆' : p.level?.includes('下') ? '⚠️' : '⭐'} {p.name}（{p.level}）
+              {p.level?.includes('上') ? '🏆' : (p.level?.includes('下') || p.level?.includes('凶')) ? '⚠️' : '⭐'} {p.name}（{p.level}）
             </span>
           ))}
         </div>

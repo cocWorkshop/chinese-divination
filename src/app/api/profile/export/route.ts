@@ -15,6 +15,7 @@ export async function GET() {
       id: true, email: true, name: true, language: true,
       birthDate: true, birthTime: true, birthPlace: true, gender: true,
       role: true, createdAt: true, consentAt: true, consentVersion: true,
+      portraitEnabled: true, masterMemoryDisclosureSeenAt: true,
     },
   })
 
@@ -55,6 +56,34 @@ export async function GET() {
     }),
   ])
 
+  // Master memory tables included for GDPR data portability.
+  const [masterChatMessages, userPortrait, userPortraitHistory] = await Promise.all([
+    prisma.masterChatMessage.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true, sessionId: true, turnIndex: true, role: true, content: true,
+        toolCallsJson: true, tokenCount: true, archivedAt: true, createdAt: true,
+      },
+    }),
+    prisma.userPortrait.findUnique({
+      where: { userId },
+      select: {
+        version: true, topics: true, preferences: true, lifeContext: true, toneNotes: true,
+        generatedPrompt: true, lastExtractedAt: true, lastTurnIndexCovered: true,
+        lastManualEditAt: true, createdAt: true, updatedAt: true,
+      },
+    }),
+    prisma.userPortraitHistory.findMany({
+      where: { userId },
+      orderBy: { version: 'asc' },
+      select: {
+        id: true, version: true, topics: true, preferences: true, lifeContext: true,
+        toneNotes: true, trigger: true, createdAt: true,
+      },
+    }),
+  ])
+
   const exportData = {
     exportedAt: new Date().toISOString(),
     profile: userProfile,
@@ -64,6 +93,12 @@ export async function GET() {
     shareLinks,
     authLogs,
     siteFeedback,
+    // Master memory data included for GDPR data portability.
+    masterMemory: {
+      chatMessages: masterChatMessages,
+      portrait: userPortrait,
+      portraitHistory: userPortraitHistory,
+    },
   }
 
   return new NextResponse(JSON.stringify(exportData, null, 2), {

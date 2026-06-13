@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Fullstack: Next.js",
+      "configurations": ["Next.js: Server", "Next.js: Client"],
+      "stopAll": true
+    }
+  ],
+  "configurations": [
+    {
+      "name": "Next.js: Server",
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "prisma: generate + migrate",
+      "program": "${workspaceFolder}/node_modules/next/dist/bin/next",  // ✅ works on both platforms
+      "args": ["dev", "-H", "0.0.0.0", "-p", "8088"],
+      "env": {
+        "NODE_OPTIONS": "--inspect"
+      },
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Next.js: Client",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8088",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true
+    }
+  ]
+}

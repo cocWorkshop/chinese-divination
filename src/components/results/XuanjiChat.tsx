@@ -8,6 +8,7 @@ import { reportError } from '@/lib/errorReporter'
 import YinYangIcon from '@/components/YinYangIcon'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { T } from '@/lib/i18n'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -16,8 +17,6 @@ interface Message {
   retryMessage?: string // store failed user message for retry
   suggestions?: string[] // dynamic suggestions from LLM
 }
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 const suggestedQuestions: Record<string, { zh: string; en: string }[]> = {
   bazi: [

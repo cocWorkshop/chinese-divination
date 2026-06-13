@@ -390,15 +390,51 @@ describe('ZiweiCalculator - Gender Differences', () => {
 })
 
 
-describe('ZiweiCalculator - 四柱 (chineseDate / Four Pillars)', () => {
-  test('1988-9-17 子时 → 戊辰年', () => {
-    const chart = calculateZiwei('1988-9-17', 'zi', 'male')
-    expect(chart.chineseDate).toContain('戊辰')
+describe('ZiweiCalculator - 大限四化 (decadalSiHua)', () => {
+  test('decadalSiHua is populated and sorted by age', () => {
+    const chart = calculateZiwei('1988-9-17', 'wu', 'male')
+    expect(chart.decadalSiHua).toBeDefined()
+    expect(chart.decadalSiHua!.length).toBeGreaterThan(0)
+    // Each entry has mutagen array of 4
+    for (const d of chart.decadalSiHua!) {
+      expect(d.mutagen.length).toBe(4)
+      expect(d.range.length).toBe(2)
+    }
+    // Sorted by range[0]
+    for (let i = 1; i < chart.decadalSiHua!.length; i++) {
+      expect(chart.decadalSiHua![i].range[0]).toBeGreaterThanOrEqual(chart.decadalSiHua![i - 1].range[0])
+    }
+  })
+})
+
+describe('ZiweiCalculator - 流年 (liuNian)', () => {
+  test('liuNian is populated with correct structure', () => {
+    const chart = calculateZiwei('1990-1-15', 'wu', 'male')
+    expect(chart.liuNian).toBeDefined()
+    expect(chart.liuNian!.length).toBeGreaterThan(0)
+    const first = chart.liuNian![0]
+    expect(first).toHaveProperty('year')
+    expect(first).toHaveProperty('age')
+    expect(first).toHaveProperty('earthlyBranch')
+    expect(first).toHaveProperty('yearlyMutagen')
+    expect(first).toHaveProperty('huaLuPalace')
+    expect(first).toHaveProperty('huaJiPalace')
+    expect(first).toHaveProperty('isLucky')
   })
 
-  test('1990-5-15 巳时 → 庚午年', () => {
-    const chart = calculateZiwei('1990-5-15', 'si', 'female')
-    expect(chart.chineseDate).toContain('庚午')
+  test('liuNian years are sequential', () => {
+    const chart = calculateZiwei('1990-1-15', 'wu', 'male')
+    const years = chart.liuNian!.map(ln => ln.year)
+    for (let i = 1; i < years.length; i++) {
+      expect(years[i]).toBe(years[i - 1] + 1)
+    }
+  })
+
+  test('liuNian isLucky flags are valid', () => {
+    const chart = calculateZiwei('1990-1-15', 'wu', 'male')
+    for (const ln of chart.liuNian!) {
+      expect([true, false, null]).toContain(ln.isLucky)
+    }
   })
 })
 

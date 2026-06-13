@@ -61,7 +61,7 @@ describe('parseFacing', () => {
 
 describe('Flying Star Chart - Known Charts Verification', () => {
   // ========================================
-  // 八运 坐子(北)朝午(南) - 经典旺山旺向
+  // 八运 坐子(北)朝午(南) - 经典双星到向 (双星会向)
   // ========================================
   describe('Period 8, sitting N facing S (八运坐子朝午)', () => {
     const chart = calculateFlyingStars({ period: 8, facing: '离/South' })
@@ -85,20 +85,22 @@ describe('Flying Star Chart - Known Charts Verification', () => {
       expect(getPalace(chart, 'SE').baseStar).toBe(7)
     })
 
-    it('should have correct mountain star plate (山星 4入中 坎=子=阴 逆飞)', () => {
-      // Reverse from 4: Center=4, NW=3, W=2, NE=1, S=9, N=8, SW=7, E=6, SE=5
+    it('should have correct mountain star plate (山星 4入中; 4本宫巽=阳 → 顺飞)', () => {
+      // 坐山N base star = 4 → 巽宫 天元龙(巽)=阳 → 顺飞.
+      // Forward from 4: Center=4, NW=5, W=6, NE=7, S=8, N=9, SW=1, E=2, SE=3
       expect(getPalace(chart, 'Center').mountainStar).toBe(4)
-      expect(getPalace(chart, 'NW').mountainStar).toBe(3)
-      expect(getPalace(chart, 'W').mountainStar).toBe(2)
-      expect(getPalace(chart, 'NE').mountainStar).toBe(1)
-      expect(getPalace(chart, 'S').mountainStar).toBe(9)
-      expect(getPalace(chart, 'N').mountainStar).toBe(8)
-      expect(getPalace(chart, 'SW').mountainStar).toBe(7)
-      expect(getPalace(chart, 'E').mountainStar).toBe(6)
-      expect(getPalace(chart, 'SE').mountainStar).toBe(5)
+      expect(getPalace(chart, 'NW').mountainStar).toBe(5)
+      expect(getPalace(chart, 'W').mountainStar).toBe(6)
+      expect(getPalace(chart, 'NE').mountainStar).toBe(7)
+      expect(getPalace(chart, 'S').mountainStar).toBe(8)
+      expect(getPalace(chart, 'N').mountainStar).toBe(9)
+      expect(getPalace(chart, 'SW').mountainStar).toBe(1)
+      expect(getPalace(chart, 'E').mountainStar).toBe(2)
+      expect(getPalace(chart, 'SE').mountainStar).toBe(3)
     })
 
-    it('should have correct water star plate (向星 3入中 离=午=阴 逆飞)', () => {
+    it('should have correct water star plate (向星 3入中; 3本宫震=阴 → 逆飞)', () => {
+      // 向首S base star = 3 → 震宫 天元龙(卯)=阴 → 逆飞.
       // Reverse from 3: Center=3, NW=2, W=1, NE=9, S=8, N=7, SW=6, E=5, SE=4
       expect(getPalace(chart, 'Center').waterStar).toBe(3)
       expect(getPalace(chart, 'NW').waterStar).toBe(2)
@@ -111,12 +113,13 @@ describe('Flying Star Chart - Known Charts Verification', () => {
       expect(getPalace(chart, 'SE').waterStar).toBe(4)
     })
 
-    it('should be 旺山旺向 (双旺)', () => {
-      // Mountain star 8 at sitting (N) = period → 旺山
-      // Water star 8 at facing (S) = period → 旺向
-      expect(chart.analysis.wangShan).toBe(true)
+    it('should be 双星到向 (向首 山星8 + 向星8)', () => {
+      // 向首S: mountain 8 + water 8 → 双星到向 (NOT 旺山旺向: 坐山N mountain=9≠8).
+      expect(getPalace(chart, 'S').mountainStar).toBe(8)
+      expect(getPalace(chart, 'S').waterStar).toBe(8)
+      expect(chart.analysis.wangShan).toBe(false)
       expect(chart.analysis.wangXiang).toBe(true)
-      expect(chart.analysis.shuangWang).toBe(true)
+      expect(chart.analysis.shuangWang).toBe(false)
       expect(chart.analysis.shanShuiTong).toBe(false)
     })
   })
@@ -159,7 +162,7 @@ describe('Flying Star Chart - Known Charts Verification', () => {
   })
 
   // ========================================
-  // 七运 坐子(北)朝午(南) - 七运子山午向 (上山下水)
+  // 七运 坐子(北)朝午(南) - 七运子山午向 (双星到坐)
   // ========================================
   describe('Period 7, sitting N facing S (七运子山午向)', () => {
     const chart = calculateFlyingStars({ period: 7, facing: '离/South' })
@@ -171,30 +174,30 @@ describe('Flying Star Chart - Known Charts Verification', () => {
       expect(getPalace(chart, 'S').baseStar).toBe(2)
     })
 
-    it('should have mountain star plate (3入中 子=阴 逆飞)', () => {
+    it('should have mountain star plate (3入中; 3本宫震=阴 → 逆飞)', () => {
+      // 坐山N base star = 3 → 震宫(阴) → 逆飞.
       // Reverse from 3: Center=3, NW=2, W=1, NE=9, S=8, N=7, SW=6, E=5, SE=4
       expect(getPalace(chart, 'Center').mountainStar).toBe(3)
       expect(getPalace(chart, 'N').mountainStar).toBe(7)
       expect(getPalace(chart, 'S').mountainStar).toBe(8)
     })
 
-    it('should have water star plate (2入中 午=阴 逆飞)', () => {
-      // Reverse from 2: Center=2, NW=1, W=9, NE=8, S=7, N=6, SW=5, E=4, SE=3
+    it('should have water star plate (2入中; 2本宫坤=阳 → 顺飞)', () => {
+      // 向首S base star = 2 → 坤宫(阳) → 顺飞.
+      // Forward from 2: Center=2, NW=3, W=4, NE=5, S=6, N=7, SW=8, E=9, SE=1
       expect(getPalace(chart, 'Center').waterStar).toBe(2)
-      expect(getPalace(chart, 'N').waterStar).toBe(6)
-      expect(getPalace(chart, 'S').waterStar).toBe(7)
+      expect(getPalace(chart, 'N').waterStar).toBe(7)
+      expect(getPalace(chart, 'S').waterStar).toBe(6)
     })
 
-    it('should be 上山下水 (shanShuiTong)', () => {
-      // Mountain star 7 at N (sitting, should be at mountain but is at向方's opposite)
-      // Actually: mountain star at facing(S)=8 (生气到向=上山), water star at sitting(N)=6 (not 7)
-      // Let me check: shanShuiTong = mountainStar=period at facing AND waterStar=period at sitting
-      // Mountain at S = 8 ≠ 7, water at N = 6 ≠ 7
-      // But mountain star at N (sitting) = 7 = period → 旺山
-      // Water star at S (facing) = 7 = period → 旺向
-      // So this is actually 旺山旺向 too!
+    it('should be 双星到坐 (坐山 山星7 + 向星7)', () => {
+      // 坐山N: mountain 7 + water 7 → 双星到坐. 旺山 (mountain 7 at sitting), but
+      // 向首S water = 6 ≠ 7 → NOT 旺向.
+      expect(getPalace(chart, 'N').mountainStar).toBe(7)
+      expect(getPalace(chart, 'N').waterStar).toBe(7)
       expect(chart.analysis.wangShan).toBe(true)
-      expect(chart.analysis.wangXiang).toBe(true)
+      expect(chart.analysis.wangXiang).toBe(false)
+      expect(chart.analysis.shuangWang).toBe(false)
     })
   })
 
@@ -217,24 +220,29 @@ describe('Flying Star Chart - Known Charts Verification', () => {
       expect(getPalace(chart, 'S').baseStar).toBe(4)
     })
 
-    it('should have mountain star plate (4入中 午=阴 逆飞)', () => {
-      // Reverse from 4: Center=4, NW=3, W=2, NE=1, S=9, N=8, SW=7, E=6, SE=5
+    it('should have mountain star plate (4入中; 4本宫巽=阳 → 顺飞)', () => {
+      // 坐山S base star = 4 → 巽宫(阳) → 顺飞.
+      // Forward from 4: Center=4, NW=5, W=6, NE=7, S=8, N=9, SW=1, E=2, SE=3
       expect(getPalace(chart, 'Center').mountainStar).toBe(4)
-      expect(getPalace(chart, 'S').mountainStar).toBe(9)
-      expect(getPalace(chart, 'N').mountainStar).toBe(8)
+      expect(getPalace(chart, 'S').mountainStar).toBe(8)
+      expect(getPalace(chart, 'N').mountainStar).toBe(9)
     })
 
-    it('should have water star plate (5入中 子=阴 逆飞)', () => {
+    it('should have water star plate (5入中; 5借向首子=阴 → 逆飞)', () => {
+      // 向首N base star = 5 (中宫，借向首子=阴) → 逆飞.
       // Reverse from 5: Center=5, NW=4, W=3, NE=2, S=1, N=9, SW=8, E=7, SE=6
       expect(getPalace(chart, 'Center').waterStar).toBe(5)
       expect(getPalace(chart, 'N').waterStar).toBe(9)
       expect(getPalace(chart, 'S').waterStar).toBe(1)
     })
 
-    it('should be 旺山旺向', () => {
-      expect(chart.analysis.wangShan).toBe(true) // mountain 9 at S (sitting)
-      expect(chart.analysis.wangXiang).toBe(true) // water 9 at N (facing)
-      expect(chart.analysis.shuangWang).toBe(true)
+    it('should be 双星到向 (向首 山星9 + 向星9)', () => {
+      // 向首N: mountain 9 + water 9 → 双星到向 (坐山S mountain=8≠9 → NOT 旺山).
+      expect(getPalace(chart, 'N').mountainStar).toBe(9)
+      expect(getPalace(chart, 'N').waterStar).toBe(9)
+      expect(chart.analysis.wangShan).toBe(false)
+      expect(chart.analysis.wangXiang).toBe(true)
+      expect(chart.analysis.shuangWang).toBe(false)
     })
   })
 
@@ -250,25 +258,26 @@ describe('Flying Star Chart - Known Charts Verification', () => {
       expect(getPalace(chart, 'S').baseStar).toBe(4)
     })
 
-    it('should have mountain star plate (5入中 子=阴 逆飞)', () => {
+    it('should have mountain star plate (5入中; 5借坐山子=阴 → 逆飞)', () => {
+      // 坐山N base star = 5 (中宫，借坐山子=阴) → 逆飞.
       // Reverse from 5: Center=5, NW=4, W=3, NE=2, S=1, N=9, SW=8, E=7, SE=6
       expect(getPalace(chart, 'N').mountainStar).toBe(9)
       expect(getPalace(chart, 'S').mountainStar).toBe(1)
     })
 
-    it('should have water star plate (4入中 午=阴 逆飞)', () => {
-      // Reverse from 4: Center=4, NW=3, W=2, NE=1, S=9, N=8, SW=7, E=6, SE=5
-      expect(getPalace(chart, 'N').waterStar).toBe(8)
-      expect(getPalace(chart, 'S').waterStar).toBe(9)
+    it('should have water star plate (4入中; 4本宫巽=阳 → 顺飞)', () => {
+      // 向首S base star = 4 → 巽宫(阳) → 顺飞.
+      // Forward from 4: Center=4, NW=5, W=6, NE=7, S=8, N=9, SW=1, E=2, SE=3
+      expect(getPalace(chart, 'N').waterStar).toBe(9)
+      expect(getPalace(chart, 'S').waterStar).toBe(8)
     })
 
-    it('should be 上山下水', () => {
-      // Mountain 9 at N (sitting) = 旺山 ✓ but water 9 at S (facing) = 旺向 ✓
-      // Actually let me re-check: mountain star at sitting(N) = 9 = period → 旺山
-      // water star at facing(S) = 9 = period → 旺向
-      // So this is ALSO 旺山旺向!
+    it('should be 双星到坐 (坐山 山星9 + 向星9)', () => {
+      // 坐山N: mountain 9 + water 9 → 双星到坐 (向首S water=8≠9 → NOT 旺向).
+      expect(getPalace(chart, 'N').mountainStar).toBe(9)
+      expect(getPalace(chart, 'N').waterStar).toBe(9)
       expect(chart.analysis.wangShan).toBe(true)
-      expect(chart.analysis.wangXiang).toBe(true)
+      expect(chart.analysis.wangXiang).toBe(false)
     })
   })
 
@@ -457,9 +466,9 @@ describe('Palace properties', () => {
 })
 
 describe('Edge cases', () => {
-  it('should handle 5 entering center (no special case needed with direction-based rule)', () => {
-    // Period 7, sitting E facing W: basePlate[E]=5, so mountain star 5 enters center
-    // E = 卯 = 阴 → reverse fly
+  it('should handle 5 entering center (借坐山/向首 阴阳)', () => {
+    // Period 7, sitting E facing W: basePlate[E]=5, so mountain star 5 enters center.
+    // 5 has no 本宫 → borrows the sitting mountain's 阴阳: E=卯=阴 → 逆飞.
     const chart = calculateFlyingStars({ period: 7, facing: 'W' })
     // Reverse from 5: Center=5, NW=4, W=3, NE=2, S=1, N=9, SW=8, E=7, SE=6
     expect(getPalace(chart, 'Center').mountainStar).toBe(5)

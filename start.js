@@ -14,19 +14,33 @@ http.createServer = function(...args) {
   return server
 }
 
-// Run pending database migrations before starting
+// Run pending database migrations before starting.
+//
+// FAIL FAST (architecture plan I2): a failed `migrate deploy` used to be
+// swallowed ("app can still run") — which is exactly how the 2026 drift
+// incident festered: a failed migration leaves a poisoned row in
+// _prisma_migrations that blocks every future deploy, while the app silently
+// serves a schema/code mismatch to paying users. Exiting non-zero instead
+// makes docker's `restart: unless-stopped` + the compose healthcheck surface
+// the failure immediately (container restart-loops → `docker ps` shows it),
+// and the logs name the cause. Prod was reconciled 2026-06-12
+// ("Database schema is up to date!") — this must not ship before that gate,
+// and it did not.
 const { execSync } = require('child_process')
-const path = require('path')
 try {
   console.log('> Running database migrations...')
   execSync(`npx prisma migrate deploy --schema=./prisma/schema.prisma`, {
     stdio: 'inherit',
-    env: { ...process.env }
+    env: { ...process.env },
+    timeout: 300_000, // 5 min — a hung migration must not hang the boot forever
   })
   console.log('> Migrations complete')
 } catch (e) {
-  console.error('> Migration failed:', e.message)
-  // Don't exit — app can still run if DB is already up to date
+  console.error('> FATAL: migration failed — refusing to start with a schema/code mismatch.')
+  console.error(`> Cause: ${e.message}`)
+  console.error('> Inspect with: DATABASE_URL=<prod> npx prisma migrate status')
+  console.error('> Runbook: docs/prisma-migrations-recovery.md (failed-row recovery: migrate resolve --rolled-back <name>)')
+  process.exit(1)
 }
 
 // Now load the original Next.js standalone server

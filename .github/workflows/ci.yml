@@ -1,0 +1,41 @@
+# CI quality gate (architecture plan I4 — hold lifted by owner 2026-06-12).
+# Runs on every push/PR, and is invoked by docker-publish.yml as a required
+# prerequisite, so an image can never be published without a green run.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_call: # lets docker-publish.yml depend on this workflow
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: divination_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:test@localhost:5432/divination_test
+      SKIP_ENV_VALIDATION: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      # Replays ALL migrations against a fresh Postgres — catches broken or
+      # drifting migration files before they ever reach a real database.
+      - run: npx prisma migrate deploy
+      - run: npm run type-check
+      - run: npm run lint
+      # Unit tests only — src/__tests__/integration/** needs seeded data and a
+      # long-lived dev DB; it stays a local pre-deploy concern for now.
+      - run: npm run test:unit

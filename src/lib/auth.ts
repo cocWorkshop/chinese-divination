@@ -3,6 +3,12 @@ import Credentials from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
 import { prisma } from './prisma'
 
+// Constant bcrypt hash of a random string nobody knows. Compared against on
+// the no-user / no-password paths so ALL authorize() branches take ~the same
+// time — otherwise the fast early-returns let an attacker enumerate which
+// emails exist by timing the response (deferred-evaluation-tasks Task B2).
+const DUMMY_BCRYPT_HASH = '$2a$12$K8GpVzbXEXAMPLEDUMMYHuJ9yQYpVxq3rW1mz5TnB7cd9eAfGhIjK'
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: 'jwt', maxAge: 7 * 24 * 60 * 60 },
@@ -24,7 +30,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: { equals: emailInput, mode: 'insensitive' } },
         })
 
-        if (!user) return null
+        if (!user) {
+          await compare(credentials.password as string, DUMMY_BCRYPT_HASH) // timing equalizer
+          return null
+        }
+
+        // Tentative users (created mid-funnel) have no password set yet.
+        // They cannot authenticate via credentials; they must complete
+        // /start/unlock first to set a password.
+        if (!user.password) {
+          await compare(credentials.password as string, DUMMY_BCRYPT_HASH) // timing equalizer
+          return null
+        }
 
         const isValid = await compare(credentials.password as string, user.password)
         if (!isValid) return null

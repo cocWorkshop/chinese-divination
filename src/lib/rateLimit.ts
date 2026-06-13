@@ -56,28 +56,38 @@ export async function deductCredits(userId: string, type: string): Promise<boole
     }),
     getCost(type),
   ])
-  // Determine which usage counter to increment
-  const usageField = ['bazi','ziwei','qimen','meihua','iching','liuyao','fengshui'].includes(type)
-    ? 'usageDivination'
-    : type === 'chat' ? 'usageChat'
-    : type === 'master' ? 'usageMaster'
-    : 'usageDivination'
+  // Determine which usage counter to increment. Whitelisted to one of the
+  // three known fields — passed through Prisma's typed `data` via computed
+  // property, so the schema is the source of truth (column rename → TS error).
+  const usageField: 'usageDivination' | 'usageChat' | 'usageMaster' =
+    ['bazi', 'ziwei', 'qimen', 'meihua', 'iching', 'liuyao', 'fengshui'].includes(type)
+      ? 'usageDivination'
+      : type === 'chat'
+        ? 'usageChat'
+        : type === 'master'
+          ? 'usageMaster'
+          : 'usageDivination'
 
   if (user?.isAdmin) {
     // Admin: no credit deduction but still track usage
-    await prisma.$executeRawUnsafe(
-      `UPDATE "User" SET "${usageField}" = "${usageField}" + 1 WHERE id = $1`,
-      userId
-    )
+    await prisma.user.update({
+      where: { id: userId },
+      data: { [usageField]: { increment: 1 } },
+    })
     return true
   }
   if (cost <= 0) return true
-  // Atomic: decrement credits + increment usage counter
-  const result = await prisma.$executeRawUnsafe(
-    `UPDATE "User" SET "credits" = "credits" - $1, "${usageField}" = "${usageField}" + 1 WHERE id = $2 AND "credits" >= $1`,
-    cost, userId
-  )
-  if (result > 0) {
+  // Atomic: decrement credits + increment usage counter, only if credits ≥ cost.
+  // updateMany lets us add the credits-gte gate to WHERE; it returns the row
+  // count, which we need to detect "insufficient balance" (returns 0).
+  const result = await prisma.user.updateMany({
+    where: { id: userId, credits: { gte: cost } },
+    data: {
+      credits: { decrement: cost },
+      [usageField]: { increment: 1 },
+    },
+  })
+  if (result.count > 0) {
     // Query balance after deduction for audit log
     const updated = await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } })
     logCreditChange({
@@ -90,6 +100,50 @@ export async function deductCredits(userId: string, type: string): Promise<boole
     return true
   }
   return false
+}
+
+/**
+ * Atomically deduct the cost of `type` as a HOLD and return the amount held,
+ * so the caller can record it (Reading.creditsHeld) for exact refunds.
+ *
+ * Same atomic guarantee as deductCredits (single guarded UPDATE — concurrent
+ * holds against one balance can never over-deduct); the only difference is
+ * the amount is returned. Admin users hold 0 (they are never charged).
+ *
+ * Returns { held: false } on insufficient balance.
+ */
+export async function holdCredits(
+  userId: string,
+  type: string
+): Promise<{ held: boolean; amount: number }> {
+  const cost = await getCost(type)
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } })
+  if (user?.isAdmin || cost <= 0) {
+    // Track usage like deductCredits does, but nothing to hold/refund.
+    await prisma.user.update({
+      where: { id: userId },
+      data: { usageDivination: { increment: 1 } },
+    }).catch(() => {})
+    return { held: true, amount: 0 }
+  }
+  const result = await prisma.user.updateMany({
+    where: { id: userId, credits: { gte: cost } },
+    data: {
+      credits: { decrement: cost },
+      usageDivination: { increment: 1 },
+    },
+  })
+  if (result.count === 0) return { held: false, amount: 0 }
+  const updated = await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } })
+  await logCreditChange({
+    userId,
+    action: 'deduct',
+    amount: -cost,
+    balance: updated?.credits ?? 0,
+    source: `divination:${type}`,
+    note: 'hold@init',
+  })
+  return { held: true, amount: cost }
 }
 
 // Legacy wrappers for backward compatibility during migration

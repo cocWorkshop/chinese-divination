@@ -106,17 +106,33 @@ export function isNorthAmericaDST(year: number, month: number, day: number, hour
 }
 
 /**
- * Approximate standard timezone from longitude for North America.
- * Returns standard UTC offset (negative for west).
+ * Approximate standard timezone + whether the zone observes DST, from longitude
+ * (and latitude where it disambiguates) for North America. `offset` is the
+ * standard UTC offset (negative for west).
+ *
+ * Known residual limitation: Arizona (no DST), Saskatchewan (no DST) and most of
+ * Mexico (DST abolished 2022) can't be separated from their DST-observing
+ * neighbours by longitude/latitude alone, so they're still treated as observing
+ * US DST. Precise handling would need a lat/lng → IANA-timezone lookup.
  */
-function getNATimezoneFromLongitude(longitude: number): number {
-  // Approximate timezone boundaries for continental North America
-  if (longitude >= -57) return -3.5    // Newfoundland (NST)
-  if (longitude >= -67.5) return -4    // Atlantic (AST)
-  if (longitude >= -82.5) return -5    // Eastern (EST)
-  if (longitude >= -97.5) return -6    // Central (CST)
-  if (longitude >= -112.5) return -7   // Mountain (MST)
-  return -8                             // Pacific (PST)
+function getNAZone(longitude: number, latitude?: number | null): { offset: number; observesDST: boolean } {
+  // Hawaii–Aleutian: far west at tropical latitude. Hawaii does NOT observe DST.
+  if (longitude < -150 && (latitude == null || latitude < 30)) {
+    return { offset: -10, observesDST: false }
+  }
+  // Alaska: far west at high latitude. Alaska DOES observe DST (offset was wrong).
+  if (longitude < -130 && (latitude == null || latitude >= 51)) {
+    return { offset: -9, observesDST: true }
+  }
+  // Continental bands (all observe US DST).
+  let offset: number
+  if (longitude >= -57) offset = -3.5       // Newfoundland (NST)
+  else if (longitude >= -67.5) offset = -4  // Atlantic (AST)
+  else if (longitude >= -82.5) offset = -5  // Eastern (EST)
+  else if (longitude >= -97.5) offset = -6  // Central (CST)
+  else if (longitude >= -112.5) offset = -7 // Mountain (MST)
+  else offset = -8                          // Pacific (PST)
+  return { offset, observesDST: true }
 }
 
 /**
@@ -178,10 +194,10 @@ export function getTimezoneOffset(
 
   // North America
   if (isNorthAmerica(longitude, latitude)) {
-    const standardOffset = getNATimezoneFromLongitude(longitude)
-    const dst = isNorthAmericaDST(year, month, day, hour)
+    const zone = getNAZone(longitude, latitude)
+    const dst = zone.observesDST && isNorthAmericaDST(year, month, day, hour)
     return {
-      offset: dst ? standardOffset + 1 : standardOffset,
+      offset: dst ? zone.offset + 1 : zone.offset,
       isDST: dst,
       region: 'north_america',
       dstNote: dst ? 'North America DST active, +1hr offset applied' : undefined,

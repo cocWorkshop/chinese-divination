@@ -30,11 +30,19 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/divination-refs ./divination-refs
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Runtime migration tooling for start.js (`npx prisma migrate deploy`):
+# copy the lockfile-resolved packages from the build stage instead of running
+# an unpinned `npm install prisma @prisma/config effect --no-save` here —
+# that fetched whatever was latest at image-build time, outside package-lock
+# versioning. (@prisma/config ships inside the @prisma copy above; `effect`
+# is its transitive dependency.)
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/effect ./node_modules/effect
+COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/start.js ./start.js
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/package-lock.json ./package-lock.json
-RUN npm install prisma @prisma/config effect --no-save
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000

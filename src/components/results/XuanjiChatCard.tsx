@@ -5,10 +5,9 @@ import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
+import { T } from '@/lib/i18n'
 
 const XuanjiChat = dynamic(() => import('./XuanjiChat'), { ssr: false })
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 interface XuanjiChatCardProps {
   readingResult: string
@@ -63,7 +62,7 @@ export default function XuanjiChatCard({ readingResult, readingType, readingId, 
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
+    <motion.div id="xuanji-qa" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
       <div className="glass-card rounded-xl p-4 sm:p-6 border-2 border-gold/30">
         <h3 className="flex items-center gap-2 text-gold font-serif text-base sm:text-lg mb-3">
           <span className="text-xl">☯</span>

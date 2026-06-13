@@ -35,6 +35,11 @@ const BRANCH_TO_SHICHEN: Record<string, number> = {
   '午': 7, '未': 8, '申': 9, '酉': 10, '戌': 11, '亥': 12,
   'zi': 1, 'chou': 2, 'yin': 3, 'mao': 4, 'chen': 5, 'si': 6,
   'wu': 7, 'wei': 8, 'shen': 9, 'you': 10, 'xu': 11, 'hai': 12,
+  // 子时 split form used by the UI / birth profiles (baziCalculator emits
+  // 'zi_early' for 00:00–01:00 and 'zi_late' for 23:00–24:00). Both are 子时
+  // (shichen #1); without these keys the lookup silently fell back to `|| 1`,
+  // which happened to be correct only by coincidence.
+  'zi_early': 1, 'zi_late': 1,
 }
 
 // 地支序数 (used as 年数 in time-based method)
@@ -43,10 +48,11 @@ const BRANCH_ORDER: Record<string, number> = {
   '午': 7, '未': 8, '申': 9, '酉': 10, '戌': 11, '亥': 12,
 }
 
-// Lines for each trigram (from bottom to top): 1=yang, 0=yin
+// Lines for each trigram, ordered bottom → top: 1=yang(⚊), 0=yin(⚋).
+// e.g. 兑 ☱ has a broken top line → [1,1,0]; 震 ☳ a solid bottom line → [1,0,0].
 const GUA_LINES: Record<string, number[]> = {
-  '乾': [1, 1, 1], '兑': [0, 1, 1], '离': [1, 0, 1], '震': [0, 0, 1],
-  '巽': [1, 1, 0], '坎': [0, 1, 0], '艮': [1, 0, 0], '坤': [0, 0, 0],
+  '乾': [1, 1, 1], '兑': [1, 1, 0], '离': [1, 0, 1], '震': [1, 0, 0],
+  '巽': [0, 1, 1], '坎': [0, 1, 0], '艮': [0, 0, 1], '坤': [0, 0, 0],
 }
 
 // Lines to trigram name (reverse lookup)
@@ -175,8 +181,15 @@ export function calculateMeihua(
 ): MeihuaChart {
   const [year, month, day] = solarBirthDate.split('-').map(Number)
 
-  // Convert solar to lunar
-  const solar = Solar.fromYmd(year, month, day)
+  // Convert solar to lunar. 晚子时 (zi_late, 23:00–24:00) belongs to the NEXT
+  // day under the 子时换日 convention this platform's bazi calculator already
+  // uses (baziCalculator advances the day for zi_late). Roll the solar date
+  // forward one day before lunar conversion so 晚子时 起卦 uses the correct
+  // 日数 (and thus 上卦/下卦/动爻), staying consistent with the bazi day boundary.
+  let solar = Solar.fromYmd(year, month, day)
+  if (birthTime === 'zi_late') {
+    solar = solar.next(1)
+  }
   const lunar = solar.getLunar()
 
   const lunarYear = lunar.getYear()

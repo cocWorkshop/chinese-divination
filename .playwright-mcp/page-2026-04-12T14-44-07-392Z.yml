@@ -1,0 +1,302 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - navigation [ref=e3]:
+    - generic [ref=e5]:
+      - link "玄機AI" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e7]:
+        - link "占卜" [ref=e8] [cursor=pointer]:
+          - /url: /divination
+        - link "歷史" [ref=e29] [cursor=pointer]:
+          - /url: /dashboard
+        - link "機緣商店" [ref=e9] [cursor=pointer]:
+          - /url: /subscribe
+        - button "🔗 分享賺機緣" [ref=e30] [cursor=pointer]
+        - button "通知" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+        - button "☀️" [ref=e10] [cursor=pointer]
+        - button "EN" [ref=e11] [cursor=pointer]
+        - button "e" [ref=e35] [cursor=pointer]:
+          - generic [ref=e36]: e
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - complementary [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e39]: 玄機
+          - generic [ref=e40]: Admin Console
+        - navigation [ref=e41]:
+          - link "📊 概覽" [ref=e42] [cursor=pointer]:
+            - /url: /admin
+            - generic [ref=e43]: 📊
+            - generic [ref=e44]: 概覽
+          - link "👥 用戶管理" [ref=e45] [cursor=pointer]:
+            - /url: /admin/users
+            - generic [ref=e46]: 👥
+            - generic [ref=e47]: 用戶管理
+          - link "📋 系統日誌" [ref=e48] [cursor=pointer]:
+            - /url: /admin/logs
+            - generic [ref=e49]: 📋
+            - generic [ref=e50]: 系統日誌
+          - link "💬 用戶反饋" [ref=e51] [cursor=pointer]:
+            - /url: /admin/feedback
+            - generic [ref=e52]: 💬
+            - generic [ref=e53]: 用戶反饋
+          - link "🎁 用戶補償" [ref=e54] [cursor=pointer]:
+            - /url: /admin/compensation
+            - generic [ref=e55]: 🎁
+            - generic [ref=e56]: 用戶補償
+          - link "🔗 禮品連結" [ref=e57] [cursor=pointer]:
+            - /url: /admin/gift-links
+            - generic [ref=e58]: 🔗
+            - generic [ref=e59]: 禮品連結
+          - link "📚 Wiki 知識庫" [ref=e60] [cursor=pointer]:
+            - /url: /admin/wiki
+            - generic [ref=e61]: 📚
+            - generic [ref=e62]: Wiki 知識庫
+          - link "🔔 通知管理" [ref=e63] [cursor=pointer]:
+            - /url: /admin/notifications
+            - generic [ref=e64]: 🔔
+            - generic [ref=e65]: 通知管理
+          - link "👋 歡迎語管理" [ref=e66] [cursor=pointer]:
+            - /url: /admin/welcome
+            - generic [ref=e67]: 👋
+            - generic [ref=e68]: 歡迎語管理
+          - link "⚙️ 系統設置" [ref=e69] [cursor=pointer]:
+            - /url: /admin/settings
+            - generic [ref=e70]: ⚙️
+            - generic [ref=e71]: 系統設置
+        - generic [ref=e72]:
+          - generic [ref=e73]: zhangweicalm@gmail.com
+          - link "← Back to app" [ref=e74] [cursor=pointer]:
+            - /url: /
+      - main [ref=e75]:
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - heading "Master Debug — zhangweicalm@gmail.com" [level=1] [ref=e78]
+            - button "← Back to users" [ref=e79] [cursor=pointer]
+          - generic [ref=e80]:
+            - heading "A. Identity" [level=2] [ref=e81]
+            - generic [ref=e82]:
+              - generic [ref=e83]:
+                - text: "id:"
+                - code [ref=e84]: cmmp2fccw000216019i8m3d8u
+              - generic [ref=e85]: "email: zhangweicalm@gmail.com"
+              - generic [ref=e86]: "name: elvin"
+              - generic [ref=e87]: "lang: zh"
+              - generic [ref=e88]: "created: 13/03/2026, 11:42:30"
+              - generic [ref=e89]: "credits: 3"
+              - generic [ref=e90]: "usageMaster: 21"
+              - generic [ref=e91]: "portraitEnabled: true"
+              - generic [ref=e92]: "disclosureSeen: 12/04/2026, 18:40:26"
+          - generic [ref=e93]:
+            - heading "B. Portrait (current)" [level=2] [ref=e94]
+            - generic [ref=e95]:
+              - generic [ref=e96]: v1 · last extracted 12/04/2026, 18:43:40
+              - generic [ref=e97]:
+                - strong [ref=e98]: "Topics:"
+                - text: career, health, family
+              - generic [ref=e99]:
+                - strong [ref=e100]: "Preferences:"
+                - code [ref=e101]: "{\"tone\":\"direct\",\"depth\":\"concise\",\"language\":\"zh-TW\"}"
+              - generic [ref=e102]:
+                - strong [ref=e103]: "Life context:"
+                - text: 中年男性，已婚有一子，關注事業穩定
+              - generic [ref=e104]:
+                - strong [ref=e105]: "Tone notes:"
+                - text: 偏好務實分析
+              - generic [ref=e106]: "cursor: turn 0"
+              - group [ref=e107]:
+                - generic "Generated prompt block" [ref=e108] [cursor=pointer]
+          - generic [ref=e109]:
+            - heading "C. Portrait history (1)" [level=2] [ref=e110]
+            - generic [ref=e112]:
+              - generic [ref=e113]: v1
+              - generic [ref=e114]: manual
+              - generic [ref=e115]: 12/04/2026, 18:43:40
+              - generic [ref=e116]: "topics: career, health, family"
+          - generic [ref=e117]:
+            - heading "D. Chat" [level=2] [ref=e118]
+            - generic [ref=e119]:
+              - generic [ref=e120]:
+                - text: "active session:"
+                - code [ref=e121]: none
+              - generic [ref=e122]: "distinct sessions: 1"
+              - generic [ref=e123]: "total messages: 2"
+              - generic [ref=e124]: "archived: 2"
+              - generic [ref=e125]: "est. total tokens: 122"
+              - generic [ref=e126]: "last activity: 12/04/2026, 18:41:04"
+            - group [ref=e127]:
+              - generic "Recent 50 messages" [ref=e128] [cursor=pointer]
+          - generic [ref=e129]:
+            - heading "E. Live preview (what the master would see right now)" [level=2] [ref=e130]
+            - generic [ref=e131]: "Compressed history: 0 messages, ~0 tokens"
+            - button "Show system prompt (22429 chars)" [ref=e132] [cursor=pointer]
+          - generic [ref=e133]:
+            - heading "F. LLM logs (last 20 master calls)" [level=2] [ref=e134]
+            - generic [ref=e135]:
+              - generic [ref=e136]:
+                - generic [ref=e137]: success
+                - generic [ref=e138]: 12/04/2026, 10:41:03
+                - generic [ref=e139]: 8477ms
+                - generic [ref=e140]: openai/gpt-5.4
+                - generic [ref=e141]: 今年運勢如何？
+              - generic [ref=e142]:
+                - generic [ref=e143]: success
+                - generic [ref=e144]: 12/04/2026, 10:40:55
+                - generic [ref=e145]: 16394ms
+                - generic [ref=e146]: openai/gpt-5.4
+                - generic [ref=e147]: 今年運勢如何？
+              - generic [ref=e148]:
+                - generic [ref=e149]: success
+                - generic [ref=e150]: 12/04/2026, 10:40:38
+                - generic [ref=e151]: 1313ms
+                - generic [ref=e152]: openai/gpt-5.4
+                - generic [ref=e153]: 今年運勢如何？
+              - generic [ref=e154]:
+                - generic [ref=e155]: success
+                - generic [ref=e156]: 12/04/2026, 10:40:37
+                - generic [ref=e157]: 3165ms
+                - generic [ref=e158]: openai/gpt-5.4
+                - generic [ref=e159]: 今年運勢如何？
+              - generic [ref=e160]:
+                - generic [ref=e161]: success
+                - generic [ref=e162]: 12/04/2026, 10:38:38
+                - generic [ref=e163]: 4619ms
+                - generic [ref=e164]: openai/gpt-5.4
+                - generic [ref=e165]: API smoke test Phase 3
+              - generic [ref=e166]:
+                - generic [ref=e167]: success
+                - generic [ref=e168]: 12/04/2026, 09:31:38
+                - generic [ref=e169]: 2564ms
+                - generic [ref=e170]: openai/gpt-5.4
+                - generic [ref=e171]: API smoke test Phase 3
+              - generic [ref=e172]:
+                - generic [ref=e173]: success
+                - generic [ref=e174]: 12/04/2026, 09:28:21
+                - generic [ref=e175]: 2174ms
+                - generic [ref=e176]: openai/gpt-5.4
+                - generic [ref=e177]: API smoke test Phase 3
+              - generic [ref=e178]:
+                - generic [ref=e179]: success
+                - generic [ref=e180]: 11/04/2026, 13:25:26
+                - generic [ref=e181]: 3645ms
+                - generic [ref=e182]: openai/gpt-5.4
+                - generic [ref=e183]: "ziwei 的占卜結果已出 (id: cmnulogs60021thsc8nsnbq1a)，請繼續分析。"
+              - generic [ref=e184]:
+                - generic [ref=e185]: success
+                - generic [ref=e186]: 11/04/2026, 13:25:22
+                - generic [ref=e187]: 1779ms
+                - generic [ref=e188]: openai/gpt-5.4
+                - generic [ref=e189]: "ziwei 的占卜結果已出 (id: cmnulogs60021thsc8nsnbq1a)，請繼續分析。"
+              - generic [ref=e190]:
+                - generic [ref=e191]: success
+                - generic [ref=e192]: 11/04/2026, 13:25:20
+                - generic [ref=e193]: 1020ms
+                - generic [ref=e194]: openai/gpt-5.4
+                - generic [ref=e195]: "ziwei 的占卜結果已出 (id: cmnulogs60021thsc8nsnbq1a)，請繼續分析。"
+              - generic [ref=e196]:
+                - generic [ref=e197]: success
+                - generic [ref=e198]: 11/04/2026, 13:25:19
+                - generic [ref=e199]: 3319ms
+                - generic [ref=e200]: openai/gpt-5.4
+                - generic [ref=e201]: "ziwei 的占卜結果已出 (id: cmnulogs60021thsc8nsnbq1a)，請繼續分析。"
+              - generic [ref=e202]:
+                - generic [ref=e203]: success
+                - generic [ref=e204]: 11/04/2026, 13:19:47
+                - generic [ref=e205]: 2382ms
+                - generic [ref=e206]: openai/gpt-5.4
+                - generic [ref=e207]: 我想给我自己再算一局紫薇斗数
+              - generic [ref=e208]:
+                - generic [ref=e209]: success
+                - generic [ref=e210]: 11/04/2026, 13:19:45
+                - generic [ref=e211]: 1736ms
+                - generic [ref=e212]: openai/gpt-5.4
+                - generic [ref=e213]: 我想给我自己再算一局紫薇斗数
+              - generic [ref=e214]:
+                - generic [ref=e215]: success
+                - generic [ref=e216]: 11/04/2026, 13:19:43
+                - generic [ref=e217]: 5427ms
+                - generic [ref=e218]: openai/gpt-5.4
+                - generic [ref=e219]: 我想给我自己再算一局紫薇斗数
+              - generic [ref=e220]:
+                - generic [ref=e221]: success
+                - generic [ref=e222]: 11/04/2026, 13:19:04
+                - generic [ref=e223]: 3775ms
+                - generic [ref=e224]: openai/gpt-5.4
+                - generic [ref=e225]: 我想看紫微命盤
+              - generic [ref=e226]:
+                - generic [ref=e227]: success
+                - generic [ref=e228]: 11/04/2026, 13:19:00
+                - generic [ref=e229]: 2103ms
+                - generic [ref=e230]: openai/gpt-5.4
+                - generic [ref=e231]: 我想看紫微命盤
+              - generic [ref=e232]:
+                - generic [ref=e233]: success
+                - generic [ref=e234]: 11/04/2026, 13:18:58
+                - generic [ref=e235]: 3283ms
+                - generic [ref=e236]: openai/gpt-5.4
+                - generic [ref=e237]: 我想看紫微命盤
+              - generic [ref=e238]:
+                - generic [ref=e239]: success
+                - generic [ref=e240]: 11/04/2026, 12:07:08
+                - generic [ref=e241]: 7522ms
+                - generic [ref=e242]: openai/gpt-5.4
+                - generic [ref=e243]: 我今年事业怎么样
+              - generic [ref=e244]:
+                - generic [ref=e245]: success
+                - generic [ref=e246]: 11/04/2026, 12:07:01
+                - generic [ref=e247]: 2079ms
+                - generic [ref=e248]: openai/gpt-5.4
+                - generic [ref=e249]: 我今年事业怎么样
+              - generic [ref=e250]:
+                - generic [ref=e251]: success
+                - generic [ref=e252]: 11/04/2026, 12:06:58
+                - generic [ref=e253]: 2845ms
+                - generic [ref=e254]: openai/gpt-5.4
+                - generic [ref=e255]: 我今年事业怎么样
+          - generic [ref=e256]:
+            - heading "G. Admin actions" [level=2] [ref=e257]
+            - generic [ref=e258]:
+              - button "Dry-run portrait extraction (preview only)" [ref=e260] [cursor=pointer]
+              - separator [ref=e261]
+              - generic [ref=e262]:
+                - generic [ref=e263]: "Reason for resetting portrait (required, recorded in audit log):"
+                - 'textbox "e.g. user requested via support ticket #1234" [ref=e264]'
+                - button "Reset portrait + history" [ref=e265] [cursor=pointer]
+              - separator [ref=e266]
+              - generic [ref=e267]:
+                - generic [ref=e268]: "Reason for clearing chat (required):"
+                - textbox "e.g. user reported master is stuck on bad context" [ref=e269]
+                - button "Clear all chat history" [ref=e270] [cursor=pointer]
+          - generic [ref=e271]:
+            - heading "H. Admin access log for this user" [level=2] [ref=e272]
+            - generic [ref=e273]:
+              - generic [ref=e274]:
+                - generic [ref=e275]: 12/04/2026, 18:44:07
+                - generic [ref=e276]: zhangweicalm@gmail.com
+                - generic [ref=e277]: view_master_debug
+              - generic [ref=e278]:
+                - generic [ref=e279]: 12/04/2026, 18:44:07
+                - generic [ref=e280]: zhangweicalm@gmail.com
+                - generic [ref=e281]: view_master_debug
+              - generic [ref=e282]:
+                - generic [ref=e283]: 12/04/2026, 18:38:43
+                - generic [ref=e284]: zhangweicalm@gmail.com
+                - generic [ref=e285]: view_master_debug
+              - generic [ref=e286]:
+                - generic [ref=e287]: 12/04/2026, 17:31:44
+                - generic [ref=e288]: zhangweicalm@gmail.com
+                - generic [ref=e289]: view_master_debug
+  - button "💬" [ref=e290] [cursor=pointer]
+  - contentinfo [ref=e25]:
+    - link "隱私政策" [ref=e26] [cursor=pointer]:
+      - /url: /privacy
+    - text: ·
+    - link "用戶協議" [ref=e27] [cursor=pointer]:
+      - /url: /terms
+    - text: ·
+    - generic [ref=e28]: © 2026 玄機
+  - generic [ref=e292]:
+    - generic [ref=e293]: 🧙‍♂️
+    - textbox "問問玄機大師..." [ref=e294]
+    - button "展開" [ref=e295] [cursor=pointer]

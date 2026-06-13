@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 async function copyToClipboard(text: string): Promise<boolean> {
   try {
@@ -27,10 +26,13 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW' }: {
+export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW', variant = 'block' }: {
   readingId: string
   shareToken?: string | null
   lang?: string
+  /** 'block' = full-width section with inline URL display (default).
+   *  'inline' = a compact pill button suited to a header corner; copies on click. */
+  variant?: 'block' | 'inline'
 }) {
   const [url, setUrl] = useState<string | null>(
     shareToken ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/${shareToken}` : null
@@ -52,8 +54,24 @@ export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW
           toast.success(T(lang, '分享連結已生成', 'Share link generated'))
         }
       }
-    } catch { toast.error('Error') }
+    } catch { toast.error(T(lang, '分享失敗', 'Share failed')) }
     setLoading(false)
+  }
+
+  // Compact pill — used in the result card's header corner.
+  if (variant === 'inline') {
+    return (
+      <button
+        onClick={url
+          ? () => { copyToClipboard(url).then(ok => { if (ok) toast.success(T(lang, '連結已複製！', 'Link copied!')) }) }
+          : generate}
+        disabled={loading}
+        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
+        style={{ backgroundColor: 'rgba(212, 168, 83, 0.1)', color: 'var(--gold)', border: '1px solid rgba(212, 168, 83, 0.25)' }}
+      >
+        {loading ? '...' : url ? `🔗 ${T(lang, '複製連結', 'Copy link')}` : `📤 ${T(lang, '分享', 'Share')}`}
+      </button>
+    )
   }
 
   if (url) {

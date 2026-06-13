@@ -156,6 +156,84 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Xuanji Master — featured AI consultant entry */}
+      {/* Static promo section for SIGNED-OUT visitors only.
+          Authenticated users get the global MasterChatWidget instead and
+          are also auto-redirected to /divination by the useEffect above,
+          so this section is effectively never shown to them. Click goes to
+          /login with a next param so signing in lands them on /divination
+          where the master widget is mounted and ready. */}
+      <section className="py-12 sm:py-20 px-3 sm:px-4 max-w-5xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="relative overflow-hidden rounded-3xl border border-gold/30 p-8 sm:p-12"
+          style={{
+            background:
+              'linear-gradient(135deg, rgba(212,168,83,0.08) 0%, rgba(20,16,40,0.4) 50%, rgba(212,168,83,0.06) 100%)',
+            boxShadow: '0 0 40px rgba(212,168,83,0.08) inset',
+          }}
+        >
+          {/* Decorative glow */}
+          <div
+            className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-30 pointer-events-none"
+            style={{ background: 'radial-gradient(circle, rgba(212,168,83,0.4) 0%, transparent 70%)' }}
+          />
+
+          <div className="relative grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-6 sm:gap-8 items-center">
+            <div className="text-6xl sm:text-7xl flex-shrink-0 select-none" aria-hidden>
+              🧙‍♂️
+            </div>
+
+            <div className="text-center md:text-left">
+              <p className="text-gold/70 text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] mb-2">
+                {lang === 'zh-TW' ? '私人命理顧問' : 'Personal Master'}
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-serif text-gold mb-3" style={{ textShadow: '0 0 30px rgba(212,168,83,0.3)' }}>
+                {lang === 'zh-TW' ? '玄機大師' : 'Master Xuanji'}
+              </h2>
+              <p className="text-white/70 leading-relaxed max-w-xl">
+                {lang === 'zh-TW'
+                  ? '不只是排盤工具。玄機大師以古法為本、AI 為用，能讀你的命盤、追你的流年、解你的疑惑。隨時對話，像和一位真正的命理師喝茶。'
+                  : 'More than a calculator. Master Xuanji reads your charts, tracks your annual fortune, and answers your questions — anytime, like sitting with a real diviner over tea.'}
+              </p>
+            </div>
+
+            <Link
+              href={`/login?next=${encodeURIComponent('/divination')}`}
+              className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light hover:shadow-lg hover:shadow-gold/30 transition-all whitespace-nowrap"
+            >
+              <span>{lang === 'zh-TW' ? '開始對話' : 'Start Chatting'}</span>
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
+
+          {/* Three small feature highlights below the main row */}
+          <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-8 pt-6 border-t border-gold/15">
+            {(lang === 'zh-TW'
+              ? [
+                  { icon: '📜', title: '命盤共讀', desc: '直接調出你的盤，逐段精解' },
+                  { icon: '🕰️', title: '流年追蹤', desc: '節氣、大運、關鍵年份的應期' },
+                  { icon: '💬', title: '隨時提問', desc: '不限次數，跨體系交叉印證' },
+                ]
+              : [
+                  { icon: '📜', title: 'Chart-aware', desc: 'Pulls your charts and walks through each section' },
+                  { icon: '🕰️', title: 'Time-anchored', desc: 'Tracks 節氣, 大運, and key year resonance' },
+                  { icon: '💬', title: 'Ask anything', desc: 'Unlimited turns, cross-system reasoning' },
+                ]
+            ).map((f) => (
+              <div key={f.title} className="text-center sm:text-left">
+                <div className="text-2xl mb-2">{f.icon}</div>
+                <p className="text-gold text-sm font-medium mb-1">{f.title}</p>
+                <p className="text-white/50 text-xs leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
       {/* About */}
       <section className="py-12 sm:py-20 px-3 sm:px-4 max-w-4xl mx-auto text-center">
         <motion.div

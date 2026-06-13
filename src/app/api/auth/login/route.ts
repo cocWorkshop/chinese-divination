@@ -30,6 +30,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'INVALID_CREDENTIALS' }, { status: 401 })
     }
 
+    // Tentative users have no password (created via the /start funnel).
+    // Surface a specific error code so the UI can redirect them to finish
+    // their pending signup at /start/unlock instead of silently failing.
+    if (!user.password) {
+      await logAuth({ action: 'login', status: 'failure', email, userId: user.id, reason: 'tentative_user', ip, userAgent })
+      return NextResponse.json({ error: 'TENTATIVE_USER', tentative: true }, { status: 403 })
+    }
+
     const isValid = await compare(password, user.password)
     if (!isValid) {
       await logAuth({ action: 'login', status: 'failure', email, userId: user.id, reason: 'invalid_password', ip, userAgent })

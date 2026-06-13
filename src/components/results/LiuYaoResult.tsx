@@ -1,13 +1,14 @@
 'use client'
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
+import SectionDrawer from './SectionDrawer'
+import StreamingSection from './StreamingSection'
+import PersonInfoHeader from './PersonInfoHeader'
 import type { DivinationResultProps, LiuYaoData, HexagramData } from '@/types/divination'
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
+import { T } from '@/lib/i18n'
 
 const elementColor: Record<string, string> = {
   '金': 'text-gray-300', '木': 'text-green-400', '水': 'text-blue-400',
@@ -31,9 +32,9 @@ const outcomeColor: Record<string, string> = {
 function HexagramVisual({ hex, label, showDetails, lang }: { hex: HexagramData; label?: string; showDetails?: boolean; lang: string }) {
   return (
     <div className="text-center">
-      {label && <div className="text-white/40 text-xs mb-2">{label}</div>}
+      {label && <div className="text-[var(--text-muted)] text-xs mb-2">{label}</div>}
       <h3 className="text-gold font-serif text-xl mb-1">{hex.fullName}</h3>
-      {hex.palace && <div className="text-white/50 text-xs mb-3">{hex.palace}{T(lang, '宫', ' Palace')} · {hex.palaceElement}</div>}
+      {hex.palace && <div className="text-[var(--text-muted)] text-xs mb-3">{hex.palace}{T(lang, '宫', ' Palace')} · {hex.palaceElement}</div>}
 
       {/* Lines — displayed bottom to top */}
       <div className="flex flex-col items-center gap-1 my-4">
@@ -41,13 +42,11 @@ function HexagramVisual({ hex, label, showDetails, lang }: { hex: HexagramData; 
           const isChanging = line.isChanging
           return (
             <div key={ri} className={`flex items-center gap-2 sm:gap-3 w-full max-w-xs mx-auto px-1 py-0.5 rounded ${isChanging ? 'bg-amber-500/5' : ''}`}>
-              {/* Six relative */}
               {showDetails && (
-                <span className={`text-[10px] sm:text-xs w-8 text-right flex-shrink-0 ${sixRelativeColor[line.sixRelative] || 'text-white/50'}`}>
+                <span className={`text-[10px] sm:text-xs w-8 text-right flex-shrink-0 ${sixRelativeColor[line.sixRelative] || 'text-[var(--text-muted)]'}`}>
                   {line.sixRelative}
                 </span>
               )}
-              {/* Line visual */}
               <div className="flex items-center gap-0.5 flex-1 justify-center">
                 {line.isYang ? (
                   <div className={`w-16 sm:w-20 h-2 rounded ${isChanging ? 'bg-amber-400' : 'bg-gold/70'}`} />
@@ -60,12 +59,11 @@ function HexagramVisual({ hex, label, showDetails, lang }: { hex: HexagramData; 
                 )}
                 {isChanging && <span className="text-amber-400 text-[10px] ml-0.5">✕</span>}
               </div>
-              {/* Branch & Element */}
               {showDetails && (
-                <span className={`text-[10px] sm:text-xs w-12 flex-shrink-0 ${elementColor[line.element] || 'text-white/50'}`}>
+                <span className={`text-[10px] sm:text-xs w-12 flex-shrink-0 ${elementColor[line.element] || 'text-[var(--text-muted)]'}`}>
                   {line.branch}{line.element}
                   {line.isShiYao && <span className="text-gold ml-0.5">世</span>}
-                  {line.isYingYao && <span className="text-white/40 ml-0.5">应</span>}
+                  {line.isYingYao && <span className="text-[var(--text-muted)] ml-0.5">应</span>}
                 </span>
               )}
             </div>
@@ -73,7 +71,6 @@ function HexagramVisual({ hex, label, showDetails, lang }: { hex: HexagramData; 
         })}
       </div>
 
-      {/* Trigrams */}
       {hex.upperTrigram && hex.lowerTrigram && (
         <div className="flex justify-center gap-6 mt-3">
           {[
@@ -83,7 +80,7 @@ function HexagramVisual({ hex, label, showDetails, lang }: { hex: HexagramData; 
             <div key={i} className="text-center">
               <div className="text-lg">{item.t.symbol}</div>
               <div className="text-gold text-xs">{item.t.name}({item.t.nature})</div>
-              <div className="text-white/30 text-[10px]">{T(lang, item.label, item.label === '上卦' ? 'Upper' : 'Lower')} · {item.t.element}</div>
+              <div className="text-[var(--text-muted)] text-[10px]">{T(lang, item.label, item.label === '上卦' ? 'Upper' : 'Lower')} · {item.t.element}</div>
             </div>
           ))}
         </div>
@@ -92,133 +89,136 @@ function HexagramVisual({ hex, label, showDetails, lang }: { hex: HexagramData; 
   )
 }
 
-export default function LiuYaoResult({ data, rawResult, isShared, readingId, chatMessages }: DivinationResultProps) {
+export default function LiuYaoResult({ data, rawResult, isShared, readingId, chatMessages, subjectName, birthInfo, createdAt, streaming }: DivinationResultProps) {
   const { lang } = useLang()
   const d = data as unknown as LiuYaoData
-  const [activeTab, setActiveTab] = useState<string>('interpretation')
-
-  const tabs = [
-    { key: 'interpretation', label: T(lang, '卦象解讀', 'Interpretation'), icon: '📖' },
-    { key: 'sixRelative', label: T(lang, '六親分析', 'Six Relatives'), icon: '👥' },
-    { key: 'shiYing', label: T(lang, '世應分析', 'Shi-Ying'), icon: '⚖️' },
-    ...(d.changingAnalysis ? [{ key: 'changing', label: T(lang, '變卦分析', 'Changing'), icon: '🔄' }] : []),
-    { key: 'advice', label: T(lang, '建議', 'Advice'), icon: '💡' },
-  ]
-
   const oc = d.outcome || '中'
   const ocClass = outcomeColor[oc] || outcomeColor['中']
 
+  // Analysis sections — interpretation is pulled out as overview
+  const analysisSections = [
+    { icon: '👥', label: T(lang, '六親分析', 'Six Relatives'), content: d.sixRelativeAnalysis },
+    { icon: '⚖️', label: T(lang, '世應分析', 'Shi-Ying'), content: d.shiYingAnalysis },
+    ...(d.changingAnalysis ? [{ icon: '🔄', label: T(lang, '變卦分析', 'Changing'), content: d.changingAnalysis }] : []),
+  ]
+
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Tabs (Analysis/Interpretation) */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <div className="flex flex-wrap gap-1 mb-4">
-          {tabs.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={`px-3 py-2 rounded-lg text-sm transition-all ${
-                activeTab === t.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'
-              }`}
-            >
-              {t.icon} {t.label}
-            </button>
-          ))}
+    <div className="space-y-4 sm:space-y-5">
+      <PersonInfoHeader subjectName={subjectName} birthInfo={birthInfo} createdAt={createdAt} />
 
-        </div>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-          >
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-white/80 text-sm leading-relaxed ziwei-markdown">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {(activeTab === 'interpretation' ? d.interpretation
-                  : activeTab === 'sixRelative' ? d.sixRelativeAnalysis
-                  : activeTab === 'shiYing' ? d.shiYingAnalysis
-                  : activeTab === 'changing' ? d.changingAnalysis
-                  : activeTab === 'advice' ? d.advice
-                  : '') || T(lang, '暫無內容', 'No content')}
-              </ReactMarkdown>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Gua Ci & Yao Ci */}
-      {(d.guaCi || d.yaoCi) && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          {d.guaCi && (
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
-              <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '卦辭', 'Hexagram Text')}</h4>
-              <div className="text-white/70 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.guaCi}</ReactMarkdown></div>
-            </div>
-          )}
-          {d.yaoCi && (
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
-              <h4 className="text-gold font-serif text-sm mb-2">{T(lang, '爻辭', 'Line Text')}</h4>
-              <div className="text-white/70 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.yaoCi}</ReactMarkdown></div>
-            </div>
-          )}
-        </motion.div>
-      )}
-
-      {/* Timing */}
-      {d.timing && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="glass-card rounded-xl p-4 sm:p-5 border border-amber-500/30 bg-amber-500/5">
-          <h4 className="text-amber-400 font-serif text-sm mb-2">⏳ {T(lang, '應期', 'Timing')}</h4>
-          <div className="text-white/80 text-sm leading-relaxed ziwei-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{d.timing}</ReactMarkdown></div>
-        </motion.div>
-      )}
-
-      {/* Key Points */}
-      {d.keyPoints && d.keyPoints.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-          className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20">
-          <h4 className="text-gold font-serif mb-3">{T(lang, '要點', 'Key Points')}</h4>
-          <ul className="space-y-2">
-            {d.keyPoints.map((pt, i) => (
-              <li key={i} className="flex gap-2 text-white/70 text-sm">
-                <span className="text-gold flex-shrink-0">☯</span>
-                <span>{pt}</span>
-              </li>
-            ))}
-          </ul>
-        </motion.div>
-      )}
-
-      {/* Hexagram Display */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-        className="glass-card rounded-xl p-3 sm:p-6 border border-gold/20">
-
-        {d.changedHexagram ? (
-          <div className="grid grid-cols-2 gap-2 sm:gap-6">
-            <div>
+      {/* ═══ ① CHART — hexagram visual + outcome + classical text ═══ */}
+      <SectionDrawer icon="🪙" title={T(lang, '卦象', 'Hexagram')} align="center" size="lg">
+        <div className="space-y-4">
+          {d.changedHexagram ? (
+            <div className="grid grid-cols-2 gap-2 sm:gap-6">
               <HexagramVisual hex={d.originalHexagram!} label={T(lang, '本卦', 'Original')} showDetails lang={lang} />
-            </div>
-            <div>
               <HexagramVisual hex={d.changedHexagram} label={T(lang, '變卦', 'Changed')} showDetails lang={lang} />
             </div>
+          ) : d.originalHexagram ? (
+            <HexagramVisual hex={d.originalHexagram} showDetails lang={lang} />
+          ) : null}
+
+          <div className="text-center">
+            <span className={`inline-block px-4 py-1.5 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
           </div>
-        ) : d.originalHexagram ? (
-          <HexagramVisual hex={d.originalHexagram} showDetails lang={lang} />
-        ) : null}
 
-        {/* Outcome Badge */}
-        <div className="text-center mt-4">
-          <span className={`inline-block px-4 py-1.5 rounded-full border text-sm font-semibold ${ocClass}`}>
-            {oc}
-          </span>
+          {(d.guaCi || d.yaoCi) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {d.guaCi && (
+                <div className="rounded-lg p-3 border border-gold/15 bg-gold/5">
+                  <h4 className="text-gold font-serif text-sm mb-1.5">{T(lang, '卦辭', 'Judgment')}</h4>
+                  <div className="text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{d.guaCi}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
+              {d.yaoCi && (
+                <div className="rounded-lg p-3 border border-gold/15 bg-gold/5">
+                  <h4 className="text-gold font-serif text-sm mb-1.5">{T(lang, '爻辭', 'Line Text')}</h4>
+                  <div className="text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{d.yaoCi}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {d.timing && (
+            <div className="rounded-lg p-3 border border-amber-500/30 bg-amber-500/5">
+              <h4 className="text-amber-400 font-serif text-sm mb-1.5 flex items-center gap-1.5">
+                <span aria-hidden>🕰️</span>
+                <span>{T(lang, '應期', 'Timing')}</span>
+              </h4>
+              <div className="text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{d.timing}</ReactMarkdown>
+              </div>
+            </div>
+          )}
         </div>
-      </motion.div>
+      </SectionDrawer>
 
-      {/* ═══ XUANJI Q&A ═══ */}
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="liuyao" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.1} />
+      {/* ═══ ② OVERVIEW — interpretation, always visible ═══ */}
+      {(() => {
+        const hasContent = typeof d.interpretation === 'string' && d.interpretation.trim().length > 0
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04 }}
+            className={`px-1 sm:px-2 transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}
+          >
+            <h3 className="text-gold font-serif text-base mb-3 flex items-center gap-2">
+              <span aria-hidden>📖</span>
+              <span>{T(lang, '卦象解讀', 'Interpretation')}</span>
+            </h3>
+            <div className="text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown break-words">
+              {hasContent ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{d.interpretation}</ReactMarkdown>
+              ) : streaming ? (
+                <p className="text-[var(--text-muted)] leading-relaxed">
+                  {T(lang, '此段正在由玄機大師撰寫，請稍候片刻…', 'Being composed by Master Xuanji…')}
+                </p>
+              ) : (
+                <span className="text-[var(--text-muted)] text-sm">{T(lang, '暫無內容', 'No content')}</span>
+              )}
+            </div>
+          </motion.div>
+        )
+      })()}
 
+      {/* ═══ ③ ANALYSIS SECTIONS — drawers ═══ */}
+      <div className="space-y-2">
+        {analysisSections.map((s) => (
+          <StreamingSection key={s.label} icon={s.icon} title={s.label} content={s.content} streaming={streaming} dotAnimName="dotPulseLY" />
+        ))}
+      </div>
+      <style jsx global>{`
+        @keyframes dotPulseLY {
+          0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+          40% { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+
+      {/* ═══ ④ FOOTER — key points + advice + QA ═══ */}
+      {d.keyPoints && d.keyPoints.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <h3 className="text-gold font-serif text-base mb-2">☯ {T(lang, '要點', 'Key Points')}</h3>
+          <div className="grid gap-2">
+            {d.keyPoints.map((pt, i) => (
+              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">
+                <span className="w-5 h-5 rounded-full bg-gold/20 text-gold text-[10px] flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
+                <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{pt}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {d.advice && typeof d.advice === 'string' && d.advice.trim() && (
+        <StreamingSection icon="💡" title={T(lang, '建議', 'Advice')} content={d.advice} streaming={streaming} dotAnimName="dotPulseLY" />
+      )}
+
+      <XuanjiChatCard readingResult={rawResult || ''} readingType="liuyao" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />
     </div>
   )
 }

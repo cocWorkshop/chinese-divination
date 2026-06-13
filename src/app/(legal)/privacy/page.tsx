@@ -2,11 +2,10 @@
 
 import { useLang } from '@/components/LanguageContext'
 import Link from 'next/link'
+import { T } from '@/lib/i18n'
 
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
-
-const POLICY_VERSION = '1.0'
-const EFFECTIVE_DATE = '2026-03-20'
+const POLICY_VERSION = '1.1'
+const EFFECTIVE_DATE = '2026-04-11'
 
 export default function PrivacyPolicyPage() {
   const { lang } = useLang()
@@ -43,9 +42,84 @@ export default function PrivacyPolicyPage() {
                 <li>{T(lang, '帳號信息：電子郵箱、姓名（可選）、密碼（加密存儲）', 'Account info: email, name (optional), password (encrypted)')}</li>
                 <li>{T(lang, '出生信息：出生日期、時辰、出生地、性別 — 用於占卜計算', 'Birth info: date, time, place, gender — for divination calculations')}</li>
                 <li>{T(lang, '占卜記錄：您的問題和生成的解讀結果', 'Divination records: your questions and generated readings')}</li>
+                <li>{T(lang, '玄機大師對話歷史：你的訊息、AI 回覆、相關工具呼叫記錄', 'Master Xuanji chat history: your messages, AI responses, and related tool call records')}</li>
+                <li>{T(lang, '用戶記憶：從對話中自動提取的穩定偏好和興趣（可隨時關閉、刪除、匯出）', 'User memory: stable preferences and interests automatically extracted from conversations (can be paused, deleted, or exported anytime)')}</li>
                 <li>{T(lang, '使用日誌：IP 地址、用戶代理（User Agent）、登入/登出時間 — 用於安全審計', 'Usage logs: IP address, user agent, login/logout times — for security audit')}</li>
                 <li>{T(lang, '回饋信息：您提交的評分和意見回饋', 'Feedback: ratings and comments you submit')}</li>
               </ul>
+            </section>
+
+            {/* 2a. Master Xuanji Memory — new in v1.1 */}
+            <section>
+              <h2 className="text-lg font-serif mb-3" style={{ color: 'var(--gold)' }}>
+                {T(lang, '2a. 玄機大師對話與記憶', '2a. Master Xuanji Conversations and Memory')}
+              </h2>
+              <p className="mb-3">{T(lang,
+                '為了提供個人化的占卜諮詢體驗，玄機大師 AI 助手會：',
+                'To provide a personalized divination consultation experience, the Master Xuanji AI assistant will:'
+              )}</p>
+              <ul className="list-disc list-inside space-y-1.5 ml-2 mb-3">
+                <li>{T(lang,
+                  '記錄你與大師的對話內容（用戶訊息、AI 回覆、工具呼叫記錄），存儲於本平台資料庫',
+                  'Record your conversations with the Master (your messages, AI responses, and tool call records), stored in this platform\'s database'
+                )}</li>
+                <li>{T(lang,
+                  '自動從對話中提取穩定的用戶偏好和興趣（「用戶記憶」），用於為你定制更貼近的回應',
+                  'Automatically extract stable user preferences and interests from conversations ("user memory"), used to personalize responses'
+                )}</li>
+                <li>{T(lang,
+                  '在每次對話中將你的「用戶記憶」作為上下文發送給第三方 AI 模型',
+                  "Include your 'user memory' as context when sending each conversation turn to third-party AI models"
+                )}</li>
+              </ul>
+              <p className="mb-3">
+                <strong>{T(lang, '用戶記憶中包含：', 'User memory includes:')}</strong>{' '}
+                {T(lang,
+                  '你經常關心的主題、溝通偏好、穩定的生活背景描述。',
+                  'topics you frequently care about, communication preferences, stable life context descriptions.'
+                )}
+              </p>
+              <p className="mb-3">
+                <strong>{T(lang, '用戶記憶中不包含：', 'User memory does NOT include:')}</strong>{' '}
+                {T(lang,
+                  '臨時情緒、一次性問題、詳細的命盤資料（命盤資料另存於占卜歷史）。',
+                  'temporary moods, one-off questions, or detailed chart data (chart data is stored separately in your reading history).'
+                )}
+              </p>
+              <p className="mb-3">
+                <strong>{T(lang, '你的控制權：', 'Your controls:')}</strong>
+              </p>
+              <ul className="list-disc list-inside space-y-1.5 ml-2 mb-3">
+                <li>{T(lang,
+                  '在「個人資料 → 玄機大師記憶」頁面查看、編輯、刪除你的用戶記憶',
+                  "View, edit, or delete your user memory on the 'Profile → Master Memory' page"
+                )}</li>
+                <li>{T(lang,
+                  '隨時暫停或永久關閉記憶功能',
+                  'Pause or permanently disable the memory feature anytime'
+                )}</li>
+                <li>{T(lang,
+                  '在資料匯出（GDPR）中包含完整的對話歷史和用戶記憶',
+                  'Your full conversation history and user memory are included in GDPR data exports'
+                )}</li>
+                <li>{T(lang,
+                  '刪除帳號時，所有對話和記憶將一併永久清除',
+                  'Account deletion permanently removes all conversations and memory together with your account'
+                )}</li>
+              </ul>
+              <p className="mb-3">
+                <strong>{T(lang, '管理員存取：', 'Admin access:')}</strong>{' '}
+                {T(lang,
+                  '為了支援與除錯，授權管理員可在個別情況下存取你的記憶資料。每次存取都會記錄到審計日誌（管理員 ID、目標用戶 ID、操作類型、時間），這些日誌可透過資料匯出取得。一般管理員介面不會顯示用戶記憶。',
+                  'For support and debugging purposes, authorized administrators may access your memory data on a case-by-case basis. Every access is logged to an audit trail (admin ID, target user ID, action type, timestamp), which is included in your data export. User memory is not displayed in the general admin interface.'
+                )}
+              </p>
+              <p>
+                {T(lang,
+                  '此功能預設開啟。如果你不希望使用，請在「個人資料 → 玄機大師記憶」頁面關閉。',
+                  'This feature is enabled by default. If you do not want to use it, please disable it on the "Profile → Master Memory" page.'
+                )}
+              </p>
             </section>
 
             {/* 3. How We Use Your Data */}
@@ -124,6 +198,7 @@ export default function PrivacyPolicyPage() {
               <ul className="list-disc list-inside space-y-1.5 ml-2">
                 <li>{T(lang, '存儲位置：加拿大', 'Storage location: Canada')}</li>
                 <li>{T(lang, '帳號數據：在帳號存續期間保留', 'Account data: retained while account is active')}</li>
+                <li>{T(lang, '玄機大師對話與記憶：在帳號存續期間保留，可隨時手動清除', 'Master Xuanji conversations and memory: retained while account is active, can be manually cleared anytime')}</li>
                 <li>{T(lang, '安全日誌（IP、登入記錄）：保留 90 天後自動清除', 'Security logs (IP, login records): retained 90 days then auto-deleted')}</li>
                 <li>{T(lang, 'LLM 調用日誌：保留 180 天後自動清除', 'LLM call logs: retained 180 days then auto-deleted')}</li>
                 <li>{T(lang, '帳號刪除後：所有數據將在 30 天內徹底清除', 'After account deletion: all data permanently removed within 30 days')}</li>
@@ -144,6 +219,7 @@ export default function PrivacyPolicyPage() {
                 <li>{T(lang, '更正權：修改不準確的個人信息', 'Right to rectification: correct inaccurate personal info')}</li>
                 <li>{T(lang, '刪除權：刪除您的帳號和所有相關數據', 'Right to erasure: delete your account and all associated data')}</li>
                 <li>{T(lang, '數據可攜權：以機器可讀格式導出您的數據', 'Right to data portability: export your data in machine-readable format')}</li>
+                <li>{T(lang, '記憶查看與控制：查看、編輯、暫停或刪除玄機大師的用戶記憶（在「個人資料 → 玄機大師記憶」頁面）', "Memory view & control: view, edit, pause, or delete Master Xuanji's user memory (on the 'Profile → Master Memory' page)")}</li>
               </ul>
               <p className="mt-3">{T(lang,
                 '您可以在「個人資料」頁面中行使以上權利（導出數據、刪除帳號）。',

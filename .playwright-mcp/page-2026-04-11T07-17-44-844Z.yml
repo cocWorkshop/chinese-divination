@@ -1,0 +1,27 @@
+- generic [active] [ref=e1]:
+  - alert [ref=e2]
+  - navigation [ref=e3]:
+    - generic [ref=e5]:
+      - link "玄機AI" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e7]:
+        - link "Divination" [ref=e8] [cursor=pointer]:
+          - /url: /divination
+        - link "Karma Shop" [ref=e9] [cursor=pointer]:
+          - /url: /subscribe
+        - button "☀️" [ref=e10] [cursor=pointer]
+        - button "繁" [ref=e11] [cursor=pointer]
+        - generic [ref=e12]:
+          - link "Login" [ref=e13] [cursor=pointer]:
+            - /url: /login
+          - link "Register" [ref=e14] [cursor=pointer]:
+            - /url: /register
+  - main [ref=e15]
+  - contentinfo [ref=e16]:
+    - link "Privacy Policy" [ref=e17] [cursor=pointer]:
+      - /url: /privacy
+    - text: ·
+    - link "Terms of Service" [ref=e18] [cursor=pointer]:
+      - /url: /terms
+    - text: ·
+    - generic [ref=e19]: © 2026 Chinese-divination

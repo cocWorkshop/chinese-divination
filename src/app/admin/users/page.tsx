@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 interface UserRow {
@@ -87,16 +88,17 @@ export default function AdminUsers() {
               <th className="px-4 py-3 text-left">用户</th>
               <th className="px-4 py-3 text-center">角色</th>
               <th className="px-4 py-3 text-center">使用統計</th>
+              <th className="px-4 py-3 text-center">大師</th>
               <th className="px-4 py-3 text-center">機緣</th>
               <th className="px-4 py-3 text-center">操作</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-white/40">Loading...</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-white/40">Loading...</td></tr>
             )}
             {!loading && users.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-white/40">无用户</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-white/40">无用户</td></tr>
             )}
             {users.map(u => (
               <tr key={u.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
@@ -121,6 +123,15 @@ export default function AdminUsers() {
                   <span title="問答次數">💬{u.usageChat}</span>
                   <span className="text-white/30 mx-1">·</span>
                   <span title="大師次數">🧙{u.usageMaster}</span>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <Link
+                    href={`/admin/users/${u.id}/master`}
+                    className="inline-block px-2 py-0.5 rounded text-xs bg-white/10 text-white/60 hover:bg-gold/20 hover:text-gold transition-colors"
+                    title="查看大師記憶 / Portrait"
+                  >
+                    🧙 詳情
+                  </Link>
                 </td>
                 <td className="px-4 py-3 text-center">
                   {grantingId === u.id ? (

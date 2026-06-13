@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import type { DivinationResultProps, BaziData, ShenShaEntry, DaYunEntry, QiYunInfo } from '@/types/divination'
+import { T } from '@/lib/i18n'
 
 const STEM_ELEMENT_MAP: Record<string, string> = {
   '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
@@ -38,8 +39,6 @@ const sectionsList = [
   { key: 'health', label: '健康', en: 'Health', icon: '🌿' },
   { key: 'daYunDetail', label: '大運精批', en: 'Life Phases', icon: '🔮' },
 ]
-
-const T = (lang: string, zh: string, en: string) => lang === 'en' ? en : zh
 
 function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
   if (!data.paipanOnly || !data.bazi) return data
@@ -86,7 +85,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
   const allPillarShenSha = pillars.some(p => (p.data?.shenSha?.length || 0) > 0)
 
   return (
-    <div className="space-y-3 sm:space-y-4">
+    <div className="space-y-3 sm:space-y-4 overflow-hidden">
       {/* ═══ CHART DATA (Collapsible, default collapsed) ═══ */}
       <button onClick={() => setShowChart(!showChart)}
         className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
@@ -102,7 +101,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="space-y-3 overflow-hidden max-w-[calc(100vw-2rem)]"
+          className="space-y-3 overflow-hidden"
         >
 
       {/* ═══ COMPACT FOUR PILLARS TABLE ═══ */}

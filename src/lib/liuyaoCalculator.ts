@@ -112,31 +112,64 @@ const NAJIA: Record<string, { stem: string; innerBranches: string[]; outerBranch
   '兑': { stem: '丁', innerBranches: ['巳','卯','丑'], outerBranches: ['亥','酉','未'] },
 }
 
-// 六亲 (Six Relatives) based on element relationships with 宫 element
+// 六亲 (Six Relatives) based on 五行生克 with the 宫 (palace) element:
+//   比和(同)→兄弟, 我生→子孙, 生我→父母, 我克→妻财, 克我→官鬼.
+// (was a bug: 妻财/官鬼 used 生 maps instead of 克, so 财/官鬼 could never be
+// assigned and those lines fell through to '?'.)
 function getSixRelative(gongElement: string, lineElement: string): string {
   if (gongElement === lineElement) return '兄弟'
-  // 五行生克
   const produces: Record<string, string> = { '木': '火', '火': '土', '土': '金', '金': '水', '水': '木' }
-  const producedBy: Record<string, string> = { '火': '木', '土': '火', '金': '土', '水': '金', '木': '水' }
-  if (produces[gongElement] === lineElement) return '子孙'
-  if (producedBy[gongElement] === lineElement) return '父母'
-  if (produces[lineElement] === gongElement) return '妻财'
-  if (producedBy[lineElement] === gongElement) return '官鬼'
+  const overcomes: Record<string, string> = { '木': '土', '土': '水', '水': '火', '火': '金', '金': '木' }
+  if (produces[gongElement] === lineElement) return '子孙'   // 我生者为子孙
+  if (produces[lineElement] === gongElement) return '父母'   // 生我者为父母
+  if (overcomes[gongElement] === lineElement) return '妻财'  // 我克者为妻财
+  if (overcomes[lineElement] === gongElement) return '官鬼'  // 克我者为官鬼
   return '?'
 }
 
-// 八宫 (Eight Palace) determination for a hexagram
-// Each palace has 8 hexagrams in order: 本宫卦, 一世, 二世, 三世, 四世, 五世, 游魂, 归魂
-const EIGHT_PALACES: { palace: string; hexagrams: string[] }[] = [
-  { palace: '乾', hexagrams: ['乾乾','乾巽','乾离','乾坤','巽坤','离坤','震坤','乾坎'] },
-  { palace: '坤', hexagrams: ['坤坤','坤震','坤坎','坤乾','震乾','坎乾','巽乾','坤离'] },
-  { palace: '震', hexagrams: ['震震','震兑','震乾','震坤','兑坤','乾坤','坎坤','震艮'] },// 坎实际...
-  { palace: '巽', hexagrams: ['巽巽','巽艮','巽坤','巽乾','艮乾','坤乾','兑乾','巽离'] },
-  { palace: '坎', hexagrams: ['坎坎','坎离','坎震','坎兑','离兑','震兑','坤兑','坎艮'] },
-  { palace: '离', hexagrams: ['离离','离坎','离兑','离艮','坎艮','兑艮','乾艮','离巽'] },
-  { palace: '艮', hexagrams: ['艮艮','艮巽','艮坎','艮离','巽离','坎离','兑离','艮坤'] },
-  { palace: '兑', hexagrams: ['兑兑','兑艮','兑坤','兑震','艮震','坤震','离震','兑乾'] },
+// 八宫 (Eight Palace / 京房八宫) determination for a hexagram.
+// Each palace has 8 hexagrams in order: 本宫卦, 一世, 二世, 三世, 四世, 五世, 游魂, 归魂.
+//
+// Generated programmatically from the canonical flip rules rather than typed by
+// hand (the previous hand-typed table was wrong for ~48/64 hexagrams, which
+// corrupted 宫/世应/六亲 for most readings). Rules, relative to the pure
+// palace hexagram (lower=upper=palace trigram), with line indices 0..5
+// counted bottom→top:
+//   本宫 = no flip; 一世..五世 = cumulatively flip lines 1..5;
+//   游魂 = 五世 with line 4 (index 3) reverted (net flips {0,1,2,4});
+//   归魂 = lower trigram restored to original (net flip {4}).
+const PALACE_ORDER = ['乾', '坤', '震', '巽', '坎', '离', '艮', '兑'] as const
+const FLIP_SETS: number[][] = [
+  [],            // 本宫卦
+  [0],           // 一世
+  [0, 1],        // 二世
+  [0, 1, 2],     // 三世
+  [0, 1, 2, 3],  // 四世
+  [0, 1, 2, 3, 4], // 五世
+  [0, 1, 2, 4],  // 游魂
+  [4],           // 归魂
 ]
+
+const EIGHT_PALACES: { palace: string; hexagrams: string[] }[] = (() => {
+  const bitsToName: Record<string, string> = {}
+  const nameToBits: Record<string, string> = {}
+  for (const k of Object.keys(TRIGRAMS)) {
+    bitsToName[k] = TRIGRAMS[k].name
+    nameToBits[TRIGRAMS[k].name] = k
+  }
+  return PALACE_ORDER.map((palace) => {
+    const base = nameToBits[palace] // 3-bit string, bottom→top
+    const full = (base + base).split('').map(Number) // 6 bits, bottom→top
+    const hexagrams = FLIP_SETS.map((flips) => {
+      const b = full.slice()
+      for (const idx of flips) b[idx] ^= 1
+      const lower = bitsToName[b.slice(0, 3).join('')]
+      const upper = bitsToName[b.slice(3, 6).join('')]
+      return upper + lower // key format used by findPalace/getShiYing
+    })
+    return { palace, hexagrams }
+  })
+})()
 
 function findPalace(upperName: string, lowerName: string): string {
   const key = upperName + lowerName
