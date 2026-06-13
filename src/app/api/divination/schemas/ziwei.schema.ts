@@ -156,8 +156,12 @@ export const ziweiSchemaV2 = z.object({
 
   keyAdvice: z.array(z.string()).default(['建议一', '建议二']),
   luckyInfo: z.object({
-    colors: z.array(z.string()).default([]),
-    directions: z.array(z.string()).default([]),
+    // Non-empty example defaults (NOT .default([])): an empty-array default
+    // makes schemaToLLMTemplate emit `[]`, hiding the shape so the LLM leaves
+    // 幸运色/幸运方位 blank. Matches bazi V2's working pattern; the LLM replaces
+    // the examples.
+    colors: z.array(z.string()).default(['颜色']),
+    directions: z.array(z.string()).default(['方位']),
   }),
 })
 

@@ -7,7 +7,7 @@ import { qimenSchema } from '../qimen.schema'
 import { liuyaoSchema } from '../liuyao.schema'
 import { meihuaSchema } from '../meihua.schema'
 import { baziSchema, baziSchemaV2 } from '../bazi.schema'
-import { ziweiSchema } from '../ziwei.schema'
+import { ziweiSchema, ziweiSchemaV2 } from '../ziwei.schema'
 
 describe('schemaToLLMTemplate', () => {
   it('fallback schema matches original', () => {
@@ -190,6 +190,14 @@ describe('schemaToLLMTemplate', () => {
     expect(kp).toHaveProperty('basis')
     expect(typeof kp.event).toBe('string')
     expect((kp.event as string).length).toBeGreaterThan(0)
+  })
+
+  it('ziweiSchemaV2 luckyInfo shows non-empty colors/directions (not the empty-[] bug)', () => {
+    const template = schemaToLLMTemplate(ziweiSchemaV2) as Record<string, unknown>
+    const luckyInfo = template.luckyInfo as Record<string, unknown>
+    // Regression: .default([]) emitted `[]` and left 幸运色/幸运方位 blank.
+    expect((luckyInfo.colors as unknown[]).length).toBeGreaterThan(0)
+    expect((luckyInfo.directions as unknown[]).length).toBeGreaterThan(0)
   })
 
   it('ziwei schema matches original', () => {
