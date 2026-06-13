@@ -18,6 +18,17 @@ ENV RESEND_API_KEY="re_dummy_build"
 ENV NEXTAUTH_SECRET="dummy-build-secret"
 RUN npm run build
 
+# Isolated prisma CLI tree for the boot-time `migrate deploy`. Version is
+# pinned to the lockfile's prisma (read from the deps stage); npm resolves the
+# FULL transitive closure — the previous hand-picked COPY approach missed deep
+# transitives (effect → fast-check → …) and crash-looped prod on 2026-06-12.
+# Lives in its own directory so it can never collide with the app's runtime
+# node_modules (standalone trace + generated client).
+FROM node:20-alpine AS prisma-cli
+WORKDIR /cli
+COPY --from=deps /app/node_modules/prisma/package.json ./prisma-version.json
+RUN npm install --no-save --no-audit --no-fund prisma@$(node -p "require('./prisma-version.json').version")
+
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -36,9 +47,10 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 # that fetched whatever was latest at image-build time, outside package-lock
 # versioning. (@prisma/config ships inside the @prisma copy above; `effect`
 # is its transitive dependency.)
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/effect ./node_modules/effect
-COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+# Boot-time migration tooling: the self-contained CLI tree from the
+# prisma-cli stage (see comments there). start.js invokes it directly via
+# `node prisma-cli/node_modules/prisma/build/index.js`.
+COPY --from=prisma-cli /cli/node_modules ./prisma-cli/node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/start.js ./start.js
 COPY --from=builder /app/package.json ./package.json

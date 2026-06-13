@@ -29,7 +29,12 @@ http.createServer = function(...args) {
 const { execSync } = require('child_process')
 try {
   console.log('> Running database migrations...')
-  execSync(`npx prisma migrate deploy --schema=./prisma/schema.prisma`, {
+  // Invoke the prisma CLI entry directly (NOT `npx prisma`): the CLI lives in
+  // its own image-baked tree (prisma-cli/, see Dockerfile) so its transitive
+  // deps are complete and isolated; npx would try to DOWNLOAD prisma at boot,
+  // and a copied .bin shim breaks (docker COPY dereferences the symlink away
+  // from its WASM sibling — the 2026-06-12 crash-loop).
+  execSync(`node prisma-cli/node_modules/prisma/build/index.js migrate deploy --schema=./prisma/schema.prisma`, {
     stdio: 'inherit',
     env: { ...process.env },
     timeout: 300_000, // 5 min — a hung migration must not hang the boot forever
