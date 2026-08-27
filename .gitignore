@@ -17,3 +17,12 @@ AGENT_TASK.md
 .claude/worktreestsconfig.tsbuildinfo
 prod_delta.sql
 .claude/
+
+# DB Backup dumps (ignore data dumps, track scripts)
+db_backup/*.dump
+db_backup/*.sql
+db_backup/*.tar
+db_backup/*.gz
+db_backup/*.zip
+db_backup/*.json
+db_backup/*.json.gz

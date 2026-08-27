@@ -14,7 +14,9 @@
     "predeploy-check": "npm run type-check && npm run lint && npm run test:ci",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:push": "echo WARNING: db push drifts migration history - local throwaway DBs ONLY (see docs/prisma-migrations-recovery.md) && prisma db push"
+    "db:push": "echo WARNING: db push drifts migration history - local throwaway DBs ONLY (see docs/prisma-migrations-recovery.md) && prisma db push",
+    "db:backup": "node db_backup/backup.mjs",
+    "db:restore": "node db_backup/restore.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.37.0",
