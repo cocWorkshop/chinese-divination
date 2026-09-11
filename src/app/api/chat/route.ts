@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { completeLLM } from '@/lib/llm'
 import { checkCredits, deductCredits } from '@/lib/rateLimit'
 import { createRequestLogger } from '@/lib/logger'
+import { describeMoment } from '@/lib/currentMoment'
 import * as Sentry from '@sentry/nextjs'
 
 export async function POST(req: NextRequest) {
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { message, history, readingContext, readingType, readingId: chatReadingId, clientTime, lang } = await req.json()
+    const { message, history, readingContext, readingType, readingId: chatReadingId, clientTime, tzOffsetMin, lang } = await req.json()
     const isEnglish = lang === 'en'
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
@@ -109,10 +110,15 @@ export async function POST(req: NextRequest) {
     const currentTypeZh = typeLabelZh[readingType] || '命理'
     const currentTypeEn = typeLabelEn[readingType] || 'Divination'
 
-    const clientDate = clientTime ? new Date(clientTime) : new Date()
-    const todayStr = isEnglish
-      ? clientDate.toLocaleDateString('en-US', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })
-      : clientDate.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'long' })
+    // Issue #150: date/干支 questions were answered from LLM memory and came
+    // out wrong. describeMoment() computes the authoritative solar + lunar +
+    // ganzhi calendar from the client's instant/timezone (same source as the
+    // Master route); the prompts below treat it as the only truth.
+    const clientInstant = typeof clientTime === 'string' && !Number.isNaN(Date.parse(clientTime))
+      ? new Date(clientTime)
+      : new Date()
+    const clientTz = typeof tzOffsetMin === 'number' && Number.isFinite(tzOffsetMin) ? tzOffsetMin : 0
+    const moment = describeMoment(clientInstant, clientTz)
     // Determine if the reading subject is different from the logged-in user
     const isSubjectUser = !targetLabel && subjectInfo.name === (user.name || '未知')
     const subjectLabel = isSubjectUser ? (isEnglish ? 'The user' : '用户本人') : (isEnglish ? 'Subject' : '命主')
@@ -158,7 +164,8 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = isEnglish
       ? `You are a professional ${currentTypeEn} reading analyst. You are helping the user deeply analyze their ${currentTypeEn} reading result.
-Today's date: ${todayStr}.
+Current moment (system-computed, authoritative — the ONLY source of truth for dates): ${moment.line}
+Resolve 今天／今年／本月、流年大運、年齡、應期、擇日 against the moment above — never against an assumed or training-cutoff date. The 干支/農曆 values above are computed for you: quote them as-is and NEVER derive them from memory.
 
 ${subjectLabel} information${targetLabel}:
 - Birth date: ${subjectInfo.birthDate}
@@ -211,7 +218,8 @@ Rules for generating these 3 questions:
 5. Make questions feel like something the user would naturally want to ask next
 ${familyRefEn}`
       : `你是一位专业的${currentTypeZh}解盘师。你正在帮助用户深入分析他们刚刚获得的${currentTypeZh}预测结果。
-今天日期：${todayStr}。
+当前时间（系统排定，权威数据，日期问题以此行为唯一依据）：${moment.line}
+凡涉及今天／今年／本月、流年大运、应期、择日的问题，只能引用上面的时间行；干支和农历值已由系统排定，直接引用，严禁凭记忆或训练数据自行推算。
 
 ${subjectLabel}信息${targetLabel}：
 - 出生日期：${subjectInfo.birthDate}
