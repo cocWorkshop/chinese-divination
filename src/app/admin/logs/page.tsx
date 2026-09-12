@@ -109,6 +109,8 @@ export default function AdminSystemLogs() {
   const [readingsPage, setReadingsPage] = useState(1)
   const [readingsPages, setReadingsPages] = useState(1)
   const [readingsTypeFilter, setReadingsTypeFilter] = useState('')
+  const [readingsEmailSearch, setReadingsEmailSearch] = useState('')
+  const [readingsEmailInput, setReadingsEmailInput] = useState('')
   const [readingsLoading, setReadingsLoading] = useState(true)
   const [readingDetail, setReadingDetail] = useState<ReadingDetail | null>(null)
   const [readingLlmLogs, setReadingLlmLogs] = useState<LlmLogMatch[]>([])
@@ -180,10 +182,11 @@ export default function AdminSystemLogs() {
       .finally(() => setErrLoading(false))
   }, [])
 
-  const fetchReadings = useCallback((p: number, type: string) => {
+  const fetchReadings = useCallback((p: number, type: string, emailSearch: string = '') => {
     setReadingsLoading(true)
     const params = new URLSearchParams({ page: String(p), limit: '20' })
     if (type) params.set('type', type)
+    if (emailSearch) params.set('email', emailSearch)
     fetch(`/api/admin/readings?${params}`)
       .then(r => r.json())
       .then(d => {
@@ -227,7 +230,7 @@ export default function AdminSystemLogs() {
   useEffect(() => { fetchLogs(1, 'all') }, [fetchLogs])
   useEffect(() => { if (tab === 'errors') fetchErrors(1) }, [tab, fetchErrors])
   useEffect(() => { if (tab === 'auth') fetchAuthLogs(1, 'all', 'all', '', '') }, [tab, fetchAuthLogs])
-  useEffect(() => { if (tab === 'readings') fetchReadings(1, '') }, [tab, fetchReadings])
+  useEffect(() => { if (tab === 'readings') fetchReadings(1, readingsTypeFilter, readingsEmailSearch) }, [tab, fetchReadings, readingsTypeFilter, readingsEmailSearch])
   useEffect(() => { if (tab === 'divination') fetchDivLogs(1, '', '') }, [tab, fetchDivLogs])
 
   const Pagination = ({ page, pages, onChange }: { page: number; pages: number; onChange: (p: number) => void }) => {
@@ -594,8 +597,8 @@ export default function AdminSystemLogs() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="text-white/40 text-xs block">用戶</span>
-                    <span className="text-white/80">{readingDetail.user.name || readingDetail.user.email?.split('@')[0]}</span>
-                    <span className="text-white/30 text-xs block">{readingDetail.user.email}</span>
+                    <span className="text-white/80 font-mono text-xs">{readingDetail.user.email || '—'}</span>
+                    {readingDetail.user.name && <span className="text-white/40 text-xs block">{readingDetail.user.name}</span>}
                   </div>
                   <div>
                     <span className="text-white/40 text-xs block">類型</span>
@@ -929,23 +932,62 @@ export default function AdminSystemLogs() {
           ) : (
             /* List View */
             <>
-              <div className="flex gap-1.5 mb-4">
-                {[
-                  { key: '', label: '全部' },
-                  { key: 'bazi', label: '八字' },
-                  { key: 'ziwei', label: '紫微' },
-                  { key: 'qimen', label: '奇門' },
-                  { key: 'iching', label: '易經' },
-                  { key: 'fengshui', label: '風水' },
-                  { key: 'meihua', label: '梅花' },
-                  { key: 'other', label: '其他' },
-                ].map(f => (
-                  <button key={f.key}
-                    onClick={() => { setReadingsTypeFilter(f.key); fetchReadings(1, f.key) }}
-                    className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
-                      readingsTypeFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
-                    }`}>{f.label}</button>
-                ))}
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { key: '', label: '全部' },
+                    { key: 'bazi', label: '八字' },
+                    { key: 'ziwei', label: '紫微' },
+                    { key: 'qimen', label: '奇門' },
+                    { key: 'iching', label: '易經' },
+                    { key: 'fengshui', label: '風水' },
+                    { key: 'meihua', label: '梅花' },
+                    { key: 'other', label: '其他' },
+                  ].map(f => (
+                    <button key={f.key}
+                      onClick={() => { setReadingsTypeFilter(f.key); fetchReadings(1, f.key, readingsEmailSearch) }}
+                      className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                        readingsTypeFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                      }`}>{f.label}</button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="搜尋用戶郵箱..."
+                    value={readingsEmailInput}
+                    onChange={e => setReadingsEmailInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        setReadingsEmailSearch(readingsEmailInput.trim())
+                        fetchReadings(1, readingsTypeFilter, readingsEmailInput.trim())
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-navy-900 border border-gold/15 text-white placeholder-white/30 focus:outline-none focus:border-gold/40 w-48 sm:w-64"
+                  />
+                  <button
+                    onClick={() => {
+                      setReadingsEmailSearch(readingsEmailInput.trim())
+                      fetchReadings(1, readingsTypeFilter, readingsEmailInput.trim())
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-gold/20 text-gold hover:bg-gold/30 transition-colors"
+                  >
+                    搜尋
+                  </button>
+                  {readingsEmailSearch && (
+                    <button
+                      onClick={() => {
+                        setReadingsEmailInput('')
+                        setReadingsEmailSearch('')
+                        fetchReadings(1, readingsTypeFilter, '')
+                      }}
+                      className="px-2 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/60 transition-colors"
+                    >
+                      清除
+                    </button>
+                  )}
+                </div>
               </div>
 
               {readingsLoading ? (
@@ -971,7 +1013,10 @@ export default function AdminSystemLogs() {
                         {r.status === 'completed' ? '✓' : r.status === 'pending' ? '⏳' : r.status === 'failed' ? '✗' : r.status}
                       </span>
                       <span className="text-white/30 text-[10px]">{r.language}</span>
-                      <span className="text-white/70 flex-1 truncate">{r.user.name || r.user.email?.split('@')[0] || '—'}</span>
+                      <span className="text-white/70 flex-1 truncate font-mono text-xs" title={r.user.email || ''}>
+                        {r.user.email || '—'}
+                        {r.user.name && <span className="text-white/40 font-sans ml-1">({r.user.name})</span>}
+                      </span>
                       <span className="text-white/40">{r.targetType === 'family' && r.familyMember ? r.familyMember.relation : '本人'}</span>
                       <span className="text-white/40">{r.inputData?.birthDate || '—'} {r.inputData?.birthTime || ''}</span>
                       <span className="text-white/30">{r.modelTier === 'model2' ? '✨' : '○'}</span>
@@ -982,7 +1027,7 @@ export default function AdminSystemLogs() {
                   ))}
                 </div>
               )}
-              <Pagination page={readingsPage} pages={readingsPages} onChange={p => fetchReadings(p, readingsTypeFilter)} />
+              <Pagination page={readingsPage} pages={readingsPages} onChange={p => fetchReadings(p, readingsTypeFilter, readingsEmailSearch)} />
             </>
           )}
         </>

@@ -139,7 +139,10 @@ export default function AdminFeedbackPage() {
               <div className="flex items-start justify-between gap-4 mb-2">
                 <div className="flex items-center gap-3">
                   <span className="text-gold text-sm tracking-wide">{stars(fb.rating)}</span>
-                  <span className="text-white/40 text-xs">{fb.user.name || fb.user.email}</span>
+                  <span className="text-white/70 text-xs font-mono">
+                    {fb.user.email}
+                    {fb.user.name && <span className="text-white/40 font-sans ml-1.5">({fb.user.name})</span>}
+                  </span>
                 </div>
                 <span className="text-white/30 text-xs flex-shrink-0">{new Date(fb.createdAt).toLocaleString('zh-TW')}</span>
               </div>
@@ -159,7 +162,10 @@ export default function AdminFeedbackPage() {
                       {typeLabels[fb.reading.type] || fb.reading.type}
                     </span>
                   )}
-                  <span className="text-white/40 text-xs">{fb.user.name || fb.user.email}</span>
+                  <span className="text-white/70 text-xs font-mono">
+                    {fb.user.email}
+                    {fb.user.name && <span className="text-white/40 font-sans ml-1.5">({fb.user.name})</span>}
+                  </span>
                 </div>
                 <span className="text-white/30 text-xs flex-shrink-0">{new Date(fb.createdAt).toLocaleString('zh-TW')}</span>
               </div>

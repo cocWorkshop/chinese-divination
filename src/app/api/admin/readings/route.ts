@@ -13,11 +13,20 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 50)
   const type = url.searchParams.get('type') || undefined
   const userId = url.searchParams.get('userId') || undefined
+  const email = url.searchParams.get('email')?.trim() || url.searchParams.get('search')?.trim() || undefined
   const skip = (page - 1) * limit
 
   const where: Record<string, unknown> = { deletedAt: null }
   if (type) where.type = type
   if (userId) where.userId = userId
+  if (email) {
+    where.user = {
+      email: {
+        contains: email,
+        mode: 'insensitive',
+      },
+    }
+  }
 
   const [readings, total] = await Promise.all([
     prisma.reading.findMany({
