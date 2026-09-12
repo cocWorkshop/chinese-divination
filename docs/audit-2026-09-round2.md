@@ -95,9 +95,45 @@
 | P13 | **残余冗余索引清理** | 纯卫生，无风险但会动生产 DDL | 下次迁移顺手 DROP 四个冗余索引 |
 | P14 | **race 修复的并发集成测试** | A1/A2/A3 竞态修复值得有 Promise.all 并发回归 | 仿 creditReservation.test.ts 模式补 3 个用例 |
 
-## 五、验证
+## 五、验证（初始基线）
 
 - `npx tsc --noEmit` — 0 错误
 - `npm run lint` — 0 警告
 - `npx vitest run` — **1078/1078 通过，7.4s**
 - `npx prisma migrate status` — 34 迁移全部应用（新增 add_missing_indexes）
+
+---
+
+## 六、优化计划执行与落地报告（2026-09-12 收尾）
+
+根据用户反馈与指令（“把值得做的做了，觉得没必要的就先不做，但是我想你把test覆盖率全面的提起来，P5也可以做了”），第二轮延后清单已落地推进：
+
+### 1. 落地事项清单
+
+| # | 事项 | 落地方案与成果 | 对应测试/验证 |
+|---|---|---|---|
+| **P1+P12** | MasterChatMessage 与 LlmLog 自动清理保留 | 新建 `masterChatRetention.ts`（>180d 批删）与强化 `logRetention.ts`（LlmLog >180d 硬删），支持环境变量覆盖与 dryRun 模式 | `src/lib/jobs/__tests__/retention.test.ts` (9 tests, 100% 覆盖) |
+| **P2+P13** | turnIndex 唯一约束 + 冗余索引清理 | 生产数据重复检查（0重复项）；生成迁移 `20260912172000_turn_index_unique_and_drop_redundant_indexes`；清理 4 处冗余索引；`appendMasterChatMessage` 增加 P2002 冲突退避重试 | 数据诊断脚本 + 迁移成功应用 |
+| **P3** | 压缩摘要持久化核查 | 生产数据核查：全生命周期 summarize 调用仅 7 次 vs master 806 次（0.9%），暂不增加合成行持久化复杂度，维持现状 | 数据查询脚本确认 |
+| **P4** | Master 失败退款链路 | `src/lib/creditService.ts` 新增 `refundMasterCredits()`（原子性补偿与日志记录）；接入 `src/app/api/master/chat/route.ts` 错误与中止回调 | `src/lib/__tests__/creditService.test.ts` (9 tests) |
+| **P5** | 分享撤销 DELETE 端点与前端交互 | `src/app/api/readings/[id]/share/route.ts` 新增 `DELETE` 路由（置 `shareToken: null`，幂等返回）；`ShareResultButton.tsx` 新增撤销分享操作按钮与提示 | `src/app/api/readings/__tests__/shareRoute.test.ts` (7 tests) |
+| **P14** | 计费竞态并发集成测试 | 针对 A1（start/complete 注册奖励）、A2（gift 领取超额）、A3（推荐人奖励）编写并发请求模拟 | `src/__tests__/integration/billingRaces.test.ts` (3 并发测试通过) |
+
+### 2. 测试覆盖率冲刺成果
+
+补齐此前 0-8% 关键盲区的核心业务与底层通信链路：
+- **`src/app/api/divination/__tests__/_inputValidation.test.ts`** (16 tests) — 验证输入字节上限、类型守卫与语言白名单
+- **`src/app/api/divination/__tests__/_finalize.test.ts`** (7 tests) — 验证结果落地、持扣结算与多级拒绝门禁
+- **`src/lib/__tests__/email.test.ts`** (12 tests) — 覆盖 88.57%，验证 token 生成、safeBaseUrl 白名单与各邮件模板
+- **`src/lib/llm/__tests__/complete.test.ts`** (5 tests) — 覆盖 88.05%，验证 OpenRouter 调度、ClaudeProxy 本地代理、400/404/422 `response_format` 自动降级重试与终止信号
+- **`src/lib/llm/__tests__/stream.test.ts`** (5 tests) — 覆盖 81.92%，验证流式 chunk、Tool call delta、done 事件与错误捕获
+- **`src/lib/master/__tests__/turnEngine.test.ts`** (4 tests) — 覆盖 87.27%，验证大模型交互主循环、`[NEXT]` 气泡拆分、Tool 调度与持久化
+- **`src/app/api/__tests__/routeHardening.test.ts`** (11 tests) — 验证 resend-verification 防枚举与限流、credits/history 分页夹紧、通知与反馈防越权
+
+### 3. 最终验收指标
+
+- **类型检查**：`npm run type-check`（`tsc --noEmit`）— **0 错误**
+- **代码规范**：`npm run lint`（`next lint`）— **0 警告/错误**
+- **测试套件**：`npm run test:ci`（Vitest）— **59 个文件，1201 个测试全部通过（耗时 7.22s）**
+- **代码覆盖率**：全局语句覆盖率由约 40% 提升至 **52.79%**；`src/lib/llm` 达 **90.17%**，`src/lib/jobs` 达 **61.84%**，`src/lib/master` 达 **65.02%**
+
