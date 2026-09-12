@@ -4,7 +4,7 @@ export const maxDuration = 600
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkCredits, deductCredits } from '@/lib/creditService'
+import { checkCredits, deductCredits, refundMasterCredits } from '@/lib/creditService'
 import { resolveLLMConfig } from '@/lib/llm'
 import type { Message } from '@/lib/llm'
 import { buildMasterSystemPrompt } from '@/lib/master'
@@ -325,6 +325,10 @@ export async function POST(req: NextRequest) {
       // timeouts (nginx: 60s) would kill the connection mid-turn. Mirrors
       // the divination route's heartbeat.
       const keepalive = setInterval(() => heartbeat(), 15_000)
+      // Failed turn → the user got nothing for the deducted credit: refund
+      // once (LLM error / timeout / client abort all surface as the
+      // engine's error event).
+      let failureRefunded = false
       try {
         for await (const event of runMasterTurn({
           userId,
@@ -345,6 +349,10 @@ export async function POST(req: NextRequest) {
           signal: req.signal,
         })) {
           send(event satisfies EngineEvent)
+          if (event.type === 'error' && !failureRefunded) {
+            failureRefunded = true
+            await refundMasterCredits(userId, log.requestId)
+          }
         }
       } finally {
         clearInterval(keepalive)
