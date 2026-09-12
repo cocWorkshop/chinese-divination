@@ -78,19 +78,22 @@ export interface MeihuaHexagram {
 }
 
 export interface MeihuaChart {
-  // Input info
-  lunarYear: number
-  lunarMonth: number
-  lunarDay: number
-  shichen: number        // 时辰序数
-  yearBranch: string     // 年支
+  // Method indicator
+  method?: 'time' | 'numbers'
+  numbers?: [number, number]
+  // Input info (present in time-based method)
+  lunarYear?: number
+  lunarMonth?: number
+  lunarDay?: number
+  shichen?: number        // 时辰序数
+  yearBranch?: string     // 年支
   // Numbers used
-  yearNum: number
-  monthNum: number
-  dayNum: number
-  hourNum: number
-  upperNum: number       // (年+月+日)%8
-  lowerNum: number       // (年+月+日+时)%8
+  yearNum?: number
+  monthNum?: number
+  dayNum?: number
+  hourNum?: number
+  upperNum: number       // 上卦数 (1-8, 先天八卦)
+  lowerNum: number       // 下卦数 (1-8, 先天八卦)
   changingLine: number   // 动爻 (1-6)
   // Hexagrams
   benGua: MeihuaHexagram    // 本卦
@@ -246,6 +249,7 @@ export function calculateMeihua(
   const { relation, analysis } = analyzeTiYong(tiGua, yongGua)
 
   return {
+    method: 'time',
     lunarYear,
     lunarMonth,
     lunarDay,
@@ -267,3 +271,71 @@ export function calculateMeihua(
     tiYongAnalysis: analysis,
   }
 }
+
+/**
+ * 报数起卦法 (Issue #155)
+ *
+ * 算法原理:
+ * 1. 用户提供两个正整数 (num1, num2)，或由系统生成 1-99 之间的随机数；
+ * 2. 上卦: num1 % 8 (余 0 取 8 坤卦，对应先天八卦数: 乾1 兑2 离3 震4 巽5 坎6 艮7 坤8)；
+ * 3. 下卦: num2 % 8 (余 0 取 8 坤卦)；
+ * 4. 组合成 本卦；
+ * 5. 互卦: 取本卦第 2,3,4 爻为下卦，第 3,4,5 爻为上卦；
+ * 6. 动爻: (num1 + num2) % 6 (余 0 取第 6 爻)；
+ * 7. 变卦: 本卦的动爻阴阳互换 (阳爻变阴，阴爻变阳)；
+ * 8. 体用判定: 动爻在 4-6 爻 (上卦动) 则下卦为体、上卦为用；动爻在 1-3 爻 (下卦动) 则上卦为体、下卦为用。
+ */
+export function calculateMeihuaByNumbers(
+  num1: number,
+  num2: number
+): MeihuaChart {
+  const n1 = Math.max(1, Math.round(Math.abs(num1)))
+  const n2 = Math.max(1, Math.round(Math.abs(num2)))
+
+  const upperNum = modToRange(n1, 8)
+  const lowerNum = modToRange(n2, 8)
+  const changingLine = modToRange(n1 + n2, 6)
+
+  const upperTrigram = makeTrigram(upperNum)
+  const lowerTrigram = makeTrigram(lowerNum)
+
+  // 本卦
+  const benGua = makeHexagram(upperTrigram, lowerTrigram)
+
+  // 互卦
+  const huGua = getHuGua(benGua.lines)
+
+  // 变卦
+  const bianGua = getBianGua(benGua.lines, changingLine)
+
+  // Determine 体卦 and 用卦
+  let tiGua: MeihuaTrigram
+  let yongGua: MeihuaTrigram
+  if (changingLine >= 4) {
+    // 动爻在上卦(4-6) → 上卦为用，下卦为体
+    tiGua = lowerTrigram
+    yongGua = upperTrigram
+  } else {
+    // 动爻在下卦(1-3) → 下卦为用，上卦为体
+    tiGua = upperTrigram
+    yongGua = lowerTrigram
+  }
+
+  const { relation, analysis } = analyzeTiYong(tiGua, yongGua)
+
+  return {
+    method: 'numbers',
+    numbers: [n1, n2],
+    upperNum,
+    lowerNum,
+    changingLine,
+    benGua,
+    huGua,
+    bianGua,
+    tiGua,
+    yongGua,
+    tiYongRelation: relation,
+    tiYongAnalysis: analysis,
+  }
+}
+

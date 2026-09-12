@@ -187,17 +187,22 @@ describe('MeiHua Integration', () => {
     { label: 'evening', input: { question: '感情', readingDateTime: '2026-04-27T18:00:00' } },
     { label: 'other month', input: { question: '事业', readingDateTime: '2026-06-15T10:00:00' } },
     { label: 'winter', input: { question: '总结', readingDateTime: '2026-12-21T14:00:00' } },
+    { label: 'numbers method 33 and 66 (Issue #155)', input: { meihuaMethod: 'numbers', num1: 33, num2: 66, question: '感情' } },
+    { label: 'numbers method 8 and 16', input: { meihuaMethod: 'numbers', num1: 8, num2: 16 } },
   ]
   for (const tc of cases) {
     it(tc.label, () => {
       const ctx = makeCtx('meihua', tc.input)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { chart } = selectHandler(ctx).calculate(ctx) as { chart: any }
+      const { chart, userMessage } = selectHandler(ctx).calculate(ctx) as { chart: any; userMessage: string }
       expect(chart).not.toBeNull()
       expect(chart.benGua).toBeDefined()
       expect(chart.huGua).toBeDefined()
       expect(chart.bianGua).toBeDefined()
       expect(chart.tiYongRelation).toBeTruthy()
+      if (tc.input.meihuaMethod === 'numbers') {
+        expect(userMessage).toContain('报数起卦')
+      }
     })
   }
 })

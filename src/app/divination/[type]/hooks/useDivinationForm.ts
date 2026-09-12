@@ -27,6 +27,9 @@ export function useDivinationForm(type: string, lang: string) {
     yearBuilt: '',
     ownerInfo: '',
     readingDateTime: (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) })(),
+    meihuaMethod: 'numbers',
+    num1: '',
+    num2: '',
     liuyaoLines: '', // JSON string of 6 lines, each {coins: [0|1, 0|1, 0|1], value: 6|7|8|9}
     ichingLines: '', // same shape as liuyaoLines — proper three-coin cast (replaces legacy single-number `hexagram` field)
     subType: 'meihua',
@@ -130,6 +133,7 @@ export function useDivinationForm(type: string, lang: string) {
       // Event-type fields — used by the failed-reading retry flow, which
       // re-seeds the form from the original reading's inputData.
       'readingDateTime', 'direction', 'yearBuilt', 'ownerInfo', 'hexagram',
+      'meihuaMethod', 'num1', 'num2',
     ] as const
     for (const k of formKeys) {
       const v = searchParams.get(k)

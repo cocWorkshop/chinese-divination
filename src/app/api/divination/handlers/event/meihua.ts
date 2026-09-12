@@ -5,7 +5,7 @@
  * from personal/other.ts which uses birth date/time.
  */
 
-import { calculateMeihua, type MeihuaChart } from '@/lib/meihuaCalculator'
+import { calculateMeihua, calculateMeihuaByNumbers, type MeihuaChart } from '@/lib/meihuaCalculator'
 import type { DivinationHandler, DivinationContext, CalculationResult } from '../_types'
 import { buildGenericUserMessage } from '../_fallback'
 import { getSuggestedQuestionsPrompt } from '../_suggestedQuestions'
@@ -29,16 +29,34 @@ export const meihuaHandler: DivinationHandler<MeihuaChart> = {
   schema: meihuaSchema,
 
   canHandle(ctx) {
-    return !!ctx.inputData.readingDateTime
+    return (
+      !!ctx.inputData.readingDateTime ||
+      ctx.inputData.meihuaMethod === 'numbers' ||
+      (ctx.inputData.num1 !== undefined && ctx.inputData.num2 !== undefined)
+    )
   },
 
   calculate(ctx): CalculationResult<MeihuaChart> {
     try {
-      const readingDt = new Date(ctx.inputData.readingDateTime as string)
-      const meihuaDate = `${readingDt.getFullYear()}-${String(readingDt.getMonth() + 1).padStart(2, '0')}-${String(readingDt.getDate()).padStart(2, '0')}`
-      const hour = readingDt.getHours()
-      const meihuaTime = SHICHEN_BY_HOUR[hour] || 'zi_early'
-      const chart = calculateMeihua(meihuaDate, meihuaTime)
+      let chart: MeihuaChart
+      let methodDetails = ''
+
+      if (
+        ctx.inputData.meihuaMethod === 'numbers' ||
+        (ctx.inputData.num1 !== undefined && ctx.inputData.num2 !== undefined)
+      ) {
+        const num1 = Math.max(1, Math.round(Number(ctx.inputData.num1) || 1))
+        const num2 = Math.max(1, Math.round(Number(ctx.inputData.num2) || 1))
+        chart = calculateMeihuaByNumbers(num1, num2)
+        methodDetails = `- 起卦方式：报数起卦（数字1：${num1}，数字2：${num2}）`
+      } else {
+        const readingDt = new Date((ctx.inputData.readingDateTime as string) || new Date().toISOString())
+        const meihuaDate = `${readingDt.getFullYear()}-${String(readingDt.getMonth() + 1).padStart(2, '0')}-${String(readingDt.getDate()).padStart(2, '0')}`
+        const hour = readingDt.getHours()
+        const meihuaTime = SHICHEN_BY_HOUR[hour] || 'zi_early'
+        chart = calculateMeihua(meihuaDate, meihuaTime)
+        methodDetails = `- 起卦方式：时间起卦\n- 起卦时间：${ctx.inputData.readingDateTime || meihuaDate}`
+      }
 
       const userMessage = `请为我进行梅花易数排卦分析。
 ${ctx.targetPersonInfo ? `\n${ctx.targetPersonInfo}\n` : ''}
@@ -46,7 +64,7 @@ ${ctx.targetPersonInfo ? `\n${ctx.targetPersonInfo}\n` : ''}
 ${meihuaChartJson(chart)}
 
 ## 用户输入
-- 起卦时间：${ctx.inputData.readingDateTime}
+${methodDetails}
 ${ctx.question ? `- 求测问题：${ctx.question}` : '- 求测问题：综合运势'}
 
 ${meihuaAnalysisInstructions(chart)}`
