@@ -17,6 +17,8 @@ import remarkGfm from 'remark-gfm'
 import type { MasterMsg } from '../MasterChatContext'
 import { formatTime } from './formatTime'
 
+import MasterFeedbackPrompt from './MasterFeedbackPrompt'
+
 const READING_CARD_ICONS: Record<string, string> = {
   bazi: '🏛️',
   ziwei: '⭐',
@@ -77,6 +79,16 @@ export default function MessageBubble({
           ✓ {msg.content}
         </span>
       </motion.div>
+    )
+  }
+
+  if (msg.kind === 'feedback_prompt') {
+    return (
+      <MasterFeedbackPrompt
+        reason={msg.feedbackPromptReason}
+        durationMs={msg.turnDurationMs}
+        isEn={isEn}
+      />
     )
   }
 

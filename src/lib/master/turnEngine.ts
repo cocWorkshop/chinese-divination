@@ -25,6 +25,13 @@ import { BubbleStreamer } from './bubbleStream'
 import { appendMasterChatMessage, estimateTokens, loadMasterChatMessages } from './chatMessageStore'
 import { maybeExtractPortrait } from './portraitExtractor'
 import type { MasterMessage } from '@/types/master'
+import { logger } from '@/lib/logger'
+import * as Sentry from '@sentry/nextjs'
+import {
+  createTurnMonitor,
+  isTimeoutError,
+  shouldPromptExperienceFeedback,
+} from './turnMonitor'
 
 type ToolCallEntry = NonNullable<MasterMessage['toolCalls']>[number]
 
@@ -37,8 +44,10 @@ export type EngineEvent =
   | { type: 'tool_end'; tool: string }
   | { type: 'cta_card'; payload: unknown }
   | { type: 'reading_card'; payload: unknown }
-  | { type: 'error'; error: string }
-  | { type: 'done' }
+  | { type: 'error'; error: string; isTimeout?: boolean }
+  | { type: 'metrics'; durationMs: number; ttftMs: number | null }
+  | { type: 'feedback_prompt'; reason: 'slow_response' | 'milestone' | 'timeout' }
+  | { type: 'done'; durationMs?: number }
 
 /**
  * Activation hint variants. Surface in the synthetic trigger message as
@@ -97,6 +106,8 @@ export interface RunTurnInput {
    * normal error event path; the partial turn is not persisted.
    */
   signal?: AbortSignal
+  /** User's turn count in this session (used to determine periodic feedback milestone). */
+  turnCount?: number
 }
 
 /** Hard cap on tool-calling iterations (runaway guard, not the primary limit — the dedupe cache is). */
@@ -105,6 +116,13 @@ const MAX_TOOL_LOOPS = 12
 export async function* runMasterTurn(
   input: RunTurnInput,
 ): AsyncGenerator<EngineEvent, void, void> {
+  const monitor = createTurnMonitor({
+    userId: input.userId,
+    sessionId: input.sessionId,
+    model: input.model,
+    requestId: input.requestId,
+  })
+
   try {
     const currentMessages: Message[] = [...input.initialMessages]
 
@@ -181,6 +199,7 @@ export async function* runMasterTurn(
         signal: input.signal,
       })) {
         if (chunk.type === 'content') {
+          monitor.recordFirstToken()
           contentChunk += chunk.text
           assistantContent += chunk.text
           bubbleStreamer.push(chunk.text, emitContent, emitBreak)
@@ -234,7 +253,9 @@ export async function* runMasterTurn(
         const cacheKey = `${tc.name}::${tc.arguments || '{}'}`
         let result = turnToolCache.get(cacheKey)
         if (!result) {
+          const toolStart = Date.now()
           result = await masterToolRegistry.execute(tc.name, args, input.toolCtx)
+          monitor.recordToolExecution(tc.name, Date.now() - toolStart)
           turnToolCache.set(cacheKey, result)
         }
 
@@ -298,6 +319,7 @@ export async function* runMasterTurn(
         // No `tools` — forces prose.
       })) {
         if (chunk.type === 'content') {
+          monitor.recordFirstToken()
           assistantContent += chunk.text
           bubbleStreamer.push(chunk.text, emitContent, emitBreak)
           yield* flushBuffered()
@@ -327,10 +349,35 @@ export async function* runMasterTurn(
       data: { totalCreditsUsed: { increment: 1 } },
     })
 
+    const metrics = monitor.finish()
+    logger.info(
+      {
+        masterMetrics: metrics,
+        requestId: input.requestId,
+        userId: input.userId,
+        sessionId: input.sessionId,
+      },
+      `[turnEngine] master turn completed in ${metrics.totalDurationMs}ms (TTFT: ${metrics.ttftMs ?? 0}ms)`
+    )
+
+    yield {
+      type: 'metrics',
+      durationMs: metrics.totalDurationMs,
+      ttftMs: metrics.ttftMs,
+    }
+
+    const feedbackDecision = shouldPromptExperienceFeedback({
+      metrics,
+      turnCount: input.turnCount,
+    })
+    if (feedbackDecision.shouldPrompt && feedbackDecision.reason) {
+      yield { type: 'feedback_prompt', reason: feedbackDecision.reason }
+    }
+
     // Emit done before the (potentially slow) portrait extraction so the
     // client can stop reading. The generator continues until extraction
     // finishes — that work is best-effort and adds no visible latency.
-    yield { type: 'done' }
+    yield { type: 'done', durationMs: metrics.totalDurationMs }
 
     try {
       const allRowsAfter = await loadMasterChatMessages(input.userId, input.sessionId)
@@ -348,10 +395,42 @@ export async function* runMasterTurn(
       console.error('[turnEngine] portrait extraction failed:', extractErr)
     }
   } catch (err) {
-    console.error('[turnEngine] error:', err)
+    const isTimeout = isTimeoutError(err, input.signal)
+    const metrics = monitor.finish({ isTimeout })
+    console.error(`[turnEngine] ${isTimeout ? 'TIMEOUT' : 'error'}:`, err, metrics)
+    logger.error(
+      {
+        err,
+        masterMetrics: metrics,
+        isTimeout,
+        requestId: input.requestId,
+        userId: input.userId,
+        sessionId: input.sessionId,
+      },
+      `[turnEngine] master turn failed (isTimeout=${isTimeout}) after ${metrics.totalDurationMs}ms`
+    )
+
+    if (isTimeout) {
+      Sentry.captureException(err, {
+        tags: { endpoint: 'master', isTimeout: 'true', requestId: input.requestId },
+        extra: { metrics },
+      })
+    }
+
+    const errorText = isTimeout
+      ? (input.lang === 'en'
+          ? 'Master consultation timed out. Please try asking again.'
+          : '玄機大師推演超時，請重新向大師提問。')
+      : (err instanceof Error ? err.message : 'Unknown error')
+
     yield {
       type: 'error',
-      error: err instanceof Error ? err.message : 'Unknown error',
+      error: errorText,
+      isTimeout,
+    }
+
+    if (isTimeout) {
+      yield { type: 'feedback_prompt', reason: 'timeout' }
     }
   }
 }

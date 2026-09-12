@@ -82,9 +82,11 @@ export interface MasterMsg {
   content: string
   timestamp: string
   /** Optional special-rendering kind. Default is text. */
-  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting' | 'system_note'
+  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting' | 'system_note' | 'feedback_prompt'
   ctaPayload?: CtaCardPayload
   readingCardPayload?: ReadingCardPayload
+  feedbackPromptReason?: 'slow_response' | 'milestone' | 'timeout'
+  turnDurationMs?: number
 }
 
 export interface ToolStatus {
@@ -586,6 +588,10 @@ export function MasterChatProvider({ children }: ProviderProps) {
                 tool?: string
                 error?: string
                 payload?: CtaCardPayload | ReadingCardPayload
+                durationMs?: number
+                ttftMs?: number | null
+                reason?: string
+                isTimeout?: boolean
               }
 
               if (event.type === 'content') {
@@ -686,6 +692,33 @@ export function MasterChatProvider({ children }: ProviderProps) {
                   kind: 'reading_card',
                   readingCardPayload: payload,
                 })
+              } else if (event.type === 'metrics') {
+                // Track turn latency metrics emitted by server
+                const duration = typeof event.durationMs === 'number' ? event.durationMs : undefined
+                if (duration) {
+                  setMessages((prev) => {
+                    const updated = [...prev]
+                    if (updated.length > 0) {
+                      const last = updated[updated.length - 1]
+                      if (last && last.role === 'assistant') {
+                        updated[updated.length - 1] = { ...last, turnDurationMs: duration }
+                      }
+                    }
+                    return updated
+                  })
+                }
+              } else if (event.type === 'feedback_prompt') {
+                const reason = event.reason as 'slow_response' | 'milestone' | 'timeout'
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    role: 'assistant',
+                    content: '',
+                    timestamp: new Date().toISOString(),
+                    kind: 'feedback_prompt',
+                    feedbackPromptReason: reason,
+                  },
+                ])
               } else if (event.type === 'error') {
                 setMessages((prev) => {
                   const updated = [...prev]

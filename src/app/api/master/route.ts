@@ -224,13 +224,14 @@ export async function POST(req: NextRequest) {
     // Turn limit — prevent runaway sessions. Configurable via AdminSetting
     // 'masterMaxTurns', defaults to 50. Checkins and reflections are exempt
     // (they're system-initiated, not user-initiated).
+    let currentTurnCount = 0
     if (!isCheckin && !isReflection) {
       const maxTurnsSetting = await prisma.adminSetting.findUnique({ where: { key: 'masterMaxTurns' } })
       const maxTurns = parseInt(maxTurnsSetting?.value || '50', 10) || 50
-      const turnCount = await prisma.masterChatMessage.count({
+      currentTurnCount = await prisma.masterChatMessage.count({
         where: { userId, sessionId: sessionId!, role: 'user' },
       })
-      if (turnCount >= maxTurns) {
+      if (currentTurnCount >= maxTurns) {
         const msg = lang === 'en'
           ? 'The Master needs to rest and gather his thoughts. Let\'s continue our conversation next time — start a "New Chat" whenever you\'re ready. Everything I\'ve learned about you is safely kept.'
           : '老夫今日耗神頗多，需閉目養息片刻。\n\n下次再會時，點「新對話」即可續接 —— 你說過的，我都記著。'
@@ -349,6 +350,7 @@ export async function POST(req: NextRequest) {
           // abort the in-flight LLM call instead of burning the full
           // tool-loop token spend into the void.
           signal: req.signal,
+          turnCount: currentTurnCount + 1,
         })) {
           send(event satisfies EngineEvent)
           if (event.type === 'error' && !failureRefunded) {
