@@ -5,6 +5,7 @@
  */
 
 import { calculateLiuYao, type LiuYaoChart } from '@/lib/liuyaoCalculator'
+import { describeMoment } from '@/lib/currentMoment'
 import type { DivinationHandler, DivinationContext, CalculationResult } from '../_types'
 import { buildGenericUserMessage } from '../_fallback'
 import { liuyaoSchema } from '../../schemas/liuyao.schema'
@@ -23,9 +24,17 @@ export const liuyaoHandler: DivinationHandler<LiuYaoChart> = {
       const chart = calculateLiuYao(rawLines)
       const orig = chart.originalHexagram
       const changed = chart.changedHexagram
+      const castInstant = chart.castTime ? new Date(chart.castTime) : new Date()
+      const moment = describeMoment(castInstant, -480)
 
       const userMessage = `请为我进行六爻占卜解卦。
 ${ctx.targetPersonInfo ? `\n${ctx.targetPersonInfo}\n` : ''}
+## 起卦时间与四柱日月（权威计算，解卦核心基准）
+- 起卦公历：${moment.solar}
+- 起卦农历：${moment.lunar}
+- 岁次四柱：${moment.yearGanZhi}年 ${moment.monthGanZhi}月(月建) ${moment.dayGanZhi}(日辰) ${moment.hourGanZhi}时
+- 当日旬空：${moment.xunKong}空
+
 ## 程序预计算的六爻卦象（已验证准确，请直接使用）
 ${JSON.stringify({
   originalHexagram: {
@@ -71,14 +80,14 @@ ${ctx.question || '综合问事'}
 你是资深六爻术数师，请基于以上程序排出的卦象进行断卦。重点：
 1. **guaCi**：本卦（${orig.fullName}）卦辞及解析（100字以上）
 2. **yaoCi**：相关爻辞解析，重点变爻（100字以上）
-3. **interpretation**：针对问题的综合解读，结合六亲、世应、用神分析（200字以上）
-4. **sixRelativeAnalysis**：六亲关系分析——确定用神、原神、忌神、仇神（150字以上）
+3. **interpretation**：针对问题的综合解读，严格结合月建（${moment.monthGanZhi}月）、日辰（${moment.dayGanZhi}）、旬空（${moment.xunKong}）、六亲、世应、用神分析（200字以上）。绝对禁止自行捏造不同的日月干支！
+4. **sixRelativeAnalysis**：六亲关系分析——确定用神、原神、忌神、仇神，分析月建日辰对用神的原动生克衰旺（150字以上）
 5. **shiYingAnalysis**：世应分析——世爻代表求卦人，应爻代表对方/事物（100字以上）
 ${changed ? `6. **changingAnalysis**：变卦（${changed.fullName}）分析——事物最终走向（100字以上）` : ''}
-7. **timing**：应期判断——事情可能发生的时间（50字以上）
+7. **timing**：应期判断——基于起卦日辰（${moment.dayGanZhi}）、月建（${moment.monthGanZhi}）及旬空（${moment.xunKong}）推算事情可能发生的时间（50字以上）
 8. **advice**：具体建议（100字以上）
 
-卦象数据以程序计算结果为准，你只负责解卦分析。`
+卦象数据与起卦日月干支均以程序预计算结果为准，你只负责解卦分析。`
 
       return { chart, userMessage }
     } catch (e) {

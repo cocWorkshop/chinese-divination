@@ -310,7 +310,9 @@ export async function POST(req: NextRequest) {
       log.info({ estimatedTokens: compressed.estimatedTokens }, 'history compressed')
     }
 
-    // Deduct credit before streaming (matches prior behaviour).
+    // Deduct credit before streaming (matches prior behaviour). On failure
+    // (engine error event) the turn is refunded via refundMasterCredits —
+    // the divination hold/refund discipline applied to master (audit P4).
     const deducted = await deductCredits(userId, 'master')
     if (!deducted) return jsonError('Failed to deduct credits', 429)
 
