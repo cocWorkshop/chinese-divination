@@ -90,6 +90,13 @@ export interface RunTurnInput {
   lang: 'zh-TW' | 'en'
   /** Request-correlation id (src/lib/logger.ts) — threaded into LlmLog rows. */
   requestId?: string
+  /**
+   * Abort signal from the HTTP request (client disconnect). Threaded into
+   * every streamLLM call so an abandoned turn stops burning tokens instead
+   * of running the full tool loop into the void. Aborts surface through the
+   * normal error event path; the partial turn is not persisted.
+   */
+  signal?: AbortSignal
 }
 
 /** Hard cap on tool-calling iterations (runaway guard, not the primary limit — the dedupe cache is). */
@@ -171,6 +178,7 @@ export async function* runMasterTurn(
         tools: masterToolRegistry.toolDefs(),
         model: input.model,
         requestId: input.requestId,
+        signal: input.signal,
       })) {
         if (chunk.type === 'content') {
           contentChunk += chunk.text
@@ -286,6 +294,7 @@ export async function* runMasterTurn(
         messages: currentMessages,
         model: input.model,
         requestId: input.requestId,
+        signal: input.signal,
         // No `tools` — forces prose.
       })) {
         if (chunk.type === 'content') {

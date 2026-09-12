@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import type { Prisma } from '@prisma/client'
 import { logCreditChange } from './creditLogger'
 
 /**
@@ -34,6 +35,25 @@ export async function getCost(type: string): Promise<number> {
     if (!isNaN(val) && val >= 0) return val
   }
   return DEFAULT_COSTS[type] ?? 3
+}
+
+/**
+ * Batched variant of getCost for endpoints that need every cost at once
+ * (e.g. /api/init) — one findMany instead of N findUnique round trips.
+ * Same resolution rules as getCost.
+ */
+export async function getCosts(types: string[]): Promise<Record<string, number>> {
+  const rows = await prisma.adminSetting.findMany({
+    where: { key: { in: types.map((t) => `cost_${t}`) } },
+    select: { key: true, value: true },
+  })
+  const overrides = new Map(rows.map((r) => [r.key, parseInt(r.value, 10)]))
+  const out: Record<string, number> = {}
+  for (const type of types) {
+    const parsed = overrides.get(`cost_${type}`)
+    out[type] = parsed !== undefined && !isNaN(parsed) && parsed >= 0 ? parsed : DEFAULT_COSTS[type] ?? 3
+  }
+  return out
 }
 
 /**
@@ -151,6 +171,64 @@ export async function holdCredits(
     note: 'hold@init',
   })
   return { held: true, amount: cost }
+}
+
+/**
+ * Atomic credit hold + pending-reading creation for /api/divination/init.
+ *
+ * The guarded decrement and the Reading row commit in ONE transaction, so a
+ * process crash between them can never leave deducted credits with no
+ * pending row for the stale sweeper to refund (the previous two-step flow
+ * relied on a compensating refund that itself wrote no CreditLog entry).
+ *
+ * Returns null on insufficient balance. The ledger entry is written after
+ * the transaction commits (an in-tx log insert would live on a different
+ * connection and could survive a rolled-back commit).
+ */
+export async function holdCreditsAndCreateReading(
+  userId: string,
+  type: string,
+  buildReadingData: (creditsHeld: number) => Prisma.ReadingUncheckedCreateInput
+): Promise<{ held: true; amount: number; readingId: string } | null> {
+  const cost = await getCost(type)
+
+  const outcome = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({ where: { id: userId }, select: { isAdmin: true } })
+    if (user?.isAdmin || cost <= 0) {
+      // Admin / free action: track usage like holdCredits, hold nothing.
+      await tx.user.update({
+        where: { id: userId },
+        data: { usageDivination: { increment: 1 } },
+      }).catch(() => {})
+      const reading = await tx.reading.create({ data: buildReadingData(0) })
+      return { amount: 0, readingId: reading.id }
+    }
+    const res = await tx.user.updateMany({
+      where: { id: userId, credits: { gte: cost } },
+      data: {
+        credits: { decrement: cost },
+        usageDivination: { increment: 1 },
+      },
+    })
+    if (res.count === 0) return null
+    const reading = await tx.reading.create({ data: buildReadingData(cost) })
+    return { amount: cost, readingId: reading.id }
+  })
+
+  if (!outcome) return null
+
+  if (outcome.amount > 0) {
+    const updated = await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } })
+    await logCreditChange({
+      userId,
+      action: 'deduct',
+      amount: -outcome.amount,
+      balance: updated?.credits ?? 0,
+      source: `divination:${type}`,
+      note: 'hold@init',
+    })
+  }
+  return { held: true, amount: outcome.amount, readingId: outcome.readingId }
 }
 
 function isSameDay(d1: Date, d2: Date): boolean {

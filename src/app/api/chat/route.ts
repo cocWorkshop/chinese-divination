@@ -22,11 +22,35 @@ export async function POST(req: NextRequest) {
     if (!message) {
       return NextResponse.json({ error: 'Missing message' }, { status: 400 })
     }
-    if (typeof message === 'string' && message.length > 2000) {
+    if (typeof message !== 'string') {
+      return NextResponse.json({ error: 'Message must be a string' }, { status: 400 })
+    }
+    if (message.length > 2000) {
       return NextResponse.json({ error: 'Message too long (max 2000 characters)' }, { status: 400 })
     }
-    if (Array.isArray(history) && history.length > 200) {
-      return NextResponse.json({ error: 'Too many history entries' }, { status: 400 })
+    // History entries flow verbatim into the LLM prompt — without per-entry
+    // validation a client could ship multi-MB contents or inject 'system'
+    // role turns into its own prompt.
+    const MAX_HISTORY = 200
+    const MAX_HISTORY_CONTENT = 4000
+    let cleanHistory: { role: 'user' | 'assistant'; content: string }[] = []
+    if (Array.isArray(history)) {
+      if (history.length > MAX_HISTORY) {
+        return NextResponse.json({ error: 'Too many history entries' }, { status: 400 })
+      }
+      for (const entry of history) {
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+          return NextResponse.json({ error: 'Invalid history entry' }, { status: 400 })
+        }
+        const { role, content } = entry as { role?: unknown; content?: unknown }
+        if (role !== 'user' && role !== 'assistant') {
+          return NextResponse.json({ error: 'Invalid history role' }, { status: 400 })
+        }
+        if (typeof content !== 'string') {
+          return NextResponse.json({ error: 'Invalid history content' }, { status: 400 })
+        }
+        cleanHistory.push({ role, content: content.slice(0, MAX_HISTORY_CONTENT) })
+      }
     }
 
         // Check chat credits
@@ -125,16 +149,25 @@ export async function POST(req: NextRequest) {
     })
     let familyReadingsBlock = ''
     if (familyMembers.length > 0) {
-      const memberReadings = await Promise.all(
-        familyMembers.map(async (fm) => {
-          const latest = await prisma.reading.findFirst({
-            where: { familyMemberId: fm.id, userId: session.user.id, deletedAt: null, status: 'completed' },
-            orderBy: { createdAt: 'desc' },
-            select: { id: true, type: true, createdAt: true, result: true },
-          })
-          return { ...fm, latestReading: latest }
-        })
-      )
+      // One DISTINCT ON query instead of a findFirst per member (N+1).
+      // Prisma's distinct + orderBy desc yields the latest completed
+      // reading per familyMemberId.
+      const latestReadings = await prisma.reading.findMany({
+        where: {
+          familyMemberId: { in: familyMembers.map((fm) => fm.id) },
+          userId: session.user.id,
+          deletedAt: null,
+          status: 'completed',
+        },
+        distinct: ['familyMemberId'],
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, familyMemberId: true, type: true, createdAt: true, result: true },
+      })
+      const latestByMember = new Map(latestReadings.map((r) => [r.familyMemberId!, r]))
+      const memberReadings = familyMembers.map((fm) => ({
+        ...fm,
+        latestReading: latestByMember.get(fm.id) ?? null,
+      }))
       const lines = memberReadings.map((m) => {
         const label = `${m.relation}${m.name ? '（' + m.name + '）' : ''}`
         if (m.latestReading) {
@@ -267,8 +300,8 @@ ${familyRefZh}`
     const maxTurnsSetting = await prisma.adminSetting.findUnique({ where: { key: 'chatMaxTurns' } })
     const maxTurns = parseInt(maxTurnsSetting?.value || '100', 10) || 100
 
-    // Build conversation messages
-    const conversationHistory = ((history || []) as { role: 'user' | 'assistant'; content: string }[]).slice(-maxTurns * 2)
+    // Build conversation messages (validated history from the input checks above)
+    const conversationHistory = cleanHistory.slice(-maxTurns * 2)
     const messages: { role: 'user' | 'assistant' | 'system'; content: string }[] = [
       ...conversationHistory,
       { role: 'user', content: message },

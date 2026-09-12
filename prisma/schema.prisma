@@ -117,6 +117,13 @@ model Reading {
   @@index([createdAt])
   @@index([userId, deletedAt])
   @@index([type])
+  // FK lookups by family member (chat history, divination checks) and the
+  // ON DELETE SET NULL cascade — Postgres does not auto-index FK columns.
+  @@index([familyMemberId])
+  // The stale-pending sweeper (every 10 min) and admin status filters query
+  // `status` + createdAt; status is dominated by 'completed' so the composite
+  // keeps those scans index-driven.
+  @@index([status, createdAt])
 }
 
 model ReadingFeedback {
@@ -336,6 +343,8 @@ model CreditLog {
   @@index([userId])
   @@index([createdAt])
   @@index([action])
+  // History / admin pagination filter by userId and order by createdAt desc.
+  @@index([userId, createdAt])
 }
 
 model WikiArticle {

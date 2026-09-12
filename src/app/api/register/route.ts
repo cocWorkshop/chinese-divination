@@ -78,18 +78,21 @@ export async function POST(req: NextRequest) {
 
     // Grant bonus to sharer and mark link as used
     if (shareLink && !shareLink.used) {
-      await prisma.$transaction([
-        prisma.shareLink.update({
-          where: { code: shareLink.code },
+      await prisma.$transaction(async (tx) => {
+        // Conditional update — concurrent registrations with the same
+        // referral code can't both flip `used` and double-credit the sharer.
+        const won = await tx.shareLink.updateMany({
+          where: { code: shareLink.code, used: false },
           data: { used: true, usedBy: user.id, usedAt: new Date() },
-        }),
-        prisma.user.update({
+        })
+        if (won.count === 0) return
+        await tx.user.update({
           where: { id: shareLink.userId },
           data: {
             credits: { increment: shareBonus },
           },
-        }),
-      ])
+        })
+      })
     }
 
     await logAuth({ action: 'register', status: 'success', email, userId: user.id, ip, userAgent })

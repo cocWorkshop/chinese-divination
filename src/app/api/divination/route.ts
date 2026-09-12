@@ -13,6 +13,7 @@ import { buildSystemPrompt } from './handlers/_systemPrompt'
 import { finalizeDivination } from './_finalize'
 import { markFailed } from '@/lib/readings/lifecycle'
 import { sseResponse } from '@/lib/sse'
+import { sanitizeLanguage, sanitizeQuestion, validateInputData, validateNewFamilyMember } from './_inputValidation'
 
 // Ask the provider for JSON-constrained decoding (OpenAI-style response_format,
 // forwarded by OpenRouter). Prevents the malformed-JSON class at the source;
@@ -56,11 +57,22 @@ export async function POST(req: NextRequest) {
     let type = body.type
     let inputData = body.inputData
     const {
-      language, question, saveProfile, saveHistory,
-      targetType: rawTargetType, familyMemberId, newFamilyMember,
+      question, saveProfile, saveHistory,
+      targetType: rawTargetType, familyMemberId,
       readingId: preCreatedReadingId, clientTime, paipanOnly,
     } = body
     const targetType = rawTargetType === 'family' ? 'family' : 'self'
+    const language = sanitizeLanguage(body.language)
+    const questionResult = sanitizeQuestion(question)
+    if (!questionResult.ok) {
+      return NextResponse.json({ error: questionResult.error }, { status: 400 })
+    }
+    const cleanQuestion = questionResult.value
+    const familyMemberResult = validateNewFamilyMember(body.newFamilyMember)
+    if (!familyMemberResult.ok) {
+      return NextResponse.json({ error: familyMemberResult.error }, { status: 400 })
+    }
+    const newFamilyMember = familyMemberResult.value
 
     // A pre-created `readingId` (normal flow via /api/divination/init, and the ad
     // funnel View 3) lets this request skip the credit + maintenance gates (init
@@ -87,8 +99,9 @@ export async function POST(req: NextRequest) {
     if (!type || !inputData) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
-    if (typeof question === 'string' && question.length > 500) {
-      return NextResponse.json({ error: 'Question too long (max 500 characters)' }, { status: 400 })
+    const inputDataResult = validateInputData(inputData)
+    if (!inputDataResult.ok) {
+      return NextResponse.json({ error: inputDataResult.error }, { status: 400 })
     }
 
     const shouldSaveHistory = saveHistory !== false
@@ -147,21 +160,18 @@ export async function POST(req: NextRequest) {
     if (targetType === 'family') {
       if (newFamilyMember?.relation) {
         // Enforce relationDetail when relation === 'other'.
-        if (newFamilyMember.relation === 'other') {
-          const rd = typeof newFamilyMember.relationDetail === 'string' ? newFamilyMember.relationDetail.trim() : ''
-          if (!rd) {
-            return NextResponse.json(
-              { error: language !== 'en' ? '請填寫具體關係（「其他」類型必填）' : "Please specify the relationship ('other' requires a detail)" },
-              { status: 400 },
-            )
-          }
+        if (newFamilyMember.relation === 'other' && !newFamilyMember.relationDetail) {
+          return NextResponse.json(
+            { error: language !== 'en' ? '請填寫具體關係（「其他」類型必填）' : "Please specify the relationship ('other' requires a detail)" },
+            { status: 400 },
+          )
         }
         const created = await prisma.familyMember.create({
           data: {
             userId: userId,
             relation: newFamilyMember.relation,
-            relationDetail: typeof newFamilyMember.relationDetail === 'string' && newFamilyMember.relationDetail.trim() ? newFamilyMember.relationDetail.trim() : null,
-            name: newFamilyMember.name || null,
+            relationDetail: newFamilyMember.relationDetail,
+            name: newFamilyMember.name,
             birthDate: inputData.birthDate || null,
             birthTime: inputData.birthTime || null,
             birthPlace: inputData.birthPlace || null,
@@ -199,7 +209,7 @@ export async function POST(req: NextRequest) {
     const clientDate = clientTime ? new Date(clientTime) : new Date()
 
     const ctx: DivinationContext = {
-      type, language, inputData, question, targetPersonInfo, clientDate, userAge, userGender,
+      type, language, inputData, question: cleanQuestion ?? undefined, targetPersonInfo, clientDate, userAge, userGender,
     }
 
     // Dispatch to the correct handler (or fallback).
@@ -220,7 +230,7 @@ export async function POST(req: NextRequest) {
           type,
           modelTier: 'model1',
           status: 'pending',
-          question: question || null,
+          question: cleanQuestion,
           inputData,
           result: '',
           calculationData: earlyCalculationDataStr,
@@ -331,6 +341,10 @@ export async function POST(req: NextRequest) {
         preLlmMs,
         llmStart,
         holdAmount,
+        // Client disconnected → abort the LLM call. An aborted reading goes
+        // through the normal markFailed + refund path (the user cancelled —
+        // they get their hold back) instead of burning the full token spend.
+        signal: req.signal,
       })
     }
 
@@ -350,6 +364,7 @@ export async function POST(req: NextRequest) {
         reasoningEffort: llmConfig.reasoningEffort,
         responseFormat: DIVINATION_RESPONSE_FORMAT,
         requestId: log.requestId,
+        signal: req.signal,
       })
       resultText = result.content
     } catch (apiErr: unknown) {
@@ -448,12 +463,14 @@ function runStreamingDivination(args: {
   llmStart: number
   holdAmount: number
   log: RequestLogger
+  /** Client-disconnect signal — aborts the LLM stream (markFailed + refund). */
+  signal?: AbortSignal
 }): Response {
   const {
     userId, type, language, modelName, llmConfig, systemPrompt, userMessage,
     chart, handler, ctx, pendingReadingId, shouldSaveHistory, shouldSaveProfile,
     resolvedFamilyMemberId, targetType, inputData, apiStart, preLlmMs, llmStart,
-    holdAmount, log,
+    holdAmount, log, signal,
   } = args
 
   return sseResponse(async ({ send, heartbeat: sendHeartbeat, close }) => {
@@ -517,6 +534,7 @@ function runStreamingDivination(args: {
           reasoningEffort: llmConfig.reasoningEffort,
           responseFormat: DIVINATION_RESPONSE_FORMAT,
           requestId: log.requestId,
+          signal,
         })) {
           if (chunk.type === 'content') {
             accumulatedRaw += chunk.text

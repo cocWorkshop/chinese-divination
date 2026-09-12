@@ -54,7 +54,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     language: reading.language,
     createdAt: reading.createdAt,
     question: reading.question,
-    inputData: reading.inputData,
+    // Raw inputData deliberately NOT returned — it carries full birth PII
+    // (lat/lng, exact time, environment) beyond what the curated birthInfo
+    // below already provides for display.
     subjectName,
     birthInfo: Object.keys(birthInfo).length > 0 ? birthInfo : null,
     targetType: reading.targetType,

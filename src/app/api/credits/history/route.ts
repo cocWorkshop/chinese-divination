@@ -10,8 +10,10 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url)
-  const page = parseInt(searchParams.get('page') || '1')
-  const limit = parseInt(searchParams.get('limit') || '20')
+  // Clamp pagination — unbounded limit issues huge queries; negative page
+  // produces negative skip which throws a Prisma 500.
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1') || 1)
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
 
   const [logs, total] = await Promise.all([
     prisma.creditLog.findMany({

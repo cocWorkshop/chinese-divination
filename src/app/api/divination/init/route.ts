@@ -3,8 +3,9 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { holdCredits, checkCredits } from '@/lib/creditService'
+import { checkCredits, holdCreditsAndCreateReading } from '@/lib/creditService'
 import { logger } from '@/lib/logger'
+import { sanitizeLanguage, sanitizeQuestion, validateInputData, validateNewFamilyMember } from '../_inputValidation'
 
 /**
  * POST /api/divination/init
@@ -28,15 +29,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { type, inputData, language, question, saveHistory, targetType: rawTargetType, familyMemberId, newFamilyMember, paipanOnly } = await req.json()
+    const body = await req.json()
+    const { type, saveHistory, targetType: rawTargetType, familyMemberId, paipanOnly } = body
+    const language = sanitizeLanguage(body.language)
+    const questionResult = sanitizeQuestion(body.question)
+    if (!questionResult.ok) {
+      return NextResponse.json({ error: questionResult.error }, { status: 400 })
+    }
+    const question = questionResult.value
+    const fmResult = validateNewFamilyMember(body.newFamilyMember)
+    if (!fmResult.ok) {
+      return NextResponse.json({ error: fmResult.error }, { status: 400 })
+    }
+    const newFamilyMember = fmResult.value
     const targetType = rawTargetType === 'family' ? 'family' : 'self'
 
-    if (!type || !inputData) {
+    if (!type || !body.inputData) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
-    if (typeof question === 'string' && question.length > 500) {
-      return NextResponse.json({ error: 'Question too long (max 500 characters)' }, { status: 400 })
+    const inputDataResult = validateInputData(body.inputData)
+    if (!inputDataResult.ok) {
+      return NextResponse.json({ error: inputDataResult.error }, { status: 400 })
     }
+    const inputData = inputDataResult.value
 
     const shouldSaveHistory = saveHistory !== false
 
@@ -75,25 +90,23 @@ export async function POST(req: NextRequest) {
     let resolvedFamilyMemberId: string | null = null
     if (targetType === 'family') {
       if (newFamilyMember?.relation) {
-        if (newFamilyMember.relation === 'other') {
-          const rd = typeof newFamilyMember.relationDetail === 'string' ? newFamilyMember.relationDetail.trim() : ''
-          if (!rd) {
-            return NextResponse.json(
-              { error: language !== 'en' ? '請填寫具體關係（「其他」類型必填）' : "Please specify the relationship ('other' requires a detail)" },
-              { status: 400 },
-            )
-          }
+        // Enforce relationDetail when relation === 'other'.
+        if (newFamilyMember.relation === 'other' && !newFamilyMember.relationDetail) {
+          return NextResponse.json(
+            { error: language !== 'en' ? '請填寫具體關係（「其他」類型必填）' : "Please specify the relationship ('other' requires a detail)" },
+            { status: 400 },
+          )
         }
         const created = await prisma.familyMember.create({
           data: {
             userId: session.user.id,
             relation: newFamilyMember.relation,
-            relationDetail: typeof newFamilyMember.relationDetail === 'string' && newFamilyMember.relationDetail.trim() ? newFamilyMember.relationDetail.trim() : null,
-            name: newFamilyMember.name || null,
-            birthDate: inputData.birthDate || null,
-            birthTime: inputData.birthTime || null,
-            birthPlace: inputData.birthPlace || null,
-            gender: inputData.gender || null,
+            relationDetail: newFamilyMember.relationDetail,
+            name: newFamilyMember.name,
+            birthDate: (inputData.birthDate as string) || null,
+            birthTime: (inputData.birthTime as string) || null,
+            birthPlace: (inputData.birthPlace as string) || null,
+            gender: (inputData.gender as string) || null,
           },
         })
         resolvedFamilyMemberId = created.id
@@ -112,25 +125,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ readingId: null, familyMemberId: resolvedFamilyMemberId })
     }
 
-    // Atomic credit HOLD (skipped for free paipan). Insufficient balance → 429
-    // before any row exists.
-    let heldAmount = 0
+    // Atomic credit HOLD + pending-reading creation (skipped for free
+    // paipan). The guarded decrement and the Reading row commit in ONE
+    // transaction — a crash between them used to leave deducted credits
+    // with no pending row for the stale sweeper to refund. Insufficient
+    // balance → null → 429 before any row exists.
+    let pendingReadingId: string
     if (!paipanOnly) {
-      const hold = await holdCredits(session.user.id, type)
-      if (!hold.held) {
+      const hold = await holdCreditsAndCreateReading(session.user.id, type, (creditsHeld) => ({
+        userId: session.user.id,
+        type,
+        modelTier: 'model1',
+        status: 'pending',
+        question: question || null,
+        inputData,
+        result: '',
+        language: language || 'zh-TW',
+        targetType,
+        familyMemberId: resolvedFamilyMemberId,
+        creditsHeld,
+      }))
+      if (!hold) {
         return NextResponse.json(
           { error: language === 'en' ? 'Not enough Karma. Visit the Karma Shop to get more.' : '✨ 機緣不足，前往機緣商店補充機緣。' },
           { status: 429 }
         )
       }
-      heldAmount = hold.amount
-    }
-
-    // Create pending reading carrying the hold. If the create fails, refund
-    // the hold immediately (compensating increment — no reading row exists).
-    let pendingReading
-    try {
-      pendingReading = await prisma.reading.create({
+      pendingReadingId = hold.readingId
+    } else {
+      const pendingReading = await prisma.reading.create({
         data: {
           userId: session.user.id,
           type,
@@ -142,24 +165,17 @@ export async function POST(req: NextRequest) {
           language: language || 'zh-TW',
           targetType,
           familyMemberId: resolvedFamilyMemberId,
-          creditsHeld: heldAmount,
+          creditsHeld: 0,
         },
       })
-    } catch (createErr) {
-      if (heldAmount > 0) {
-        await prisma.user.update({
-          where: { id: session.user.id },
-          data: { credits: { increment: heldAmount } },
-        }).catch((refundErr) => logger.error({ err: refundErr, userId: session.user.id, heldAmount }, 'init hold refund failed'))
-      }
-      throw createErr
+      pendingReadingId = pendingReading.id
     }
 
     // Stale-pending cleanup moved OFF the request path — the staleReadings
     // job (src/lib/jobs) sweeps + refunds every 10 minutes.
 
     return NextResponse.json({
-      readingId: pendingReading.id,
+      readingId: pendingReadingId,
       familyMemberId: resolvedFamilyMemberId,
     })
   } catch (e) {

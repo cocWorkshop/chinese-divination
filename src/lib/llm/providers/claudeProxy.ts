@@ -56,7 +56,11 @@ export async function callClaudeProxy(
 
     if (!res.ok) {
       const errBody = (await res.json().catch(() => ({}))) as { error?: string }
-      throw new Error(errBody.error || `Proxy returned ${res.status}`)
+      // Carry the upstream status so callers (e.g. the divination route's
+      // 429/5xx mapping) can map it instead of always falling back to 502.
+      const err = new Error(errBody.error || `Proxy returned ${res.status}`) as Error & { status?: number }
+      err.status = res.status
+      throw err
     }
 
     const data = (await res.json()) as {

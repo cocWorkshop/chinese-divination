@@ -9,6 +9,15 @@ import { prisma } from './prisma'
 // emails exist by timing the response (deferred-evaluation-tasks Task B2).
 const DUMMY_BCRYPT_HASH = '$2a$12$K8GpVzbXEXAMPLEDUMMYHuJ9yQYpVxq3rW1mz5TnB7cd9eAfGhIjK'
 
+/**
+ * Timing equalizer for pre-flight auth routes (e.g. /api/auth/login):
+ * run a dummy bcrypt compare on the no-user / no-password branches so all
+ * paths take ~the same wall-clock time (same defense as authorize() below).
+ */
+export async function dummyBcryptCompare(password: string): Promise<void> {
+  await compare(password, DUMMY_BCRYPT_HASH)
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: 'jwt', maxAge: 7 * 24 * 60 * 60 },

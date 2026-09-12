@@ -187,10 +187,13 @@ export async function POST(req: NextRequest) {
     // Ensure a MasterSession row exists for this user — it tracks the
     // per-user master usage counter (totalCreditsUsed). Chat history and
     // portrait live in dedicated tables (MasterChatMessage / UserPortrait).
-    let masterSession = await prisma.masterSession.findUnique({ where: { userId } })
-    if (!masterSession) {
-      masterSession = await prisma.masterSession.create({ data: { userId, tzOffsetMin: clientTz ?? undefined } })
-    }
+    // Upsert, not find-then-create: two concurrent first turns would
+    // otherwise race a P2002 on the userId unique constraint into a 500.
+    const masterSession = await prisma.masterSession.upsert({
+      where: { userId },
+      create: { userId, tzOffsetMin: clientTz ?? undefined },
+      update: {},
+    })
 
     // Resolve the timezone: this request's client offset wins; otherwise fall
     // back to the user's last-seen offset (so server-initiated check-ins are
@@ -316,7 +319,12 @@ export async function POST(req: NextRequest) {
     // Pipe the engine's event stream to SSE. The engine handles errors by
     // yielding `{ type: 'error' }` — the route never sees a thrown exception
     // from the streaming loop.
-    return sseResponse(async ({ send, close }) => {
+    return sseResponse(async ({ send, heartbeat, close }) => {
+      // 15s keepalive — during a long first LLM call (30-90s to first token
+      // with reasoning + tools) nothing else flows, and default proxy read
+      // timeouts (nginx: 60s) would kill the connection mid-turn. Mirrors
+      // the divination route's heartbeat.
+      const keepalive = setInterval(() => heartbeat(), 15_000)
       try {
         for await (const event of runMasterTurn({
           userId,
@@ -331,10 +339,15 @@ export async function POST(req: NextRequest) {
           masterSessionPk: masterSession!.id,
           lang,
           requestId: log.requestId,
+          // Client disconnected (cancel button / unmount / network drop) →
+          // abort the in-flight LLM call instead of burning the full
+          // tool-loop token spend into the void.
+          signal: req.signal,
         })) {
           send(event satisfies EngineEvent)
         }
       } finally {
+        clearInterval(keepalive)
         close()
       }
     })

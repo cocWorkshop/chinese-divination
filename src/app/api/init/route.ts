@@ -2,7 +2,9 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkCredits, getCost, grantDailyBonus } from '@/lib/creditService'
+import { checkCredits, getCosts, grantDailyBonus } from '@/lib/creditService'
+
+const COST_KEYS = ['bazi', 'ziwei', 'qimen', 'meihua', 'iching', 'liuyao', 'fengshui', 'chat'] as const
 
 const DEFAULT_VISIBILITY = [
   { type: 'bazi', visible: true, order: 1 },
@@ -61,11 +63,13 @@ export async function GET() {
   // Grant daily bonus first (before checking credits so counts reflect bonus)
   const dailyBonusResult = await grantDailyBonus(userId)
 
-  const [creditCheck, timeoutSetting, bonusDiv, bonusChat, user, familyMembers, visibility, costs] = await Promise.all([
+  const [creditCheck, miscSettings, user, familyMembers, visibility, costs] = await Promise.all([
     checkCredits(userId, 'bazi'),
-    prisma.adminSetting.findUnique({ where: { key: 'llmTimeoutSeconds' } }),
-    prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } }),
-    prisma.adminSetting.findUnique({ where: { key: 'shareBonusChat' } }),
+    // One findMany for the three non-cost settings this endpoint needs.
+    prisma.adminSetting.findMany({
+      where: { key: { in: ['llmTimeoutSeconds', 'shareBonus', 'shareBonusChat'] } },
+      select: { key: true, value: true },
+    }),
     prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -79,15 +83,12 @@ export async function GET() {
       orderBy: { createdAt: 'asc' },
     }),
     visibilityPromise,
-    Promise.all([
-      getCost('bazi'), getCost('ziwei'), getCost('qimen'),
-      getCost('meihua'), getCost('iching'), getCost('liuyao'),
-      getCost('fengshui'), getCost('chat'),
-    ]),
+    // One findMany for all eight costs (was 8 sequential findUnique).
+    getCosts([...COST_KEYS]),
   ])
 
-  const [costBazi, costZiwei, costQimen, costMeihua, costIching, costLiuyao, costFengshui, costChat] = costs
-  const llmTimeoutSeconds = parseInt(timeoutSetting?.value || '240', 10) || 240
+  const misc = new Map(miscSettings.map((s) => [s.key, s.value]))
+  const llmTimeoutSeconds = parseInt(misc.get('llmTimeoutSeconds') || '240', 10) || 240
 
   return NextResponse.json({
     credits: {
@@ -97,15 +98,15 @@ export async function GET() {
       chat: { remaining: creditCheck.remaining },
       llmTimeoutSeconds,
       costs: {
-        bazi: costBazi, ziwei: costZiwei, qimen: costQimen,
-        meihua: costMeihua, iching: costIching, liuyao: costLiuyao,
-        fengshui: costFengshui, chat: costChat,
+        bazi: costs.bazi, ziwei: costs.ziwei, qimen: costs.qimen,
+        meihua: costs.meihua, iching: costs.iching, liuyao: costs.liuyao,
+        fengshui: costs.fengshui, chat: costs.chat,
       },
     },
     profile: user || null,
     shareBonus: {
-      divination: parseInt(bonusDiv?.value ?? '20'),
-      chat: parseInt(bonusChat?.value ?? '5'),
+      divination: parseInt(misc.get('shareBonus') ?? '20'),
+      chat: parseInt(misc.get('shareBonusChat') ?? '5'),
     },
     familyMembers,
     visibility,

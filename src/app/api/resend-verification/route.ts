@@ -2,10 +2,24 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateToken, tokenExpiry, sendVerificationEmail } from '@/lib/email'
+import { rateLimit } from '@/lib/rateLimiter'
+
+// Uniform response for every branch — differential messages here would let
+// anonymous callers enumerate which emails are registered / verified.
+const GENERIC_MESSAGE = 'If the account exists and is not yet verified, a verification email has been sent.'
 
 export async function POST(req: NextRequest) {
   try {
-    const { email: rawEmail, check } = await req.json()
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') || null
+
+    // Rate limit: 3 per hour per IP — each resend to a real address fires
+    // an actual email (bombing vector) and a verificationToken DB write.
+    if (ip && !rateLimit(`resend-verification:${ip}`, 3, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+    }
+
+    const { email: rawEmail } = await req.json()
     const email = typeof rawEmail === 'string' ? rawEmail.toLowerCase().trim() : rawEmail
     if (!email) {
       return NextResponse.json({ error: 'Email required' }, { status: 400 })
@@ -16,17 +30,8 @@ export async function POST(req: NextRequest) {
       select: { id: true, emailVerified: true, language: true },
     })
 
-    // Login page check mode: just report if unverified
-    if (check) {
-      return NextResponse.json({ unverified: user ? !user.emailVerified : false })
-    }
-
-    if (!user) {
-      return NextResponse.json({ message: 'If the account exists, a verification email has been sent.' })
-    }
-
-    if (user.emailVerified) {
-      return NextResponse.json({ message: 'Email already verified.' })
+    if (!user || user.emailVerified) {
+      return NextResponse.json({ message: GENERIC_MESSAGE })
     }
 
     const vToken = generateToken()
@@ -38,7 +43,7 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get('origin') || req.headers.get('referer')?.replace(/\/[^/]*$/, '') || ''
     await sendVerificationEmail(email, vToken, user.language || 'zh-TW', origin)
 
-    return NextResponse.json({ message: 'Verification email sent.' })
+    return NextResponse.json({ message: GENERIC_MESSAGE })
   } catch (e) {
     console.error('Resend verification error:', e)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

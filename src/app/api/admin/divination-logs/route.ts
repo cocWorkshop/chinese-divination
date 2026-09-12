@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
       take: limit,
       select: {
         id: true,
+        userId: true,
         type: true,
         status: true,
         question: true,
@@ -39,13 +40,13 @@ export async function GET(req: NextRequest) {
     }),
   ])
 
-  // Get LLM logs for these readings by matching userId + createdAt window
-  const readingIds = readings.map(r => r.id)
-  
-  // Match LLM logs to readings via time proximity (within 5 min window)
+  // Get LLM logs for these readings by matching userId + createdAt window.
+  // Constrained to the page's users (the window alone can span months on
+  // low-traffic deployments, which made this query unbounded) and capped.
   const llmLogs = readings.length > 0 ? await prisma.llmLog.findMany({
     where: {
       endpoint: 'divination',
+      userId: { in: readings.map(r => r.userId) },
       createdAt: {
         gte: new Date(new Date(readings[readings.length - 1].createdAt).getTime() - 5 * 60000),
         lte: new Date(new Date(readings[0].createdAt).getTime() + 5 * 60000),
@@ -62,17 +63,23 @@ export async function GET(req: NextRequest) {
       createdAt: true,
     },
     orderBy: { createdAt: 'desc' },
+    take: 1000,
   }) : []
 
-  // Match each reading to its LLM log by userId + closest time
+  // Match each reading to its LLM log: same user, CLOSEST time within 5 min.
+  // (Previously only time proximity was checked, attributing other users'
+  // logs to a reading.)
   const enriched = readings.map(r => {
-    const userEmail = r.user?.email
-    // Find matching LLM log: same user, closest time within 5 min
-    const matched = llmLogs.find(l => {
-      if (!l.userId) return false
+    let matched: (typeof llmLogs)[number] | null = null
+    let bestDiff = Infinity
+    for (const l of llmLogs) {
+      if (l.userId !== r.userId) continue
       const timeDiff = Math.abs(new Date(l.createdAt).getTime() - new Date(r.createdAt).getTime())
-      return timeDiff < 5 * 60000
-    })
+      if (timeDiff < 5 * 60000 && timeDiff < bestDiff) {
+        bestDiff = timeDiff
+        matched = l
+      }
+    }
 
     return {
       ...r,
