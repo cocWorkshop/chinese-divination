@@ -58,6 +58,20 @@ export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW
     setLoading(false)
   }
 
+  const revoke = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/readings/${readingId}/share`, { method: 'DELETE' })
+      if (res.ok) {
+        setUrl(null)
+        toast.success(T(lang, '已停止分享，連結已失效', 'Sharing stopped — link revoked'))
+      } else {
+        toast.error(T(lang, '操作失敗', 'Operation failed'))
+      }
+    } catch { toast.error(T(lang, '操作失敗', 'Operation failed')) }
+    setLoading(false)
+  }
+
   // Compact pill — used in the result card's header corner.
   if (variant === 'inline') {
     return (
@@ -85,6 +99,15 @@ export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW
           style={{ backgroundColor: 'rgba(212, 168, 83, 0.1)', color: 'var(--gold)' }}
         >
           📋
+        </button>
+        <button
+          onClick={revoke}
+          disabled={loading}
+          className="px-2 py-0.5 text-xs rounded transition-colors disabled:opacity-50"
+          style={{ backgroundColor: 'rgba(220, 100, 100, 0.1)', color: '#dc6464' }}
+          title={T(lang, '停止分享並使連結失效', 'Stop sharing and revoke the link')}
+        >
+          {T(lang, '停止分享', 'Stop sharing')}
         </button>
       </div>
     )
