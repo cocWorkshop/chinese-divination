@@ -5,7 +5,7 @@ export const maxDuration = 600
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkCredits } from '@/lib/rateLimit'
+import { checkCredits } from '@/lib/creditService'
 import { completeLLM, streamLLM, resolveLLMConfig } from '@/lib/llm'
 import type { LLMConfig } from '@/lib/llm'
 import { selectHandler, buildHandlerSchema, type DivinationContext } from './handlers'

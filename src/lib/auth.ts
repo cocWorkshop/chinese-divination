@@ -54,6 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           email: user.email,
           name: user.name,
+          isAdmin: user.isAdmin,
         }
       },
     }),
@@ -62,12 +63,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        // Claim is set at sign-in and lives as long as the JWT (7 days).
+        // Stale-claim risk (admin demoted mid-session) is contained by the
+        // authoritative requireAdmin() DB check in every /api/admin route.
+        token.isAdmin = user.isAdmin === true
       }
       return token
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string
+        // JWT augmentation doesn't reach the re-exported @auth/core
+        // interface — cast, same as token.id above.
+        if (token.isAdmin !== undefined) session.user.isAdmin = token.isAdmin as boolean
       }
       return session
     },

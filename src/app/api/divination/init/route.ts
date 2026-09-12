@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { holdCredits, checkCredits } from '@/lib/rateLimit'
+import { holdCredits, checkCredits } from '@/lib/creditService'
 import { logger } from '@/lib/logger'
 
 /**

@@ -14,6 +14,16 @@ export default auth((req) => {
       loginUrl.searchParams.set('callbackUrl', pathname)
       return NextResponse.redirect(loginUrl)
     }
+    // Edge-level admin gate: non-admins are rejected before the admin page
+    // bundle is ever served. Defense-in-depth — the authoritative check
+    // remains requireAdmin() (DB lookup) in every /api/admin route, which
+    // also covers stale 7-day JWTs from admins demoted mid-session.
+    if (!req.auth.user?.isAdmin) {
+      if (pathname.startsWith('/api/admin')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      return NextResponse.redirect(new URL('/', req.url))
+    }
   }
 
   return NextResponse.next()

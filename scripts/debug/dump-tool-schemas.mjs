@@ -2,7 +2,7 @@
 // what gets sent to OpenRouter.
 import { register } from 'node:module'
 register('tsx/esm', import.meta.url)
-const { masterToolRegistry } = await import('../src/lib/master/tools/index.ts')
+const { masterToolRegistry } = await import('../../src/lib/master/tools/index.ts')
 const defs = masterToolRegistry.toolDefs()
 for (const d of defs) {
   console.log('---', d.function.name, '---')

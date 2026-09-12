@@ -2,8 +2,20 @@ name: CI
 
 on:
   push:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   pull_request:
-  workflow_call: # lets docker-publish.yml depend on this workflow
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+  workflow_call: # lets deploy-local.yml depend on this workflow
+
+# Cancel superseded runs on the same branch/PR — quick successive pushes
+# otherwise pile up parallel Postgres containers on the runner.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
@@ -38,3 +50,7 @@ jobs:
       # Integration tests — runs against the fresh Postgres service container
       - name: Integration Tests (DB-backed)
         run: npm run test:integration
+      # Production build gate — prerender/RSC-boundary/bundling errors only
+      # surface at `next build`, never at type-check or lint.
+      - name: Production Build
+        run: npm run build

@@ -4,7 +4,7 @@ export const maxDuration = 600
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkCredits, deductCredits } from '@/lib/rateLimit'
+import { checkCredits, deductCredits } from '@/lib/creditService'
 import { resolveLLMConfig } from '@/lib/llm'
 import type { Message } from '@/lib/llm'
 import { buildMasterSystemPrompt } from '@/lib/master'

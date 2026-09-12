@@ -1,6 +1,13 @@
 import { prisma } from './prisma'
 import { logCreditChange } from './creditLogger'
 
+/**
+ * Credit/billing service (formerly rateLimit.ts — renamed to end the
+ * confusion with rateLimiter.ts, which is the HTTP request-frequency
+ * limiter. This module owns the credit ledger: pricing, checks, atomic
+ * holds/deductions and the daily bonus).
+ */
+
 // Default costs per divination type (overridden by AdminSetting)
 const DEFAULT_COSTS: Record<string, number> = {
   bazi: 5,
@@ -144,26 +151,6 @@ export async function holdCredits(
     note: 'hold@init',
   })
   return { held: true, amount: cost }
-}
-
-// Legacy wrappers for backward compatibility during migration
-export async function checkDivinationCredits(userId: string): Promise<{ allowed: boolean; remaining: number }> {
-  const r = await checkCredits(userId, 'bazi')
-  return { allowed: r.allowed, remaining: r.remaining }
-}
-
-export async function deductDivinationCredit(userId: string): Promise<boolean> {
-  // This should not be called anymore — use deductCredits(userId, type) instead
-  return deductCredits(userId, 'bazi')
-}
-
-export async function checkChatCredits(userId: string): Promise<{ allowed: boolean; remaining: number }> {
-  const r = await checkCredits(userId, 'chat')
-  return { allowed: r.allowed, remaining: r.remaining }
-}
-
-export async function deductChatCredit(userId: string): Promise<boolean> {
-  return deductCredits(userId, 'chat')
 }
 
 function isSameDay(d1: Date, d2: Date): boolean {

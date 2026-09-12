@@ -1,4 +1,4 @@
-import { masterToolRegistry } from '../src/lib/master/tools'
+import { masterToolRegistry } from '../../src/lib/master/tools'
 
 const defs = masterToolRegistry.toolDefs()
 for (const d of defs) {

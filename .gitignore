@@ -27,3 +27,4 @@ db_backup/*.gz
 db_backup/*.zip
 db_backup/*.json
 db_backup/*.json.gz
+coverage/

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkCredits, getCost, grantDailyBonus } from '@/lib/rateLimit'
+import { checkCredits, getCost, grantDailyBonus } from '@/lib/creditService'
 
 const DEFAULT_VISIBILITY = [
   { type: 'bazi', visible: true, order: 1 },

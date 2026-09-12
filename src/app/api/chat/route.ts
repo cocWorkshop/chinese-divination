@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { completeLLM } from '@/lib/llm'
-import { checkCredits, deductCredits } from '@/lib/rateLimit'
+import { checkCredits, deductCredits } from '@/lib/creditService'
 import { createRequestLogger } from '@/lib/logger'
 import * as Sentry from '@sentry/nextjs'
 

@@ -1,7 +1,7 @@
 /**
  * BaZi Calculator V2 — powered by tyme4ts
  *
- * Replaces the lunar-typescript-based v1 (baziCalculator.v1.ts).
+ * Successor of the removed lunar-typescript-based v1.
  * Adds: 流年, 六冲/六合/六害/三刑, 人元司令分野, 胎元, 命宫/身宫.
  * Keeps: custom 神煞 (30+ stars), five elements strength, day master analysis, true solar time correction.
  */

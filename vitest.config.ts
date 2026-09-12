@@ -10,5 +10,10 @@ export default defineConfig({
   test: {
     include: ['src/**/__tests__/**/*.test.ts'],
     testTimeout: 30000,
+    coverage: {
+      provider: 'v8',
+      include: ['src/lib/**', 'src/app/api/**'],
+      exclude: ['src/**/__tests__/**'],
+    },
   },
 })
