@@ -13,6 +13,7 @@
 
 import { logger } from '../logger'
 import { runLogRetention } from './logRetention'
+import { runMasterChatRetention } from './masterChatRetention'
 import { cleanupStaleReadings } from '../readings/lifecycle'
 
 const MINUTE_MS = 60 * 1000
@@ -33,6 +34,9 @@ const JOBS: JobDef[] = [
   // Fails + refunds pending readings stuck >15 min (was a fire-and-forget
   // side effect inside /api/divination/init).
   { name: 'staleReadings', run: cleanupStaleReadings, intervalMs: 10 * MINUTE_MS },
+  // Hard-deletes archived MasterChatMessage rows past the retention window
+  // (default 180d) — archived rows are never re-read but were never deleted.
+  { name: 'masterChatRetention', run: runMasterChatRetention, intervalMs: DAY_MS },
 ]
 
 // Per-job re-entrancy guard: setInterval fires regardless of whether the

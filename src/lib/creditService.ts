@@ -231,6 +231,39 @@ export async function holdCreditsAndCreateReading(
   return { held: true, amount: outcome.amount, readingId: outcome.readingId }
 }
 
+/**
+ * Refund a failed master turn (audit P4). Master credits are deducted
+ * BEFORE streaming; when the engine yields a failure (LLM error, timeout,
+ * client abort) the user received nothing for the charge — mirror the
+ * divination hold/refund discipline. Best-effort: never throws (a failed
+ * refund is logged, not propagated). Admins never pay (deductCredits skips
+ * them), so they are skipped here too.
+ */
+export async function refundMasterCredits(userId: string, requestId?: string): Promise<void> {
+  try {
+    const [user, cost] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } }),
+      getCost('master'),
+    ])
+    if (!user || user.isAdmin || cost <= 0) return
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { credits: { increment: cost } },
+      select: { credits: true },
+    })
+    await logCreditChange({
+      userId,
+      action: 'refund',
+      amount: cost,
+      balance: updated.credits,
+      source: 'master',
+      note: requestId ? `refund failed master turn request=${requestId}` : 'refund failed master turn',
+    })
+  } catch (err) {
+    console.error('[creditService] master turn refund failed:', err)
+  }
+}
+
 function isSameDay(d1: Date, d2: Date): boolean {
   return d1.getUTCFullYear() === d2.getUTCFullYear()
     && d1.getUTCMonth() === d2.getUTCMonth()

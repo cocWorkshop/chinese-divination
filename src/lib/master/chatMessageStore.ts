@@ -43,31 +43,45 @@ export interface MasterChatMessageRow {
  * if the write failed (caller continues regardless). The `mcm_` id prefix is
  * preserved (vs. cuid default in schema.prisma) for backward compatibility
  * with existing rows.
+ *
+ * turnIndex comes from an aggregate max+1; the (userId, sessionId, turnIndex)
+ * unique constraint turns a concurrent append race into P2002, which is
+ * retried with a fresh index (bounded attempts) instead of silently producing
+ * duplicate ordering keys.
  */
+const MAX_TURN_INDEX_ATTEMPTS = 3
+
 export async function appendMasterChatMessage(
   input: MasterChatMessageInput,
 ): Promise<string | null> {
-  try {
-    const turnIndex = await nextTurnIndex(input.userId, input.sessionId)
-    const id = `mcm_${randomUUID().replace(/-/g, '').slice(0, 20)}`
-    await prisma.masterChatMessage.create({
-      data: {
-        id,
-        userId: input.userId,
-        sessionId: input.sessionId,
-        turnIndex,
-        role: input.role,
-        content: input.content ?? null,
-        toolCallsJson: input.toolCallsJson ?? null,
-        toolCallId: input.toolCallId ?? null,
-        tokenCount: input.tokenCount ?? null,
-      },
-    })
-    return id
-  } catch (err) {
-    console.error('[chatMessageStore] appendMasterChatMessage failed:', err)
-    return null
+  for (let attempt = 1; attempt <= MAX_TURN_INDEX_ATTEMPTS; attempt++) {
+    try {
+      const turnIndex = await nextTurnIndex(input.userId, input.sessionId)
+      const id = `mcm_${randomUUID().replace(/-/g, '').slice(0, 20)}`
+      await prisma.masterChatMessage.create({
+        data: {
+          id,
+          userId: input.userId,
+          sessionId: input.sessionId,
+          turnIndex,
+          role: input.role,
+          content: input.content ?? null,
+          toolCallsJson: input.toolCallsJson ?? null,
+          toolCallId: input.toolCallId ?? null,
+          tokenCount: input.tokenCount ?? null,
+        },
+      })
+      return id
+    } catch (err) {
+      const code = (err as { code?: string }).code
+      if (code === 'P2002' && attempt < MAX_TURN_INDEX_ATTEMPTS) {
+        continue // lost the turnIndex race — recompute and retry
+      }
+      console.error('[chatMessageStore] appendMasterChatMessage failed:', err)
+      return null
+    }
   }
+  return null
 }
 
 /**
