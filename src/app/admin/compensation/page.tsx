@@ -30,6 +30,7 @@ export default function AdminCompensation() {
   const [affected, setAffected] = useState<AffectedUser[]>([])
   const [loadingAffected, setLoadingAffected] = useState(false)
   const [sinceDays, setSinceDays] = useState(7)
+  const [includePseudoErrors, setIncludePseudoErrors] = useState(false)
 
   // Draft items
   const [drafts, setDrafts] = useState<DraftItem[]>([])
@@ -53,13 +54,13 @@ export default function AdminCompensation() {
   const fetchAffected = useCallback(() => {
     setLoadingAffected(true)
     const since = new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000).toISOString()
-    fetch(`/api/admin/compensation?action=affected-users&since=${since}`)
+    fetch(`/api/admin/compensation?action=affected-users&since=${since}&includePseudoErrors=${includePseudoErrors}`)
       .then(r => r.json())
       .then(d => {
         setAffected(d.affected || [])
       })
       .finally(() => setLoadingAffected(false))
-  }, [sinceDays])
+  }, [sinceDays, includePseudoErrors])
 
   const fetchHistory = useCallback((page: number) => {
     setHistLoading(true)
@@ -106,6 +107,27 @@ export default function AdminCompensation() {
     }])
     setManualEmail('')
     setManualReason('')
+  }
+
+  const dismissAffectedUser = async (au: AffectedUser) => {
+    try {
+      const res = await fetch('/api/admin/compensation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'dismiss',
+          email: au.user.email,
+          userId: au.user.id,
+          reason: '管理員忽略（無需補償）',
+        }),
+      })
+      if (!res.ok) throw new Error('忽略操作失敗')
+      setAffected(prev => prev.filter(u => u.user.email !== au.user.email))
+      setDrafts(prev => prev.filter(d => d.email !== au.user.email))
+      setMessage({ text: `已忽略用戶 ${au.user.email}，移出待補償列表`, type: 'success' })
+    } catch (err: unknown) {
+      setMessage({ text: err instanceof Error ? err.message : '忽略操作失敗', type: 'error' })
+    }
   }
 
   const removeDraft = (email: string) => {
@@ -170,6 +192,7 @@ export default function AdminCompensation() {
       sent: { bg: 'bg-blue-400/10', text: 'text-blue-400', label: '已發送' },
       claimed: { bg: 'bg-green-400/10', text: 'text-green-400', label: '已領取' },
       expired: { bg: 'bg-red-400/10', text: 'text-red-400', label: '已過期' },
+      dismissed: { bg: 'bg-white/10', text: 'text-white/40', label: '已忽略' },
     }
     const m = map[s] || { bg: 'bg-white/10', text: 'text-white/50', label: s }
     return <span className={`px-2 py-0.5 rounded-full text-xs ${m.bg} ${m.text}`}>{m.label}</span>
@@ -230,9 +253,18 @@ export default function AdminCompensation() {
 
           {/* Affected users from errors */}
           <div className="glass-card rounded-xl p-4 border border-gold/15 mb-5">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <div className="text-white/60 text-xs uppercase tracking-wider">受影響用戶（系統錯誤）</div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1.5 text-xs text-white/50 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={includePseudoErrors}
+                    onChange={e => setIncludePseudoErrors(e.target.checked)}
+                    className="rounded border-gold/30 bg-navy-900 text-gold focus:ring-0"
+                  />
+                  <span>包含額度不足偽報錯</span>
+                </label>
                 <select value={sinceDays} onChange={e => setSinceDays(Number(e.target.value))}
                   className="px-2 py-1 rounded-lg bg-navy-900 border border-gold/20 text-white/70 text-xs">
                   <option value={1}>近 1 天</option>
@@ -263,15 +295,24 @@ export default function AdminCompensation() {
                           {au.frontendErrors.length > 0 && <span className="text-orange-400">🟠 前端錯誤 ×{au.frontendErrors.length}</span>}
                         </div>
                       </div>
-                      <button
-                        onClick={() => addAffectedToDraft(au)}
-                        disabled={inDraft}
-                        className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
-                          inDraft ? 'bg-green-400/10 text-green-400 cursor-default' : 'bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20'
-                        }`}
-                      >
-                        {inDraft ? '✓ 已加入' : '+ 加入'}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => addAffectedToDraft(au)}
+                          disabled={inDraft}
+                          className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
+                            inDraft ? 'bg-green-400/10 text-green-400 cursor-default' : 'bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20'
+                          }`}
+                        >
+                          {inDraft ? '✓ 已加入' : '+ 加入'}
+                        </button>
+                        <button
+                          onClick={() => dismissAffectedUser(au)}
+                          className="px-2.5 py-1.5 rounded-lg text-xs text-white/40 border border-white/10 hover:text-red-400 hover:border-red-400/30 hover:bg-red-500/10 transition-colors"
+                          title="將該用戶移出待補償列表（標記為已忽略）"
+                        >
+                          ✕ 忽略
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
@@ -367,13 +408,13 @@ export default function AdminCompensation() {
       {tab === 'history' && (
         <>
           <div className="flex gap-1.5 mb-4">
-            {['', 'pending', 'sent', 'claimed', 'expired'].map(f => (
+            {['', 'pending', 'sent', 'claimed', 'expired', 'dismissed'].map(f => (
               <button key={f}
                 onClick={() => { setHistFilter(f); }}
                 className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
                   histFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
                 }`}>
-                {f === '' ? '全部' : f === 'pending' ? '待發送' : f === 'sent' ? '已發送' : f === 'claimed' ? '已領取' : '已過期'}
+                {f === '' ? '全部' : f === 'pending' ? '待發送' : f === 'sent' ? '已發送' : f === 'claimed' ? '已領取' : f === 'expired' ? '已過期' : '已忽略'}
               </button>
             ))}
           </div>

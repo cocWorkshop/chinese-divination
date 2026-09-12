@@ -4,6 +4,21 @@ import { requireAdmin } from '@/lib/adminAuth'
 import { prisma } from '@/lib/prisma'
 import { generateToken, tokenExpiry } from '@/lib/email'
 
+export function isPseudoError(errorText: string | null | undefined, status?: number | null): boolean {
+  if (status === 429) return true
+  if (!errorText) return false
+  const lower = errorText.toLowerCase()
+  return (
+    errorText.includes('機緣不足') ||
+    errorText.includes('机缘不足') ||
+    errorText.includes('額度不足') ||
+    errorText.includes('额度不足') ||
+    lower.includes('not enough karma') ||
+    lower.includes('insufficient credits') ||
+    lower.includes('insufficient_credits')
+  )
+}
+
 // GET: list compensations + fetch error-affected users
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin()
@@ -15,20 +30,29 @@ export async function GET(req: NextRequest) {
   // Fetch affected users from error logs
   if (action === 'affected-users') {
     const since = searchParams.get('since') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const includePseudoErrors = searchParams.get('includePseudoErrors') === 'true'
 
     // LLM errors
-    const llmErrors = await prisma.llmLog.findMany({
+    const rawLlmErrors = await prisma.llmLog.findMany({
       where: { status: 'error', createdAt: { gte: new Date(since) } },
       select: { id: true, userId: true, endpoint: true, errorMessage: true, model: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
     })
 
     // Frontend errors
-    const frontendErrors = await prisma.frontendError.findMany({
+    const rawFrontendErrors = await prisma.frontendError.findMany({
       where: { createdAt: { gte: new Date(since) } },
       select: { id: true, userId: true, endpoint: true, error: true, status: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
     })
+
+    const llmErrors = includePseudoErrors
+      ? rawLlmErrors
+      : rawLlmErrors.filter(e => !isPseudoError(e.errorMessage))
+
+    const frontendErrors = includePseudoErrors
+      ? rawFrontendErrors
+      : rawFrontendErrors.filter(e => !isPseudoError(e.error, e.status))
 
     // Collect unique user IDs
     const userIds = new Set<string>()
@@ -41,9 +65,9 @@ export async function GET(req: NextRequest) {
     })
     const userMap = Object.fromEntries(users.map(u => [u.id, u]))
 
-    // Find users who already have compensations (any status except expired)
+    // Find users who already have compensations (any status except expired) or were dismissed
     const existingComps = await prisma.compensation.findMany({
-      where: { status: { in: ['pending', 'sent', 'claimed'] } },
+      where: { status: { in: ['pending', 'sent', 'claimed', 'dismissed'] } },
       select: { email: true },
     })
     const compensatedEmails = new Set(existingComps.map(c => c.email))
@@ -92,12 +116,32 @@ export async function GET(req: NextRequest) {
   })
 }
 
-// POST: create compensation record(s)
+// POST: create compensation record(s) or dismiss affected user
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin()
   if (error) return error
 
   const body = await req.json()
+
+  // Dismiss action: mark pseudo-error user as dismissed so they leave the affected list
+  if (body?.action === 'dismiss') {
+    const { email, userId, reason } = body as { email?: string; userId?: string; reason?: string }
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    }
+    const dismissed = await prisma.compensation.create({
+      data: {
+        userId: userId || null,
+        email,
+        reason: reason || '管理員忽略（額度用盡/無需補償）',
+        sourceType: 'dismissed',
+        token: generateToken(),
+        status: 'dismissed',
+      },
+    })
+    return NextResponse.json({ ok: true, dismissed })
+  }
+
   const { items } = body as {
     items: Array<{
       email: string
