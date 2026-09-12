@@ -11,6 +11,7 @@
     "test": "vitest",
     "test:ci": "vitest run",
     "test:unit": "vitest run --exclude src/__tests__/integration/**",
+    "test:integration": "vitest run integration",
     "predeploy-check": "npm run type-check && npm run lint && npm run test:ci",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

@@ -1,9 +1,10 @@
 /**
  * Master Chat integration tests — 25 scenarios.
  * Tests deterministic parts without LLM calls.
+ * Uses self-contained test fixtures created in beforeAll and cleaned up in afterAll.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { renderGreeting, pickOpener, type GreetingInput } from '@/lib/master/greetings'
 import { buildMasterSystemPrompt } from '@/lib/master/systemPrompt/buildSystemPrompt'
 import { masterToolRegistry } from '@/lib/master/tools'
@@ -12,11 +13,58 @@ import type { ToolContext } from '@/lib/master/tools/_types'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
+const TEST_EMAIL = `test-master-chat-${process.pid}@test.local`
 
-async function getTestUserId(): Promise<string | null> {
-  const user = await prisma.user.findFirst({ where: { email: 'zhangweicalm@gmail.com' }, select: { id: true } })
-  return user?.id ?? null
-}
+let userId: string
+let testReadingId: string
+let testFamilyMemberId: string
+let ctx: ToolContext
+
+beforeAll(async () => {
+  const user = await prisma.user.create({
+    data: {
+      email: TEST_EMAIL,
+      name: '测试用户',
+      birthDate: '1990-05-15',
+      birthTime: 'wu',
+      gender: 'male',
+      credits: 10,
+    },
+  })
+  userId = user.id
+
+  const reading = await prisma.reading.create({
+    data: {
+      userId,
+      type: 'bazi',
+      status: 'completed',
+      result: JSON.stringify({ summary: '测试测算结果', overview: '整体运势平稳' }),
+      inputData: { birthDate: '1990-05-15' },
+    },
+  })
+  testReadingId = reading.id
+
+  const member = await prisma.familyMember.create({
+    data: {
+      userId,
+      relation: 'parent',
+      name: '测试家属',
+      gender: 'male',
+      birthDate: '1965-01-01',
+      birthTime: 'zi',
+    },
+  })
+  testFamilyMemberId = member.id
+
+  ctx = { userId, lang: 'zh-TW', prisma }
+})
+
+afterAll(async () => {
+  if (userId) {
+    await prisma.user.delete({ where: { id: userId } }).catch(() => {})
+  }
+  await prisma.$disconnect()
+})
 
 // ═══ Scenarios 1-3: Greetings ═══
 describe('Master Greeting', () => {
@@ -57,53 +105,42 @@ describe('Master Greeting', () => {
 
 // ═══ Scenarios 4-9: Tool execution ═══
 describe('Master Tools', () => {
-  let userId: string | null = null
-  let ctx: ToolContext
-
   it('S4: get_user_profile', async () => {
-    userId = await getTestUserId()
-    if (!userId) return
-    ctx = { userId, lang: 'zh-TW', prisma }
     const result = await masterToolRegistry.execute('get_user_profile', {}, ctx)
     expect(result.ok).toBe(true)
   })
 
   it('S5: list_family_members', async () => {
-    if (!userId) return
     const result = await masterToolRegistry.execute('list_family_members', {}, ctx)
     expect(result.ok).toBe(true)
-    if (result.ok) expect(Array.isArray((result.data as { members: unknown[] }).members)).toBe(true)
+    if (result.ok) {
+      const members = (result.data as { members: unknown[] }).members
+      expect(Array.isArray(members)).toBe(true)
+      expect(members.length).toBeGreaterThanOrEqual(1)
+    }
   })
 
   it('S6: list_readings', async () => {
-    if (!userId) return
     const result = await masterToolRegistry.execute('list_readings', { type: 'bazi' }, ctx)
     expect(result.ok).toBe(true)
-    if (result.ok) expect(Array.isArray((result.data as { readings: unknown[] }).readings)).toBe(true)
+    if (result.ok) {
+      const readings = (result.data as { readings: unknown[] }).readings
+      expect(Array.isArray(readings)).toBe(true)
+      expect(readings.length).toBeGreaterThanOrEqual(1)
+    }
   })
 
   it('S7: get_reading valid id', async () => {
-    if (!userId) return
-    // Find a reading with non-empty result
-    const reading = await prisma.reading.findFirst({
-      where: { userId, status: 'completed', result: { not: '' } },
-      select: { id: true },
-      orderBy: { createdAt: 'desc' },
-    })
-    if (!reading) return // skip if no completed readings
-    const result = await masterToolRegistry.execute('get_reading', { readingId: reading.id }, ctx)
-    // Should succeed or fail gracefully (NOT crash)
-    expect(typeof result.ok).toBe('boolean')
+    const result = await masterToolRegistry.execute('get_reading', { readingId: testReadingId }, ctx)
+    expect(result.ok).toBe(true)
   })
 
   it('S8: get_reading invalid id → NOT_FOUND', async () => {
-    if (!userId) return
     const result = await masterToolRegistry.execute('get_reading', { readingId: 'nonexistent_xxxxx' }, ctx)
     expect(result.ok).toBe(false)
   })
 
   it('S9: prefill_divination_form self', async () => {
-    if (!userId) return
     const result = await masterToolRegistry.execute('prefill_divination_form', { type: 'bazi', target: { kind: 'self' } }, ctx)
     expect(result.ok).toBe(true)
     if (result.ok) {
@@ -116,29 +153,19 @@ describe('Master Tools', () => {
 
 // ═══ Scenarios 10-12: Prefill targets ═══
 describe('Master Prefill targets', () => {
-  let userId: string | null = null
-  let ctx: ToolContext
-
   it('S10: self target', async () => {
-    userId = await getTestUserId()
-    if (!userId) return
-    ctx = { userId, lang: 'zh-TW', prisma }
     const r = await masterToolRegistry.execute('prefill_divination_form', { type: 'ziwei', target: { kind: 'self' } }, ctx)
     expect(r.ok).toBe(true)
     if (r.ok) expect((r.data as { divinationType: string }).divinationType).toBe('ziwei')
   })
 
   it('S11: existing family member', async () => {
-    if (!userId) return
-    const member = await prisma.familyMember.findFirst({ where: { userId }, select: { id: true } })
-    if (!member) return
-    const r = await masterToolRegistry.execute('prefill_divination_form', { type: 'bazi', target: { kind: 'family', familyMemberId: member.id } }, ctx)
+    const r = await masterToolRegistry.execute('prefill_divination_form', { type: 'bazi', target: { kind: 'family', familyMemberId: testFamilyMemberId } }, ctx)
     expect(r.ok).toBe(true)
     if (r.ok) expect((r.data as { url: string }).url).toContain('familyMemberId')
   })
 
   it('S12: new family member', async () => {
-    if (!userId) return
     const r = await masterToolRegistry.execute('prefill_divination_form', {
       type: 'bazi', target: { kind: 'newFamily', relation: 'spouse', name: '测试' },
       prefill: { birthDate: '1990-05-15', birthTime: 'wu', gender: 'female' },
@@ -199,18 +226,14 @@ describe('Master Errors', () => {
   })
 
   it('S20: other relation without detail → error', async () => {
-    const userId = await getTestUserId()
-    if (!userId) return
     const r = await masterToolRegistry.execute('prefill_divination_form', {
       type: 'bazi', target: { kind: 'newFamily', relation: 'other' },
-    }, { userId, lang: 'zh-TW', prisma })
+    }, ctx)
     expect(r.ok).toBe(false)
   })
 
   it('S21: list_readings unknown type → error or empty', async () => {
-    const userId = await getTestUserId()
-    if (!userId) return
-    const r = await masterToolRegistry.execute('list_readings', { type: 'fake' }, { userId, lang: 'zh-TW', prisma })
+    const r = await masterToolRegistry.execute('list_readings', { type: 'fake' }, ctx)
     // Might return ok with empty array, or fail with validation error — both are acceptable
     if (r.ok) {
       expect((r.data as { readings: unknown[] }).readings).toHaveLength(0)
@@ -229,12 +252,11 @@ describe('Master Edge cases', () => {
   })
 
   it('S23: prefill URL params correct', async () => {
-    const userId = await getTestUserId()
-    if (!userId) return
     const r = await masterToolRegistry.execute('prefill_divination_form', {
       type: 'bazi', target: { kind: 'self' },
       prefill: { birthDate: '1990-01-15', birthTime: 'wu', gender: 'male' },
     }, { userId, lang: 'en', prisma })
+    expect(r.ok).toBe(true)
     if (r.ok) {
       const d = r.data as { url: string }
       expect(d.url).toContain('birthDate=1990-01-15')
@@ -243,11 +265,10 @@ describe('Master Edge cases', () => {
   })
 
   it('S24: en prefill English text', async () => {
-    const userId = await getTestUserId()
-    if (!userId) return
     const r = await masterToolRegistry.execute('prefill_divination_form', {
       type: 'bazi', target: { kind: 'self' },
     }, { userId, lang: 'en', prisma })
+    expect(r.ok).toBe(true)
     if (r.ok) {
       const d = r.data as { ctaContext: { target: string }; ctaLabel: string }
       expect(d.ctaContext.target).toContain('yourself')

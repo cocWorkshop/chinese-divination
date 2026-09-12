@@ -1,8 +1,8 @@
 /**
- * Integration tests for all divination types.
+ * Pipeline tests for all divination types.
  *
  * Tests the handler pipeline: extractBirthInputs → calculator → chart output.
- * Calls handler.calculate() directly (no HTTP/auth needed).
+ * Calls handler.calculate() directly (no DB, no HTTP/auth needed).
  *
  * Coverage:
  *   - BaZi: 15 cases (solar/lunar, precise/fuzzy, DST, various decades)
@@ -223,3 +223,4 @@ describe('Cross-type consistency', () => {
     expect(r1.chart.dayPillar.stem).toBe(r2.chart.dayPillar.stem)
   })
 })
+

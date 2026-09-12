@@ -14,7 +14,8 @@ AGENT_TASK.md
 
 
 .playwright-mcp
-.claude/worktreestsconfig.tsbuildinfo
+.claude/worktrees
+tsconfig.tsbuildinfo
 prod_delta.sql
 .claude/
 

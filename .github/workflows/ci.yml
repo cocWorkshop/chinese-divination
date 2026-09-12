@@ -1,6 +1,3 @@
-# CI quality gate (architecture plan I4 — hold lifted by owner 2026-06-12).
-# Runs on every push/PR, and is invoked by docker-publish.yml as a required
-# prerequisite, so an image can never be published without a green run.
 name: CI
 
 on:
@@ -10,18 +7,18 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     services:
       postgres:
         image: postgres:16
         env:
           POSTGRES_PASSWORD: test
           POSTGRES_DB: divination_test
-        ports: ['5432:5432']
+        ports: ['55432:5432']
         options: >-
           --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      DATABASE_URL: postgresql://postgres:test@localhost:5432/divination_test
+      DATABASE_URL: postgresql://postgres:test@localhost:55432/divination_test
       SKIP_ENV_VALIDATION: '1'
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +33,8 @@ jobs:
       - run: npx prisma migrate deploy
       - run: npm run type-check
       - run: npm run lint
-      # Unit tests only — src/__tests__/integration/** needs seeded data and a
-      # long-lived dev DB; it stays a local pre-deploy concern for now.
-      - run: npm run test:unit
+      - name: Unit Tests
+        run: npm run test:unit
+      # Integration tests — runs against the fresh Postgres service container
+      - name: Integration Tests (DB-backed)
+        run: npm run test:integration
