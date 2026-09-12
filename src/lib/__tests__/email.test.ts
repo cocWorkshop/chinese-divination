@@ -37,15 +37,17 @@ describe('email service', () => {
     })
 
     it('tokenExpiry returns a future Date matching requested hours', () => {
-      const before = Date.now()
+      const before24 = Date.now()
       const expiry24 = tokenExpiry(24)
-      const after = Date.now()
-      expect(expiry24.getTime()).toBeGreaterThanOrEqual(before + 24 * 3600 * 1000)
-      expect(expiry24.getTime()).toBeLessThanOrEqual(after + 24 * 3600 * 1000)
+      const after24 = Date.now()
+      expect(expiry24.getTime()).toBeGreaterThanOrEqual(before24 + 24 * 3600 * 1000)
+      expect(expiry24.getTime()).toBeLessThanOrEqual(after24 + 24 * 3600 * 1000)
 
+      const before1 = Date.now()
       const expiry1 = tokenExpiry(1)
-      expect(expiry1.getTime()).toBeGreaterThanOrEqual(before + 3600 * 1000)
-      expect(expiry1.getTime()).toBeLessThanOrEqual(after + 3600 * 1000)
+      const after1 = Date.now()
+      expect(expiry1.getTime()).toBeGreaterThanOrEqual(before1 + 3600 * 1000)
+      expect(expiry1.getTime()).toBeLessThanOrEqual(after1 + 3600 * 1000)
     })
   })
 

@@ -1,9 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import ResultRenderer from '@/components/results/ResultRenderer'
 import ReadingFeedback from '@/components/ReadingFeedback'
 import ShareResultButton from '@/components/ShareResultButton'
+import InContextMasterPrompt from '@/components/reading/InContextMasterPrompt'
+import FatePosterModal from '@/components/reading/FatePosterModal'
 import FlameBorderStyle from '@/components/FlameBorderStyle'
 import { T } from '@/lib/i18n'
 
@@ -70,6 +73,7 @@ export default function ReadingResultCard({
 }: ReadingResultCardProps) {
   const isEn = lang === 'en'
   const canShare = !!readingId && !streaming
+  const [showPoster, setShowPoster] = useState(false)
 
   return (
     <motion.div
@@ -117,7 +121,22 @@ export default function ReadingResultCard({
           )}
         </div>
         {canShare && (
-          <ShareResultButton readingId={readingId!} shareToken={shareToken} lang={lang} variant="inline" />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setShowPoster(true)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg transition-colors flex-shrink-0 cursor-pointer"
+              style={{
+                backgroundColor: 'rgba(212, 168, 83, 0.12)',
+                color: 'var(--gold)',
+                border: '1px solid rgba(212, 168, 83, 0.3)',
+              }}
+              title={isEn ? 'Generate aesthetic fortune poster' : '生成東方典藏命理籤卡'}
+            >
+              <span>📜</span>
+              <span>{isEn ? 'Fate Poster' : '命理籤卡'}</span>
+            </button>
+            <ShareResultButton readingId={readingId!} shareToken={shareToken} lang={lang} variant="inline" />
+          </div>
         )}
       </div>
 
@@ -135,11 +154,30 @@ export default function ReadingResultCard({
         createdAt={createdAt}
       />
 
+      {/* In-Context Master Consultation Prompts — once reading is complete */}
+      {!streaming && (
+        <InContextMasterPrompt divinationType={type} readingId={readingId} lang={lang} />
+      )}
+
       {/* Feedback widget — only once a saved reading exists (not mid-stream) */}
       {canShare && (
         <div className="mt-6">
           <ReadingFeedback readingId={readingId!} initialRating={rating} />
         </div>
+      )}
+
+      {/* Aesthetic Oriental Fate Poster Modal */}
+      {canShare && (
+        <FatePosterModal
+          isOpen={showPoster}
+          onClose={() => setShowPoster(false)}
+          readingId={readingId!}
+          shareToken={shareToken}
+          divinationType={type}
+          subjectName={subjectName}
+          result={result}
+          lang={lang}
+        />
       )}
     </motion.div>
   )

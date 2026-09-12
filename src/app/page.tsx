@@ -1,261 +1,300 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
-import YinYangIcon from '@/components/YinYangIcon'
 import StarField from '@/components/StarField'
-
-interface VisibilityItem {
-  type: string
-  visible: boolean
-  order: number
-}
-
-const serviceMap: Record<string, { symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }> = {
-  bazi: { symbol: '🏛️', twName: '八字命理', enName: 'BaZi', twDesc: '四柱八字，推演命運', enDesc: 'Four Pillars of Destiny' },
-  iching: { symbol: '📖', twName: '易經占卜', enName: 'I Ching', twDesc: '六十四卦，洞察先機', enDesc: 'Book of Changes Oracle' },
-  liuyao: { symbol: '🪙', twName: '六爻占卜', enName: 'Liu Yao', twDesc: '銅錢搖卦，精準斷事', enDesc: 'Six Lines Divination' },
-  ziwei: { symbol: '⭐', twName: '紫微斗數', enName: 'Zi Wei', twDesc: '星盤命宮，紫微護命', enDesc: 'Purple Star Astrology' },
-  qimen: { symbol: '🧭', twName: '奇門遁甲', enName: 'Qi Men', twDesc: '奇門佈局，謀事在天', enDesc: 'Qi Men Dun Jia' },
-  fengshui: { symbol: '🏯', twName: '風水佈局', enName: 'Feng Shui', twDesc: '藏風聚氣，宅運興旺', enDesc: 'Wind & Water Harmony' },
-  meihua: { symbol: '🌸', twName: '梅花易數', enName: 'Plum Blossom', twDesc: '以數起卦，體用生克，精準預測具體事項', enDesc: 'Plum Blossom numerology for precise event prediction' },
-}
-
-// Map visibility type keys to route ids
-const routeIdMap: Record<string, string> = {}
-const getRouteId = (type: string) => routeIdMap[type] || type
 
 export default function HomePage() {
   const { lang } = useLang()
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
+  const { data: session } = useSession()
+  const [showOtherSystems, setShowOtherSystems] = useState(false)
+  const isZh = lang !== 'en'
 
-  useEffect(() => {
-    fetch('/api/divination/visibility')
-      .then(r => r.json())
-      .then((items: VisibilityItem[]) => {
-        const ordered = items
-          .filter(item => item.visible && serviceMap[item.type])
-          .sort((a, b) => a.order - b.order)
-          .map(item => ({
-            id: getRouteId(item.type),
-            ...serviceMap[item.type],
-          }))
-        setVisibleServices(ordered)
-      })
-      .catch(() => {
-        // Fallback: show all
-        setVisibleServices(Object.entries(serviceMap).map(([type, info]) => ({ id: getRouteId(type), ...info })))
-      })
-  }, [])
-
-  useEffect(() => {
-    if (status === 'authenticated' && session) {
-      router.replace('/divination')
-    }
-  }, [status, session, router])
+  const secondaryServices = [
+    {
+      id: 'qimen',
+      symbol: '🧭',
+      name: isZh ? '奇門遁甲' : 'Qi Men Dun Jia',
+      desc: isZh ? '空間方位，排盤擇吉' : 'Directional spatial strategy & timing',
+      href: '/divination/qimen',
+    },
+    {
+      id: 'fengshui',
+      symbol: '🏯',
+      name: isZh ? '風水佈局' : 'Feng Shui Harmony',
+      desc: isZh ? '藏風聚氣，調和宅運' : 'Environmental energy & spatial balance',
+      href: '/divination/fengshui',
+    },
+    {
+      id: 'iching',
+      symbol: '📖',
+      name: isZh ? '易經六十四卦' : 'I Ching Classic',
+      desc: isZh ? '周易象數，卦辭直解' : 'Classical hexagram wisdom & guidance',
+      href: '/divination/iching',
+    },
+  ]
 
   return (
-    <div className="flex-1 bg-navy-950">
-      {/* Hero */}
-      <section className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden">
+    <div className="flex-1 bg-navy-950 text-white selection:bg-gold/20 selection:text-gold-light relative overflow-x-hidden">
+      {/* ─── Hero Section ─── */}
+      <section className="relative min-h-[85vh] sm:min-h-[88vh] flex flex-col items-center justify-center overflow-hidden px-4 py-16 sm:py-24">
         <StarField />
-        <div className="relative z-10 text-center px-3 sm:px-4 max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-          >
-            <h1 className="text-6xl sm:text-8xl md:text-9xl font-serif text-gold mb-4" style={{ textShadow: '0 0 40px rgba(212,168,83,0.5)' }}>
-              玄機
-            </h1>
-            <p className="text-xl md:text-2xl text-white/70 mb-2 font-serif">
-              {lang === 'zh-TW' ? '古法智慧，現代傳承' : 'Ancient Wisdom, Modern Clarity'}
-            </p>
-            <p className="text-white/50 mb-10 max-w-xl mx-auto">
-              {lang === 'zh-TW'
-                ? '融匯八字、易經、紫微、奇門、風水等傳統預測學，以AI智慧為您解讀命運玄機'
-                : 'BaZi, I Ching, Zi Wei, Qi Men, Feng Shui — classical divination powered by AI insight'}
-            </p>
-          </motion.div>
 
+        {/* Subtle Celestial Orbit Rings (Traditional Armillary Sphere motif) */}
+        <div
+          className="celestial-orbit w-[340px] h-[340px] sm:w-[540px] sm:h-[540px]"
+          aria-hidden="true"
+        />
+        <div
+          className="celestial-orbit w-[500px] h-[500px] sm:w-[780px] sm:h-[780px] opacity-40"
+          style={{ animationDirection: 'reverse', animationDuration: '240s' }}
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 text-center max-w-3xl mx-auto">
+          {/* Authenticated user welcoming greeting badge */}
+          {session?.user && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full text-xs text-gold/80 border border-gold/25 bg-gold/5 backdrop-blur-md"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+              <span>
+                {isZh
+                  ? `歡迎歸位，${session.user.name || '道友'}`
+                  : `Welcome back, ${session.user.name || 'Friend'}`}
+              </span>
+              <Link href="/divination" className="text-gold underline ml-1 hover:text-gold-light">
+                {isZh ? '進入命盤簿 →' : 'My Readings →'}
+              </Link>
+            </motion.div>
+          )}
+
+          {/* Core Brand Title */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
           >
-            <Link
-              href="/divination"
-              className="px-8 py-3 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-all shadow-lg shadow-gold/20"
+            <h1
+              className="text-6xl sm:text-7xl md:text-8xl font-serif text-gold tracking-wider mb-4 select-none"
+              style={{
+                textShadow: '0 0 45px rgba(212,168,83,0.3)',
+              }}
             >
-              {lang === 'zh-TW' ? '開始占卜' : 'Start Divination'}
-            </Link>
-            <Link
-              href="/register"
-              className="px-8 py-3 border border-gold/50 text-gold rounded-xl font-semibold text-lg hover:border-gold hover:bg-gold/10 transition-all"
-            >
-              {lang === 'zh-TW' ? '免費註冊' : 'Register Free'}
-            </Link>
+              玄機
+            </h1>
+            <p className="text-xs sm:text-sm uppercase tracking-[0.35em] text-gold/60 mb-4 font-sans font-light">
+              XuanJi · Modern Metaphysics
+            </p>
+            <p className="text-lg sm:text-xl md:text-2xl text-white/80 font-serif font-light mb-4">
+              {isZh ? '古法智慧 · 當代精算' : 'Ancient Wisdom, Contemporary Calculation'}
+            </p>
+            <p className="text-sm sm:text-base text-white/50 max-w-xl mx-auto leading-relaxed font-light mb-10">
+              {isZh
+                ? '「不論是一生大運起伏，還是當下一事之惑，皆有數可循。」'
+                : '“Whether charting the arc of a lifetime or resolving an immediate crossroad, every fate has its number.”'}
+            </p>
           </motion.div>
-        </div>
 
-        {/* Scroll indicator */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-gold/50"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </motion.div>
-      </section>
-
-      {/* Services grid */}
-      <section className="py-12 sm:py-20 px-3 sm:px-4 max-w-6xl mx-auto">
-        <motion.h2
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="text-3xl font-serif text-center text-gold mb-4"
-        >
-          {lang === 'zh-TW' ? '六大命理體系' : 'Six Divination Systems'}
-        </motion.h2>
-        <p className="text-center text-white/50 mb-12">
-          {lang === 'zh-TW' ? '千年傳承，AI解讀' : 'Millennia of wisdom, AI-powered analysis'}
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {visibleServices.map((svc, i) => (
-            <motion.div
-              key={svc.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-            >
-              <Link href={`/divination/${svc.id}`}>
-                <div className="glass-card rounded-2xl p-6 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10 transition-all group cursor-pointer">
-                  <div className="text-5xl mb-4"> {svc.symbol}</div>
-                  <h3 className="text-xl font-serif text-gold mb-1 group-hover:text-gold-light">
-                    {lang === 'en' ? svc.enName : svc.twName}
-                  </h3>
-                  <p className="text-white/60 text-sm">
-                    {lang === 'en' ? svc.enDesc : svc.twDesc}
-                  </p>
+          {/* ─── Dual-Scenario Core Navigation Cards (Minimalist & Intuitive) ─── */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 text-left max-w-3xl mx-auto"
+          >
+            {/* Scenario 1: Who am I? (BaZi / Zi Wei) */}
+            <div className="card-mystic-l1 p-6 sm:p-7 flex flex-col justify-between group">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className="text-2xl" aria-hidden="true">🏛️</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full border border-gold/30 text-gold-light bg-gold/10 font-serif">
+                    {isZh ? '本命推演' : 'Life Blueprint'}
+                  </span>
                 </div>
+                <h2 className="text-xl sm:text-2xl font-serif text-gold-light font-medium mb-2 group-hover:text-gold transition-colors">
+                  {isZh ? '觀照自性 · 終生大運' : 'Discover Your Blueprint'}
+                </h2>
+                <p className="text-xs sm:text-sm text-white/60 leading-relaxed font-light mb-6">
+                  {isZh
+                    ? '探尋本命格局順逆、十年大運流轉與內在性格長板。面對人生轉折或生涯迷茫時的定盤羅盤。'
+                    : 'Analyze four pillars, life palace, and decade cycles. Your guiding compass when navigating major life transitions.'}
+                </p>
+
+                {/* Sub-system quick chips */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <Link
+                    href="/divination/bazi"
+                    className="px-2.5 py-1 text-xs rounded-lg bg-white/5 hover:bg-gold/15 hover:text-gold border border-white/10 transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span>🏛️</span>
+                    <span>{isZh ? '四柱八字' : 'BaZi'}</span>
+                  </Link>
+                  <Link
+                    href="/divination/ziwei"
+                    className="px-2.5 py-1 text-xs rounded-lg bg-white/5 hover:bg-gold/15 hover:text-gold border border-white/10 transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span>⭐</span>
+                    <span>{isZh ? '紫微斗數' : 'Zi Wei'}</span>
+                  </Link>
+                </div>
+              </div>
+
+              <Link
+                href="/divination/bazi"
+                className="w-full py-3 px-5 rounded-xl bg-gold text-navy-950 font-medium text-sm text-center hover:bg-gold-light transition-all shadow-md shadow-gold/10 flex items-center justify-center gap-1.5 group-hover:gap-2.5"
+              >
+                <span>{isZh ? '探索本命星盤' : 'Explore Your Chart'}</span>
+                <span className="transition-transform duration-300">→</span>
               </Link>
-            </motion.div>
-          ))}
+            </div>
+
+            {/* Scenario 2: What should I do now? (Liu Yao / Mei Hua) */}
+            <div className="card-mystic-l1 p-6 sm:p-7 flex flex-col justify-between group">
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className="text-2xl" aria-hidden="true">🪙</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full border border-sky-400/30 text-sky-200 bg-sky-500/10 font-serif">
+                    {isZh ? '一事一占' : 'Decision Oracle'}
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-serif text-sky-200 font-medium mb-2 group-hover:text-white transition-colors">
+                  {isZh ? '凝神問事 · 當下決疑' : 'Resolve Immediate Doubts'}
+                </h2>
+                <p className="text-xs sm:text-sm text-white/60 leading-relaxed font-light mb-6">
+                  {isZh
+                    ? '事業跳槽、投資吉凶、求財求謀，銅錢搖卦。陷於是非取捨、進退兩難之際，叩問天機應期。'
+                    : 'Career moves, partnership investments, and critical dilemmas. Ask the oracle for precise situational timing.'}
+                </p>
+
+                {/* Sub-system quick chips */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <Link
+                    href="/divination/liuyao"
+                    className="px-2.5 py-1 text-xs rounded-lg bg-white/5 hover:bg-sky-500/15 hover:text-sky-200 border border-white/10 transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span>🪙</span>
+                    <span>{isZh ? '六爻神卦' : 'Liu Yao'}</span>
+                  </Link>
+                  <Link
+                    href="/divination/meihua"
+                    className="px-2.5 py-1 text-xs rounded-lg bg-white/5 hover:bg-sky-500/15 hover:text-sky-200 border border-white/10 transition-colors inline-flex items-center gap-1.5"
+                  >
+                    <span>🌸</span>
+                    <span>{isZh ? '梅花易數' : 'Mei Hua'}</span>
+                  </Link>
+                </div>
+              </div>
+
+              <Link
+                href="/divination/liuyao"
+                className="w-full py-3 px-5 rounded-xl border border-sky-400/50 text-sky-100 font-medium text-sm text-center hover:bg-sky-400/15 transition-all flex items-center justify-center gap-1.5 group-hover:gap-2.5"
+              >
+                <span>{isZh ? '即刻起卦決疑' : 'Cast an Oracle'}</span>
+                <span className="transition-transform duration-300">→</span>
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Secondary Traditional Arts Collapsible Drawer */}
+          <div className="mt-8">
+            <button
+              onClick={() => setShowOtherSystems(!showOtherSystems)}
+              className="text-xs text-white/40 hover:text-gold/80 transition-colors inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full border border-white/5 hover:border-gold/20"
+            >
+              <span>{isZh ? '探尋更多古法術數（奇門遁甲、風水、易經）' : 'Explore traditional arts (Qi Men, Feng Shui, I Ching)'}</span>
+              <span className={`transition-transform duration-300 ${showOtherSystems ? 'rotate-180' : ''}`}>↓</span>
+            </button>
+
+            <AnimatePresence>
+              {showOtherSystems && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden mt-4"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-3xl mx-auto pt-2">
+                    {secondaryServices.map((s) => (
+                      <Link
+                        key={s.id}
+                        href={s.href}
+                        className="p-3.5 rounded-xl bg-navy-900/60 border border-white/10 hover:border-gold/30 transition-all group"
+                      >
+                        <div className="text-xl mb-1">{s.symbol}</div>
+                        <p className="text-xs font-serif text-gold-light group-hover:text-gold font-medium">
+                          {s.name}
+                        </p>
+                        <p className="text-[11px] text-white/40 mt-0.5 line-clamp-1">
+                          {s.desc}
+                        </p>
+                      </Link>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </section>
 
-      {/* Xuanji Master — featured AI consultant entry */}
-      {/* Static promo section for SIGNED-OUT visitors only.
-          Authenticated users get the global MasterChatWidget instead and
-          are also auto-redirected to /divination by the useEffect above,
-          so this section is effectively never shown to them. Click goes to
-          /login with a next param so signing in lands them on /divination
-          where the master widget is mounted and ready. */}
-      <section className="py-12 sm:py-20 px-3 sm:px-4 max-w-5xl mx-auto">
+      {/* ─── Xuanji Master Teahouse Consultation Section ─── */}
+      <section className="py-14 sm:py-20 px-4 max-w-4xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="relative overflow-hidden rounded-3xl border border-gold/30 p-8 sm:p-12"
-          style={{
-            background:
-              'linear-gradient(135deg, rgba(212,168,83,0.08) 0%, rgba(20,16,40,0.4) 50%, rgba(212,168,83,0.06) 100%)',
-            boxShadow: '0 0 40px rgba(212,168,83,0.08) inset',
-          }}
+          transition={{ duration: 0.8 }}
+          className="card-mystic-featured p-8 sm:p-12 relative overflow-hidden"
         >
-          {/* Decorative glow */}
-          <div
-            className="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-3xl opacity-30 pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(212,168,83,0.4) 0%, transparent 70%)' }}
-          />
-
-          <div className="relative grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-6 sm:gap-8 items-center">
-            <div className="text-6xl sm:text-7xl flex-shrink-0 select-none" aria-hidden>
-              🧙‍♂️
-            </div>
-
-            <div className="text-center md:text-left">
-              <p className="text-gold/70 text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] mb-2">
-                {lang === 'zh-TW' ? '私人命理顧問' : 'Personal Master'}
-              </p>
-              <h2 className="text-3xl sm:text-4xl font-serif text-gold mb-3" style={{ textShadow: '0 0 30px rgba(212,168,83,0.3)' }}>
-                {lang === 'zh-TW' ? '玄機大師' : 'Master Xuanji'}
-              </h2>
-              <p className="text-white/70 leading-relaxed max-w-xl">
-                {lang === 'zh-TW'
-                  ? '不只是排盤工具。玄機大師以古法為本、AI 為用，能讀你的命盤、追你的流年、解你的疑惑。隨時對話，像和一位真正的命理師喝茶。'
-                  : 'More than a calculator. Master Xuanji reads your charts, tracks your annual fortune, and answers your questions — anytime, like sitting with a real diviner over tea.'}
-              </p>
-            </div>
-
-            <Link
-              href={`/login?next=${encodeURIComponent('/divination')}`}
-              className="flex-shrink-0 inline-flex items-center justify-center gap-2 px-6 py-3 bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light hover:shadow-lg hover:shadow-gold/30 transition-all whitespace-nowrap"
-            >
-              <span>{lang === 'zh-TW' ? '開始對話' : 'Start Chatting'}</span>
-              <span aria-hidden>→</span>
-            </Link>
+          {/* Delicate corner seal */}
+          <div className="absolute top-6 right-6 select-none opacity-80" aria-hidden="true">
+            <span className="stamp-vermillion text-xs">玄機天算</span>
           </div>
 
-          {/* Three small feature highlights below the main row */}
-          <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-8 pt-6 border-t border-gold/15">
-            {(lang === 'zh-TW'
-              ? [
-                  { icon: '📜', title: '命盤共讀', desc: '直接調出你的盤，逐段精解' },
-                  { icon: '🕰️', title: '流年追蹤', desc: '節氣、大運、關鍵年份的應期' },
-                  { icon: '💬', title: '隨時提問', desc: '不限次數，跨體系交叉印證' },
-                ]
-              : [
-                  { icon: '📜', title: 'Chart-aware', desc: 'Pulls your charts and walks through each section' },
-                  { icon: '🕰️', title: 'Time-anchored', desc: 'Tracks 節氣, 大運, and key year resonance' },
-                  { icon: '💬', title: 'Ask anything', desc: 'Unlimited turns, cross-system reasoning' },
-                ]
-            ).map((f) => (
-              <div key={f.title} className="text-center sm:text-left">
-                <div className="text-2xl mb-2">{f.icon}</div>
-                <p className="text-gold text-sm font-medium mb-1">{f.title}</p>
-                <p className="text-white/50 text-xs leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
+          <div className="max-w-xl">
+            <p className="text-xs uppercase tracking-[0.25em] text-gold/70 font-sans mb-2">
+              {isZh ? '名師對坐 · 知無不言' : 'Personal Master Consultation'}
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-serif text-gold-light mb-4">
+              {isZh ? '玄機大師 · 深度陪伴' : 'Master Xuanji'}
+            </h2>
+            <p className="text-sm sm:text-base text-white/70 leading-relaxed font-light mb-6">
+              {isZh
+                ? '不只是靜態的排盤紙。大師以古籍源流為本、結合現代推演，能調取您的本命星盤、逐段深入解讀、追溯節氣流年，為您解答心中的連環之惑。'
+                : 'Far beyond a static chart. Master Xuanji recalls your previous readings, traces seasonal rhythms, and answers your follow-up questions like sitting with a true sage.'}
+            </p>
+
+            <div className="flex flex-wrap gap-4 items-center">
+              <Link
+                href={session ? '/divination' : `/login?next=${encodeURIComponent('/divination')}`}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gold text-navy-950 text-sm font-medium hover:bg-gold-light transition-all shadow-md shadow-gold/10"
+              >
+                <span>{isZh ? '開始與大師品茗對話' : 'Converse with Master'}</span>
+                <span>→</span>
+              </Link>
+              <span className="text-xs text-white/40">
+                {isZh ? '隨時在排盤結果中直接追問' : 'Available on any reading result'}
+              </span>
+            </div>
           </div>
         </motion.div>
       </section>
 
-      {/* About */}
-      <section className="py-12 sm:py-20 px-3 sm:px-4 max-w-4xl mx-auto text-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="glass-card rounded-3xl p-10"
-        >
-          <div className="mb-6"><YinYangIcon size={48} /></div>
-          <h2 className="text-3xl font-serif text-gold mb-4">
-            {lang === 'zh-TW' ? '關於玄機' : 'About Xuanji'}
-          </h2>
-          <p className="text-white/70 leading-relaxed mb-4">
-            {lang === 'zh-TW'
-              ? '玄機融合中國傳統命理學與現代AI技術，提供專業、深入的命理分析。我們傳承數千年的預測智慧，以現代語言為您解讀生命的玄機。'
-              : 'Xuanji combines traditional Chinese metaphysics with modern AI to deliver professional, in-depth divination analysis. We carry forward millennia of wisdom in a format for today.'}
-          </p>
-          <p className="text-white/50 text-sm">
-            {lang === 'zh-TW' ? '僅供參考，不構成任何決策建議' : 'For reference only. Not a substitute for professional advice.'}
-          </p>
-        </motion.div>
-      </section>
+      {/* ─── Minimalist Footer & Serene Disclaimer ─── */}
+      <footer className="py-12 px-4 border-t border-white/5 text-center text-xs text-white/40 font-light">
+        <p className="mb-2">玄機 XuanJi · 古法智慧，當代傳承</p>
+        <p className="text-white/30 max-w-lg mx-auto">
+          {isZh
+            ? '本網站內容僅供傳統文化愛好與個人心性修養參照，不構成任何醫療、法律、財務或投資決策建議。'
+            : 'For traditional cultural appreciation and personal mindfulness reference only. Not financial, medical, or legal advice.'}
+        </p>
+      </footer>
     </div>
   )
 }
