@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import StarField from '@/components/StarField'
-import { T } from '@/lib/i18n'
+import MasterEntryCard from './MasterEntryCard'
 
 interface VisibilityItem {
   type: string
@@ -37,38 +37,10 @@ const categoryColors: Record<string, string> = {
 const routeIdMap: Record<string, string> = {}
 const getRouteId = (type: string) => routeIdMap[type] || type
 
-interface WelcomeItem {
-  zh: string
-  en: string
-  recommendType: string | null
-}
-
 export default function DivinationPage() {
   const { lang } = useLang()
   const [visibleServices, setVisibleServices] = useState<{ id: string; symbol: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
-  const [welcomeMessages, setWelcomeMessages] = useState<WelcomeItem[]>([])
-  const [welcomeIndex, setWelcomeIndex] = useState(0)
   const [costs, setCosts] = useState<Record<string, number>>({})
-
-  useEffect(() => {
-    fetch('/api/welcome')
-      .then(r => r.json())
-      .then((data: { messages?: WelcomeItem[] }) => {
-        if (data.messages && data.messages.length > 0) {
-          setWelcomeMessages(data.messages)
-        }
-      })
-      .catch(() => {})
-  }, [])
-
-  // Auto-rotate welcome messages every 6 seconds
-  useEffect(() => {
-    if (welcomeMessages.length <= 1) return
-    const timer = setInterval(() => {
-      setWelcomeIndex(prev => (prev + 1) % welcomeMessages.length)
-    }, 6000)
-    return () => clearInterval(timer)
-  }, [welcomeMessages.length])
 
   useEffect(() => {
     fetch('/api/divination/visibility')
@@ -116,43 +88,8 @@ export default function DivinationPage() {
               </h1>
             </motion.div>
 
-            {/* Welcome tip banner */}
-            {welcomeMessages.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="mb-6 max-w-3xl mx-auto rounded-xl px-4 py-2.5 flex items-center justify-center gap-3 text-center"
-                style={{ background: 'rgba(212,168,83,0.08)', border: '1px solid var(--border-gold)' }}
-              >
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={welcomeIndex}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.4 }}
-                    className="text-sm leading-relaxed flex-1 min-h-[2.5rem] flex items-center justify-center text-center px-2"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    {lang === 'en' ? welcomeMessages[welcomeIndex].en : welcomeMessages[welcomeIndex].zh}
-                  </motion.span>
-                </AnimatePresence>
-                {welcomeMessages.length > 1 && (
-                  <div className="flex gap-1 flex-shrink-0">
-                    {welcomeMessages.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setWelcomeIndex(i)}
-                        aria-label={lang === 'en' ? `Show message ${i + 1}` : `顯示第 ${i + 1} 則訊息`}
-                        className="w-1.5 h-1.5 rounded-full transition-all duration-300"
-                        style={{ backgroundColor: i === welcomeIndex ? 'var(--gold)' : 'var(--text-muted)', opacity: i === welcomeIndex ? 1 : 0.3 }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-            )}
+            {/* Master Xuanji Entrance */}
+            <MasterEntryCard />
 
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
               {visibleServices.map((svc, i) => (
