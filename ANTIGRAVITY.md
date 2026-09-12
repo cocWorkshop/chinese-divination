@@ -323,3 +323,88 @@ Validated at boot by `src/lib/env.ts` (fails fast in production, warns in develo
   3. Register handler in `src/app/api/divination/handlers/index.ts`.
   4. Add snapshot/schema tests verifying `schemaToLLMTemplate()` output.
   5. Colocate unit tests under `__tests__/`.
+
+---
+
+## Test-Driven Development (TDD) Engineering Standard
+
+All bug fixes, feature extensions, and algorithm updates must strictly adhere to the project's **Test-Driven Development (TDD)** lifecycle.
+
+### Core Lifecycle: Red-Green-Refactor
+
+```mermaid
+graph LR
+    Red["🔴 RED<br/>Write Failing Test<br/>Define Expected Contract"] --> Green["🟢 GREEN<br/>Write Minimal Code<br/>Make Tests Pass"]
+    Green --> Refactor["🔵 REFACTOR<br/>Clean Code & Types<br/>Maintain Green Tests"]
+    Refactor --> Gate["🛡️ GATE CHECK<br/>type-check + lint<br/>npm run test:ci"]
+```
+
+1. **🔴 RED**: Write a focused, deterministic unit/integration test *before* altering any source code. Run the test and verify it fails for the expected reason (e.g., function not found, assertion mismatch, edge case failure).
+2. **🟢 GREEN**: Implement the minimum production code necessary to turn the test green. Do not over-engineer at this step.
+3. **🔵 REFACTOR**: Clean up implementation, deduplicate logic, enforce TypeScript types and code style without altering functional behavior. Ensure all tests stay green.
+4. **🛡️ GATE**: Run `npm run predeploy-check` (`type-check` + `lint` + `test:ci`) before committing.
+
+---
+
+### Five Iterations of Expert Optimization (针对玄機AI项目特性的五轮专家级迭代演进)
+
+To ensure TDD is not treated as mere dogma but is tailored to Chinese metaphysics, LLM streaming, financial state machines, and Next.js fullstack architecture, this standard has undergone **five rounds of expert review and optimization**:
+
+#### 迭代 1：确定性命理排盘算法 TDD 标准 (Deterministic Algorithm Engine)
+- **挑战与背景**：八字、紫微斗数、梅花易数等推算依赖中国古天文干支纪年法与易经六十四卦数理变换，规则繁复，极其忌讳经验主义编码。
+- **最佳实践落地**：
+  1. **基准测试盘（Ground-Truth Fixtures）**：每一个算法必须建立标准黄金测试集（如：1988-09-17 子时男命、1990-05-15 巳时女命、2000-01-01 Y2K纪元、2020-02-29 闰年闰月日、1988 夏季夏令时、乌鲁木齐与上海经纬度真太阳时时差）。
+  2. **边缘情况全覆盖（Boundary Matrix）**：
+     - 早晚子时分界点：`23:00`（夜子时）与 `00:00`（早子时）日柱与时柱分界校验；
+     - 节气交节瞬间：交节日前后 1 分钟大运与月柱归属；
+     - 起卦取模边界：如梅花易数被 8 整除（余0）时取坤8卦、动爻被 6 整除（余0）时取上爻（第6爻）。
+  3. **纯函数无副作用断言**：所有 `*Calculator.ts` 必须保证是纯函数（Pure Function），禁止在排盘层引入任何网络 I/O、数据库访问或未初始化的外部系统时间依赖。
+
+#### 迭代 2：LLM 结构化契约与容错流式解析 TDD 标准 (LLM Contract & Streaming Parser)
+- **挑战与背景**：LLM 具有随机性且耗时昂贵，单元测试若直连真实公网 API 会导致测试缓慢、不稳定且消耗 token 成本。
+- **最佳实践落地**：
+  1. **零外部网络依赖（Zero-Network Unit Tests）**：单元测试严禁直连 OpenRouter 或 Claude。
+  2. **Schema 与 Prompt 单一可信源校验**：所有生成模板测试必须调用 `schemaToLLMTemplate(schema)`，验证其生成的 JSON 骨架包含必要的 `sections` 与 `interpretation` 字段。
+  3. **宽松解析防御性测试（Permissive Fallback Tests）**：为 Zod safeParse 编写容错用例，断言当 LLM 返回包含轻微非标键值（如 markdown 代码块包裹、缺少次要字段）时，系统绝不抛出 500 丢弃结果，而是回退保留核心内容。
+  4. **流式增量修复测试**：针对 `_streamingJsonParser.ts` 编写分段 chunk 注入测试（模拟在引号中截断、括号未闭合、大段 markdown 插入），断言流式解析器能在各个截断点正确修复并逐节发出渲染事件。
+
+#### 迭代 3：金融级积分与状态机并发安全 TDD 标准 (Credit Machine & Concurrency)
+- **挑战与背景**：积分（Karma）涉及用户真实支付（Stripe），网络异常、客户端中途断开或恶意并发点击若处理不当，易导致积分多扣或超额白嫖。
+- **最佳实践落地**：
+  1. **并发防超扣压测（Parallel Race-Condition Testing）**：
+     - 测试用例必须使用 `Promise.all` 模拟 $N=10$ 个并发请求对仅剩 1 次额度的账户发起 `holdCredits()`；
+     - 断言：**严格仅有 1 个成功**，其余 9 个干净拒绝；
+     - 断言：数据库中的 `credits` 余额在任何时刻均 $\ge 0$。
+  2. **幂等退款生命周期测试（Idempotency & Lifecycle）**：
+     - 测试 `markFailed()` 与 `refundHold()` 在同一 reading 上连续调用多次，断言退款仅执行且只记账一次；
+     - 处于 `completed` 状态的 reading 绝不允许被退款。
+  3. **测试数据隔离与自愈（Test Fixture Isolation）**：
+     - 集成测试生成以 `process.pid` 和随机数命名的临时用户与账单，`afterAll` 中必须完整回滚删除，避免测试脏数据污染测试库。
+
+#### 迭代 4：Next.js 全栈路由与双语组件交互 TDD 标准 (Fullstack App Router & i18n)
+- **挑战与背景**：Next.js 14 App Router 具有 Server Actions、Route Handlers、动态路由与 Client Component 混合的复杂性。
+- **最佳实践落地**：
+  1. **API Handlers 请求上下文 Mock**：
+     - 测试 Route Handlers 时，构造标准 `NextRequest`，包含 query params、json body 和 header；
+     - Mock `auth()` 会话上下文，针对未登录（401）、非管理员访问（403）及合法调用（200）分别编写三类独立断言。
+  2. **双语对齐测试（Bilingual Parity）**：
+     - 每次新增或修改前端文案与选项，必须在 `src/lib/i18n/` 或翻译字典中检查并测试 `zh-TW` 与 `en` 双语键存在性，严禁出现英文化界面显示生硬拼音（如修正 `"Paipan only"` 为 `"Chart Only"`）。
+  3. **交互 Hook 状态机测试**：
+     - 对 `useMasterChat` 等异步流式 hook，通过模拟 SSE event stream（`text/event-stream`）测试 `idle -> streaming -> done -> error` 状态流转。
+
+#### 迭代 5：性能预算、CI 自动化门禁与 GitHub Issue 闭环标准 (Performance & Delivery Loop)
+- **挑战与背景**：测试集膨胀容易拖慢开发反馈循环；代码修改与 Issue 追踪脱节容易产生信息孤岛。
+- **最佳实践落地**：
+  1. **单测耗时性能预算（Performance Budget）**：
+     - 单个基础算法单元测试执行耗时必须 $< 50\text{ms}$；
+     - 全套 1,000+ 单元测试总执行时间控制在 $30\text{s}$ 预算内，严禁在常规单测中引入耗时几十秒的多重遍历大循环；大样本全量 cross-validation 抽离至专项回归套件。
+  2. **本地预提交门禁（Pre-deploy Gate）**：
+     - 代码合并前必须本地执行 `npm run predeploy-check`（`type-check` + `lint` + `test:ci`），全部通过方可提交。
+  3. **GitHub Issue 交付闭环标准**：
+     - 开发分支命名规范：`fix/issue-{number}-{description}` 或 `feat/issue-{number}-{description}`；
+     - 完成代码与测试并通过回归后，使用 GitHub CLI 规范回帖：
+       ```bash
+       gh issue comment {number} --body "【修复/实现说明】... 【测试覆盖情况】..."
+       gh issue close {number} --reason "completed"
+       ```
+
