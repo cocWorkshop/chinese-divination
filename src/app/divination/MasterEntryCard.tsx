@@ -37,28 +37,28 @@ export default function MasterEntryCard() {
       transition={{ duration: 0.5, delay: 0.1 }}
       className="mb-8 max-w-4xl mx-auto"
     >
-      <div className="card-mystic-featured p-6 sm:p-7 relative overflow-hidden group">
+      <div className="card-mystic-featured p-5 sm:p-7 relative overflow-hidden group">
         {/* Ambient subtle warm gold radial halo (no harsh purple or cyber-light) */}
         <div
-          className="absolute -top-20 -left-20 w-52 h-52 rounded-full blur-3xl opacity-10 pointer-events-none transition-opacity group-hover:opacity-20"
+          className="absolute -top-24 -left-24 w-60 h-60 rounded-full blur-3xl opacity-10 pointer-events-none transition-opacity group-hover:opacity-20"
           style={{ background: 'var(--gold)' }}
           aria-hidden="true"
         />
 
         {/* Top bar: Classical Sanctuary Header & Seal */}
-        <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-white/5">
+        <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-gold/10">
           <div className="flex items-center gap-2">
-            <span className="text-gold/60 font-serif text-sm">✧</span>
+            <span className="text-gold/70 font-serif text-sm">✧</span>
             <span className="text-xs uppercase tracking-[0.25em] text-gold/80 font-serif">
               {isZh ? '天機玄覽 · 歲時氣象' : 'Celestial Sanctuary · Master Xuanji'}
             </span>
           </div>
           <span className="stamp-vermillion text-[10px] py-0.5 px-2 select-none">
-            {isZh ? '玄機神算' : 'XuanJi'}
+            {isZh ? '玄機驗證' : 'XuanJi'}
           </span>
         </div>
 
-        {/* Main Content Area */}
+        {/* Main Content Area: Atmospheric typography + Dignified Action */}
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
           <div className="flex-1 min-w-0">
             {/* Philosophical Motto */}
@@ -73,30 +73,30 @@ export default function MasterEntryCard() {
             </p>
           </div>
 
-          {/* Action CTA Button */}
+          {/* Action CTA Button: Quiet dignity, restrained gold leaf framing */}
           <div className="w-full md:w-auto flex-shrink-0">
             <button
               onClick={() => handleAction()}
-              className="w-full md:w-auto px-6 py-3 rounded-xl font-medium text-sm transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-gold/10 hover:shadow-gold/25 active:scale-98 bg-gold hover:bg-gold-light text-navy-950 font-serif"
+              className="w-full md:w-auto px-6 py-3 rounded-xl font-serif text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border border-gold/40 hover:border-gold bg-gold/15 hover:bg-gold/25 text-gold-light hover:text-white shadow-md shadow-gold/5 hover:shadow-gold/20 active:scale-98"
             >
               <span>{isZh ? '登堂請益 · 叩問玄機' : config.ctaButton}</span>
-              <span className="transition-transform group-hover:translate-x-1">→</span>
+              <span className="transition-transform group-hover:translate-x-1 font-sans">→</span>
             </button>
           </div>
         </div>
 
-        {/* Quick Suggestion Scroll Chips */}
-        <div className="relative z-10 mt-5 pt-3.5 border-t border-white/5 flex flex-wrap items-center gap-2">
+        {/* Disciplines of Inquiry (Subtle, non-chatty themes) */}
+        <div className="relative z-10 mt-5 pt-3.5 border-t border-gold/10 flex flex-wrap items-center gap-2">
           <span className="text-xs text-white/40 mr-1 hidden sm:inline-block font-serif">
-            {isZh ? '快捷請教：' : 'Inquire:'}
+            {isZh ? '參詳方向：' : 'Inquire:'}
           </span>
           {quickPrompts.map((item) => (
             <button
               key={item.id}
               onClick={() => handleAction(item.prompt)}
-              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer bg-white/5 hover:bg-gold/10 border border-white/10 hover:border-gold/30 text-white/75 hover:text-gold-light"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer bg-white/[0.03] hover:bg-gold/[0.08] border border-gold/15 hover:border-gold/40 text-white/70 hover:text-gold-light font-serif"
             >
-              <span className="text-gold/70">{item.icon}</span>
+              <span className="text-gold/60">{item.icon}</span>
               <span>{item.label}</span>
             </button>
           ))}

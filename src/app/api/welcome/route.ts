@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { calculateGrowth } from '@/lib/growth/growthSystem'
 
 function getStage(readingCount: number): string {
   if (readingCount === 0) return 'new'
@@ -35,11 +36,26 @@ export async function GET() {
   try {
     const session = await auth()
     let readingCount = 0
+    let growth = null
 
     if (session?.user?.id) {
-      readingCount = await prisma.reading.count({
-        where: { userId: session.user.id, deletedAt: null, status: 'completed' },
-      })
+      const [count, user] = await Promise.all([
+        prisma.reading.count({
+          where: { userId: session.user.id, deletedAt: null, status: 'completed' },
+        }),
+        prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { usageDivination: true, usageMaster: true, usageChat: true },
+        }),
+      ])
+      readingCount = count
+      if (user) {
+        growth = calculateGrowth({
+          usageDivination: Math.max(user.usageDivination || 0, count),
+          usageMaster: user.usageMaster || 0,
+          usageChat: user.usageChat || 0,
+        })
+      }
     }
 
     const stage = getStage(readingCount)
@@ -108,6 +124,7 @@ export async function GET() {
       message: first ? { zh: first.zh, en: first.en } : null,
       recommendType: first?.recommendType || null,
       stage,
+      realm: growth?.currentRealm ?? null,
       messages: finalItems,
     })
   } catch (e) {

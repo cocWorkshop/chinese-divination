@@ -9,7 +9,7 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147)', () => {
   it('should return correct localized strings for Traditional Chinese', () => {
     const config = getMasterEntryConfig('zh-TW')
     expect(config.title).toContain('玄機大師')
-    expect(config.role).toContain('AI 命理總顧問')
+    expect(config.role).toContain('命理總顧問')
     expect(config.description).toBeDefined()
     expect(config.ctaButton).toBeDefined()
   })
@@ -17,7 +17,7 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147)', () => {
   it('should return correct localized strings for English', () => {
     const config = getMasterEntryConfig('en')
     expect(config.title).toContain('Master Xuanji')
-    expect(config.role).toContain('AI Destiny Consultant')
+    expect(config.role).toContain('Destiny Consultant')
     expect(config.description).toBeDefined()
     expect(config.ctaButton).toBeDefined()
   })
@@ -25,7 +25,7 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147)', () => {
   it('should provide localized quick prompt chips', () => {
     const zhPrompts = getMasterQuickPrompts('zh-TW')
     expect(zhPrompts.length).toBeGreaterThanOrEqual(3)
-    expect(zhPrompts[0].prompt).toContain('不知道')
+    expect(zhPrompts[0].prompt).toContain('不知')
 
     const enPrompts = getMasterQuickPrompts('en')
     expect(enPrompts.length).toBeGreaterThanOrEqual(3)

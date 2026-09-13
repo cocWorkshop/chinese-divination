@@ -18,21 +18,21 @@ export function getMasterEntryConfig(lang: string): MasterEntryConfig {
   if (isEn) {
     return {
       title: 'Master Xuanji',
-      role: 'AI Destiny Consultant',
-      badge: 'All-in-One Oracle Guide',
+      role: 'Destiny Consultant & Synthesis',
+      badge: 'Holistic Oracle Synthesis',
       description:
-        'Unsure which oracle fits your question? Master Xuanji provides personalized advice and multi-chart synthesis across BaZi, Zi Wei, Liu Yao, and I Ching.',
+        'Unsure which oracle fits your question? Master Xuanji synthesizes insights across BaZi, Zi Wei, Liu Yao, and I Ching to provide personalized guidance.',
       ctaButton: 'Consult Master Xuanji',
     }
   }
 
   return {
     title: '玄機大師',
-    role: 'AI 命理總顧問',
-    badge: '全方位指引 · 跨盤合參',
+    role: '命理總顧問 · 天地合參',
+    badge: '全盤合參 · 叩問玄機',
     description:
-      '心有疑惑、不知該選哪種術數？玄機大師為您量身引路，更可縱覽生辰命盤與卦象，進行八字、紫微、六爻等跨法合參。',
-    ctaButton: '向玄機大師請教',
+      '心有疑惑、不知該選哪種術數？玄機大師縱覽生辰八字、紫微星盤與周易卦象，跨法參詳，指引迷津。',
+    ctaButton: '登堂請益 · 叩問玄機',
   }
 }
 
@@ -65,19 +65,19 @@ export function getMasterQuickPrompts(lang: string): QuickPrompt[] {
     {
       id: 'recommend',
       icon: '🧭',
-      label: '不知道該選哪個？',
-      prompt: '我心裡有些困惑，但不知道哪種占卜或命理術數最適合我現在的問題，能為我指引嗎？',
+      label: '不知如何擇術？',
+      prompt: '我心裡有些困惑，不知哪種占卜或命理術數最適合我現在的問題，請大師為我指引。',
     },
     {
       id: 'fortune',
       icon: '✨',
-      label: '近期綜合運勢指引',
+      label: '近期綜合運勢',
       prompt: '玄機大師，請為我推演並指引近期的綜合運勢與重要注意事項。',
     },
     {
       id: 'synthesis',
       icon: '☯',
-      label: '跨盤合參解讀',
+      label: '跨法合參解盤',
       prompt: '請幫我整合八字、紫微與各項占卜記錄進行跨盤合參，給出全局建議。',
     },
   ]

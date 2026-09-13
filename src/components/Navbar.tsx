@@ -30,11 +30,33 @@ export default function Navbar() {
   const pathname = usePathname()
   const isFunnel = pathname?.startsWith('/start') ?? false
 
+  const [growthBadge, setGrowthBadge] = useState<{ badge: string; name: string; title: string } | null>(null)
+
   useEffect(() => {
     fetch('/api/config/nav').then(r => r.json()).then(data => {
       if (data.showWikiNav) setShowWiki(true)
     }).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!session?.user) {
+      setGrowthBadge(null)
+      return
+    }
+    fetch('/api/user/growth')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.currentRealm) {
+          const lKey = lang === 'en' ? 'en' : 'zh-TW'
+          setGrowthBadge({
+            badge: data.currentRealm.badge,
+            name: data.currentRealm.name[lKey],
+            title: data.currentRealm.title[lKey],
+          })
+        }
+      })
+      .catch(() => {})
+  }, [session, lang])
 
   useEffect(() => {
     if (!menuOpen && !userMenuOpen) return
@@ -166,7 +188,23 @@ export default function Navbar() {
                   </span>
                 </button>
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-lg shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-gold)' }}>
+                  <div className="absolute right-0 mt-2 w-52 rounded-lg shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-gold)' }}>
+                    {growthBadge && (
+                      <Link
+                        href="/profile?tab=growth"
+                        className="block px-4 py-2.5 border-b hover:bg-gold/5 transition-colors"
+                        style={{ borderColor: 'rgba(212,168,83,0.15)' }}
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <div className="text-[10px] text-white/50 uppercase tracking-wider font-sans">
+                          {lang === 'zh-TW' ? '術數修為境界' : 'Divination Realm'}
+                        </div>
+                        <div className="text-xs font-serif text-gold font-medium mt-0.5 flex items-center gap-1.5">
+                          <span>{growthBadge.badge}</span>
+                          <span className="truncate">{growthBadge.title}</span>
+                        </div>
+                      </Link>
+                    )}
                     <Link
                       href="/profile"
                       className="block px-4 py-2 hover:opacity-80 transition-colors"
@@ -174,6 +212,14 @@ export default function Navbar() {
                       onClick={() => setUserMenuOpen(false)}
                     >
                       {lang === 'zh-TW' ? '個人資料' : 'Profile'}
+                    </Link>
+                    <Link
+                      href="/profile?tab=growth"
+                      className="block px-4 py-2 hover:opacity-80 transition-colors"
+                      style={{ color: 'var(--text-secondary)' }}
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      {lang === 'zh-TW' ? '術數修為' : 'Divination Mastery'}
                     </Link>
                     <button
                       onClick={() => { setFeedbackOpen(true); setUserMenuOpen(false) }}
@@ -290,6 +336,12 @@ export default function Navbar() {
           {session && (
             <Link href="/profile" className="text-white/80 hover:text-gold py-1.5" onClick={() => setMenuOpen(false)}>
               {lang === 'zh-TW' ? '個人資料' : 'Profile'}
+            </Link>
+          )}
+          {session && (
+            <Link href="/profile?tab=growth" className="text-white/80 hover:text-gold py-1.5 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+              <span>{growthBadge?.badge || '☯️'}</span>
+              <span>{growthBadge ? growthBadge.title : (lang === 'zh-TW' ? '術數修為' : 'Divination Mastery')}</span>
             </Link>
           )}
           {session && (

@@ -23,16 +23,6 @@ const serviceMap: Record<string, { symbol: string; twName: string; enName: strin
   meihua: { symbol: '🌸', twName: '梅花易數', enName: 'Plum Blossom', twDesc: '以數起卦，體用生克，精準預測具體事項', enDesc: 'Plum Blossom numerology for precise event prediction' },
 }
 
-const categoryColors: Record<string, string> = {
-  bazi: "rgba(212,175,55,0.06)",
-  ziwei: "rgba(212,175,55,0.06)",
-  liuyao: "rgba(100,149,237,0.06)",
-  iching: "rgba(100,149,237,0.06)",
-  qimen: "rgba(147,112,219,0.06)",
-  meihua: "rgba(147,112,219,0.06)",
-  fengshui: "rgba(76,175,80,0.06)",
-}
-
 // Map visibility type keys to route ids
 const routeIdMap: Record<string, string> = {}
 const getRouteId = (type: string) => routeIdMap[type] || type
@@ -101,28 +91,29 @@ export default function DivinationPage() {
                 >
                   <Link
                     href={`/divination/${svc.id}`}
-                    className="glass-card rounded-2xl p-5 sm:p-6 h-full w-full text-left block hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
-                    style={{ borderColor: 'var(--card-border)', background: categoryColors[svc.id] || undefined }}
+                    className="glass-card rounded-2xl p-5 sm:p-6 h-full w-full text-left block hover:shadow-2xl hover:shadow-gold/10 hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+                    style={{ borderColor: 'rgba(212, 168, 83, 0.16)' }}
                   >
                     {svc.id === "bazi" && (
-                      <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-medium dark:text-[#1a1a2e] light:text-white" style={{ background: "var(--gold)" }}>
+                      <span className="absolute top-3 right-3 text-[10px] px-2.5 py-0.5 rounded-full font-serif font-medium border border-gold/30 bg-gold/15 text-gold-light tracking-wider">
                         {lang === "en" ? "Popular" : "推薦"}
                       </span>
                     )}
-                    <div className="text-4xl sm:text-5xl mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">{svc.symbol}</div>
+                    <div className="text-4xl sm:text-5xl mb-3 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-2">{svc.symbol}</div>
                     <h2 className="text-lg sm:text-xl font-serif mb-1.5 transition-colors group-hover:text-gold" style={{ color: 'var(--gold)' }}>
                       {lang === 'en' ? svc.enName : svc.twName}
                     </h2>
-                    <p className="text-xs sm:text-sm leading-relaxed mb-2" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-xs sm:text-sm leading-relaxed mb-3" style={{ color: 'var(--text-muted)' }}>
                       {lang === 'en' ? svc.enDesc : svc.twDesc}
                     </p>
                     <div className="flex items-center justify-between">
                       {costs[svc.id] != null && (
-                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(212,175,55,0.12)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                          ✨ {costs[svc.id]} {lang === 'en' ? 'pts' : '點'}
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full font-serif" style={{ background: 'rgba(212,175,55,0.08)', color: 'var(--gold)', border: '1px solid rgba(212,175,55,0.18)' }}>
+                          <span>✧</span>
+                          <span>{costs[svc.id]} {lang === 'en' ? 'pts' : '點機緣'}</span>
                         </span>
                       )}
-                      <span className="text-gold/30 group-hover:text-gold/60 transition-colors text-sm">→</span>
+                      <span className="text-gold/40 group-hover:text-gold transition-colors text-sm font-sans">→</span>
                     </div>
 
                     {/* Subtle hover glow */}

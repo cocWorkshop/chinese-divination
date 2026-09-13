@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
+import type { UserGrowthProfile } from '@/lib/growth/types'
 import { publish } from '@/lib/events'
 import YinYangIcon from '@/components/YinYangIcon'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -142,6 +144,16 @@ export default function DashboardPage() {
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const { setShape: setMasterShape, enabled: masterEnabled } = useMasterChat()
+  const [growth, setGrowth] = useState<UserGrowthProfile | null>(null)
+
+  useEffect(() => {
+    if (session?.user) {
+      fetch('/api/user/growth')
+        .then(r => r.ok ? r.json() : null)
+        .then(setGrowth)
+        .catch(() => {})
+    }
+  }, [session])
 
 
 
@@ -268,6 +280,42 @@ export default function DashboardPage() {
             ? `共 ${readings.length} 條記錄${activeTypeFilter ? ` · 篩選：${typeLabels[activeTypeFilter]?.['zh-TW'] ?? activeTypeFilter}` : ''}`
             : `${readings.length} readings${activeTypeFilter ? ` · Filter: ${typeLabels[activeTypeFilter]?.en ?? activeTypeFilter}` : ''}`}
         </p>
+
+        {/* Cultivation Realm Progress Ribbon */}
+        {growth && (
+          <Link
+            href="/profile?tab=growth"
+            className="mb-4 p-3.5 sm:p-4 rounded-xl glass-card flex items-center justify-between border border-gold/25 hover:border-gold/50 transition-all group"
+            style={{ background: 'linear-gradient(90deg, rgba(212,168,83,0.1), rgba(10,17,40,0.6))' }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl sm:text-3xl w-10 h-10 rounded-lg bg-gold/15 border border-gold/30 flex items-center justify-center flex-shrink-0">
+                {growth.currentRealm.badge}
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-serif text-gold text-sm sm:text-base font-semibold">
+                    {growth.currentRealm.title[lang === 'en' ? 'en' : 'zh-TW']}
+                  </span>
+                  <span className="text-[10px] text-white/60 bg-white/10 px-1.5 py-0.5 rounded font-mono">
+                    {growth.xp} XP
+                  </span>
+                </div>
+                <p className="text-xs text-white/70 mt-0.5 font-sans">
+                  {growth.nextRealm
+                    ? (lang === 'zh-TW'
+                        ? `距下一階【${growth.nextRealm.name['zh-TW']}】還需 ${growth.xpToNextLevel} 道行 (${growth.levelProgressPercent}%)`
+                        : `${growth.xpToNextLevel} XP to ${growth.nextRealm.name.en} (${growth.levelProgressPercent}%)`)
+                    : (lang === 'zh-TW' ? '已臻至高境界 · 天人合一' : 'Pinnacle Reached: Unity with the Tao')}
+                </p>
+              </div>
+            </div>
+            <span className="text-xs text-gold/80 group-hover:text-gold flex items-center gap-1 font-serif flex-shrink-0">
+              <span className="hidden sm:inline">{lang === 'zh-TW' ? '修為圖譜' : 'Mastery'}</span>
+              <span>→</span>
+            </span>
+          </Link>
+        )}
         {/* Type filter chips */}
         <div className="flex gap-2 overflow-x-auto lg:flex-wrap pb-2 scrollbar-hide -mx-1 px-1">
           <button

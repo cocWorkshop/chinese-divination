@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
 import BirthplaceInput from '@/components/BirthplaceInput'
 import { catchAndReport } from '@/lib/errorReporter'
 import FamilyTab from './_tabs/FamilyTab'
+import GrowthTab from './_tabs/GrowthTab'
 import type { FamilyMemberData } from './_components/FamilyDrawer'
 import { T, formatDate } from '@/lib/i18n'
 
@@ -57,10 +58,11 @@ const shichen = [
   { value: 'zi_late', zh: '晚子時 (23:00-00:00)', en: 'Late Zi (23:00-00:00)' },
 ]
 
-type TabKey = 'personal' | 'family' | 'credits' | 'account'
+type TabKey = 'personal' | 'growth' | 'family' | 'credits' | 'account'
 
 const TABS: { key: TabKey; icon: string; zh: string; en: string }[] = [
   { key: 'personal', icon: '👤', zh: '個人資料', en: 'Personal Info' },
+  { key: 'growth', icon: '☯️', zh: '術數修為', en: 'Mastery' },
   { key: 'family', icon: '👨‍👩‍👦', zh: '家庭成員', en: 'Family Members' },
   { key: 'credits', icon: '✨', zh: '機緣簿', en: 'Credit Ledger' },
   { key: 'account', icon: '⚙️', zh: '帳號設置', en: 'Account' },
@@ -72,7 +74,20 @@ export default function ProfilePage() {
   const { data: session, status } = useSession()
   const { lang, setLang } = useLang()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<TabKey>('personal')
+  const searchParams = useSearchParams()
+  const tabFromQuery = searchParams?.get('tab') as TabKey | null
+  const [activeTab, setActiveTab] = useState<TabKey>(
+    tabFromQuery && ['personal', 'growth', 'family', 'credits', 'account'].includes(tabFromQuery)
+      ? tabFromQuery
+      : 'personal'
+  )
+
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab') as TabKey | null
+    if (tabParam && ['personal', 'growth', 'family', 'credits', 'account'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
   const [form, setForm] = useState({
     name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', language: 'zh-TW',
     timeMode: 'fuzzy' as 'fuzzy' | 'precise', calendarType: 'solar' as 'solar' | 'lunar',
@@ -430,6 +445,11 @@ export default function ProfilePage() {
             {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '💾 儲存', '💾 Save')}
           </button>
         </form>
+      )}
+
+      {/* ========== Divination Mastery & Growth Tab ========== */}
+      {activeTab === 'growth' && (
+        <GrowthTab />
       )}
 
       {/* ========== Family Members Tab (extracted) ========== */}

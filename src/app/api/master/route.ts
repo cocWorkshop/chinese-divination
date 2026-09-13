@@ -22,6 +22,8 @@ import {
 import { compressHistory } from '@/lib/master/compression'
 import { loadPortrait, deletePortrait } from '@/lib/master/portraitStore'
 import { renderPersonalizedPrompt } from '@/lib/master/personalizedPrompt'
+import { calculateGrowth } from '@/lib/growth/growthSystem'
+import { checkMasterDailyLimit } from '@/lib/master/dailyLimiter'
 import { runMasterTurn, type EngineEvent, type CheckinHint } from '@/lib/master/turnEngine'
 import { SolarDay, SolarTime } from 'tyme4ts'
 import { FUNNEL_COOKIE_NAME, verifyFunnelToken } from '@/lib/funnelSession'
@@ -174,15 +176,32 @@ export async function POST(req: NextRequest) {
       select: { language: true },
     })
     const lang: 'zh-TW' | 'en' = user?.language === 'en' ? 'en' : 'zh-TW'
+    const clientTz = typeof body.tzOffsetMin === 'number' && Number.isFinite(body.tzOffsetMin)
+      ? body.tzOffsetMin
+      : null
+
+    // Daily turn limit check (Issue #148: 控制用户每日聊天总长度)
+    // Applies to user-initiated messages (exempting server-initiated checkin/reflection)
+    if (!isCheckin && !isReflection) {
+      const dailyLimit = await checkMasterDailyLimit(userId, lang, clientTz)
+      if (!dailyLimit.allowed) {
+        return new Response(
+          JSON.stringify({
+            error: dailyLimit.message,
+            dailyLimitReached: true,
+            maxLimit: dailyLimit.maxLimit,
+          }),
+          { status: 429, headers: { 'Content-Type': 'application/json' } },
+        )
+      }
+    }
+
     // Inputs for the "now" the Master sees. The instant comes from the client
     // when present (else server clock); the timezone offset is resolved below
     // against the stored value so server-initiated turns stay correct.
     const clientInstant = typeof body.clientTime === 'string' && !Number.isNaN(Date.parse(body.clientTime))
       ? new Date(body.clientTime)
       : new Date()
-    const clientTz = typeof body.tzOffsetMin === 'number' && Number.isFinite(body.tzOffsetMin)
-      ? body.tzOffsetMin
-      : null
 
     // Ensure a MasterSession row exists for this user — it tracks the
     // per-user master usage counter (totalCreditsUsed). Chat history and
@@ -261,20 +280,31 @@ export async function POST(req: NextRequest) {
     // is false or the portrait is missing/empty, personalizedPrompt stays
     // null and the system prompt composer omits the block entirely
     // (cold-start path).
-    const portraitRow = await loadPortrait(userId)
+    // Load portrait + render personalized prompt block with growth realm context.
+    // If portraitEnabled is false or missing, growth context can still provide
+    // the user's metaphysical realm to Master Xuanji.
+    const [portraitRow, growthUser] = await Promise.all([
+      loadPortrait(userId),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { usageDivination: true, usageMaster: true, usageChat: true },
+      }),
+    ])
+    const growth = growthUser ? calculateGrowth(growthUser) : null
     let personalizedPrompt: string | null = null
-    if (portraitRow) {
-      personalizedPrompt =
-        portraitRow.generatedPrompt ??
-        renderPersonalizedPrompt(
-          {
-            topics: portraitRow.topics,
-            preferences: portraitRow.preferences,
-            lifeContext: portraitRow.lifeContext,
-            toneNotes: portraitRow.toneNotes,
-          },
-          lang,
-        )
+    if (portraitRow || growth) {
+      personalizedPrompt = renderPersonalizedPrompt(
+        portraitRow
+          ? {
+              topics: portraitRow.topics,
+              preferences: portraitRow.preferences,
+              lifeContext: portraitRow.lifeContext,
+              toneNotes: portraitRow.toneNotes,
+            }
+          : null,
+        lang,
+        growth ? { tier: growth.tier, title: growth.currentRealm.title[lang === 'en' ? 'en' : 'zh-TW'] } : null,
+      )
     }
 
     // Compose system prompt with progressive disclosure:

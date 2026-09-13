@@ -114,25 +114,32 @@ export function isPortraitEmpty(portrait: Portrait): boolean {
 export function renderPersonalizedPrompt(
   portrait: Portrait | null,
   lang: PortraitLang,
+  growthContext?: { tier: number; title: string } | null,
 ): string | null {
-  if (!portrait || isPortraitEmpty(portrait)) return null
+  const hasPortrait = Boolean(portrait && !isPortraitEmpty(portrait))
+  const hasGrowth = Boolean(growthContext && growthContext.title)
+
+  if (!hasPortrait && !hasGrowth) return null
 
   const lines: string[] = []
 
   if (lang === 'en') {
     lines.push('## User context for this conversation')
     lines.push('')
-    if (portrait.topics?.length) {
+    if (hasGrowth) {
+      lines.push(`- Metaphysical Cultivation Realm: ${growthContext!.title} (Tier ${growthContext!.tier})`)
+    }
+    if (portrait?.topics?.length) {
       lines.push(`- Topics this user cares about: ${joinTopics(portrait.topics, lang)}`)
     }
-    const prefs = preferenceClauseEn(portrait.preferences)
+    const prefs = portrait ? preferenceClauseEn(portrait.preferences) : null
     if (prefs) {
       lines.push(`- Communication preferences: ${prefs}`)
     }
-    if (portrait.lifeContext?.trim()) {
+    if (portrait?.lifeContext?.trim()) {
       lines.push(`- Life context: ${portrait.lifeContext.trim()}`)
     }
-    if (portrait.toneNotes?.trim()) {
+    if (portrait?.toneNotes?.trim()) {
       lines.push(`- Tone notes: ${portrait.toneNotes.trim()}`)
     }
     lines.push('')
@@ -140,17 +147,20 @@ export function renderPersonalizedPrompt(
   } else {
     lines.push('## 本次对话的用户上下文')
     lines.push('')
-    if (portrait.topics?.length) {
+    if (hasGrowth) {
+      lines.push(`- 易道修为境界：${growthContext!.title}`)
+    }
+    if (portrait?.topics?.length) {
       lines.push(`- 用户关注的主题：${joinTopics(portrait.topics, lang)}`)
     }
-    const prefs = preferenceClauseZh(portrait.preferences)
+    const prefs = portrait ? preferenceClauseZh(portrait.preferences) : null
     if (prefs) {
       lines.push(`- 沟通偏好：${prefs}`)
     }
-    if (portrait.lifeContext?.trim()) {
+    if (portrait?.lifeContext?.trim()) {
       lines.push(`- 生活背景：${portrait.lifeContext.trim()}`)
     }
-    if (portrait.toneNotes?.trim()) {
+    if (portrait?.toneNotes?.trim()) {
       lines.push(`- 回应方式备注：${portrait.toneNotes.trim()}`)
     }
     lines.push('')

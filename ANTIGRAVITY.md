@@ -346,11 +346,11 @@ graph LR
 
 ---
 
-### Five Iterations of Expert Optimization (针对玄機AI项目特性的五轮专家级迭代演进)
+### 五大核心领域专项测试准则 (Domain-Specific Testing Standards)
 
-To ensure TDD is not treated as mere dogma but is tailored to Chinese metaphysics, LLM streaming, financial state machines, and Next.js fullstack architecture, this standard has undergone **five rounds of expert review and optimization**:
+为避免 TDD 流于教条主义，针对《玄机AI》的中国古典算历、LLM 容错流式解析、金融级积分状态机及 Next.js 全栈架构特性，制定以下 **5 大核心系统领域的强制性测试与防御规范**：
 
-#### 迭代 1：确定性命理排盘算法 TDD 标准 (Deterministic Algorithm Engine)
+#### 1. 确定性命理排盘算法测试标准 (Deterministic Algorithm Engine)
 - **挑战与背景**：八字、紫微斗数、梅花易数等推算依赖中国古天文干支纪年法与易经六十四卦数理变换，规则繁复，极其忌讳经验主义编码。
 - **最佳实践落地**：
   1. **基准测试盘（Ground-Truth Fixtures）**：每一个算法必须建立标准黄金测试集（如：1988-09-17 子时男命、1990-05-15 巳时女命、2000-01-01 Y2K纪元、2020-02-29 闰年闰月日、1988 夏季夏令时、乌鲁木齐与上海经纬度真太阳时时差）。
@@ -360,7 +360,7 @@ To ensure TDD is not treated as mere dogma but is tailored to Chinese metaphysic
      - 起卦取模边界：如梅花易数被 8 整除（余0）时取坤8卦、动爻被 6 整除（余0）时取上爻（第6爻）。
   3. **纯函数无副作用断言**：所有 `*Calculator.ts` 必须保证是纯函数（Pure Function），禁止在排盘层引入任何网络 I/O、数据库访问或未初始化的外部系统时间依赖。
 
-#### 迭代 2：LLM 结构化契约与容错流式解析 TDD 标准 (LLM Contract & Streaming Parser)
+#### 2. LLM 结构化契约与容错流式解析标准 (LLM Contract & Streaming Parser)
 - **挑战与背景**：LLM 具有随机性且耗时昂贵，单元测试若直连真实公网 API 会导致测试缓慢、不稳定且消耗 token 成本。
 - **最佳实践落地**：
   1. **零外部网络依赖（Zero-Network Unit Tests）**：单元测试严禁直连 OpenRouter 或 Claude。
@@ -368,7 +368,7 @@ To ensure TDD is not treated as mere dogma but is tailored to Chinese metaphysic
   3. **宽松解析防御性测试（Permissive Fallback Tests）**：为 Zod safeParse 编写容错用例，断言当 LLM 返回包含轻微非标键值（如 markdown 代码块包裹、缺少次要字段）时，系统绝不抛出 500 丢弃结果，而是回退保留核心内容。
   4. **流式增量修复测试**：针对 `_streamingJsonParser.ts` 编写分段 chunk 注入测试（模拟在引号中截断、括号未闭合、大段 markdown 插入），断言流式解析器能在各个截断点正确修复并逐节发出渲染事件。
 
-#### 迭代 3：金融级积分与状态机并发安全 TDD 标准 (Credit Machine & Concurrency)
+#### 3. 金融级积分与状态机并发安全标准 (Credit Machine & Concurrency)
 - **挑战与背景**：积分（Karma）涉及用户真实支付（Stripe），网络异常、客户端中途断开或恶意并发点击若处理不当，易导致积分多扣或超额白嫖。
 - **最佳实践落地**：
   1. **并发防超扣压测（Parallel Race-Condition Testing）**：
@@ -381,7 +381,7 @@ To ensure TDD is not treated as mere dogma but is tailored to Chinese metaphysic
   3. **测试数据隔离与自愈（Test Fixture Isolation）**：
      - 集成测试生成以 `process.pid` 和随机数命名的临时用户与账单，`afterAll` 中必须完整回滚删除，避免测试脏数据污染测试库。
 
-#### 迭代 4：Next.js 全栈路由与双语组件交互 TDD 标准 (Fullstack App Router & i18n)
+#### 4. Next.js 全栈路由与双语组件交互标准 (Fullstack App Router & i18n)
 - **挑战与背景**：Next.js 14 App Router 具有 Server Actions、Route Handlers、动态路由与 Client Component 混合的复杂性。
 - **最佳实践落地**：
   1. **API Handlers 请求上下文 Mock**：
@@ -392,7 +392,7 @@ To ensure TDD is not treated as mere dogma but is tailored to Chinese metaphysic
   3. **交互 Hook 状态机测试**：
      - 对 `useMasterChat` 等异步流式 hook，通过模拟 SSE event stream（`text/event-stream`）测试 `idle -> streaming -> done -> error` 状态流转。
 
-#### 迭代 5：性能预算、CI 自动化门禁与 GitHub Issue 闭环标准 (Performance & Delivery Loop)
+#### 5. 性能预算、CI 自动化门禁与 GitHub Issue 闭环标准 (Performance & Delivery Loop)
 - **挑战与背景**：测试集膨胀容易拖慢开发反馈循环；代码修改与 Issue 追踪脱节容易产生信息孤岛。
 - **最佳实践落地**：
   1. **单测耗时性能预算（Performance Budget）**：
@@ -408,3 +408,117 @@ To ensure TDD is not treated as mere dogma but is tailored to Chinese metaphysic
        gh issue close {number} --reason "completed"
        ```
 
+---
+
+## UI/UX Engineering & Aesthetic Standard: 簡約 · 直覺 · 現代神秘 (MANDATORY)
+
+> [!IMPORTANT]
+> **全站强制执行规范 (STRICTLY ENFORCED)**  
+> 所有 Antigravity Agent 在编写、修改或重构前端 UI（React / Next.js / Tailwind CSS / Framer Motion / CSS）时，**必须无条件遵循本标准**。  
+> 本规范旨在彻底清除“劣质AI味”与“浮夸电竞感”，确立**「簡約 · 直覺 · 現代神秘 (Modern Oriental Mysticism)」**的高级工业级设计标杆。任何包含违规反面特征（如紫色发光球、客服在线闪烁点、廉价 Emoji 堆叠、百分比进度条）的代码均不得合并。
+
+### 1. 核心美学三大支柱 (Core Aesthetic Pillars)
+
+#### 1.1 簡約 (Minimalism & Breathing Space)
+- **留白与克制**：大面积留白不是空洞，而是让核心卦辞与命盘自由呼吸。拒绝无意义的多重嵌套边框与装饰性图标堆叠。
+- **色彩配比律 (85 / 12 / 3)**：
+  - **85% 墨夜玄黑底色**（`#080C17` 太极虚空底色，`#0D1526` 主卡片表面色，`#111D35` 浮动层与弹窗），深邃沉静，严禁使用纯黑 `#000000` 或泛紫/泛蓝的浮躁暗色。
+  - **12% 晨曦雅金与暖白**（`#D4A853` 纯金，`rgba(255, 255, 255, 0.88)` 暖白高可读文本，`#9A722E` 古刹沉金次级文本与弱边界）。
+  - **3% 灵气点睛色（极度克制点缀）**：
+    - 硃砂御印（`#C0392B`）：用于关键变爻、急所化解、犯太岁印记。
+    - 灵泉青玉（`#2D8A6E`）：用于吉利、平和、守正状态指示。
+- **材质替代光效**：严禁粗暴高饱和的径向大光晕（Radial Gradients）。使用 `0.02~0.03` 不透明度的微噪点/暗水墨宣纸质感（Micro-grain），搭配 `0.5px~1px` 的烫金发丝线（`rgba(212, 168, 83, 0.16)`），赋予界面古墨石砚与宣纸典籍般的实体触感。
+
+#### 1.2 直覺 (Intuition & Progressive Disclosure)
+- **三层渐进式认知漏斗（Progressive Disclosure）**：
+  命理系统具有极高的专业门槛（天干地支、藏干、十神、十二宫、神煞）。页面严禁一股脑倾倒专业术语，必须建立三层直觉动线：
+  1. **第一层（3 秒直觉断语）**：以极具文采与洞察的大白话给出核心定性（例如：“2026 岁次丙午：金水相激，宜守不宜急，立秋后财源渐明”）。
+  2. **第二层（30 秒现代图解）**：通过现代数据可视化（五行能量分布条、运势走势折线图、吉凶倾向雷达图）将抽象术数直观具象化。
+  3. **第三层（传统专业原盘）**：四柱八字原盘、紫微十二宫盘、六爻爻象等完整专业盘面，**默认优雅折叠**，保留“查看传统盘面”入口，供资深爱好者按需展开深研。
+- **零门槛交互**：生辰录入支持平滑的自然公农历转换与精准轮盘；起卦动线一气呵成；CTA 按钮意图明确（“推演命盘”、“叩问玄机”），绝不让用户在专业术语前产生认知阻抗。
+
+#### 1.3 現代神秘 (Modern Oriental Mysticism)
+- **西文精密 + 中文古雅的排印碰撞**：
+  - **西文/数值/标签**：采用现代、精密、高清晰度的无衬线体（`Inter` / `Geist` / `-apple-system`），展现严密客观的算法推演。
+  - **卦辞/断语/天机箴言**：采用骨力遒劲的古典宋体（`Noto Serif SC` / `Songti SC`），并施加 `tracking-widest`（`letter-spacing: 0.15em ~ 0.25em`），呈现金石拓印与古籍善本的庄严肃穆。
+- **禅意律动（Zen Motion & Haptics）**：
+  - 界面转场与抽屉展开使用沉稳内敛的缓动曲线：`cubic-bezier(0.16, 1, 0.3, 1)`，时长控制在 `400ms ~ 600ms`，杜绝轻浮突兀的机械弹性动画。
+  - 背景呼吸光效周期设定为 **4 ~ 6 秒一次循环**（契合人类静心冥想的呼吸频率）。
+  - 移动端（Capacitor/Android）起卦或定盘时，调用原生轻微触觉震动（Haptics），强化“落子定乾坤”的仪式感。
+- **隐形 AI，尊崇宗师**：
+  - 严禁出现“AI 正在利用大模型生成分析...”等廉价技术自嗨文案；
+  - 替代为“天地推演 · 岁时同频”、“宗师叩问 · 经卷朱批”，将最先进的大模型智能包裹在最庄严的东方意境之中。
+
+---
+
+### 2. 零容忍反面特征清单 (Zero-Tolerance Checklist / 严禁触碰)
+
+在编写任何组件时，**以下 7 种反面设计绝对禁止出现**：
+
+| ❌ 严禁出现的“廉价AI/粗制味” | ✅ 必须替换的标准规范（简约·直觉·现代神秘） |
+| :--- | :--- |
+| **1. 杂色/紫黄模糊大光球** (`#9370db` 等 Radial Gradient 乱闪) | **墨夜玄黑 + 0.02 微噪点**，仅保留局部极微弱的暖金色月晕（不透明度 $\le 0.06$） |
+| **2. 客服式闪烁圆点** (`animate-ping bg-amber-400 / bg-green-400`) | **撤销闪烁点**；改用静穆庄严的古典篆印或微光金石符文 |
+| **3. 烂俗 AI / 奇幻符号** (🤖, 🔮, ✨, 🧙‍♂️, 💬 等 Emoji 堆砌) | **东方几何古朴符文**（`✧`、`☯`、`「」`、`·`）或极简古典线条矢量图标 |
+| **4. 生硬的 AI 广告标语** (“AI 命理总顾问”、“全网最强 AI 算命”) | **典雅中堂式意境文案**（“天机玄览 · 岁时气象”、“登堂请益 · 叩问玄机”） |
+| **5. 客服工具式对话气泡** (类似 Intercom/微信的左右左右气泡弹窗) | **对弈案台 / 经卷对读展开**，如同宗师在命盘旁手书批注答疑 |
+| **6. 冰冷进度条算命** (“正在计算 65%”、“大模型推理中...”) | **天象交汇 / 水墨聚散动效**，配以时节卦辞微转，营造沉静等待感 |
+| **7. 刺眼的高饱和对比色** (大红大绿、荧光亮蓝、高饱和纯金渐变) | **雅致东方矿物色彩**：玄墨、晨曦金、硃砂暗红、翡冷翠青，全部降低饱和度 |
+
+---
+
+### 3. 工程落地规范 (CSS Tokens & Tailwind Patterns)
+
+#### 3.1 核心色彩与样式 Token (`globals.css`)
+```css
+:root {
+  /* 墨夜基底（深邃沉静，严禁使用纯黑 #000000 或泛紫渐变） */
+  --bg-abyss: #080c17;          /* 太极虚空底层 */
+  --bg-surface: #0d1526;        /* 主卡片表面色 */
+  --bg-elevated: #111d35;       /* 浮动层与弹窗背景 */
+
+  /* 东方雅金（温润内敛，严禁高饱和亮黄与彩虹渐变） */
+  --gold-pure: #d4a853;         /* 主色：晨曦赤金 */
+  --gold-glow: #e8c278;         /* 悬停高光：流金 */
+  --gold-ancient: #9a722e;      /* 古刹沉金：低调次级文字与边界 */
+  --gold-hairline: rgba(212, 168, 83, 0.16); /* 烫金发丝线：极细高贵边框 */
+
+  /* 神妙点睛色（克制使用，点缀吉凶印证） */
+  --vermillion-seal: #c0392b;   /* 硃砂御印：印章、关键化解、犯太岁提示 */
+  --jade-tranquil: #2d8a6e;     /* 灵泉青玉：平安、吉利、守正状态 */
+
+  /* 字体族定义 */
+  --font-serif-classical: 'Noto Serif SC', 'Noto Serif TC', 'Songti SC', SimSun, serif;
+  --font-sans-modern: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+```
+
+#### 3.2 经典卡片与容器 Tailwind 组合范式
+```tsx
+// 标准东方极简玄机卡片（彻底取代杂色光晕卡片）
+className="relative rounded-2xl bg-gradient-to-b from-[#0d1526]/80 to-[#080c17]/95 
+           border border-[#d4a853]/15 shadow-[0_12px_36px_rgba(0,0,0,0.45)] 
+           hover:border-[#d4a853]/35 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+```
+
+#### 3.3 经典文案排版范式 (Typography Pairing)
+```tsx
+// 卦辞 / 批注箴言（古雅宋体 + 呼吸字距）
+<h3 className="font-serif text-[#d4a853] tracking-widest text-lg leading-relaxed">
+  「 觀 天 之 道 ， 執 天 之 行 ， 盡 矣 。 」
+</h3>
+
+// 数据 / 时辰标签（精密西文无衬线 + 沉金细字）
+<span className="font-sans text-xs uppercase tracking-wider text-[#9a722e]">
+  2026.09.12 · SOLAR TIME 14:32 · JIANGNAN
+</span>
+```
+
+---
+
+### 4. 交付自检三问 (The Design Litmus Test)
+
+在提交任何 UI 代码或 PR 前，工程师与 Agent 必须进行如下 3 项自检：
+1. **看 1 秒钟（直觉检验）**：用户能否在 1 秒内抓住最核心的一句大白话断语，而不是被满屏专业卦盘吓退？
+2. **看 3 秒钟（简约检验）**：界面是否存在多余的客服组件、杂色光晕、廉价 Emoji 或刺眼高斯模糊？
+3. **看 10 秒钟（现代神秘检验）**：界面的整体色调、字距节奏与动效，是否让用户内心宁静、感到专业权威并心生敬畏？
