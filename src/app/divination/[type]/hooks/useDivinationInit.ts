@@ -47,7 +47,7 @@ export function useDivinationInit({
         // Daily bonus toast
         if (data.dailyBonusGranted && data.dailyBonus) {
           const c = data.dailyBonus.credits
-          toast.success(T(lang, `🎁 每日登入獎勵：+${c} 點機緣`, `🎁 Daily login bonus: +${c} Karma`), { duration: 4000 })
+          toast.success(T(lang, `每日登入獎勵：+${c} 點機緣`, `Daily login bonus: +${c} Karma`), { duration: 4000 })
         }
 
         // Credits
@@ -95,7 +95,7 @@ export function useDivinationInit({
           }
           setProfileLoaded(true)
           if (p.birthDate || p.birthTime) {
-            toast.success(T(lang, '已從檔案自動填充生辰資訊', 'Profile info auto-filled'), { icon: '📋' })
+            toast.success(T(lang, '已從檔案自動填充生辰資訊', 'Profile info auto-filled'))
           }
         }
       })

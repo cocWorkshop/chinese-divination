@@ -19,6 +19,8 @@ interface BackButtonProps {
   fallbackHref?: string
   /** Override the default localized "Back" label. */
   label?: string
+  /** Visual appearance style */
+  variant?: 'pill' | 'subtle' | 'default'
   /**
    * Pin to the top-left corner of the viewport instead of rendering inline.
    * Useful on pages that don't already have a top-left slot for it.
@@ -28,11 +30,19 @@ interface BackButtonProps {
 }
 
 /**
- * Universal back button. Drop it at the top-left of any page that needs a
+ * Universal oriental back button. Drop it at the top-left of any page that needs a
  * "go back" affordance. By default it navigates through browser history;
  * pass `href` to force a specific destination.
  */
-export default function BackButton({ onClick, href, fallbackHref = '/', label, fixed = false, className = '' }: BackButtonProps) {
+export default function BackButton({
+  onClick,
+  href,
+  fallbackHref = '/',
+  label,
+  variant = 'default',
+  fixed = false,
+  className = '',
+}: BackButtonProps) {
   const router = useRouter()
   const { lang } = useLang()
 
@@ -56,15 +66,25 @@ export default function BackButton({ onClick, href, fallbackHref = '/', label, f
 
   const text = label ?? (lang === 'en' ? 'Back' : '返回')
 
+  let baseStyle = 'inline-flex items-center gap-1.5 text-xs font-serif transition-all min-h-[36px] select-none cursor-pointer'
+  if (variant === 'pill') {
+    baseStyle += ' px-3.5 py-1.5 rounded-full border border-[rgba(212,168,83,0.25)] bg-[rgba(212,168,83,0.06)] hover:bg-[rgba(212,168,83,0.15)] text-[var(--gold)] hover:shadow-[0_0_12px_rgba(212,168,83,0.15)] active:scale-[0.98]'
+  } else if (variant === 'subtle') {
+    baseStyle += ' py-1 text-[var(--text-muted)] hover:text-[var(--gold)]'
+  } else {
+    baseStyle += ' px-3 py-1.5 rounded-lg border border-[rgba(212,168,83,0.25)] bg-[rgba(212,168,83,0.06)] hover:bg-[rgba(212,168,83,0.12)] text-[var(--gold)] active:scale-[0.98]'
+  }
+
+  const fixedStyle = fixed ? 'fixed top-20 left-3 sm:left-4 z-40 shadow-lg' : ''
+
   return (
     <button
       type="button"
       onClick={handleClick}
       aria-label={text}
-      className={`inline-flex items-center gap-1 text-sm transition-colors hover:text-gold ${fixed ? 'fixed top-20 left-3 sm:left-4 z-40' : ''} ${className}`}
-      style={{ color: 'var(--text-muted)' }}
+      className={`${baseStyle} ${fixedStyle} ${className}`}
     >
-      <span aria-hidden>←</span>
+      <span aria-hidden className="text-sm leading-none font-sans">←</span>
       <span>{text}</span>
     </button>
   )

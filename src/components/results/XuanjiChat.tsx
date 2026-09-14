@@ -6,6 +6,7 @@ import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
 import { reportError } from '@/lib/errorReporter'
 import YinYangIcon from '@/components/YinYangIcon'
+import { SparkleIcon, RefreshIcon } from '@/components/DivinationIcons'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { T } from '@/lib/i18n'
@@ -277,13 +278,13 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
                   <button
                     key={i}
                     onClick={() => { markQuestionUsed(i); sendMessage(lang === 'en' ? q.en : q.zh) }}
-                    className="w-full text-left px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl text-sm transition-all hover:opacity-80"
+                    className="w-full text-left px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl text-sm transition-all hover:opacity-80 flex items-center"
                     style={{ border: '1px solid var(--border-gold)', color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
                     onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--gold)' }}
                     onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
                   >
-                    <span style={{ color: 'var(--gold)', opacity: 0.6 }} className="mr-2">💬</span>
-                    {lang === 'en' ? q.en : q.zh}
+                    <SparkleIcon size={14} className="mr-2 text-gold/70 flex-shrink-0" />
+                    <span>{lang === 'en' ? q.en : q.zh}</span>
                   </button>
                 ))}
             </div>
@@ -309,7 +310,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
                   }
                 >
                   {msg.role === 'assistant' ? (
-                    <div className="prose prose-invert prose-sm prose-gold max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>h1]:text-gold [&>h2]:text-gold [&>h3]:text-gold [&>h4]:text-gold [&>strong]:text-gold/90 [&>ul>li::marker]:text-gold/50 [&>ol>li::marker]:text-gold/50">
+                    <div className="prose dark:prose-invert prose-sm prose-gold max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>h1]:text-gold [&>h2]:text-gold [&>h3]:text-gold [&>h4]:text-gold [&>strong]:text-gold/90 [&>ul>li::marker]:text-gold/50 [&>ol>li::marker]:text-gold/50">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                     </div>
                   ) : (
@@ -323,10 +324,11 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
                   {msg.retryMessage && (
                     <button
                       onClick={() => handleRetry(msg.retryMessage!, i)}
-                      className="block mt-2 text-sm font-semibold underline hover:opacity-80 cursor-pointer"
+                      className="inline-flex items-center gap-1 mt-2 text-sm font-semibold underline hover:opacity-80 cursor-pointer"
                       style={{ color: 'var(--gold)', background: 'none', border: 'none', padding: 0 }}
                     >
-                      🔄 {T(lang, '點擊重試', 'Click to retry')}
+                      <RefreshIcon size={14} />
+                      <span>{T(lang, '點擊重試', 'Click to retry')}</span>
                     </button>
                   )}
                 </div>
@@ -359,13 +361,13 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
                 <button
                   key={i}
                   onClick={() => { setDynamicSuggestions([]); sendMessage(q) }}
-                  className="text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:opacity-80"
+                  className="text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:opacity-80 flex items-center"
                   style={{ border: '1px solid var(--border-gold)', color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
                   onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--gold)' }}
                   onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
                 >
-                  <span style={{ color: 'var(--gold)', opacity: 0.6 }} className="mr-1">💬</span>
-                  {q}
+                  <SparkleIcon size={12} className="mr-1 text-gold/70 flex-shrink-0" />
+                  <span>{q}</span>
                 </button>
               ))}
             </div>
@@ -380,13 +382,13 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
               <button
                 key={i}
                 onClick={() => { markQuestionUsed(i); sendMessage(lang === 'en' ? q.en : q.zh) }}
-                className="text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:opacity-80"
+                className="text-left px-2.5 py-1.5 rounded-lg text-xs transition-all hover:opacity-80 flex items-center"
                 style={{ border: '1px solid var(--border-gold)', color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-bg)'; e.currentTarget.style.color = 'var(--gold)' }}
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
               >
-                <span style={{ color: 'var(--gold)', opacity: 0.6 }} className="mr-1">💬</span>
-                {lang === 'en' ? q.en : q.zh}
+                <SparkleIcon size={12} className="mr-1 text-gold/70 flex-shrink-0" />
+                <span>{lang === 'en' ? q.en : q.zh}</span>
               </button>
             ))}
           </div>

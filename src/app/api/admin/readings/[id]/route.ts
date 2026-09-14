@@ -16,12 +16,14 @@ import {
  */
 const LLM_LOG_MATCH_WINDOW_MS = 5 * 60 * 1000
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   const { error } = await requireAdmin()
   if (error) return error
 
+  const { id } = await params
+
   const reading = await prisma.reading.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       user: { select: { id: true, name: true, email: true } },
       familyMember: { select: { name: true, relation: true } },

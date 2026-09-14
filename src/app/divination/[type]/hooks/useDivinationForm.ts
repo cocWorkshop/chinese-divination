@@ -97,7 +97,7 @@ export function useDivinationForm(type: string, lang: string) {
       if (Object.keys(updates).length === 0) return
       setForm(f => ({ ...f, ...updates }))
       paramsHydratedRef.current = true // keep /api/init auto-fill from clobbering the draft
-      toast(T(lang, '已恢復未完成的表單草稿', 'Restored your unfinished draft'), { icon: '📝', duration: 3000 })
+      toast(T(lang, '已恢復未完成的表單草稿', 'Restored your unfinished draft'), { duration: 3000 })
     } catch { /* corrupt draft — ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -194,7 +194,7 @@ export function useDivinationForm(type: string, lang: string) {
     if (Object.keys(updates).length > 0 || target) {
       // Generic wording — hydration is used by both the Master CTA flow and
       // the failed-reading retry flow.
-      toast(T(lang, '已自動填入先前資訊', 'Fields pre-filled'), { icon: '✨', duration: 3000 })
+      toast(T(lang, '已自動填入先前資訊', 'Fields pre-filled'), { duration: 3000 })
     }
   }, [searchParams, lang])
 

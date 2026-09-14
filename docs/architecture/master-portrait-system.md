@@ -22,6 +22,33 @@ Replace the current opaque `MasterSession.messages` JSON blob and ad-hoc `summar
 
 The unifying insight: **anything fetchable from the database is evidence, not memory.** Raw chart data, profile fields, family rows, and reading details all live in canonical tables and can be re-fetched on demand. What cannot be re-fetched — user intent, conclusions drawn, preferences expressed — is what compression and the portrait must preserve.
 
+```mermaid
+flowchart TD
+    subgraph Layer1 ["Layer 1: 原始對話持久層 (Raw Chat Layer)"]
+        MsgRow["MasterChatMessage (PostgreSQL)<br/>• userId, sessionId, turnIndex<br/>• role, content, toolCallsJson<br/>• tokenCount (Monotonic Indexed)"]
+    end
+
+    subgraph Layer2 ["Layer 2: 工作記憶滑動壓縮層 (Working-Memory Layer)"]
+        ContextWindow["上下文預算監控 (估算 Token > 60K 觸發)"]
+        Stage1["Stage 1: 工具結果存根化<br/>(保留最近 3 輪，歷史 tool 結果替換為 stub)"]
+        Stage2["Stage 2: 散文對話增量摘要<br/>(歷史 prose 壓縮為 narrative summary)"]
+        ContextWindow --> Stage1
+        Stage1 -->|若上下文仍超預算| Stage2
+    end
+
+    subgraph Layer3 ["Layer 3: 長期用戶畫像層 (Long-Term Portrait Layer)"]
+        Extractor["雙軸提取觸發引擎 (Two-Axis Trigger)<br/>• 條件 A: ≥8 個全新對話輪次<br/>• 條件 B: 距上次提取 ≥24h 且 ≥3 個新輪次"]
+        PortraitRow["UserPortrait (核心畫像)<br/>• topics (JSON array)<br/>• preferences (JSON object)<br/>• lifeContext & toneNotes<br/>• generatedPrompt (快取的個性化注入塊)"]
+        HistoryRow["UserPortraitHistory (不可篡改版本快照)"]
+        Extractor -->|異步抽取| PortraitRow
+        PortraitRow -->|變更歸檔| HistoryRow
+    end
+
+    MsgRow --> ContextWindow
+    MsgRow --> Extractor
+    PortraitRow --> PromptComposer["System Prompt 合成器<br/>[固定角色錨點 (Cacheable Prefix)]<br/>+ [個人化畫像塊 (Generated Prompt)]<br/>+ [動態命盤上下文 (Dynamic Context)]"]
+```
+
 ---
 
 ## 2. Goals

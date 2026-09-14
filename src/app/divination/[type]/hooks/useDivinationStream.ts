@@ -211,14 +211,14 @@ export function useDivinationStream(deps: StreamDeps) {
           setReadingId(savedId)
           notifyReadingComplete(savedId)
           if (data.cached) {
-            toast.success(T(lang, '已使用之前的八字分析結果', 'Using cached BaZi analysis'), { icon: '📦' })
+            toast.success(T(lang, '已使用之前的八字分析結果', 'Using cached BaZi analysis'))
           }
           fetch('/api/credits').then(r => r.json()).then(setCredits).catch(catchAndReport('/api/credits'))
         } else if (data?.error) {
           toast.error(data.error)
           reportError({ endpoint: '/api/divination', status: res.status, error: data.error, context: `type=${type}` })
         } else if (pendingReadingId) {
-          toast(T(lang, '⏳ 伺服器仍在處理中，等待結果...', '⏳ Server still processing, waiting for result...'), { icon: '🔄', duration: 5000 })
+          toast(T(lang, '伺服器仍在處理中，等待結果...', 'Server still processing, waiting for result...'), { duration: 5000 })
           const found = await pollForReadingById(pendingReadingId)
           if (found && found.status === 'completed') {
             setResult(found.result)
@@ -349,7 +349,7 @@ export function useDivinationStream(deps: StreamDeps) {
       const msg = e instanceof Error ? e.message : 'Network error'
       setStreaming(false)
       if (pendingReadingId) {
-        toast(T(lang, '⏳ 連接中斷，等待伺服器處理結果...', '⏳ Connection lost, waiting for server result...'), { icon: '🔄', duration: 5000 })
+        toast(T(lang, '連接中斷，等待伺服器處理結果...', 'Connection lost, waiting for server result...'), { duration: 5000 })
         const found = await pollForReadingById(pendingReadingId)
         if (found && found.status === 'completed') {
           setResult(found.result)
@@ -422,7 +422,7 @@ export function useDivinationStream(deps: StreamDeps) {
       toast.success(T(lang,
         type === 'ziwei' ? '已載入歷史紫微分析' : '已載入歷史八字分析',
         type === 'ziwei' ? 'Loaded previous Zi Wei reading' : 'Loaded previous BaZi reading'
-      ), { icon: '📦' })
+      ))
     }
   }
 

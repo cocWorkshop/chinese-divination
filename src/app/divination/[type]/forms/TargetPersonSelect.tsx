@@ -1,5 +1,6 @@
 'use client'
 
+import { FamilyIcon } from '@/components/DivinationIcons'
 import { useDivination } from '../DivinationContext'
 import { T, inputCls, labelCls, relationPresets } from '../constants'
 
@@ -20,10 +21,11 @@ export default function TargetPersonSelect() {
   } = useDivination()
 
   return (
-    <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-3">
-      <p className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-2">
-        {T(lang, '👤 預測對象', '👤 Reading For')}
-      </p>
+    <div className="oriental-sanctuary-card rounded-xl p-4 sm:p-5 space-y-3.5 shadow-sm">
+      <div className="text-gold-light/90 text-sm font-serif font-medium tracking-wide flex items-center gap-1.5 border-b border-gold/10 pb-2.5">
+        <FamilyIcon className="w-3.5 h-3.5 text-gold" />
+        <span>{T(lang, '預測對象', 'Reading For')}</span>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
@@ -79,7 +81,7 @@ export default function TargetPersonSelect() {
                   {m.name ? ` - ${m.name}` : ''}
                 </option>
               ))}
-              <option value="__new__">{T(lang, '➕ 新增家庭成員', '➕ Add New Member')}</option>
+              <option value="__new__">{T(lang, '+ 新增家庭成員', '+ Add New Member')}</option>
             </select>
           </div>
 

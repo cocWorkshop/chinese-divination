@@ -2,6 +2,7 @@
 
 import React, { Component, type ReactNode } from 'react'
 import { reportError } from '@/lib/errorReporter'
+import { AlertIcon, RefreshIcon } from '@/components/DivinationIcons'
 
 interface Props {
   children: ReactNode
@@ -57,21 +58,24 @@ export default class ResultErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       const isChunk = this.state.error ? this.isChunkLoadError(this.state.error) : false
       return (
-        <div className="glass-card rounded-2xl p-8 text-center my-4">
-          <div className="text-4xl mb-3">⚠️</div>
+        <div className="oriental-sanctuary-card rounded-2xl p-8 text-center my-4 border border-gold/30">
+          <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-3 text-amber-400">
+            <AlertIcon size={24} />
+          </div>
           <h3 className="text-lg font-serif text-gold mb-2">
             {isChunk ? '頁面版本已更新' : (this.props.fallbackTitle || '結果顯示異常')}
           </h3>
-          <p className="text-white/50 text-sm mb-4">
+          <p className="text-white/60 text-sm mb-4">
             {isChunk
               ? '網站剛剛更新了新版本，請刷新頁面即可正常使用。'
               : '此部分內容載入失敗，其他功能不受影響。'}
           </p>
           <button
             onClick={() => isChunk ? window.location.reload() : this.setState({ hasError: false, error: null })}
-            className="px-4 py-2 bg-gold/20 text-gold rounded-lg text-sm hover:bg-gold/30 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-gold/20 hover:bg-gold/30 text-gold border border-gold/40 rounded-lg text-sm font-serif transition-colors"
           >
-            {isChunk ? '刷新頁面' : '重試'}
+            <RefreshIcon size={16} />
+            <span>{isChunk ? '刷新頁面' : '重試'}</span>
           </button>
           {this.state.error && (
             <details className="mt-4 text-left">

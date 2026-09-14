@@ -1,17 +1,24 @@
 'use client'
 
 import BirthplaceInput from '@/components/BirthplaceInput'
+import { DivinationIcon } from '@/components/DivinationIcons'
 import { useDivination } from '../DivinationContext'
 import { T, inputCls, labelCls } from '../constants'
 import CalendarToggle from './fields/CalendarToggle'
 import TimeModeInput from './fields/TimeModeInput'
 import FormSection from './fields/FormSection'
+import DualCalendarPreview from './fields/DualCalendarPreview'
 
 export default function ZiweiForm() {
   const { form, setField, setBirthLat, setBirthLng, setIsSouthernHemisphere, lang } = useDivination()
   return (
     <>
-      <FormSection title={`📅 ${T(lang, '生辰信息', 'Birth Information')}`}>
+      <FormSection title={
+        <span className="flex items-center gap-1.5">
+          <DivinationIcon type="ziwei" className="w-4 h-4 text-gold-light" />
+          <span>{T(lang, '生辰資訊', 'Birth Information')}</span>
+        </span>
+      }>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <CalendarToggle layoutId="ziweiCalendarToggle" />
@@ -20,6 +27,7 @@ export default function ZiweiForm() {
             <input id="ziwei-birth-date" type="date" className={inputCls} value={form.birthDate} onChange={e => setField('birthDate', e.target.value)} required />
           </div>
         </div>
+        <DualCalendarPreview birthDate={form.birthDate} lunarToggle={form.lunarToggle} lang={lang} />
 
         {/* Time Mode Toggle + Time Input */}
         <TimeModeInput layoutId="ziweiTimeModeToggle" />

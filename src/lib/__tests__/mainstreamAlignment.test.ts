@@ -1,6 +1,6 @@
 /**
  * Value-level tests for the mainstream-default 神煞/格局 alignment
- * (owner decision 2026-06-12 — spec: docs/deferred-evaluation-tasks.md Task A).
+ * (owner decision 2026-06-12 — spec: docs/archive/deferred-evaluation-tasks-202606.md Task A).
  * These pin the corrected table values so they can't silently drift back.
  */
 import { describe, it, expect } from 'vitest'

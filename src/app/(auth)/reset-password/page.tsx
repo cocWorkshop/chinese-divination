@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
+import { AlertIcon, CheckSealIcon, LockSealIcon, CloseIcon } from '@/components/DivinationIcons'
 
 function validatePassword(pwd: string, lang: string): string | null {
   if (pwd.length < 8) return lang === 'zh-TW' ? '密碼至少需要 8 個字符' : 'Password must be at least 8 characters'
@@ -31,9 +32,11 @@ function ResetInner() {
   if (!token) {
     return (
       <div className="flex-1 flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
-        <div className="glass-card rounded-2xl p-8 w-full max-w-md text-center">
-          <div className="text-5xl mb-4">❌</div>
-          <h1 className="text-xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
+        <div className="oriental-sanctuary-card rounded-2xl p-6 sm:p-8 w-full max-w-md text-center shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center mx-auto mb-4 text-rose-400">
+            <CloseIcon className="w-7 h-7" />
+          </div>
+          <h1 className="text-xl font-serif mb-2 text-gold">
             {lang === 'zh-TW' ? '無效連結' : 'Invalid Link'}
           </h1>
           <Link href="/forgot-password" className="text-gold text-sm hover:text-gold-light">
@@ -76,16 +79,18 @@ function ResetInner() {
   if (status === 'success') {
     return (
       <div className="flex-1 flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
-        <div className="glass-card rounded-2xl p-8 w-full max-w-md text-center">
-          <div className="text-5xl mb-4">✅</div>
-          <h1 className="text-2xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
+        <div className="oriental-sanctuary-card rounded-2xl p-6 sm:p-8 w-full max-w-md text-center shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-jade/15 border border-jade/30 flex items-center justify-center mx-auto mb-4 text-jade">
+            <CheckSealIcon className="w-7 h-7" />
+          </div>
+          <h1 className="text-2xl font-serif mb-2 text-gold">
             {lang === 'zh-TW' ? '密碼已重置' : 'Password Reset'}
           </h1>
-          <p className="text-white/60 text-sm mb-6">
+          <p className="text-white/60 text-sm mb-6 leading-relaxed">
             {lang === 'zh-TW' ? '您的密碼已成功更新，請使用新密碼登入。' : 'Your password has been updated. Please log in with your new password.'}
           </p>
-          <Link href="/login" className="inline-block px-6 py-2.5 bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light transition-colors">
-            🔑 {lang === 'zh-TW' ? '前往登入' : 'Go to Login'}
+          <Link href="/login" className="inline-flex items-center justify-center px-6 py-3 min-h-[44px] bg-gold text-navy-950 rounded-xl font-serif font-bold hover:bg-gold-light transition-colors text-sm shadow-md shadow-gold/10">
+            {lang === 'zh-TW' ? '前往登入' : 'Go to Login'}
           </Link>
         </div>
       </div>
@@ -95,9 +100,11 @@ function ResetInner() {
   if (status === 'expired' || status === 'invalid') {
     return (
       <div className="flex-1 flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
-        <div className="glass-card rounded-2xl p-8 w-full max-w-md text-center">
-          <div className="text-5xl mb-4">{status === 'expired' ? '⏰' : '❌'}</div>
-          <h1 className="text-xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
+        <div className="oriental-sanctuary-card rounded-2xl p-6 sm:p-8 w-full max-w-md text-center shadow-2xl">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center mx-auto mb-4 text-amber-400">
+            <AlertIcon className="w-7 h-7" />
+          </div>
+          <h1 className="text-xl font-serif mb-2 text-gold">
             {status === 'expired'
               ? (lang === 'zh-TW' ? '連結已過期' : 'Link Expired')
               : (lang === 'zh-TW' ? '無效連結' : 'Invalid Link')}
@@ -105,8 +112,8 @@ function ResetInner() {
           <p className="text-white/50 text-sm mb-4">
             {lang === 'zh-TW' ? '請重新申請密碼重置。' : 'Please request a new reset link.'}
           </p>
-          <Link href="/forgot-password" className="inline-block px-6 py-2.5 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors">
-            {lang === 'zh-TW' ? '📧 重新申請' : '📧 Request Again'}
+          <Link href="/forgot-password" className="inline-flex items-center justify-center px-6 py-3 min-h-[44px] border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-sm font-serif">
+            {lang === 'zh-TW' ? '重新申請' : 'Request Again'}
           </Link>
         </div>
       </div>
@@ -124,10 +131,12 @@ function ResetInner() {
 
   return (
     <div className="flex-1 flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
-      <div className="glass-card rounded-2xl p-8 w-full max-w-md">
+      <div className="oriental-sanctuary-card rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl">
         <div className="text-center mb-8">
-          <div className="text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>玄機</div>
-          <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>
+          <div className="w-12 h-12 rounded-2xl bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-3 text-gold">
+            <LockSealIcon className="w-6 h-6" />
+          </div>
+          <h1 className="text-2xl font-serif text-gold">
             {lang === 'zh-TW' ? '設置新密碼' : 'Set New Password'}
           </h1>
         </div>
@@ -183,11 +192,11 @@ function ResetInner() {
           <button
             type="submit"
             disabled={loading || !allPassed}
-            className="w-full py-3 bg-gold text-navy-950 rounded-lg font-semibold hover:bg-gold-light transition-colors disabled:opacity-50"
+            className="w-full py-3.5 min-h-[44px] bg-gradient-to-r from-gold via-gold-light to-gold text-navy-950 rounded-xl font-serif font-bold text-base hover:brightness-105 active:scale-[0.99] transition-all shadow-md shadow-gold/15 disabled:opacity-50"
           >
             {loading
               ? (lang === 'zh-TW' ? '重置中...' : 'Resetting...')
-              : (lang === 'zh-TW' ? '🔑 重置密碼' : '🔑 Reset Password')}
+              : (lang === 'zh-TW' ? '重置密碼' : 'Reset Password')}
           </button>
         </form>
       </div>

@@ -20,6 +20,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
+import {
+  DivinationIcon,
+  CareerIcon,
+  MarriageIcon,
+  WealthIcon,
+  HealthIcon,
+  KeyPredictionIcon,
+  LockSealIcon,
+} from '@/components/DivinationIcons'
 
 interface Pillar { stem: string; branch: string; element?: string; nayin?: string }
 interface ChartSeed {
@@ -36,12 +45,12 @@ const ELEMENT_COLORS: Record<string, string> = {
   火: 'text-rose-400', 土: 'text-amber-600',
 }
 
-const LOCKED_SECTIONS: { key: string; label: string; icon: string }[] = [
-  { key: 'marriage', label: '婚姻運', icon: '💞' },
-  { key: 'wealth', label: '財運', icon: '💰' },
-  { key: 'health', label: '健康', icon: '🌿' },
-  { key: 'daYun', label: '大運精批（八步流年）', icon: '🔮' },
-  { key: 'keyAdvice', label: '核心建議（3-5條）', icon: '✨' },
+const LOCKED_SECTIONS: { key: string; label: string; icon: (cls: string) => React.ReactNode }[] = [
+  { key: 'marriage', label: '婚姻運', icon: (cls) => <MarriageIcon className={cls} /> },
+  { key: 'wealth', label: '財運', icon: (cls) => <WealthIcon className={cls} /> },
+  { key: 'health', label: '健康', icon: (cls) => <HealthIcon className={cls} /> },
+  { key: 'daYun', label: '大運精批（八步流年）', icon: (cls) => <DivinationIcon type="bazi" className={cls} /> },
+  { key: 'keyAdvice', label: '核心建議（3-5條）', icon: (cls) => <KeyPredictionIcon className={cls} /> },
 ]
 
 export default function StartReadingPage() {
@@ -239,10 +248,12 @@ export default function StartReadingPage() {
         <motion.section
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="glass-card rounded-2xl p-5 mb-5"
-          style={{ border: '1px solid var(--card-border)' }}
+          className="oriental-sanctuary-card rounded-2xl p-5 mb-5 shadow-sm"
         >
-          <h3 className="font-serif text-base mb-3" style={{ color: 'var(--gold)' }}>📜 命盤總覽</h3>
+          <div className="flex items-center gap-2 mb-3">
+            <DivinationIcon type="bazi" className="w-4 h-4 text-gold" />
+            <h3 className="font-serif text-base text-gold">命盤總覽</h3>
+          </div>
           <p className="text-sm leading-relaxed font-serif" style={{ color: 'var(--text-primary)' }}>
             {overview || '…'}
           </p>
@@ -254,10 +265,12 @@ export default function StartReadingPage() {
         <motion.section
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="glass-card rounded-2xl p-5 mb-5"
-          style={{ border: '1px solid var(--card-border)' }}
+          className="oriental-sanctuary-card rounded-2xl p-5 mb-5 shadow-sm"
         >
-          <h3 className="font-serif text-base mb-3" style={{ color: 'var(--gold)' }}>💼 事業運</h3>
+          <div className="flex items-center gap-2 mb-3">
+            <CareerIcon className="w-4 h-4 text-gold" />
+            <h3 className="font-serif text-base text-gold">事業運</h3>
+          </div>
           <p className="text-sm leading-relaxed font-serif" style={{ color: 'var(--text-primary)' }}>
             {career || '…'}
           </p>
@@ -277,16 +290,17 @@ export default function StartReadingPage() {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, delay: 0.08 * i }}
-            className="rounded-xl p-4 relative overflow-hidden"
-            style={{ background: 'var(--card-bg)', border: '1px dashed var(--card-border)' }}
+            className="oriental-sanctuary-card rounded-xl p-4 relative overflow-hidden shadow-sm"
           >
             <div className="flex items-center gap-2 mb-1.5 relative z-10">
-              <span className="text-base">{s.icon}</span>
-              <span className="font-serif text-sm" style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
+              <span className="text-gold flex-shrink-0">{s.icon('w-4 h-4')}</span>
+              <span className="font-serif text-sm text-gold-light/90">{s.label}</span>
               <span
-                className="ml-auto text-xs"
+                className="ml-auto"
                 style={{ animation: 'xjLockPulse 3s ease-in-out infinite' }}
-              >🔒</span>
+              >
+                <LockSealIcon className="w-3.5 h-3.5 text-gold/60" />
+              </span>
             </div>
             <div
               className="h-12 rounded-md relative overflow-hidden"

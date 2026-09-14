@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import { T } from '@/lib/i18n'
+import YinYangIcon from '@/components/YinYangIcon'
 
 const XuanjiChat = dynamic(() => import('./XuanjiChat'), { ssr: false })
 
@@ -28,7 +29,7 @@ export default function XuanjiChatCard({ readingResult, readingType, readingId, 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
         <div className="glass-card rounded-xl p-4 sm:p-6 border-2 border-gold/30">
           <h3 className="flex items-center gap-2 text-gold font-serif text-base sm:text-lg mb-3">
-            <span className="text-xl">☯</span>
+            <YinYangIcon size={20} />
             <span className="bg-gradient-to-r from-amber-400 to-gold bg-clip-text text-transparent font-semibold">
               {T(lang, '玄機問答', 'Q&A Chat')}
             </span>
@@ -46,7 +47,7 @@ export default function XuanjiChatCard({ readingResult, readingType, readingId, 
                   }
                 >
                   {msg.role === 'assistant' ? (
-                    <div className="prose prose-invert prose-sm prose-gold max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>h1]:text-gold [&>h2]:text-gold [&>h3]:text-gold [&>h4]:text-gold [&>strong]:text-gold/90 [&>ul>li::marker]:text-gold/50 [&>ol>li::marker]:text-gold/50">
+                    <div className="prose dark:prose-invert prose-sm prose-gold max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>h1]:text-gold [&>h2]:text-gold [&>h3]:text-gold [&>h4]:text-gold [&>strong]:text-gold/90 [&>ul>li::marker]:text-gold/50 [&>ol>li::marker]:text-gold/50">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                     </div>
                   ) : (
@@ -65,7 +66,7 @@ export default function XuanjiChatCard({ readingResult, readingType, readingId, 
     <motion.div id="xuanji-qa" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
       <div className="glass-card rounded-xl p-4 sm:p-6 border-2 border-gold/30">
         <h3 className="flex items-center gap-2 text-gold font-serif text-base sm:text-lg mb-3">
-          <span className="text-xl">☯</span>
+          <YinYangIcon size={20} />
           <span className="bg-gradient-to-r from-amber-400 to-gold bg-clip-text text-transparent font-semibold">
             {T(lang, '玄機問答', 'Q&A')}
           </span>

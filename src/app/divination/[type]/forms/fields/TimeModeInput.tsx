@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useDivination } from '../../DivinationContext'
 import { T, inputCls, labelCls, shichen } from '../../constants'
+import { EARLY_LATE_ZI_EXPLANATION } from '../../../guidanceConfig'
+import HelpTooltip from '@/components/HelpTooltip'
 
 /**
  * Birth-time input with a fuzzy (shichen) / precise (HH:MM) mode toggle.
@@ -13,7 +15,15 @@ export default function TimeModeInput({ layoutId, showHints = false }: { layoutI
   const { form, setField, lang } = useDivination()
   return (
     <div>
-      <label htmlFor={form.timeMode === 'fuzzy' ? `${layoutId}-shichen` : `${layoutId}-exact-time`} className={labelCls}>{T(lang, '出生時間', 'Birth Time')}</label>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <label htmlFor={form.timeMode === 'fuzzy' ? `${layoutId}-shichen` : `${layoutId}-exact-time`} className={labelCls + ' mb-0'}>
+          {T(lang, '出生時間', 'Birth Time')}
+        </label>
+        <HelpTooltip
+          content={T(lang, EARLY_LATE_ZI_EXPLANATION.tooltip.zh, EARLY_LATE_ZI_EXPLANATION.tooltip.en)}
+          title={T(lang, EARLY_LATE_ZI_EXPLANATION.label.zh, EARLY_LATE_ZI_EXPLANATION.label.en)}
+        />
+      </div>
       <div className="flex rounded-full border border-gold/30 overflow-hidden bg-navy-800 w-fit mb-3">
         {([['fuzzy', '模糊（時辰）', 'Fuzzy (Shichen)'], ['precise', '精確（時分）', 'Precise (HH:MM)']] as const).map(([val, zh, en]) => (
           <motion.button

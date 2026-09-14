@@ -20,6 +20,86 @@ const DEFAULT_COSTS: Record<string, number> = {
   fengshui: 3,
   chat: 2,
   master: 1,
+  dayun_unlock: 1,
+}
+
+export interface KarmaRules {
+  costs: Record<string, number>
+  decadalGating: {
+    freeDaYunLimit: number
+    costDayunUnlock: number
+  }
+  inflows: {
+    registerBonus: number
+    dailyBonusCredits: number
+    shareBonus: number
+  }
+}
+
+/**
+ * Get free DaYun limit according to decadal gating rule.
+ * Defaults to 3 (decades 0, 1, 2 free; 3+ locked).
+ */
+export async function getFreeDaYunLimit(): Promise<number> {
+  const setting = await prisma.adminSetting.findUnique({
+    where: { key: 'free_dayun_limit' },
+  })
+  if (setting) {
+    const val = parseInt(setting.value, 10)
+    if (!isNaN(val) && val >= 0) return val
+  }
+  return 3
+}
+
+/**
+ * Get full Karma rules snapshot including divination costs, decadal gating limits,
+ * and user bonus inflows.
+ */
+export async function getKarmaRules(): Promise<KarmaRules> {
+  const keys = [
+    'cost_bazi', 'cost_ziwei', 'cost_qimen', 'cost_meihua',
+    'cost_iching', 'cost_liuyao', 'cost_fengshui', 'cost_chat',
+    'cost_master', 'cost_dayun_unlock',
+    'free_dayun_limit',
+    'registerBonus', 'dailyBonusCredits', 'shareBonus',
+  ]
+  const rows = await prisma.adminSetting.findMany({
+    where: { key: { in: keys } },
+  })
+  const map = new Map(rows.map(r => [r.key, r.value]))
+
+  const getNum = (k: string, def: number) => {
+    const v = map.get(k)
+    if (v !== undefined) {
+      const n = parseInt(v, 10)
+      if (!isNaN(n) && n >= 0) return n
+    }
+    return def
+  }
+
+  return {
+    costs: {
+      bazi: getNum('cost_bazi', 5),
+      ziwei: getNum('cost_ziwei', 5),
+      qimen: getNum('cost_qimen', 5),
+      meihua: getNum('cost_meihua', 3),
+      iching: getNum('cost_iching', 3),
+      liuyao: getNum('cost_liuyao', 3),
+      fengshui: getNum('cost_fengshui', 3),
+      chat: getNum('cost_chat', 2),
+      master: getNum('cost_master', 1),
+      dayun_unlock: getNum('cost_dayun_unlock', 1),
+    },
+    decadalGating: {
+      freeDaYunLimit: getNum('free_dayun_limit', 3),
+      costDayunUnlock: getNum('cost_dayun_unlock', 1),
+    },
+    inflows: {
+      registerBonus: getNum('registerBonus', 6),
+      dailyBonusCredits: getNum('dailyBonusCredits', 2),
+      shareBonus: getNum('shareBonus', 20),
+    },
+  }
 }
 
 /**
@@ -75,7 +155,7 @@ export async function checkCredits(userId: string, type: string): Promise<{ allo
 /**
  * Deduct credits for a given action. Returns true if successful.
  */
-export async function deductCredits(userId: string, type: string): Promise<boolean> {
+export async function deductCredits(userId: string, type: string, note?: string): Promise<boolean> {
   const [user, cost] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -87,7 +167,7 @@ export async function deductCredits(userId: string, type: string): Promise<boole
   // three known fields — passed through Prisma's typed `data` via computed
   // property, so the schema is the source of truth (column rename → TS error).
   const usageField: 'usageDivination' | 'usageChat' | 'usageMaster' =
-    ['bazi', 'ziwei', 'qimen', 'meihua', 'iching', 'liuyao', 'fengshui'].includes(type)
+    ['bazi', 'ziwei', 'qimen', 'meihua', 'iching', 'liuyao', 'fengshui', 'dayun_unlock'].includes(type)
       ? 'usageDivination'
       : type === 'chat'
         ? 'usageChat'
@@ -123,6 +203,7 @@ export async function deductCredits(userId: string, type: string): Promise<boole
       amount: -cost,
       balance: updated?.credits ?? 0,
       source: type === 'chat' ? 'chat' : type === 'master' ? 'master' : `divination:${type}`,
+      note,
     })
     return true
   }

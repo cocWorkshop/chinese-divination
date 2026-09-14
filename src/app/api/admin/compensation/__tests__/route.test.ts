@@ -39,7 +39,8 @@ vi.mock('@/lib/prisma', () => ({
   },
 }))
 
-import { GET, POST, isPseudoError } from '../route'
+import { GET, POST } from '../route'
+import { isPseudoError } from '../utils'
 
 describe('Compensation Route - Affected Users & Dismissal', () => {
   beforeEach(() => {

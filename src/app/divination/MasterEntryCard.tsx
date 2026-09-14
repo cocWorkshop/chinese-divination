@@ -4,7 +4,7 @@ import React from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
-import { useMasterChat } from '@/components/master/MasterChatContext'
+import { useMasterChatActions } from '@/components/master/MasterChatContext'
 import {
   getMasterEntryConfig,
   getMasterQuickPrompts,
@@ -14,7 +14,7 @@ import {
 export default function MasterEntryCard() {
   const { lang } = useLang()
   const router = useRouter()
-  const { enabled: masterEnabled, setShape: setMasterShape, sendMessage } = useMasterChat()
+  const { enabled: masterEnabled, setShape: setMasterShape, sendMessage } = useMasterChatActions()
 
   const config = getMasterEntryConfig(lang)
   const quickPrompts = getMasterQuickPrompts(lang)

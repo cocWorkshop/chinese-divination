@@ -1,15 +1,28 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logCreditChange } from '@/lib/creditLogger'
+import { rateLimit } from '@/lib/rateLimiter'
+
+const shareClaimSchema = z.object({
+  code: z.string().trim().min(3).max(64),
+})
 
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { code } = await req.json()
-  if (!code) return NextResponse.json({ error: 'Code required' }, { status: 400 })
+  if (!rateLimit(`share-claim:${session.user.id}`, 10, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many share claim attempts' }, { status: 429 })
+  }
+
+  const raw = await req.json().catch(() => null)
+  const parsed = shareClaimSchema.safeParse(raw)
+  if (!parsed.success) return NextResponse.json({ error: 'Code required' }, { status: 400 })
+
+  const { code } = parsed.data
 
   const link = await prisma.shareLink.findUnique({ where: { code } })
   if (!link) return NextResponse.json({ error: 'Invalid share code' }, { status: 404 })

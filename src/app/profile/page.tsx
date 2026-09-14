@@ -3,15 +3,18 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
+import BackButton from '@/components/BackButton'
 import BirthplaceInput from '@/components/BirthplaceInput'
 import { catchAndReport } from '@/lib/errorReporter'
 import FamilyTab from './_tabs/FamilyTab'
 import GrowthTab from './_tabs/GrowthTab'
 import type { FamilyMemberData } from './_components/FamilyDrawer'
 import { T, formatDate } from '@/lib/i18n'
+import { DivinationIcon, SunMoonIcon, FamilyIcon, MasterSageIcon, NoticeIcon, LockSealIcon, AlertIcon, CheckSealIcon } from '@/components/DivinationIcons'
 
 const relationPresets = [
   { value: 'spouse', zh: '配偶', en: 'Spouse' },
@@ -60,13 +63,57 @@ const shichen = [
 
 type TabKey = 'personal' | 'growth' | 'family' | 'credits' | 'account'
 
-const TABS: { key: TabKey; icon: string; zh: string; en: string }[] = [
-  { key: 'personal', icon: '👤', zh: '個人資料', en: 'Personal Info' },
-  { key: 'growth', icon: '☯️', zh: '術數修為', en: 'Mastery' },
-  { key: 'family', icon: '👨‍👩‍👦', zh: '家庭成員', en: 'Family Members' },
-  { key: 'credits', icon: '✨', zh: '機緣簿', en: 'Credit Ledger' },
-  { key: 'account', icon: '⚙️', zh: '帳號設置', en: 'Account' },
+const TABS: { key: TabKey; zh: string; en: string }[] = [
+  { key: 'personal', zh: '個人資料', en: 'Personal Info' },
+  { key: 'growth', zh: '術數修為', en: 'Mastery' },
+  { key: 'family', zh: '家庭成員', en: 'Family Members' },
+  { key: 'credits', zh: '機緣簿', en: 'Credit Ledger' },
+  { key: 'account', zh: '帳號設置', en: 'Account' },
 ]
+
+function TabIcon({ tabKey }: { tabKey: TabKey }) {
+  if (tabKey === 'personal') {
+    return (
+      <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block">
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    )
+  }
+  if (tabKey === 'growth') {
+    return (
+      <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="inline-block">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 2a5 5 0 0 0 0 10 5 5 0 0 1 0 10" />
+        <circle cx="12" cy="7" r="1.5" fill="currentColor" />
+        <circle cx="12" cy="17" r="1.5" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (tabKey === 'family') {
+    return (
+      <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block">
+        <path d="M17 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M9 21v-2a4 4 0 0 1 3-3.87" />
+        <circle cx="9" cy="7" r="4" />
+        <circle cx="17" cy="11" r="3" />
+      </svg>
+    )
+  }
+  if (tabKey === 'credits') {
+    return (
+      <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      </svg>
+    )
+  }
+  return (
+    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  )
+}
 
 const PAGE_SIZE = 5
 
@@ -105,6 +152,7 @@ export default function ProfilePage() {
   const [addingMember, setAddingMember] = useState(false)
   const [newMember, setNewMember] = useState<Partial<FamilyMember>>({ relation: '', relationDetail: '', name: '', birthDate: '', birthTime: '', birthPlace: '', gender: '', calendarType: 'solar', timeMode: 'fuzzy', exactTime: '', birthLat: null, birthLng: null, birthEnvironment: '' })
   const [credits, setCredits] = useState<{ credits: number } | null>(null)
+  const [hasPassword, setHasPassword] = useState<boolean>(true)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -119,13 +167,13 @@ export default function ProfilePage() {
   const [creditLogLoading, setCreditLogLoading] = useState(false)
 
   const handleDeleteAccount = useCallback(async () => {
-    if (!deletePassword) return
+    if (hasPassword && !deletePassword) return
     setDeleteLoading(true)
     try {
       const res = await fetch('/api/profile/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: deletePassword }),
+        body: JSON.stringify({ password: hasPassword ? deletePassword : undefined }),
       })
       if (res.ok) {
         setDeleteEmailSent(true)
@@ -144,7 +192,7 @@ export default function ProfilePage() {
     } finally {
       setDeleteLoading(false)
     }
-  }, [deletePassword, lang])
+  }, [hasPassword, deletePassword, lang])
 
   const handleDeleteMemory = useCallback(async () => {
     setDeleteMemoryLoading(true)
@@ -182,6 +230,9 @@ export default function ProfilePage() {
             timeMode: data.timeMode || 'fuzzy',
             calendarType: data.calendarType || 'solar',
           }))
+          if (typeof data.hasPassword === 'boolean') {
+            setHasPassword(data.hasPassword)
+          }
         }
       }).catch(catchAndReport('/api/profile'))
       fetch('/api/family-members').then(r => r.json()).then(data => setFamilyMembers(data.members || [])).catch(catchAndReport('/api/family-members'))
@@ -289,37 +340,48 @@ export default function ProfilePage() {
   )
 
   return (
-    <div className="flex-1 py-8 sm:py-12 px-3 sm:px-4 w-full max-w-2xl mx-auto">
-      {/* Page Header Card */}
-      <div className="glass-card rounded-2xl p-6 sm:p-8 mb-6 text-center relative overflow-hidden">
-        <div className="absolute inset-0 rounded-2xl border border-gold/20 pointer-events-none" />
-        <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center text-3xl"
-          style={{ background: 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.05))', border: '2px solid rgba(212,168,83,0.3)' }}>
-          👤
+    <div className="flex-1 py-6 sm:py-10 px-3 sm:px-4 w-full max-w-2xl mx-auto">
+      {/* Top Navigation & Breadcrumbs */}
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <BackButton fallbackHref="/divination" label={T(lang, '返回', 'Back')} variant="pill" />
+        <div className="flex items-center gap-2 text-xs text-white/50 font-serif">
+          <Link href="/divination" className="hover:text-gold transition-colors">
+            {T(lang, '占卜大廳', 'Divinations')}
+          </Link>
+          <span className="text-white/20">/</span>
+          <span className="text-gold/80">{T(lang, '個人檔案', 'Profile')}</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-serif text-gold">
-          {T(lang, '個人資料', 'Profile')}
+      </div>
+
+      {/* Page Header Card */}
+      <div className="oriental-sanctuary-card p-6 sm:p-8 mb-6 text-center relative overflow-hidden">
+        <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center text-xl font-serif font-bold text-gold"
+          style={{ background: 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.05))', border: '1.5px solid rgba(212,168,83,0.4)' }}>
+          {session?.user?.name?.[0] || '玄'}
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-serif text-gold-light">
+          {T(lang, '個人命盤檔案', 'Profile')}
         </h1>
         {session?.user?.email && (
-          <p className="text-white/40 text-sm mt-1">{session.user.email}</p>
+          <p className="text-white/40 text-xs font-serif mt-1">{session.user.email}</p>
         )}
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex rounded-xl overflow-hidden mb-6 border border-gold/20">
+      <div className="flex rounded-xl overflow-hidden mb-6 border border-gold/20 p-1 bg-navy-900/60 backdrop-blur-md">
         {TABS.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-3 px-2 text-xs sm:text-sm font-medium transition-colors text-center ${
+            className={`flex-1 py-2.5 px-2 text-xs sm:text-sm font-serif font-medium transition-all rounded-lg text-center flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 ${
               activeTab === tab.key
-                ? 'bg-gold text-navy-950'
-                : 'bg-navy-800/50 text-white/50 hover:text-white/70 hover:bg-navy-800'
+                ? 'bg-gold text-navy-950 shadow-md shadow-gold/10'
+                : 'text-white/60 hover:text-gold hover:bg-white/[0.03]'
             }`}
           >
-            <span className="block text-base sm:text-sm sm:inline">{tab.icon}</span>
-            <span className="block text-[11px] leading-tight sm:hidden">{T(lang, tab.zh, tab.en).split(/[\s/]/)[0]}</span>
-            <span className="hidden sm:inline"> {T(lang, tab.zh, tab.en)}</span>
+            <TabIcon tabKey={tab.key} />
+            <span className="block text-[10px] leading-tight sm:hidden">{T(lang, tab.zh, tab.en).split(/[\s/]/)[0]}</span>
+            <span className="hidden sm:inline">{T(lang, tab.zh, tab.en)}</span>
           </button>
         ))}
       </div>
@@ -328,9 +390,9 @@ export default function ProfilePage() {
       {activeTab === 'personal' && (
         <form onSubmit={handleSave} className="space-y-6">
           {/* Personal Info Card */}
-          <div className="glass-card rounded-2xl">
+          <div className="oriental-sanctuary-card rounded-2xl border border-gold/20">
             <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
-              <span className="text-lg">🏷️</span>
+              <NoticeIcon className="w-5 h-5 text-gold" />
               <h2 className="text-lg font-serif text-gold">{T(lang, '個人信息', 'Personal Info')}</h2>
             </div>
             <div className="p-4 sm:p-6 space-y-5">
@@ -351,9 +413,9 @@ export default function ProfilePage() {
           </div>
 
           {/* Birth Info Card */}
-          <div className="glass-card rounded-2xl">
+          <div className="oriental-sanctuary-card rounded-2xl border border-gold/20">
             <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
-              <span className="text-lg">📅</span>
+              <SunMoonIcon className="w-5 h-5 text-gold" />
               <h2 className="text-lg font-serif text-gold">{T(lang, '生辰信息', 'Birth Info')}</h2>
             </div>
             <div className="p-4 sm:p-6 space-y-5">
@@ -784,9 +846,9 @@ export default function ProfilePage() {
           )}
 
           {/* Ledger */}
-          <div className="glass-card rounded-2xl">
+          <div className="oriental-sanctuary-card rounded-2xl border border-gold/20">
             <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
-              <span className="text-lg">📜</span>
+              <DivinationIcon type="other" className="w-5 h-5 text-gold" />
               <h2 className="text-lg font-serif text-gold">{T(lang, '機緣簿', 'Karma Ledger')}</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -800,11 +862,10 @@ export default function ProfilePage() {
                         deduct: { zh: '消耗', en: 'Used', color: 'text-red-400' },
                         deduct_admin: { zh: '使用(管理員)', en: 'Used(Admin)', color: 'text-orange-400' },
                         grant_daily: { zh: '每日贈送', en: 'Daily Bonus', color: 'text-green-400' },
-                        grant_purchase: { zh: '購買', en: 'Purchase', color: 'text-emerald-400' },
-                        grant_share: { zh: '分享獎勵', en: 'Share Reward', color: 'text-blue-400' },
-                        grant_compensation: { zh: '補償', en: 'Compensation', color: 'text-purple-400' },
-                        grant_gift: { zh: '禮品領取', en: 'Gift', color: 'text-pink-400' },
-                        grant_admin: { zh: '管理員發放', en: 'Admin Grant', color: 'text-yellow-400' },
+                        grant_admin: { zh: '管理員贈送', en: 'Admin Bonus', color: 'text-green-400' },
+                        grant_system: { zh: '系統贈送', en: 'System Bonus', color: 'text-green-400' },
+                        purchase: { zh: '購買', en: 'Purchased', color: 'text-green-400' },
+                        gift_redeem: { zh: '兌換禮品碼', en: 'Gift Code', color: 'text-green-400' },
                       }
                       const info = actionLabels[log.action] || { zh: log.action, en: log.action, color: 'text-white/60' }
                       const sourceLabels: Record<string, { zh: string; en: string }> = {
@@ -972,9 +1033,9 @@ export default function ProfilePage() {
       {activeTab === 'account' && (
         <div className="space-y-6">
           {/* Change Password Card */}
-          <div className="glass-card rounded-2xl">
+          <div className="oriental-sanctuary-card rounded-2xl border border-gold/20">
             <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
-              <span className="text-lg">🔑</span>
+              <LockSealIcon className="w-5 h-5 text-gold" />
               <h2 className="text-lg font-serif text-gold">{T(lang, '修改密碼', 'Change Password')}</h2>
             </div>
             <div className="p-4 sm:p-6">
@@ -993,7 +1054,7 @@ export default function ProfilePage() {
                 <button
                   type="submit"
                   disabled={saving || (!form.currentPassword && !form.newPassword)}
-                  className="px-5 py-2.5 rounded-xl font-medium text-sm bg-gold text-navy-950 hover:bg-gold-light transition-colors disabled:opacity-40"
+                  className="px-5 py-2.5 min-h-[44px] rounded-xl font-medium text-sm bg-gold text-navy-950 hover:bg-gold-light transition-colors disabled:opacity-40 font-serif"
                 >
                   {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '更新密碼', 'Update Password')}
                 </button>
@@ -1002,13 +1063,13 @@ export default function ProfilePage() {
           </div>
 
           {/* Master Memory Card */}
-          <div className="glass-card rounded-2xl">
+          <div className="oriental-sanctuary-card rounded-2xl border border-gold/20">
             <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
-              <span className="text-lg">🧙</span>
+              <MasterSageIcon className="w-5 h-5 text-gold" />
               <h2 className="text-lg font-serif text-gold">{T(lang, '大師記憶', 'Master Memory')}</h2>
             </div>
             <div className="p-4 sm:p-6">
-              <p className="text-sm text-white/50 mb-4">
+              <p className="text-sm text-white/50 mb-4 leading-relaxed">
                 {T(lang,
                   '玄機大師在對話中記下的主題與偏好。您可前往記憶設定頁面查看、編輯或暫停，也可在此永久刪除。刪除後不影響您的占卜歷史與個人檔案。',
                   "Topics and preferences Master Xuanji has noted from your conversations. You can view, edit, or pause them on the memory settings page, or permanently delete them here. Deletion does not affect your reading history or profile."
@@ -1017,39 +1078,38 @@ export default function ProfilePage() {
               <div className="flex flex-wrap gap-3">
                 <a
                   href="/profile/portrait"
-                  className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 border border-gold/15 text-white/70"
+                  className="px-4 py-2.5 min-h-[44px] inline-flex items-center rounded-lg text-sm font-medium transition-colors hover:bg-white/5 border border-gold/20 text-white/80 font-serif"
                 >
-                  📝 {T(lang, '記憶設定', 'Memory Settings')}
+                  {T(lang, '記憶設定', 'Memory Settings')}
                 </a>
                 <button
                   onClick={() => setShowDeleteMemoryConfirm(true)}
-                  className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-red-500/10"
-                  style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
+                  className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-colors hover:bg-red-500/10 border border-red-500/30 text-red-400 font-serif"
                 >
-                  🗑️ {T(lang, '刪除所有記憶', 'Delete All Memory')}
+                  {T(lang, '刪除所有記憶', 'Delete All Memory')}
                 </button>
               </div>
 
               {showDeleteMemoryConfirm && (
-                <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                  <p className="text-sm mb-3" style={{ color: '#fca5a5' }}>
-                    ⚠️ {T(lang,
+                <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                  <p className="text-sm mb-3 text-red-300 flex items-center gap-1.5">
+                    <AlertIcon size={16} className="text-red-400 flex-shrink-0" />
+                    <span>{T(lang,
                       '這將永久刪除大師對您的所有記憶與歷史版本。無法復原。',
                       'This will permanently delete all memory the Master has of you, including all history versions. Cannot be undone.'
-                    )}
+                    )}</span>
                   </p>
                   <div className="flex gap-2">
                     <button
                       onClick={handleDeleteMemory}
                       disabled={deleteMemoryLoading}
-                      className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors"
-                      style={{ backgroundColor: '#dc2626' }}
+                      className="px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors bg-red-600 hover:bg-red-700"
                     >
                       {deleteMemoryLoading ? '...' : T(lang, '確認刪除', 'Confirm delete')}
                     </button>
                     <button
                       onClick={() => setShowDeleteMemoryConfirm(false)}
-                      className="px-3 py-2 rounded-lg text-sm text-white/40 hover:text-white/60 transition-colors"
+                      className="px-3 py-2 min-h-[40px] rounded-lg text-sm text-white/60 hover:text-white transition-colors"
                     >
                       {T(lang, '取消', 'Cancel')}
                     </button>
@@ -1060,13 +1120,13 @@ export default function ProfilePage() {
           </div>
 
           {/* Data Management Card */}
-          <div className="glass-card rounded-2xl">
+          <div className="oriental-sanctuary-card rounded-2xl border border-gold/20">
             <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
-              <span className="text-lg">🔒</span>
+              <LockSealIcon className="w-5 h-5 text-gold" />
               <h2 className="text-lg font-serif text-gold">{T(lang, '數據管理', 'Data Management')}</h2>
             </div>
             <div className="p-4 sm:p-6">
-              <p className="text-sm text-white/50 mb-4">
+              <p className="text-sm text-white/50 mb-4 leading-relaxed">
                 {T(lang,
                   '根據 GDPR 和 PIPEDA，您有權導出或刪除您的所有個人數據。',
                   'Under GDPR and PIPEDA, you have the right to export or delete all your personal data.'
@@ -1078,57 +1138,59 @@ export default function ProfilePage() {
                     window.open('/api/profile/export', '_blank')
                     toast.success(T(lang, '數據導出已開始', 'Data export started'))
                   }}
-                  className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 border border-gold/15 text-white/70"
+                  className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-colors hover:bg-white/5 border border-gold/20 text-white/80 font-serif"
                 >
-                  📥 {T(lang, '導出數據', 'Export Data')}
+                  {T(lang, '導出數據', 'Export Data')}
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-red-500/10"
-                  style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444' }}
+                  className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-colors hover:bg-red-500/10 border border-red-500/30 text-red-400 font-serif"
                 >
-                  🗑️ {T(lang, '刪除帳號', 'Delete Account')}
+                  {T(lang, '刪除帳號', 'Delete Account')}
                 </button>
               </div>
 
               {deleteEmailSent && (
-                <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: 'rgba(45,212,137,0.05)', border: '1px solid rgba(45,212,137,0.2)' }}>
-                  <p className="text-sm text-emerald-400">
-                    ✉️ {T(lang,
+                <div className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                  <p className="text-sm text-emerald-400 flex items-center gap-1.5">
+                    <CheckSealIcon size={16} className="text-emerald-400 flex-shrink-0" />
+                    <span>{T(lang,
                       '確認郵件已發送。請點擊郵件中的連結完成帳號刪除，24 小時內有效。',
                       'Confirmation email sent. Click the link to complete deletion. Valid for 24 hours.'
-                    )}
+                    )}</span>
                   </p>
                 </div>
               )}
 
               {showDeleteConfirm && (
-                <div className="mt-4 p-4 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                  <p className="text-sm mb-3" style={{ color: '#fca5a5' }}>
-                    ⚠️ {T(lang,
-                      '我們將發送確認郵件。請輸入密碼繼續。',
-                      'We will send a confirmation email. Enter your password to continue.'
-                    )}
+                <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                  <p className="text-sm mb-3 text-red-300 flex items-center gap-1.5">
+                    <AlertIcon size={16} className="text-red-400 flex-shrink-0" />
+                    <span>{hasPassword
+                      ? T(lang, '我們將發送確認郵件。請輸入密碼繼續。', 'We will send a confirmation email. Enter your password to continue.')
+                      : T(lang, '您使用的是第三方快捷登入，點擊確認將向您的郵箱發送確認郵件以完成帳號刪除。', 'You signed in via OAuth. Click confirm to send a deletion confirmation link to your email.')
+                    }</span>
                   </p>
                   <div className="flex gap-2">
-                    <input
-                      type="password"
-                      value={deletePassword}
-                      onChange={e => setDeletePassword(e.target.value)}
-                      placeholder={T(lang, '請輸入密碼', 'Enter password')}
-                      className="flex-1 px-3 py-2 rounded-lg text-sm text-white bg-navy-900/50 border border-gold/10 focus:outline-none focus:border-gold/30"
-                    />
+                    {hasPassword && (
+                      <input
+                        type="password"
+                        value={deletePassword}
+                        onChange={e => setDeletePassword(e.target.value)}
+                        placeholder={T(lang, '請輸入密碼', 'Enter password')}
+                        className="flex-1 px-3 py-2 min-h-[40px] rounded-lg text-sm text-white bg-navy-900/60 border border-gold/20 focus:outline-none focus:border-gold/40"
+                      />
+                    )}
                     <button
                       onClick={handleDeleteAccount}
-                      disabled={!deletePassword || deleteLoading}
-                      className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors"
-                      style={{ backgroundColor: '#dc2626' }}
+                      disabled={(hasPassword && !deletePassword) || deleteLoading}
+                      className="px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors bg-red-600 hover:bg-red-700 font-serif"
                     >
-                      {deleteLoading ? '...' : T(lang, '確認', 'Confirm')}
+                      {deleteLoading ? '...' : (hasPassword ? T(lang, '確認', 'Confirm') : T(lang, '發送確認郵件', 'Send Email'))}
                     </button>
                     <button
                       onClick={() => { setShowDeleteConfirm(false); setDeletePassword('') }}
-                      className="px-3 py-2 rounded-lg text-sm text-white/40 hover:text-white/60 transition-colors"
+                      className="px-3 py-2 min-h-[40px] rounded-lg text-sm text-white/60 hover:text-white transition-colors font-serif"
                     >
                       {T(lang, '取消', 'Cancel')}
                     </button>

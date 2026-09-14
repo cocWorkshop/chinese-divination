@@ -1,15 +1,28 @@
-# BaZi Gold Standard Interpretation — V2 Schema
+# BaZi Gold Standard Interpretation — V2 Schema & Evaluation Rubric
 
-> Chart: 1990-01-15, 午時, Male, 北京
-> Four Pillars: 己巳年 丁丑月 庚辰日 壬午時
-> Day Master: 庚金（陽）, 中和
-> hideHeavenStemDay: { stem: "辛", type: "中气" }
-> branchRelationships: { harms: [{ 丑-午, month-hour }] }
-> fetalOrigin: 戊辰, ownSign: 甲戌, bodySign: 壬申
+> **地位**：八字解盤黃金標竿範例與質檢規約 (Ground Truth Benchmark & Quality Rubric)  
+> **命盤參數**：公曆 1990-01-15 午時，男命，北京  
+> **四柱干支**：己巳年 丁丑月 庚辰日 壬午時  
+> **日主狀態**：庚金（陽金），中和偏旺，生於丑月寒冬  
+> **格局判定**：正官格（官印相生，丁火正官透月干、己土正印透年干）  
+> **對標 Schema**：`src/app/api/divination/schemas/bazi.schema.ts` (V2)
 
 ---
 
-## V2 Schema Output
+## 一、架構級質檢規約 (Gold Standard Evaluation Rubric)
+
+評估一次八字解盤是否達到「生產級標竿標準」，採用以下四維度打分矩陣（總分 100 分，≥90 分為標竿級，75~89 分為合格，<75 分為缺陷/重答）：
+
+| 評估維度 | 權重 | 核心考察指標 | 缺陷表現 (Red Flags) |
+|---|---|---|---|
+| **Dim 1: 術數嚴密性 (Metaphysical Rigor)** | 35% | 所有論斷必須引用命盤客觀證據（十神透藏、五行生剋、月令分野、調候用神、刑沖破害）。 | 空泛斷語（如「你命運不錯」卻未引出庚金生丑月或丁火透干）、五行喜忌計算錯誤。 |
+| **Dim 2: 時間維度精確性 (Temporal Specificity)** | 25% | 大運推演包含具體干支、起止歲數與年份；關鍵流年具體到年份（如 2027 乙巳年）且給出因果依據。 | 無流年節點、通篇泛指「中年以後」「未來某年」、流年與大運干支混淆。 |
+| **Dim 3: 現代語義轉譯 (Modern Relevance)** | 25% | 將古籍斷語（如官印相生、食神洩秀）轉譯為現代職業、親密關係與資產配置建議，具備心理賦能價值。 | 照抄生硬古文、恐嚇性語言（如「必遭大禍」）、過時的封建仕途說教。 |
+| **Dim 4: Schema 契約合規 (Contract Compliance)** | 15% | 100% 符合 V2 JSON Schema 字段約束，文字長度充足，無未閉合或殘缺欄位。 | 缺少 `sections` 子屬性、大運數組長度不足、JSON 解析失敗。 |
+
+---
+
+## 二、標竿輸出數據 (V2 Schema Output)
 
 ```json
 {
@@ -59,7 +72,7 @@
         { "year": 2017, "ganZhi": "乙卯", "event": "正財坐卯（財星強根），財運或婚戀突破" },
         { "year": 2021, "ganZhi": "辛亥", "event": "劫財+傷官，競爭壓力大，可能跳槽或調整方向" }
       ],
-      "advice": "事業積極佈局但避免衝動創業。辰戌沖年份（2018戊戌）特別注意婚姻關係。"
+      "advice": "事業積累期，避免盲目合夥或大額投機。辰戌沖年份注意感情穩定。"
     },
     {
       "stem": "癸", "branch": "酉",

@@ -1,69 +1,149 @@
-# 大运排盘参考文章
+# 大運排盤與交運時間算法工程規格書 (DaYun Algorithmic Specification)
 
-来源：豆瓣 https://www.douban.com/note/806546816/
+> **版本**：v2.0 (系統工程標準規範)  
+> **維護者**：術數算法與核心架構組  
+> **代碼對標**：[`src/lib/baziCalculator.ts`](file:///c:/Users/DaZWe/Developer/chinese-divination-dev/src/lib/baziCalculator.ts) 及 [`src/lib/__tests__/baziCrossValidation.test.ts`](file:///c:/Users/DaZWe/Developer/chinese-divination-dev/src/lib/__tests__/baziCrossValidation.test.ts)
 
-## 核心规则
+---
 
-### 什么是起运时间
-起运时间就是行大运时的岁数，人出生后几岁开始行大运，其计算方法是根据出生的年月日时至交节时间的长短而定的。
+## 一、算法理論基礎與天文曆法定義
 
-### 大运起运时间的计算方法
-以出生之日所在月令，按男女顺逆方法推算到下一个节或者上一个节，记下日数。然后按三天为一年，一天为四个月，一个时辰为十天来折算，加上出生时间就是起运的时间。
+大運是八字命理學中表徵個體生命週期運勢起伏的十進制時間序列（每步大運管十年）。其數學排布本質是**月柱干支依據性別與年干陰陽進行的順逆循環進位**，起運交運時間則取決於**出生時間點與節氣交界點之間的時間跨度折算**。
 
-### 起运只论十二节不论十二气
-阴年生女同阳年生男计算方法一致，阴年生男同阳年生女计算方法一致。
+### 1. 核心定序法則
+- **基準軸心**：以生辰八字中的**月柱 (Month Pillar)** 干支為基點向後或向前遞推；
+- **順逆判定矩陣**：
+  $$\text{Direction} = \begin{cases} 
+  \text{Forward (順行)}, & (\text{YearStem} \in \{\text{甲,丙,戊,庚,壬}\} \land \text{Gender} = \text{Male}) \lor (\text{YearStem} \in \{\text{乙,丁,己,辛,癸}\} \land \text{Gender} = \text{Female}) \\
+  \text{Backward (逆行)}, & (\text{YearStem} \in \{\text{乙,丁,己,辛,癸}\} \land \text{Gender} = \text{Male}) \lor (\text{YearStem} \in \{\text{甲,丙,戊,庚,壬}\} \land \text{Gender} = \text{Female})
+  \end{cases}$$
 
-### 十二节令
-立春、惊蛰、清明、立夏、芒种、小暑、立秋、白露、寒露、立冬、大雪、小寒
+### 2. 節氣交節標準（只論節，不論氣）
+起運計算嚴格僅以二十四節氣中的 **12 個「節令 (Jie)」** 為時間標尺，12 個「中氣 (Qi)」不參與起運邊界計算：
+- **十二節令標尺**：立春 (寅月)、驚蟄 (卯月)、清明 (辰月)、立夏 (巳月)、芒種 (午月)、小暑 (未月)、立秋 (申月)、白露 (酉月)、寒露 (戌月)、立冬 (亥月)、大雪 (子月)、小寒 (丑月)。
 
-## 详细方法
+---
 
-### 一、方法说明
-1. 大运的起排是以生辰八字中月柱的干支为基点。
-2. 大运起排的顺序：
-   - 阳年出生的男性、阴年出生的女性 → 大运顺行排列
-   - 阴年出生的男性、阳年出生的女性 → 大运逆行排列
-   - 阳年：年柱天干为甲、丙、戊、庚、壬
-   - 阴年：年柱天干为乙、丁、己、辛、癸
-3. 大运起始时间点的计算：
-   - 顺行：从出生之日时算起，到出生之后的下一个节令为止
-   - 逆行：从出生之日时算起，到出生之前的上一个节令为止
-   - 换算：三天=一岁，一天=四个月，一个时辰=十天
-4. 大运是每十年更替一次的。
+## 二、起運時間折算數學模型
 
-## 举例
+### 1. 時間跨度 $\Delta T$ 定義
+設出生時刻為 $T_{\text{birth}}$（精確至毫秒的真太陽時時間戳）：
+- **順行**：$\Delta T = T_{\text{next\_jie}} - T_{\text{birth}}$（從出生時刻計算至出生後的**下一個節令**時刻）；
+- **逆行**：$\Delta T = T_{\text{birth}} - T_{\text{prev\_jie}}$（從出生時刻倒推至出生前的**上一個節令**時刻）。
 
-### 例1：阳年男命顺排
-某男一九九四年正月十七日寅时生，一九九四年为甲戌年阳年男命顺排。
-从出生到惊蛰节为八天，合为两年零八个月。
-起运时间：一九九六年九月十七日。
+### 2. 傳統折算率常數表
+傳統命理依據「一年 360 天、一節一氣 30 天」的理想模型對應人壽三萬六千日，折算率如下：
 
-### 例2：阴年女命顺排
-某女生2013年7月13日16时17分出生。
-癸巳年 六月 初六日 申时 → 癸=阴年，女命 → 顺行
-月柱己未，大运依次为：庚申、辛酉、壬戌、癸亥、甲子、乙丑、丙寅……
+| 天文時間跨度 ($\Delta T$) | 對應大運起運時間 | 換算比例 |
+|---|---|---|
+| **3 天 (72 小時)** | **1 歲 (1 年)** | $1 \text{ 天} = 4 \text{ 個月}$ |
+| **1 天 (24 小時)** | **4 個月 (120 天)** | $1 \text{ 小時} = 5 \text{ 天}$ |
+| **1 時辰 (2 小時)** | **10 天** | $12 \text{ 分鐘} = 1 \text{ 天}$ |
+| **1 小時 (60 分鐘)** | **5 天** | $1 \text{ 分鐘} = 2 \text{ 小時}$ |
 
-节气：小暑:2013年7月7日6时35分，立秋:2013年8月7日16时20分。
-出生后下一个节令为"立秋"。
-相隔25天0小时3分。
-25天 = 8岁3个月（25÷3=8余1，1天=4个月）
-剩余3分：一个时辰按10天计大运，一小时按5天计大运，一分按2小时=1个时辰计大运。
-起大运时间：8岁4个月0天3个时辰。
-公历2021年11月13日亥时起运。
+### 3. 精確分解數學公式
+設時間差總分鐘數為 $M = \lfloor \Delta T / 60000 \rfloor$：
+$$\begin{aligned}
+\text{TotalDays} &= M / 1440 \\
+\text{StartAgeYears} &= \lfloor \text{TotalDays} / 3 \rfloor \\
+\text{RemainingDays} &= \text{TotalDays} \bmod 3 \\
+\text{StartMonths} &= \lfloor \text{RemainingDays} \times 4 \rfloor \\
+\text{RemainingHours} &= (\text{RemainingDays} \times 4 - \text{StartMonths}) \times 30 \times 24 / 120 \\
+\text{StartDays} &= \lfloor \text{RemainingHours} \times 5 \rfloor
+\end{aligned}$$
 
-大运排列：
-庚申(8岁/2021) → 辛酉(18/2031) → 壬戌(28/2041) → 癸亥(38/2051) → 甲子(48/2061) → 乙丑(58/2071) → 丙寅(68/2081) → 丁卯(78/2091)
+---
 
-### 例3：阴年男命逆排
-某男生于1989年(己巳年)三月初二寅时。
-己=阴年男命，需要逆推。
-从清明(二月二十九日寅时)到三月初二日寅时，正好两天。
-两天 = 八个月。
-起运时间：1989年十一月初二。
+## 三、工程演算法偽代碼 (Pseudocode)
 
-## 精确换算规则
-- 3天 = 1年（1岁）
-- 1天 = 4个月
-- 1时辰(2小时) = 10天
-- 1小时 = 5天
-- 1分钟 = 2小时 = 1个时辰
+```typescript
+interface DaYunStep {
+  stepIndex: number;      // 1 ~ 10
+  stem: string;           // 大運天干
+  branch: string;         // 大運地支
+  startAge: number;       // 起運虛歲 (實歲 = startAge - 1)
+  startYear: number;      // 起運公曆年份
+  endYear: number;        // 結束公曆年份
+}
+
+function calculateDaYun(
+  birthDate: Date, 
+  gender: 'male' | 'female', 
+  yearStem: string, 
+  monthStem: string, 
+  monthBranch: string
+): { startAge: number; steps: DaYunStep[] } {
+  // 1. 判定順逆
+  const isYangYear = ['甲','丙','戊','庚','壬'].includes(yearStem);
+  const isForward = (isYangYear && gender === 'male') || (!isYangYear && gender === 'female');
+
+  // 2. 獲取相鄰節令時刻 (高精度 VSOP87D / 天文演算法)
+  const prevJie = getPrevJieTermSolar(birthDate);
+  const nextJie = getNextJieTermSolar(birthDate);
+  
+  // 3. 計算時間跨度 (毫秒)
+  const deltaMs = isForward 
+    ? nextJie.getTime() - birthDate.getTime() 
+    : birthDate.getTime() - prevJie.getTime();
+
+  // 4. 精確折算為起運年歲
+  const totalDays = deltaMs / (1000 * 60 * 60 * 24);
+  const startAgeYears = Math.max(1, Math.round(totalDays / 3)); // 傳統四捨五入或截斷整年
+
+  // 5. 排定 10 步大運干支
+  const steps: DaYunStep[] = [];
+  let curStemIdx = HEAVENLY_STEMS.indexOf(monthStem);
+  let curBranchIdx = EARTHLY_BRANCHES.indexOf(monthBranch);
+
+  for (let i = 1; i <= 10; i++) {
+    if (isForward) {
+      curStemIdx = (curStemIdx + 1) % 10;
+      curBranchIdx = (curBranchIdx + 1) % 12;
+    } else {
+      curStemIdx = (curStemIdx - 1 + 10) % 10;
+      curBranchIdx = (curBranchIdx - 1 + 12) % 12;
+    }
+
+    const stepStartYear = birthDate.getFullYear() + startAgeYears + (i - 1) * 10;
+    steps.push({
+      stepIndex: i,
+      stem: HEAVENLY_STEMS[curStemIdx],
+      branch: EARTHLY_BRANCHES[curBranchIdx],
+      startAge: startAgeYears + (i - 1) * 10,
+      startYear: stepStartYear,
+      endYear: stepStartYear + 9
+    });
+  }
+
+  return { startAge: startAgeYears, steps };
+}
+```
+
+---
+
+## 四、邊界場景與極端情況處理規範
+
+### 1. 早子時與晚子時（夜子時）邊界
+- **定義**：23:00 ~ 24:00 為晚子時（夜子時），00:00 ~ 01:00 為早子時；
+- **日柱界定**：平台嚴格遵循主流標準——**23:00 即換日柱干支**；
+- **節氣交節時間差計算**：計算 $\Delta T$ 時，使用經過經緯度真太陽時校正後的物理精確時間戳，避免因跨日導致時間差出現 $\pm 24$ 小時的階躍誤差。
+
+### 2. 出生時刻與交節時刻重合（$\Delta T < 1\text{ 小時}$）
+- 當用戶出生在節令交接地點的數分鐘之內時，計算得出的起運時間可能趨近於 0 歲（出生即起運）；
+- **工程下限保證**：系統底層強制 `startAge = Math.max(1, calculatedAge)`，確保第一步大運起運年齡不小於 1 虛歲，防止大運卡片渲染年齡段重疊。
+
+### 3. 真太陽時校正對大運方向的極限翻轉
+- 某些案例公曆出生時間在立春交節前 5 分鐘，但經當地偏東經度校正後，真太陽時越過立春點；
+- **排盤規範**：以**校正後的真太陽時**為唯一判斷依據。若真太陽時跨過節令，則年柱更換、月柱更換，交節倒推點與下一個節令點亦隨之重置。
+
+---
+
+## 五、基準測試對標向量 (Test Vectors)
+
+以下基準案例被納入系統 CI 回歸測試套件（`src/lib/__tests__/baziCrossValidation.test.ts`）：
+
+| 測試用例 | 出生時間 (公曆) | 性別 | 判定結果 | 起運年齡 (虛歲) | 第一步大運 |
+|---|---|---|---|---|---|
+| **Case 1: 陽男順行** | 1994-02-26 04:15 (甲戌年丁卯月) | 男 | 順行 (至驚蟄) | 3 歲 | 戊辰 (1996起) |
+| **Case 2: 陰女順行** | 2013-07-13 16:17 (癸巳年己未月) | 女 | 順行 (至立秋) | 8 歲 | 庚申 (2021起) |
+| **Case 3: 陰男逆行** | 1989-04-07 04:00 (己巳年戊辰月) | 男 | 逆行 (至清明) | 1 歲 | 丁卯 (1989起) |

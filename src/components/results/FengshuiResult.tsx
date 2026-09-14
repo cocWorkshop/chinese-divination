@@ -7,9 +7,11 @@ import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import SectionDrawer from './SectionDrawer'
 import StreamingSection from './StreamingSection'
+import StreamingKeyAdvice from './StreamingKeyAdvice'
 import PersonInfoHeader from './PersonInfoHeader'
 import type { DivinationResultProps, FengshuiData } from '@/types/divination'
 import { T } from '@/lib/i18n'
+import { DivinationIcon, WealthIcon, HealthIcon, MarriageIcon, SparkleIcon } from '@/components/DivinationIcons'
 
 const energyColor: Record<string, string> = {
   '旺': 'bg-green-400', '平': 'bg-yellow-400', '衰': 'bg-orange-400', '煞': 'bg-red-500',
@@ -46,7 +48,7 @@ export default function FengshuiResult({ data, isShared, rawResult, readingId, c
 
       {/* ═══ ① CHART — flying star grid + compass + formations ═══ */}
       {fsChart && fsChart.palaces && fsChart.palaces.length > 0 ? (
-        <SectionDrawer icon="🏯" title={T(lang, '玄空飛星盤', 'Flying Star Chart')} align="center" size="lg">
+        <SectionDrawer icon={<DivinationIcon type="fengshui" className="w-5 h-5 text-gold" />} title={T(lang, '玄空飛星盤', 'Flying Star Chart')} align="center" size="lg">
           <div className="space-y-4">
             {/* Period + facing/sitting */}
             <div className="flex flex-wrap justify-center items-center gap-3 text-sm">
@@ -72,7 +74,7 @@ export default function FengshuiResult({ data, isShared, rawResult, readingId, c
                 if (!palace) return <div key={i} className="aspect-square" />
                 const isCenter = palace.position === 'Center'
                 return (
-                  <div key={i} className={`relative aspect-square rounded-lg border ${isCenter ? 'border-gold/50 bg-gold/10' : 'border-gold/20 bg-white/5'} p-1.5 flex flex-col`}>
+                  <div key={i} className={`relative aspect-square rounded-lg border ${isCenter ? 'border-gold/50 bg-gold/10' : 'border-gold/20 bg-[var(--accent-bg)]'} p-1.5 flex flex-col`}>
                     <div className="flex items-start justify-between text-[10px] sm:text-xs leading-none">
                       <span className={starColor(palace.mountainStar, fsChart.period)}>{palace.mountainStar}</span>
                       <span className={starColor(palace.waterStar, fsChart.period)}>{palace.waterStar}</span>
@@ -100,7 +102,7 @@ export default function FengshuiResult({ data, isShared, rawResult, readingId, c
         </SectionDrawer>
       ) : (
         /* Fallback: compass visual + LLM flying star summary */
-        <SectionDrawer icon="🏯" title={T(lang, '飛星盤', 'Flying Star Chart')} align="center" size="lg">
+        <SectionDrawer icon={<DivinationIcon type="fengshui" className="w-5 h-5 text-gold" />} title={T(lang, '飛星盤', 'Flying Star Chart')} align="center" size="lg">
           <div className="space-y-4">
             {/* Compass visual */}
             {(() => {
@@ -156,7 +158,7 @@ export default function FengshuiResult({ data, isShared, rawResult, readingId, c
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
             className={`px-1 sm:px-2 transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}>
             <h3 className="text-gold font-serif text-base mb-3 flex items-center gap-2">
-              <span aria-hidden>🏯</span>
+              <DivinationIcon type="fengshui" className="w-4 h-4 text-gold flex-shrink-0" />
               <span>{T(lang, '整體格局', 'Overall Layout')}</span>
             </h3>
             <div className="text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown break-words">
@@ -174,9 +176,9 @@ export default function FengshuiResult({ data, isShared, rawResult, readingId, c
 
       {/* ═══ ③ ANALYSIS SECTIONS — drawers ═══ */}
       <div className="space-y-2">
-        <StreamingSection icon="💰" title={T(lang, '財位分析', 'Wealth Position')} content={d.sections?.wealth} streaming={streaming} dotAnimName="dotPulseFS" />
-        <StreamingSection icon="🌿" title={T(lang, '健康能量', 'Health Energy')} content={d.sections?.health} streaming={streaming} dotAnimName="dotPulseFS" />
-        <StreamingSection icon="💕" title={T(lang, '人際感情', 'Relationships')} content={d.sections?.relationships} streaming={streaming} dotAnimName="dotPulseFS" />
+        <StreamingSection icon={<WealthIcon className="w-4 h-4 text-amber-400" />} title={T(lang, '財位分析', 'Wealth Position')} content={d.sections?.wealth} streaming={streaming} dotAnimName="dotPulseFS" />
+        <StreamingSection icon={<HealthIcon className="w-4 h-4 text-emerald-400" />} title={T(lang, '健康能量', 'Health Energy')} content={d.sections?.health} streaming={streaming} dotAnimName="dotPulseFS" />
+        <StreamingSection icon={<MarriageIcon className="w-4 h-4 text-rose-400" />} title={T(lang, '人際感情', 'Relationships')} content={d.sections?.relationships} streaming={streaming} dotAnimName="dotPulseFS" />
       </div>
       <style jsx global>{`
         @keyframes dotPulseFS {
@@ -186,10 +188,24 @@ export default function FengshuiResult({ data, isShared, rawResult, readingId, c
       `}</style>
 
       {/* ═══ ④ ROOMS + REMEDIES — drawers ═══ */}
-      {d.rooms && d.rooms.length > 0 && (
-        <SectionDrawer icon="🏠" title={T(lang, '各室能量', 'Room Energy')}>
-          <div className="space-y-3">
-            {d.rooms.map((room, i) => (
+      {((d.rooms && d.rooms.length > 0) || streaming) && (
+        <SectionDrawer
+          icon={<DivinationIcon type="fengshui" className="w-4 h-4 text-gold" />}
+          title={T(lang, '各室能量', 'Room Energy')}
+          trailing={streaming && (!d.rooms || d.rooms.length === 0) ? (
+            <span className="inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-gold/70 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-gold/70 animate-pulse [animation-delay:200ms]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-gold/70 animate-pulse [animation-delay:400ms]" />
+            </span>
+          ) : undefined}
+        >
+          <div className={`space-y-3 transition-all duration-700 ${streaming && (!d.rooms || d.rooms.length === 0) ? 'blur-[6px] opacity-60 select-none pointer-events-none' : ''}`}>
+            {(d.rooms && d.rooms.length > 0 ? d.rooms : [
+              { room: T(lang, '客廳', 'Living Room'), energy: '吉', suggestion: T(lang, '明堂聚氣，保持通風採光，宜置吉祥綠植以納旺氣。', 'Nurture light and airflow; place vibrant plants to welcome positive Qi.') },
+              { room: T(lang, '主臥', 'Master Bedroom'), energy: '吉', suggestion: T(lang, '安神納福之所，床頭靠實牆，忌鏡子直衝，溫和燈光為佳。', 'Restful sanctuary; keep headboard against solid wall away from harsh mirrors.') },
+              { room: T(lang, '書房/辦公', 'Study/Office'), energy: '次吉', suggestion: T(lang, '文昌吉位，書桌背有靠山，利專注思考與學業事業晉升。', 'Auspicious focus zone; position desk with solid support behind.') },
+            ]).map((room, i) => (
               <div key={i} className="flex gap-3 items-start">
                 <div className="flex items-center gap-2 w-20 flex-shrink-0">
                   <div className={`w-2.5 h-2.5 rounded-full ${energyColor[room.energy] || 'bg-gray-400'}`} />
@@ -202,12 +218,25 @@ export default function FengshuiResult({ data, isShared, rawResult, readingId, c
         </SectionDrawer>
       )}
 
-      {d.remedies && d.remedies.length > 0 && (
-        <SectionDrawer icon="⚡" title={T(lang, '化解方案', 'Remedies')}>
-          <div className="space-y-2">
-            {d.remedies.map((r, i) => (
-              <div key={i} className="flex gap-2 text-sm">
-                <span className="text-yellow-400 flex-shrink-0">⚡</span>
+      {((d.remedies && d.remedies.length > 0) || streaming) && (
+        <SectionDrawer
+          icon={<SparkleIcon className="w-4 h-4 text-gold" />}
+          title={T(lang, '化解方案', 'Remedies')}
+          trailing={streaming && (!d.remedies || d.remedies.length === 0) ? (
+            <span className="inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-gold/70 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-gold/70 animate-pulse [animation-delay:200ms]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-gold/70 animate-pulse [animation-delay:400ms]" />
+            </span>
+          ) : undefined}
+        >
+          <div className={`space-y-2 transition-all duration-700 ${streaming && (!d.remedies || d.remedies.length === 0) ? 'blur-[6px] opacity-60 select-none pointer-events-none' : ''}`}>
+            {(d.remedies && d.remedies.length > 0 ? d.remedies : [
+              { issue: T(lang, '氣場流通沖煞', 'Qi Circulation'), solution: T(lang, '增設隔斷或屏風阻隔，緩解直沖之氣', 'Introduce a screen or partition to gently disperse direct Qi currents') },
+              { issue: T(lang, '角落光線偏弱', 'Dim Corner Energy'), solution: T(lang, '增設暖色柔光地燈或五行水晶調和能量', 'Place a warm accent light or crystal to revitalize ambient energy') },
+            ]).map((r, i) => (
+              <div key={i} className="flex gap-2 text-sm items-start">
+                <SparkleIcon className="w-3.5 h-3.5 text-gold flex-shrink-0 mt-0.5" />
                 <span className="text-[var(--text-muted)]">{r.issue}{T(lang, '：', ': ')}</span>
                 <span className="text-[var(--text-secondary)]">{r.solution}</span>
               </div>
@@ -217,21 +246,16 @@ export default function FengshuiResult({ data, isShared, rawResult, readingId, c
       )}
 
       {/* ═══ ⑤ FOOTER — advice + QA ═══ */}
-      {d.keyAdvice && d.keyAdvice.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <h3 className="text-gold font-serif text-base mb-2">{T(lang, '核心建議', 'Key Advice')}</h3>
-          <div className="grid gap-2">
-            {d.keyAdvice.map((advice, i) => (
-              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">
-                <span className="w-5 h-5 rounded-full bg-gold/20 text-gold text-[10px] flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
-                <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{advice}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
+      <StreamingKeyAdvice
+        title={T(lang, '核心建議', 'Key Advice')}
+        icon={<SparkleIcon className="w-4 h-4 text-gold" />}
+        items={d.keyAdvice}
+        streaming={streaming}
+        delay={0.08}
+        variant="oriental"
+      />
 
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="fengshui" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />
+      {!streaming && <XuanjiChatCard readingResult={rawResult || ''} readingType="fengshui" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />}
     </div>
   )
 }

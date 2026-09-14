@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import type { UserGrowthProfile } from '@/lib/growth/types'
 import { publish } from '@/lib/events'
 import YinYangIcon from '@/components/YinYangIcon'
+import { DivinationIcon, AlertIcon } from '@/components/DivinationIcons'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
@@ -50,28 +51,6 @@ const typeLabels: Record<string, { 'zh-TW': string; en: string }> = {
   meihua: { 'zh-TW': '梅花易數', en: 'Mei Hua' },
   fengshui: { 'zh-TW': '風水佈局', en: 'Feng Shui' },
   other: { 'zh-TW': '其他', en: 'Others' },
-}
-
-const typeIcons: Record<string, string> = {
-  bazi: '🏛️',
-  ziwei: '⭐',
-  iching: '☯',
-  qimen: '🧭',
-  liuyao: '🪙',
-  meihua: '🌸',
-  fengshui: '🏯',
-  other: '📖',
-}
-
-const typeBorderColor: Record<string, string> = {
-  bazi: 'rgba(212,175,55,0.6)',
-  ziwei: 'rgba(147,112,219,0.6)',
-  iching: 'rgba(100,149,237,0.6)',
-  qimen: 'rgba(220,120,60,0.6)',
-  liuyao: 'rgba(100,149,237,0.6)',
-  meihua: 'rgba(236,130,180,0.6)',
-  fengshui: 'rgba(76,175,80,0.6)',
-  other: 'rgba(160,160,160,0.6)',
 }
 
 const shichenLabels: Record<string, { 'zh-TW': string; en: string }> = {
@@ -338,14 +317,14 @@ export default function DashboardPage() {
                 <button
                   key={key}
                   onClick={() => { setActiveTypeFilter(active ? null : key); setVisibleCount(15) }}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 font-serif"
                   style={{
                     background: active ? 'var(--gold)' : 'transparent',
                     color: active ? '#000' : 'var(--text-muted)',
                     border: `1px solid ${active ? 'var(--gold)' : 'var(--card-border)'}`,
                   }}
                 >
-                  <span>{typeIcons[key] ?? '📖'}</span>
+                  <DivinationIcon type={key} size={14} className={active ? 'text-navy-950' : 'text-gold'} />
                   <span>{lang === 'zh-TW' ? label['zh-TW'] : label.en}</span>
                   <span style={{ opacity: 0.6 }}>({count})</span>
                 </button>
@@ -384,8 +363,7 @@ export default function DashboardPage() {
               animate={{ opacity: isDeleting ? 0.5 : 1, y: 0 }}
               exit={{ opacity: 0, x: 40, scale: 0.95, transition: { duration: 0.25 } }}
               transition={{ delay: i * 0.05 }}
-              className="glass-card rounded-2xl overflow-hidden w-full min-w-0 relative scroll-mt-24"
-              style={{ borderLeft: `3px solid ${typeBorderColor[r.type] || typeBorderColor.other}` }}
+              className="oriental-sanctuary-card overflow-hidden w-full min-w-0 relative scroll-mt-24 border-l-2 border-l-gold/40"
             >
               {isDeleting && (
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-20 pointer-events-none">
@@ -397,24 +375,25 @@ export default function DashboardPage() {
               )}
               <button
                 type="button"
-                className={`w-full text-left p-5 cursor-pointer hover:bg-white/5 transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''} ${isDeleting ? 'pointer-events-none' : ''}`}
+                className={`w-full text-left p-5 cursor-pointer hover:bg-white/[0.03] transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''} ${isDeleting ? 'pointer-events-none' : ''}`}
                 onClick={() => router.push(`/reading/${r.id}`)}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="px-2 py-0.5 bg-gold/20 text-gold text-xs rounded-full mr-2 inline-flex items-center gap-1">
-                      <span>{typeIcons[r.type] ?? '📖'}</span>
-                      {typeLabels[r.type]?.[lang === 'en' ? 'en' : 'zh-TW'] || r.type}
+                    <span className="px-2.5 py-0.5 bg-gold/15 border border-gold/25 text-gold text-xs rounded-full mr-2 inline-flex items-center gap-1.5 font-serif">
+                      <DivinationIcon type={r.type} size={13} className="text-gold" />
+                      <span>{typeLabels[r.type]?.[lang === 'en' ? 'en' : 'zh-TW'] || r.type}</span>
                     </span>
                     {r.status === 'pending' && (
-                      <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-300 text-xs rounded-full mr-2 inline-flex items-center gap-1">
-                        <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
-                        {lang === 'en' ? 'Processing...' : '解讀中...'}
+                      <span className="px-2.5 py-0.5 bg-gold/15 border border-gold/30 text-gold text-xs rounded-full mr-2 inline-flex items-center gap-1.5 font-serif">
+                        <span className="text-gold/80 text-xs">✧</span>
+                        <span>{lang === 'en' ? 'Processing...' : '解讀中...'}</span>
                       </span>
                     )}
                     {r.status === 'failed' && (
-                      <span className="px-2 py-0.5 bg-red-500/20 text-red-300 text-xs rounded-full mr-2">
-                        {lang === 'en' ? 'Failed' : '解讀失敗'}
+                      <span className="px-2.5 py-0.5 bg-red-500/15 border border-red-500/30 text-red-300 text-xs rounded-full mr-2 inline-flex items-center gap-1 font-serif">
+                        <AlertIcon size={11} className="text-red-400" />
+                        <span>{lang === 'en' ? 'Failed' : '解讀失敗'}</span>
                       </span>
                     )}
                     {r.targetType === 'family' && r.familyMember && (
@@ -493,7 +472,7 @@ export default function DashboardPage() {
                         try {
                           const parsed = JSON.parse(r.result)
                           if (parsed.paipanOnly) {
-                            return lang === 'en' ? 'Paipan only (no AI interpretation)' : '只排盤（無AI解盤）'
+                            return lang === 'en' ? 'Chart calculation only (no AI reading)' : '只排盤（無AI解盤）'
                           }
                           const summary = parsed.sections?.overview
                             || parsed.sections?.overall       // fengshui uses 'overall' not 'overview'

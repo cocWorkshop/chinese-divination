@@ -14,6 +14,7 @@ import {
   canWebShare,
   triggerNativeShare,
 } from '@/lib/share/socialShare'
+import { CloseIcon, SparkleIcon, ScrollIcon } from '@/components/DivinationIcons'
 
 export interface FatePosterModalProps {
   isOpen: boolean
@@ -227,8 +228,8 @@ export default function FatePosterModal({
 
       // 6. Three Attribute Badges
       const pills = isZh
-        ? ['⭐ 吉曜照臨', '🌿 宜守正待時', '⚖️ 逢生化煞']
-        : ['⭐ Auspicious Timing', '🌿 Cultivate & Wait', '⚖️ Balance Restored']
+        ? ['吉曜照臨', '守正待時', '逢生化煞']
+        : ['Auspicious Timing', 'Cultivate & Wait', 'Balance Restored']
       const pillY = cursorY + (isStory ? 120 : 100)
       ctx.textAlign = 'center'
       const pillSpacing = width / 3
@@ -429,7 +430,7 @@ export default function FatePosterModal({
             className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors p-1 z-10"
             aria-label="Close"
           >
-            ✕
+            <CloseIcon size={18} />
           </button>
 
           {/* Header */}
@@ -441,14 +442,14 @@ export default function FatePosterModal({
           </h3>
 
           {/* Ratio & Mode Selector Bar */}
-          <div className="flex items-center justify-between gap-2 p-1 bg-navy-900/90 rounded-xl border border-gold/20 mb-3 text-xs">
+          <div className="flex items-center justify-between gap-2 p-1 bg-[var(--accent-bg)] rounded-xl border border-gold/20 mb-3 text-xs">
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setRatio('3:4')}
                 className={`px-3 py-1.5 rounded-lg transition-all font-medium cursor-pointer ${
                   ratio === '3:4'
                     ? 'bg-gold text-navy-950 shadow-sm'
-                    : 'text-white/60 hover:text-white'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <span>{isZh ? '3:4 經典卡片' : '3:4 Classic'}</span>
@@ -458,7 +459,7 @@ export default function FatePosterModal({
                 className={`px-3 py-1.5 rounded-lg transition-all font-medium cursor-pointer ${
                   ratio === '9:16'
                     ? 'bg-gold text-navy-950 shadow-sm'
-                    : 'text-white/60 hover:text-white'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <span>{isZh ? '9:16 沉浸快拍' : '9:16 Story'}</span>
@@ -469,7 +470,7 @@ export default function FatePosterModal({
               <button
                 onClick={() => setActiveTab('poster')}
                 className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'poster' ? 'bg-gold/20 text-gold' : 'text-white/40 hover:text-white/70'
+                  activeTab === 'poster' ? 'bg-gold/20 text-gold font-medium' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                 }`}
               >
                 {isZh ? '籤卡預覽' : 'Card'}
@@ -477,7 +478,7 @@ export default function FatePosterModal({
               <button
                 onClick={() => setActiveTab('platforms')}
                 className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'platforms' ? 'bg-gold/20 text-gold' : 'text-white/40 hover:text-white/70'
+                  activeTab === 'platforms' ? 'bg-gold/20 text-gold font-medium' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                 }`}
               >
                 {isZh ? '社交專區' : 'Platforms'}
@@ -486,7 +487,7 @@ export default function FatePosterModal({
           </div>
 
           {/* Sub-label explaining ratio fit */}
-          <p className="text-[11px] text-white/50 mb-3 text-left px-1">
+          <p className="text-[11px] text-[var(--text-muted)] mb-3 text-left px-1">
             {isZh ? POSTER_RATIOS[ratio].recommendedForZh : POSTER_RATIOS[ratio].recommendedForEn}
           </p>
 
@@ -514,27 +515,27 @@ export default function FatePosterModal({
                   )}
                 </div>
 
-                <p className="text-[11px] text-white/40 mt-2">
+                <p className="text-[11px] text-[var(--text-muted)] mt-2">
                   {isZh
-                    ? '💡 手機端可直接「長按上方籤卡」保存至系統相簿'
-                    : '💡 On mobile, long-press card to save directly to photos'}
+                    ? '手機端可直接「長按上方籤卡」保存至系統相簿'
+                    : 'On mobile, long-press card to save directly to photos'}
                 </p>
               </div>
             ) : (
               /* Social Platforms Quick Actions */
               <div className="flex flex-col gap-3 text-left">
                 {/* 1. Line Section */}
-                <div className="p-3 rounded-xl bg-navy-900/60 border border-emerald-500/25 flex flex-col gap-2">
+                <div className="p-3 rounded-xl bg-[var(--accent-bg)] border border-emerald-500/25 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-[#06C755] flex items-center justify-center text-white font-bold text-[10px]">
                         L
                       </span>
-                      <span className="text-xs font-medium text-white">Line</span>
+                      <span className="text-xs font-medium text-[var(--text-primary)]">Line</span>
                     </div>
                     <span className="text-[10px] text-emerald-400/80">{isZh ? '一鍵發送' : '1-Tap Share'}</span>
                   </div>
-                  <p className="text-[11px] text-white/50">
+                  <p className="text-[11px] text-[var(--text-muted)]">
                     {isZh ? '直接呼起 Line App，將命理籤文與連結分享給好友或群組' : 'Directly launch Line with prefilled fortune message'}
                   </p>
                   <div className="flex gap-2">
@@ -542,30 +543,30 @@ export default function FatePosterModal({
                       onClick={handleLineShare}
                       className="flex-1 py-1.5 px-3 rounded-lg bg-[#06C755] hover:bg-[#05b34c] text-white text-xs font-medium transition-all flex items-center justify-center gap-1 cursor-pointer"
                     >
-                      <span>💬 {isZh ? '開啟 Line 分享' : 'Share to Line'}</span>
+                      <span>{isZh ? '開啟 Line 分享' : 'Share to Line'}</span>
                     </button>
                     <button
                       onClick={() => handleCopyPlatformText('line', 'Line', 'Line')}
-                      className="py-1.5 px-3 rounded-lg border border-white/10 hover:border-gold/30 text-white/70 hover:text-white text-xs transition-all cursor-pointer"
+                      className="py-1.5 px-3 rounded-lg border border-gold/20 hover:border-gold/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs transition-all cursor-pointer inline-flex items-center justify-center"
                       title={isZh ? '複製 Line 專屬文案' : 'Copy Line Text'}
                     >
-                      📋
+                      <ScrollIcon size={14} />
                     </button>
                   </div>
                 </div>
 
                 {/* 2. WeChat Section */}
-                <div className="p-3 rounded-xl bg-navy-900/60 border border-green-500/25 flex flex-col gap-2">
+                <div className="p-3 rounded-xl bg-[var(--accent-bg)] border border-green-500/25 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-[#07C160] flex items-center justify-center text-white font-bold text-[10px]">
                         微
                       </span>
-                      <span className="text-xs font-medium text-white">{isZh ? '微信 (聊天 / 朋友圈)' : 'WeChat'}</span>
+                      <span className="text-xs font-medium text-[var(--text-primary)]">{isZh ? '微信 (聊天 / 朋友圈)' : 'WeChat'}</span>
                     </div>
                     <span className="text-[10px] text-green-400/80">{isZh ? '推薦 3:4' : '3:4 Recommended'}</span>
                   </div>
-                  <p className="text-[11px] text-white/50">
+                  <p className="text-[11px] text-[var(--text-muted)]">
                     {isZh ? '微信朋友圈推薦保存 3:4 高清海報配搭文案發布' : 'Save 3:4 poster & copy poetic caption for Moments'}
                   </p>
                   <div className="grid grid-cols-2 gap-2">
@@ -574,31 +575,31 @@ export default function FatePosterModal({
                         setRatio('3:4')
                         handleDownload()
                       }}
-                      className="py-1.5 px-2.5 rounded-lg bg-green-600/20 border border-green-500/30 hover:bg-green-600/30 text-green-200 text-xs font-medium transition-all text-center cursor-pointer"
+                      className="py-1.5 px-2.5 rounded-lg bg-green-600/20 border border-green-500/30 hover:bg-green-600/30 text-green-600 dark:text-green-200 text-xs font-medium transition-all text-center cursor-pointer"
                     >
-                      📸 {isZh ? '保存朋友圈海報' : 'Save Moments Card'}
+                      {isZh ? '保存朋友圈海報' : 'Save Moments Card'}
                     </button>
                     <button
                       onClick={() => handleCopyPlatformText('wechat_moments', '朋友圈', 'Moments')}
-                      className="py-1.5 px-2.5 rounded-lg border border-white/10 hover:border-gold/30 text-white/70 hover:text-white text-xs transition-all text-center cursor-pointer"
+                      className="py-1.5 px-2.5 rounded-lg border border-gold/20 hover:border-gold/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs transition-all text-center cursor-pointer"
                     >
-                      ✍️ {isZh ? '複製朋友圈文案' : 'Copy Moments Copy'}
+                      {isZh ? '複製朋友圈文案' : 'Copy Moments Copy'}
                     </button>
                   </div>
                 </div>
 
                 {/* 3. Instagram Section */}
-                <div className="p-3 rounded-xl bg-navy-900/60 border border-pink-500/25 flex flex-col gap-2">
+                <div className="p-3 rounded-xl bg-[var(--accent-bg)] border border-pink-500/25 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center text-white font-bold text-[10px]">
                         IG
                       </span>
-                      <span className="text-xs font-medium text-white">Instagram</span>
+                      <span className="text-xs font-medium text-[var(--text-primary)]">Instagram</span>
                     </div>
                     <span className="text-[10px] text-pink-400/80">{isZh ? '推薦 9:16 快拍' : '9:16 Stories'}</span>
                   </div>
-                  <p className="text-[11px] text-white/50">
+                  <p className="text-[11px] text-[var(--text-muted)]">
                     {isZh ? '適配 9:16 沉浸長圖，可直接分享至 IG Stories 或貼文' : 'Optimized 9:16 vertical format for Stories & Reels'}
                   </p>
                   <div className="grid grid-cols-2 gap-2">
@@ -607,31 +608,31 @@ export default function FatePosterModal({
                         setRatio('9:16')
                         handleDownload()
                       }}
-                      className="py-1.5 px-2.5 rounded-lg bg-pink-600/20 border border-pink-500/30 hover:bg-pink-600/30 text-pink-200 text-xs font-medium transition-all text-center cursor-pointer"
+                      className="py-1.5 px-2.5 rounded-lg bg-pink-600/20 border border-pink-500/30 hover:bg-pink-600/30 text-pink-600 dark:text-pink-200 text-xs font-medium transition-all text-center cursor-pointer"
                     >
-                      🔮 {isZh ? '保存快拍 (9:16)' : 'Save Story (9:16)'}
+                      {isZh ? '保存快拍 (9:16)' : 'Save Story (9:16)'}
                     </button>
                     <button
                       onClick={() => handleCopyPlatformText('instagram', 'Instagram', 'Instagram')}
-                      className="py-1.5 px-2.5 rounded-lg border border-white/10 hover:border-gold/30 text-white/70 hover:text-white text-xs transition-all text-center cursor-pointer"
+                      className="py-1.5 px-2.5 rounded-lg border border-gold/20 hover:border-gold/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs transition-all text-center cursor-pointer"
                     >
-                      🏷️ {isZh ? '複製 IG 標籤文案' : 'Copy IG Tags'}
+                      {isZh ? '複製 IG 標籤文案' : 'Copy IG Tags'}
                     </button>
                   </div>
                 </div>
 
                 {/* 4. TikTok Section */}
-                <div className="p-3 rounded-xl bg-navy-900/60 border border-sky-500/25 flex flex-col gap-2">
+                <div className="p-3 rounded-xl bg-[var(--accent-bg)] border border-sky-500/25 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-black border border-white/20 flex items-center justify-center text-white font-bold text-[10px]">
                         TT
                       </span>
-                      <span className="text-xs font-medium text-white">{isZh ? 'TikTok / 抖音' : 'TikTok'}</span>
+                      <span className="text-xs font-medium text-[var(--text-primary)]">{isZh ? 'TikTok / 抖音' : 'TikTok'}</span>
                     </div>
                     <span className="text-[10px] text-sky-400/80">{isZh ? '圖文模式' : 'Photo Mode'}</span>
                   </div>
-                  <p className="text-[11px] text-white/50">
+                  <p className="text-[11px] text-[var(--text-muted)]">
                     {isZh ? '適用於 TikTok 圖文模式及短影音封面' : 'Suitable for TikTok Photo Mode and short video covers'}
                   </p>
                   <div className="grid grid-cols-2 gap-2">
@@ -640,13 +641,13 @@ export default function FatePosterModal({
                         setRatio('9:16')
                         handleDownload()
                       }}
-                      className="py-1.5 px-2.5 rounded-lg bg-sky-600/20 border border-sky-500/30 hover:bg-sky-600/30 text-sky-200 text-xs font-medium transition-all text-center cursor-pointer"
+                      className="py-1.5 px-2.5 rounded-lg bg-sky-600/20 border border-sky-500/30 hover:bg-sky-600/30 text-sky-600 dark:text-sky-200 text-xs font-medium transition-all text-center cursor-pointer"
                     >
-                      🎵 {isZh ? '保存圖文 (9:16)' : 'Save Photo (9:16)'}
+                      {isZh ? '保存圖文 (9:16)' : 'Save Photo (9:16)'}
                     </button>
                     <button
                       onClick={() => handleCopyPlatformText('tiktok', 'TikTok', 'TikTok')}
-                      className="py-1.5 px-2.5 rounded-lg border border-white/10 hover:border-gold/30 text-white/70 hover:text-white text-xs transition-all text-center cursor-pointer"
+                      className="py-1.5 px-2.5 rounded-lg border border-gold/20 hover:border-gold/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs transition-all text-center cursor-pointer"
                     >
                       # {isZh ? '複製熱門標籤' : 'Copy Trending Tags'}
                     </button>
@@ -670,8 +671,8 @@ export default function FatePosterModal({
                       ? '繪製中...'
                       : 'Rendering...'
                     : isZh
-                    ? `💾 下載 ${POSTER_RATIOS[ratio].nameZh}`
-                    : `💾 Download ${POSTER_RATIOS[ratio].nameEn}`}
+                    ? `下載 ${POSTER_RATIOS[ratio].nameZh}`
+                    : `Download ${POSTER_RATIOS[ratio].nameEn}`}
                 </span>
               </button>
 
@@ -679,10 +680,10 @@ export default function FatePosterModal({
                 <button
                   onClick={handleNativeShare}
                   disabled={sharing}
-                  className="py-2.5 px-3.5 rounded-xl bg-gold/15 border border-gold/30 hover:bg-gold/25 text-gold text-xs font-medium transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                  className="py-2.5 px-3.5 rounded-xl bg-gold/15 border border-gold/30 hover:bg-gold/25 text-gold text-xs font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                   title={isZh ? '調用手機系統分享面板' : 'Trigger system share sheet'}
                 >
-                  <span>📲</span>
+                  <SparkleIcon size={14} className="text-gold" />
                   <span className="hidden sm:inline">{isZh ? '系統分享' : 'Share'}</span>
                 </button>
               )}
@@ -690,9 +691,9 @@ export default function FatePosterModal({
 
             <button
               onClick={handleCopyLink}
-              className="w-full py-2 px-3 rounded-xl border border-white/10 hover:border-gold/30 text-white/70 hover:text-white transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full py-2 px-3 rounded-xl border border-gold/20 hover:border-gold/40 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>🔗</span>
+              <ScrollIcon size={14} className="text-gold" />
               <span>{isZh ? '複製專屬命理分享連結' : 'Copy Public Share Link'}</span>
             </button>
           </div>

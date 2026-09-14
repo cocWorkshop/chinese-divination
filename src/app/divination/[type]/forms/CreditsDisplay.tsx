@@ -1,5 +1,6 @@
 'use client'
 
+import { SparkleIcon } from '@/components/DivinationIcons'
 import { useDivination } from '../DivinationContext'
 import { T } from '../constants'
 
@@ -14,10 +15,11 @@ export default function CreditsDisplay() {
   if (!credits) return null
 
   return (
-    <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50">
+    <div className="oriental-sanctuary-card rounded-xl p-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">
-          {T(lang, '✨ 機緣', '✨ Karma')}
+        <span className="text-gold-light/90 text-xs font-serif font-medium tracking-wide flex items-center gap-1.5">
+          <SparkleIcon className="w-3.5 h-3.5 text-gold" />
+          <span>{T(lang, '機緣餘額', 'Karma Balance')}</span>
         </span>
         <span className="text-gold font-mono font-bold">
           {credits.credits === 999 ? '∞' : (credits.credits ?? 0)}

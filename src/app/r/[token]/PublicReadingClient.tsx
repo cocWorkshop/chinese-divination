@@ -7,6 +7,9 @@ import Link from 'next/link'
 import ResultRenderer from '@/components/results/ResultRenderer'
 import MysticalLoader from '@/components/MysticalLoader'
 import { catchAndReport } from '@/lib/errorReporter'
+import { useTheme } from '@/components/ThemeProvider'
+import { DivinationIcon, SunMoonIcon } from '@/components/DivinationIcons'
+import FullPageFlameEffect from '@/components/reading/FullPageFlameEffect'
 
 const typeLabels: Record<string, { zh: string; en: string }> = {
   bazi: { zh: '八字命理', en: 'BaZi Analysis' },
@@ -48,6 +51,7 @@ export default function PublicReadingClient({ token: initialToken }: { token?: s
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [shareBonus, setShareBonus] = useState<{divination: number, chat: number, shareBonus?: number, registerBonus?: number} | null>(null)
+  const { theme, toggleTheme } = useTheme()
 
   // Hide navbar, chat widget, and remove top padding for public page
   useEffect(() => {
@@ -97,10 +101,10 @@ export default function PublicReadingClient({ token: initialToken }: { token?: s
   if (notFound || !data) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="glass-card rounded-2xl p-5 sm:p-8 text-center max-w-md">
-          <div className="text-4xl mb-4">🔮</div>
+        <div className="oriental-sanctuary-card rounded-2xl p-5 sm:p-8 text-center max-w-md">
+          <div className="flex justify-center mb-4"><DivinationIcon type="bazi" size={40} /></div>
           <h1 className="text-xl font-serif text-gold mb-2">找不到此預測結果</h1>
-          <p className="text-white/50 text-sm mb-6">Reading not found or has been removed</p>
+          <p className="text-[var(--text-muted)] text-sm mb-6">Reading not found or has been removed</p>
           <Link href="/" className="px-6 py-2 bg-gold text-navy-950 rounded-lg font-medium hover:bg-gold-light transition-colors">
             前往玄機 / Visit Xuanji
           </Link>
@@ -117,51 +121,75 @@ export default function PublicReadingClient({ token: initialToken }: { token?: s
 
   return (
     <div className="flex-1 py-6 sm:py-8 px-3 sm:px-4">
+      <FullPageFlameEffect lang={lang} />
       <div className="max-w-3xl mx-auto">
+        {/* Top Control Bar (Issue #146 Theme Switching) */}
+        <div className="flex items-center justify-between py-2 px-1 mb-4">
+          <Link href="/" className="flex items-center gap-2 text-gold hover:opacity-80 transition-opacity">
+            <YinYangIcon size={22} />
+            <span className="font-serif font-bold text-base tracking-wider">玄機 · Xuanji</span>
+          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 px-2.5 rounded-lg border border-gold/30 bg-gold/10 text-gold hover:bg-gold/20 transition-colors flex items-center gap-1.5 text-xs font-medium"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              <SunMoonIcon size={14} isDark={theme === 'dark'} />
+              <span>{theme === 'dark' ? (lang === 'en' ? 'Light' : '明亮') : (lang === 'en' ? 'Dark' : '幽暗')}</span>
+            </button>
+            <Link
+              href="/divination"
+              className="px-3 py-1.5 text-xs rounded-lg bg-gold text-navy-950 font-medium hover:bg-gold-light transition-colors"
+            >
+              {lang === 'en' ? 'Try Free' : '免費體驗'}
+            </Link>
+          </div>
+        </div>
+
         {/* Header */}
-        <div className="glass-card rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 text-center relative overflow-hidden">
-          <div className="absolute inset-0 rounded-2xl border border-gold/20 pointer-events-none" />
-          <div className="mb-2"><YinYangIcon size={30} /></div>
+        <div className="oriental-sanctuary-card rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 text-center relative overflow-hidden">
+          <div className="mb-2"><DivinationIcon type={data.type} size={36} /></div>
           <h1 className="text-2xl font-serif text-gold mb-1">
             {typeLabel ? (lang === 'en' ? typeLabel.en : typeLabel.zh) : data.type}
           </h1>
           {data.question && (
-            <p className="text-white/50 text-sm mt-2">❓ {data.question}</p>
+            <p className="text-[var(--text-secondary)] text-sm mt-2">{data.question}</p>
           )}
-          <div className="flex flex-wrap justify-center gap-3 mt-3 text-xs text-white/30">
-            <span>🕐 {new Date(data.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')}</span>
-            {data.subjectName && <span>👤 {data.subjectName}</span>}
+          <div className="flex flex-wrap justify-center gap-4 mt-3 text-xs text-[var(--text-muted)] font-serif">
+            <span>{lang === 'en' ? 'Date: ' : '推演時間：'}{new Date(data.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')}</span>
+            {data.subjectName && <span>{lang === 'en' ? 'Querent: ' : '命主：'}{data.subjectName}</span>}
           </div>
           {data.birthInfo && (data.type === 'bazi' || data.type === 'ziwei' || data.type === 'qimen' || data.type === 'other') && (
-            <div className="flex flex-wrap justify-center gap-3 mt-2 text-xs text-white/40">
+            <div className="flex flex-wrap justify-center gap-4 mt-2 text-xs text-[var(--text-secondary)] border-t border-gold/10 pt-2">
               {data.birthInfo.birthDate && (
-                <span>📅 {data.birthInfo.birthDate}{data.birthInfo.calendarType === 'lunar' ? ' (農曆)' : ''}</span>
+                <span>{lang === 'en' ? 'Birth: ' : '生辰：'}{data.birthInfo.birthDate}{data.birthInfo.calendarType === 'lunar' ? ' (農曆)' : ''}</span>
               )}
               {data.birthInfo.birthTime && (
-                <span>🕐 {timeLabels[data.birthInfo.birthTime] || data.birthInfo.birthTime}</span>
+                <span>{lang === 'en' ? 'Hour: ' : '時辰：'}{timeLabels[data.birthInfo.birthTime] || data.birthInfo.birthTime}</span>
               )}
               {data.birthInfo.gender && (
-                <span>{data.birthInfo.gender === 'male' ? '♂' : '♀'} {lang === 'en' ? genderLabels[data.birthInfo.gender]?.en : genderLabels[data.birthInfo.gender]?.zh}</span>
+                <span>{lang === 'en' ? 'Gender: ' : '乾坤：'}{lang === 'en' ? genderLabels[data.birthInfo.gender]?.en : genderLabels[data.birthInfo.gender]?.zh}</span>
               )}
             </div>
           )}
         </div>
 
         {/* Result */}
-        <div className="glass-card rounded-2xl p-4 sm:p-8 mb-6">
+        <div className="oriental-sanctuary-card rounded-2xl p-4 sm:p-8 mb-6">
           <ResultRenderer type={data.type} result={resultString} isShared chatMessages={data.chatMessages} />
         </div>
 
         {/* CTA */}
-        <div className="glass-card rounded-2xl p-4 sm:p-6 text-center">
-          <p className="text-white/60 text-sm mb-2">
+        <div className="oriental-sanctuary-card rounded-2xl p-4 sm:p-6 text-center">
+          <p className="text-[var(--text-secondary)] text-sm mb-2">
             {lang === 'en'
-              ? '✨ Want your own divination? Try Xuanji for free!'
-              : '✨ 想知道自己的命運？來玄機免費體驗！'}
+              ? 'Want your own divination? Try Xuanji for free!'
+              : '想知道自己的命運？來玄機免費體驗！'}
           </p>
           {shareBonus && (
             <p className="text-xs mb-4" style={{ color: 'var(--gold)' }}>
-              🎁 {lang === 'en'
+              {lang === 'en'
                 ? `Register now and get ${shareBonus.registerBonus || 6} Karma for free!`
                 : `新用戶註冊即獲得 ${shareBonus.registerBonus || 6} 點機緣！`}
             </p>
@@ -171,19 +199,19 @@ export default function PublicReadingClient({ token: initialToken }: { token?: s
               href="/register"
               className="px-6 py-2.5 bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light transition-colors"
             >
-              {lang === 'en' ? '🎁 Register Free' : '🎁 免費註冊'}
+              {lang === 'en' ? 'Register Free' : '免費註冊'}
             </Link>
             <Link
               href="/divination"
               className="px-6 py-2.5 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors"
             >
-              {lang === 'en' ? '🔮 Try Now' : '🔮 立即體驗'}
+              {lang === 'en' ? 'Try Now' : '立即體驗'}
             </Link>
           </div>
         </div>
 
         {/* Footer branding */}
-        <div className="text-center mt-6 text-white/20 text-xs">
+        <div className="text-center mt-6 text-[var(--text-muted)] text-xs">
           <Link href="/" className="hover:text-gold/50 transition-colors">
             玄機 · Xuanji — 古法智慧，現代傳承
           </Link>

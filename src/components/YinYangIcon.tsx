@@ -9,7 +9,7 @@ export default function YinYangIcon({ size = 24, className = '' }: { size?: numb
     // </svg>
 
       <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke="#d4a853" stroke-width="2"/>
+      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke="#d4a853" strokeWidth="2"/>
       <path d="M50 2a48 48 0 0 1 0 96a24 24 0 0 1 0-48a24 24 0 0 0 0-48z" fill="#d4a853"/>
       <circle cx="50" cy="26" r="8" fill="#0a0f1e"/>
       <circle cx="50" cy="26" r="4" fill="#d4a853"/>

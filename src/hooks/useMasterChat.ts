@@ -4,4 +4,5 @@
  * This file exists so legacy import paths keep working during migration.
  */
 
-export { useMasterChat } from '@/components/master/MasterChatContext'
+export { useMasterChat, useMasterChatActions } from '@/components/master/MasterChatContext'
+export type { MasterChatActionsValue } from '@/components/master/MasterChatContext'

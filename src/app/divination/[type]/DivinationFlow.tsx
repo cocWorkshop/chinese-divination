@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import YinYangIcon from '@/components/YinYangIcon'
+import BackButton from '@/components/BackButton'
+import { DivinationIcon } from '@/components/DivinationIcons'
 import { useDivination } from './DivinationContext'
 import { T } from './constants'
 import DivinationForm from './forms/DivinationForm'
@@ -40,8 +43,22 @@ export default function DivinationFlow() {
 
   // Stages 1 & 2 — form / generating share the narrower form layout.
   return (
-    <div className={`flex flex-col py-8 sm:py-12 px-3 sm:px-4 max-w-4xl mx-auto w-full ${loading ? '' : 'min-h-[calc(100vh-4rem)]'}`}>
+    <div className={`flex flex-col py-6 sm:py-10 px-3 sm:px-4 max-w-4xl mx-auto w-full ${loading ? '' : 'min-h-[calc(100vh-4rem)]'}`}>
       <CacheDialog />
+
+      {/* Top Navigation Bar with BackButton & Breadcrumbs */}
+      {!showGenerating && (
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <BackButton fallbackHref="/divination" label={T(lang, '返回大廳', 'Divinations')} variant="pill" />
+          <div className="flex items-center gap-1.5 text-xs text-white/50 font-serif">
+            <Link href="/divination" className="hover:text-gold transition-colors">
+              {T(lang, '占卜大廳', 'Divinations')}
+            </Link>
+            <span className="text-white/20">/</span>
+            <span className="text-gold/80">{lang === 'en' ? info.enName : info.twName}</span>
+          </div>
+        </div>
+      )}
 
       {/* Page header (type symbol + name). Hidden during the generating
           stage so it doesn't sit redundantly above the animated loader. */}
@@ -49,23 +66,20 @@ export default function DivinationFlow() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10"
+          className="text-center mb-8 sm:mb-10"
         >
-          <div className="text-5xl mb-3">{type === 'iching' ? <YinYangIcon size={48} /> : info.symbol}</div>
-          <h1 className="text-3xl font-serif text-gold">{lang === 'en' ? info.enName : info.twName}</h1>
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-2xl bg-navy-900/80 border border-gold/30 flex items-center justify-center shadow-lg shadow-gold/5 relative group">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-gold/10 to-transparent pointer-events-none" />
+              {type === 'iching' ? (
+                <YinYangIcon size={38} className="text-gold" />
+              ) : (
+                <DivinationIcon type={type} className="w-9 h-9 text-gold-light drop-shadow-md" />
+              )}
+            </div>
+          </div>
+          <h1 className="text-3xl font-serif text-gold tracking-wide">{lang === 'en' ? info.enName : info.twName}</h1>
         </motion.div>
-      )}
-
-      {/* Back link (form stage) */}
-      {!result && !loading && (
-        <button
-          type="button"
-          onClick={() => router.push('/divination')}
-          className="mb-4 text-sm transition-colors hover:text-gold flex items-center gap-1"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          ← {T(lang, '返回占卜列表', 'Back to Divination')}
-        </button>
       )}
 
       {/* Stage 1 — form */}

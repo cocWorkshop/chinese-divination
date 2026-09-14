@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import { T } from '@/lib/i18n'
 import type { UserGrowthProfile, RealmTierInfo, Achievement } from '@/lib/growth/types'
+import { DivinationIcon, MasterSageIcon, SparkleIcon, SunMoonIcon, CheckSealIcon } from '@/components/DivinationIcons'
 
 export default function GrowthTab() {
   const { lang } = useLang()
@@ -60,9 +61,8 @@ export default function GrowthTab() {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden text-center"
+        className="oriental-sanctuary-card rounded-2xl p-6 sm:p-8 relative overflow-hidden text-center border border-gold/35"
         style={{
-          border: '1px solid rgba(212, 168, 83, 0.35)',
           background: 'radial-gradient(ellipse at top, rgba(212,168,83,0.12) 0%, rgba(10,17,40,0.85) 70%)',
         }}
       >
@@ -139,8 +139,8 @@ export default function GrowthTab() {
 
       {/* ── 2. Experience Source Breakdown ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="glass-card rounded-xl p-4 text-center border border-gold/15 hover:border-gold/30 transition-colors">
-          <span className="text-2xl mb-1 block">🔮</span>
+        <div className="oriental-sanctuary-card rounded-xl p-4 text-center border border-gold/20 hover:border-gold/40 transition-colors">
+          <DivinationIcon type="iching" size={26} className="mx-auto mb-1.5 text-gold" />
           <div className="text-sm font-serif text-white/90">{T(lang, '占卜解卦', 'Divinations')}</div>
           <div className="text-xs text-white/50 mt-0.5">{profile.breakdown.divination.count} {T(lang, '次', 'times')}</div>
           <div className="text-gold text-sm font-semibold mt-1">
@@ -151,8 +151,8 @@ export default function GrowthTab() {
           </span>
         </div>
 
-        <div className="glass-card rounded-xl p-4 text-center border border-gold/15 hover:border-gold/30 transition-colors">
-          <span className="text-2xl mb-1 block">🧙</span>
+        <div className="oriental-sanctuary-card rounded-xl p-4 text-center border border-gold/20 hover:border-gold/40 transition-colors">
+          <MasterSageIcon size={26} className="mx-auto mb-1.5 text-gold" />
           <div className="text-sm font-serif text-white/90">{T(lang, '大師請益', 'Master Consults')}</div>
           <div className="text-xs text-white/50 mt-0.5">{profile.breakdown.master.count} {T(lang, '輪', 'turns')}</div>
           <div className="text-gold text-sm font-semibold mt-1">
@@ -163,8 +163,8 @@ export default function GrowthTab() {
           </span>
         </div>
 
-        <div className="glass-card rounded-xl p-4 text-center border border-gold/15 hover:border-gold/30 transition-colors">
-          <span className="text-2xl mb-1 block">💬</span>
+        <div className="oriental-sanctuary-card rounded-xl p-4 text-center border border-gold/20 hover:border-gold/40 transition-colors">
+          <SunMoonIcon size={26} className="mx-auto mb-1.5 text-gold" />
           <div className="text-sm font-serif text-white/90">{T(lang, '卦意深究', 'Deep Q&A')}</div>
           <div className="text-xs text-white/50 mt-0.5">{profile.breakdown.chat.count} {T(lang, '次', 'rounds')}</div>
           <div className="text-gold text-sm font-semibold mt-1">
@@ -178,30 +178,30 @@ export default function GrowthTab() {
 
       {/* ── 3. Master Xuanji Realm Greeting ── */}
       <div
-        className="glass-card rounded-2xl p-5 border border-gold/25 relative flex items-start gap-4"
-        style={{ background: 'linear-gradient(135deg, rgba(212,168,83,0.06), rgba(10,17,40,0.6))' }}
+        className="oriental-sanctuary-card rounded-2xl p-5 border border-gold/30 relative flex items-start gap-4"
+        style={{ background: 'linear-gradient(135deg, rgba(212,168,83,0.08), rgba(10,17,40,0.7))' }}
       >
-        <div className="w-12 h-12 rounded-full flex-shrink-0 bg-gold/15 border border-gold/30 flex items-center justify-center text-2xl">
-          🧙‍♂️
+        <div className="w-12 h-12 rounded-full flex-shrink-0 bg-gold/15 border border-gold/30 flex items-center justify-center text-gold">
+          <MasterSageIcon size={24} />
         </div>
         <div className="flex-1">
           <div className="text-xs font-serif text-gold tracking-wide">
             {T(lang, '玄機大師 · 應修為寄語', 'Master Xuanji · Realm Reflection')}
           </div>
-          <p className="text-sm text-white/80 mt-1 font-serif leading-relaxed italic">
+          <p className="text-sm text-white/85 mt-1 font-serif leading-relaxed italic">
             「{profile.masterGreeting[langKey]}」
           </p>
         </div>
       </div>
 
       {/* ── 4. The Nine Metaphysical Realms Roadmap (易道九階) ── */}
-      <div className="glass-card rounded-2xl p-6 border border-gold/20">
+      <div className="oriental-sanctuary-card rounded-2xl p-6 border border-gold/25">
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-gold/15">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🎴</span>
+            <DivinationIcon type="iching" size={20} className="text-gold" />
             <h3 className="font-serif text-lg text-gold">{T(lang, '易道九階圖譜', 'Nine Realms of Metaphysics')}</h3>
           </div>
-          <span className="text-xs text-white/40">
+          <span className="text-xs text-white/40 font-serif">
             {T(lang, '點擊查看各階真義', 'Tap to view realm details')}
           </span>
         </div>
@@ -272,13 +272,13 @@ export default function GrowthTab() {
       </div>
 
       {/* ── 5. Metaphysical Achievements Wall (術數修為印記) ── */}
-      <div className="glass-card rounded-2xl p-6 border border-gold/20">
+      <div className="oriental-sanctuary-card rounded-2xl p-6 border border-gold/25">
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-gold/15">
           <div className="flex items-center gap-2">
-            <span className="text-xl">🏆</span>
+            <SparkleIcon size={20} className="text-gold" />
             <h3 className="font-serif text-lg text-gold">{T(lang, '術數修為印記', 'Achievements & Seals')}</h3>
           </div>
-          <span className="text-xs text-white/50">
+          <span className="text-xs text-white/50 font-serif">
             {profile.achievements.filter(a => a.unlocked).length} / {profile.achievements.length} {T(lang, '已點亮', 'Unlocked')}
           </span>
         </div>
@@ -309,11 +309,12 @@ export default function GrowthTab() {
                     {item.name[langKey]}
                   </h4>
                   {item.unlocked ? (
-                    <span className="text-[10px] text-gold font-bold px-1.5 py-0.5 rounded bg-gold/15 border border-gold/30">
-                      ✓ {T(lang, '已得', 'Unlocked')}
+                    <span className="text-[10px] text-gold font-bold px-1.5 py-0.5 rounded bg-gold/15 border border-gold/30 inline-flex items-center gap-1 font-serif">
+                      <CheckSealIcon size={12} color="#d4a853" />
+                      <span>{T(lang, '已得', 'Unlocked')}</span>
                     </span>
                   ) : (
-                    <span className="text-[10px] text-white/40">
+                    <span className="text-[10px] text-white/40 font-mono">
                       {item.currentVal} / {item.targetVal}
                     </span>
                   )}

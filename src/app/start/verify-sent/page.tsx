@@ -17,6 +17,7 @@ import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { MasterSageIcon, CheckSealIcon } from '@/components/DivinationIcons'
 
 function VerifySentContent() {
   const searchParams = useSearchParams()
@@ -25,7 +26,7 @@ function VerifySentContent() {
   const [resendError, setResendError] = useState<string | null>(null)
 
   const onResend = async () => {
-    if (resendState === 'sending') return
+    if (!email || resendState === 'sending') return
     setResendState('sending')
     setResendError(null)
     try {
@@ -35,15 +36,13 @@ function VerifySentContent() {
         body: JSON.stringify({ email }),
       })
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        setResendError(data.error || '重新發送失敗，請稍後再試')
-        setResendState('error')
-        return
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || '發送失敗，請稍後再試')
       }
       setResendState('sent')
-    } catch {
-      setResendError('連線失敗')
+    } catch (e) {
       setResendState('error')
+      setResendError(e instanceof Error ? e.message : '發送失敗')
     }
   }
 
@@ -53,24 +52,23 @@ function VerifySentContent() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md text-center glass-card rounded-2xl p-7 sm:p-9"
-        style={{ border: '1px solid var(--card-border)' }}
+        className="w-full max-w-md text-center oriental-sanctuary-card rounded-2xl p-7 sm:p-9 shadow-2xl"
       >
-        {/* Breathing scroll icon — gentle scale loop signals "waiting on you" */}
+        {/* Breathing sage icon — gentle scale loop signals "waiting on you" */}
         <div
-          className="text-5xl mb-4"
+          className="w-16 h-16 rounded-2xl bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4 text-gold shadow-lg shadow-gold/5"
           style={{ animation: 'xjScrollBreathe 3.6s ease-in-out infinite' }}
         >
-          📜
+          <MasterSageIcon className="w-8 h-8 text-gold" />
         </div>
-        <h2 className="font-serif text-xl sm:text-2xl mb-2" style={{ color: 'var(--gold)' }}>
+        <h2 className="font-serif text-xl sm:text-2xl mb-2 text-gold">
           已發出驗證信
         </h2>
         <p className="text-sm leading-relaxed mb-1" style={{ color: 'var(--text-secondary)' }}>
           您的帳號已建立，最後一步：請查收信箱。
         </p>
         {email && (
-          <p className="font-mono text-xs mt-3 mb-1 px-3 py-1.5 rounded inline-block" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--text-primary)' }}>
+          <p className="font-mono text-xs mt-3 mb-1 px-3 py-1.5 rounded inline-block bg-navy-900/60 border border-gold/20 text-gold-light/90">
             {email}
           </p>
         )}
@@ -79,7 +77,7 @@ function VerifySentContent() {
           <br />命盤與玄機大師對話皆已為您保留。
         </p>
 
-        <div className="my-6 h-px" style={{ background: 'var(--card-border)' }} />
+        <div className="my-6 h-px bg-gold/15" />
 
         {/* Resend block */}
         <div>
@@ -87,19 +85,16 @@ function VerifySentContent() {
             沒收到？檢查垃圾郵件，或：
           </p>
           {resendState === 'sent' ? (
-            <p className="text-sm" style={{ color: 'var(--gold)' }}>
-              ✓ 已重新發送
+            <p className="text-sm text-gold inline-flex items-center gap-1.5">
+              <CheckSealIcon className="w-4 h-4 text-gold" />
+              <span>已重新發送</span>
             </p>
           ) : (
             <button
               type="button"
               onClick={onResend}
               disabled={resendState === 'sending' || !email}
-              className="text-sm px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
-              style={{
-                color: 'var(--gold)',
-                border: '1px solid var(--border-gold)',
-              }}
+              className="text-sm px-4 py-2 min-h-[44px] rounded-lg transition-colors disabled:opacity-50 border border-gold/30 text-gold hover:bg-gold/10 inline-flex items-center justify-center"
             >
               {resendState === 'sending' ? '發送中…' : '重新發送驗證信'}
             </button>

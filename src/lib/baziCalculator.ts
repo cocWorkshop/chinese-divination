@@ -58,6 +58,20 @@ export interface QiYunInfo {
   daysDiff: number
 }
 
+export interface AdvancedPillar {
+  stem: string
+  branch: string
+  pillar: string
+  nayin: string
+}
+
+export interface LiuNianAnnualForecast {
+  focus: string
+  stemBranchInteraction: string
+  forecast: string
+  advice: string
+}
+
 export interface LiuNianPillar {
   stem: string
   branch: string
@@ -66,6 +80,18 @@ export interface LiuNianPillar {
   year: number
   tenGod: string
   isLucky: boolean | null
+  analysis?: LiuNianAnnualForecast
+}
+
+export const FREE_DAYUN_LIMIT = 3
+
+export function isDaYunUnlocked(
+  decadeIndex: number,
+  unlockedDecades: number[] = [],
+  freeLimit: number = FREE_DAYUN_LIMIT
+): boolean {
+  if (decadeIndex < freeLimit) return true
+  return unlockedDecades.includes(decadeIndex)
 }
 
 export interface BranchRelationships {
@@ -157,6 +183,9 @@ export interface BaziChart {
   fetalOrigin?: string
   ownSign?: string
   bodySign?: string
+  taiYuan?: AdvancedPillar
+  mingGong?: AdvancedPillar
+  shenGong?: AdvancedPillar
   /** Pillar-shaped data (干支/藏干/十神/长生/纳音) for 命宫/身宫/胎元, so they
    *  can render as extra columns alongside the four pillars. No per-pillar
    *  神煞/空亡 are computed for these (left empty). */
@@ -707,6 +736,15 @@ export function calculateBazi(
     // fallback: leave undefined
   }
 
+  // ─── Explicit 胎元 / 命宫 / 身宫 (Issue #131 / #134) ─────────────
+  const taiYuan = calculateTaiYuan(mStem, mBranch)
+  const mingGong = calculateMingGong(yStem, mBranch, hBranch)
+  const shenGong = calculateShenGong(yStem, mBranch, hBranch)
+
+  if (!fetalOrigin) fetalOrigin = taiYuan.pillar
+  if (!ownSign) ownSign = mingGong.pillar
+  if (!bodySign) bodySign = shenGong.pillar
+
   return {
     yearPillar,
     monthPillar,
@@ -732,11 +770,199 @@ export function calculateBazi(
     fetalOrigin,
     ownSign,
     bodySign,
+    taiYuan,
+    mingGong,
+    shenGong,
     ownSignPillar,
     bodySignPillar,
     fetalOriginPillar,
     jieLu,
     tenGodStrength,
+  }
+}
+
+// ─── 胎元 / 命宫 / 身宫 / 流年精析 Implementation ───────────────────────────
+
+const STEMS_ARRAY = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸']
+const BRANCHES_ARRAY = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥']
+
+const YIN_BASED_BRANCH_INDEX: Record<string, number> = {
+  '寅': 1, '卯': 2, '辰': 3, '巳': 4, '午': 5, '未': 6,
+  '申': 7, '酉': 8, '戌': 9, '亥': 10, '子': 11, '丑': 12,
+}
+const INDEX_TO_YIN_BRANCH: Record<number, string> = {
+  1: '寅', 2: '卯', 3: '辰', 4: '巳', 5: '午', 6: '未',
+  7: '申', 8: '酉', 9: '戌', 10: '亥', 11: '子', 12: '丑',
+}
+
+const ZI_BASED_HOUR_INDEX: Record<string, number> = {
+  '子': 1, '丑': 2, '寅': 3, '卯': 4, '辰': 5, '巳': 6,
+  '午': 7, '未': 8, '申': 9, '酉': 10, '戌': 11, '亥': 12,
+}
+
+const WU_HU_DUN_TIGER_STEM: Record<string, string> = {
+  '甲': '丙', '己': '丙',
+  '乙': '戊', '庚': '戊',
+  '丙': '庚', '辛': '庚',
+  '丁': '壬', '壬': '壬',
+  '戊': '甲', '癸': '甲',
+}
+
+/**
+ * 胎元（代表先天体质与祖上根基）:
+ * 月柱天干后加1位，地支后加3位。
+ */
+export function calculateTaiYuan(monthStem: string, monthBranch: string): AdvancedPillar {
+  const sIdx = STEMS_ARRAY.indexOf(monthStem)
+  const bIdx = BRANCHES_ARRAY.indexOf(monthBranch)
+  const newStem = STEMS_ARRAY[(sIdx >= 0 ? sIdx + 1 : 0) % 10]
+  const newBranch = BRANCHES_ARRAY[(bIdx >= 0 ? bIdx + 3 : 0) % 12]
+  const pillar = `${newStem}${newBranch}`
+  let nayin = ''
+  try {
+    nayin = SixtyCycle.fromName(pillar).getSound().getName()
+  } catch {
+    nayin = ''
+  }
+  return { stem: newStem, branch: newBranch, pillar, nayin }
+}
+
+/**
+ * 命宫（先天性格、核心本质与一生运势）:
+ * 寅=1..丑=12。地支位数 = 26 - (月支数 + 时支数)，大于12则减12。
+ * 天干依年柱天干五虎遁反推。
+ */
+export function calculateMingGong(yearStem: string, monthBranch: string, hourBranch: string): AdvancedPillar {
+  const mVal = YIN_BASED_BRANCH_INDEX[monthBranch] || 1
+  const hVal = YIN_BASED_BRANCH_INDEX[hourBranch] || 1
+  let branchNum = 26 - (mVal + hVal)
+  while (branchNum > 12) branchNum -= 12
+  while (branchNum <= 0) branchNum += 12
+
+  const branch = INDEX_TO_YIN_BRANCH[branchNum] || '寅'
+  const tigerStem = WU_HU_DUN_TIGER_STEM[yearStem] || '甲'
+  const tigerStemIdx = STEMS_ARRAY.indexOf(tigerStem)
+  const stem = STEMS_ARRAY[(tigerStemIdx + (branchNum - 1)) % 10]
+  const pillar = `${stem}${branch}`
+  let nayin = ''
+  try {
+    nayin = SixtyCycle.fromName(pillar).getSound().getName()
+  } catch {
+    nayin = ''
+  }
+  return { stem, branch, pillar, nayin }
+}
+
+/**
+ * 身宫（后天运势与财帛归宿）:
+ * 月柱地支(寅起) + 时柱地支(子起)，大于12则减12。天干依五虎遁推算。
+ */
+export function calculateShenGong(yearStem: string, monthBranch: string, hourBranch: string): AdvancedPillar {
+  const mVal = YIN_BASED_BRANCH_INDEX[monthBranch] || 1
+  const hVal = ZI_BASED_HOUR_INDEX[hourBranch] || 1
+  let branchNum = mVal + hVal
+  while (branchNum > 12) branchNum -= 12
+  while (branchNum <= 0) branchNum += 12
+
+  const branch = INDEX_TO_YIN_BRANCH[branchNum] || '寅'
+  const tigerStem = WU_HU_DUN_TIGER_STEM[yearStem] || '甲'
+  const tigerStemIdx = STEMS_ARRAY.indexOf(tigerStem)
+  const stem = STEMS_ARRAY[(tigerStemIdx + (branchNum - 1)) % 10]
+  const pillar = `${stem}${branch}`
+  let nayin = ''
+  try {
+    nayin = SixtyCycle.fromName(pillar).getSound().getName()
+  } catch {
+    nayin = ''
+  }
+  return { stem, branch, pillar, nayin }
+}
+
+/**
+ * 流年精批算法（Issue #134）：
+ * 结合日元、流年干支、大运干支与十神喜忌生成年度精准预测。
+ */
+export function generateLiuNianAnalysis(
+  dayStem: string,
+  liuNian: { year: number; age: number; stem: string; branch: string; nayin?: string; tenGod?: string; isLucky?: boolean | null },
+  daYun?: { stem: string; branch: string; startYear?: number; endYear?: number }
+): LiuNianAnnualForecast {
+  const stem = liuNian.stem
+  const branch = liuNian.branch
+  const god = liuNian.tenGod || '十神'
+  const isLucky = liuNian.isLucky
+
+  const branchClashes: Record<string, string> = {
+    '子': '午', '午': '子', '丑': '未', '未': '丑', '寅': '申', '申': '寅',
+    '卯': '酉', '酉': '卯', '辰': '戌', '戌': '辰', '巳': '亥', '亥': '巳',
+  }
+  const branchCombines: Record<string, string> = {
+    '子': '丑', '丑': '子', '寅': '亥', '亥': '寅', '卯': '戌', '戌': '卯',
+    '辰': '酉', '酉': '辰', '巳': '申', '申': '巳', '午': '未', '未': '午',
+  }
+
+  let stemBranchInteraction = ''
+  if (daYun && daYun.stem === stem && daYun.branch === branch) {
+    stemBranchInteraction = '岁运并临：流年与大运干支重叠，气象万千，宜清静守正，顺势而为。'
+  } else if (daYun && branchClashes[branch] === daYun.branch) {
+    stemBranchInteraction = `岁运逢冲（流年${branch}冲大运${daYun.branch}）：冲主变动与转折，动中求机，多有环境或职务之变。`
+  } else if (daYun && branchCombines[branch] === daYun.branch) {
+    stemBranchInteraction = `岁运相合（流年${branch}合大运${daYun.branch}）：合主聚和与贵人，人际融洽，谋事多得同道支持。`
+  } else {
+    stemBranchInteraction = `流年${stem}${branch}（${liuNian.nayin || ''}）临局，引动行运气场生克消长。`
+  }
+
+  let focus = ''
+  let forecast = ''
+  let advice = ''
+
+  if (god.includes('财')) {
+    focus = '求财营谋 · 投资开拓 · 谨防破耗'
+    forecast = isLucky === true
+      ? `岁入${god}吉位，财气通门户，正偏财源活络，有利于商业合作、薪酬晋升或投资斩获。`
+      : isLucky === false
+      ? `岁入${god}逢忌，容易因财务起贪心或决策冒进引发破耗，注意现金流周转与借贷风险。`
+      : `岁入${god}运势平稳，多劳多得，求财当取正道，循序渐进为宜。`
+    advice = '宜制定严谨预算，见好就收，避免高杠杆或盲目跟风投机。'
+  } else if (god.includes('官') || god.includes('杀')) {
+    focus = '事业晋升 · 权责担当 · 贵人提携'
+    forecast = isLucky === true
+      ? `岁逢${god}用神，权柄增强，职场上有承接重要项目、职务升迁或受权威人士赏识之机。`
+      : isLucky === false
+      ? `岁逢${god}忌神，职场压力倍增，易逢竞争对手掣肘或法规琐事缠绕，需谨言慎行。`
+      : `岁逢${god}主事业平稳，适合恪尽职守，积累专业公信力。`
+    advice = '克己奉公，处事遵规守纪，低调务实方能化解是非阻力。'
+  } else if (god.includes('印')) {
+    focus = '学业深造 · 名誉提升 · 身心滋养'
+    forecast = isLucky === true
+      ? `岁临${god}生身，文昌星明，利于考证、评优、置办房产或长辈贵人助力，身心安和。`
+      : isLucky === false
+      ? `岁临${god}过旺，易生依赖拖延之心，思想包袱过重或长辈健康需多加照应。`
+      : `岁临${god}安常守正，利于读书沉淀、研习新知与身心修整。`
+    advice = '多亲近正能量良师益友，保持行动力，切勿空想踌躇。'
+  } else if (god.includes('食') || god.includes('伤')) {
+    focus = '才华施展 · 灵感创意 · 破旧立新'
+    forecast = isLucky === true
+      ? `岁入${god}吐秀，才华与灵感喷涌，利于创作、拓展副业或打破陈规开展新业务。`
+      : isLucky === false
+      ? `岁入${god}忌位，心性浮躁，言语易得罪上司或惹官非口舌，需防锋芒太露。`
+      : `岁入${god}思维活跃，适合探索新领域与发展个人兴趣技能。`
+    advice = '戒骄戒躁，谨言慎行，以温和沟通化解人际分歧。'
+  } else {
+    focus = '同侪人脉 · 合伙协作 · 防范纷争'
+    forecast = isLucky === true
+      ? `岁逢${god}帮身，朋侪多助，利于合伙开拓新局面，在团队协作中凝聚更大力量。`
+      : isLucky === false
+      ? `岁逢${god}劫夺，易遇小人争功、财物分夺或亲友借贷纷争，合作需格外小心。`
+      : `岁逢${god}社交繁密，宜择善而交，保持君子之交淡如水。`
+    advice = '财务分明，亲兄弟明算账，合同文书务必严谨落笔。'
+  }
+
+  return {
+    focus,
+    stemBranchInteraction,
+    forecast,
+    advice,
   }
 }
 

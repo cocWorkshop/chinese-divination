@@ -35,37 +35,37 @@ const divinationQuotes = {
 // Hexagram-based divination types (use 卦象 instead of 命盤)
 const HEXAGRAM_TYPES = new Set(['iching', 'liuyao', 'qimen', 'fengshui', 'meihua', 'other'])
 
-// Progress stages with estimated time thresholds (seconds)
-function getProgressStages(lang: string, divinationType?: string) {
-  const isHexagram = HEXAGRAM_TYPES.has(divinationType || '')
-  if (lang === 'en') {
-    return [
-      { at: 0, label: isHexagram ? 'Casting hexagram...' : 'Calculating chart...', pct: 5 },
-      { at: 3, label: isHexagram ? 'Hexagram data ready' : 'Chart data ready', pct: 15 },
-      { at: 8, label: 'Connecting to oracle...', pct: 20 },
-      { at: 15, label: isHexagram ? 'Master is interpreting the hexagram...' : 'Master is studying your chart...', pct: 30 },
-      { at: 40, label: isHexagram ? 'Analyzing hexagram patterns...' : 'Analyzing destiny patterns...', pct: 50 },
-      { at: 70, label: 'Writing detailed analysis...', pct: 65 },
-      { at: 100, label: isHexagram ? 'Interpreting changing lines...' : 'Analyzing life phases...', pct: 80 },
-      { at: 140, label: 'Final review...', pct: 90 },
-      { at: 180, label: 'Almost done, please wait...', pct: 95 },
-    ]
+// Three Celestial Rite Stages (三階天地氣象儀軌)
+function getCelestialRiteStage(elapsed: number, isEn: boolean, isHexagram: boolean) {
+  if (elapsed < 12) {
+    return {
+      stage: 1,
+      title: isEn ? 'Ordering Heaven & Earth' : '乾坤定序',
+      desc: isEn
+        ? (isHexagram ? 'Casting hexagram and establishing host lines...' : 'Aligning the Four Pillars and cyclical stems...')
+        : (isHexagram ? '六爻定序，布列體用世應...' : '乾坤定序，排定四柱干支...'),
+    }
   }
-  return [
-    { at: 0, label: isHexagram ? '正在起卦排盤...' : '正在排盤計算...', pct: 5 },
-    { at: 3, label: isHexagram ? '卦象數據準備完成' : '命盤數據準備完成', pct: 15 },
-    { at: 8, label: '正在連接天機...', pct: 20 },
-    { at: 15, label: isHexagram ? '大師正在解讀卦象...' : '大師正在研讀命盤...', pct: 30 },
-    { at: 40, label: isHexagram ? '深入分析卦理變化...' : '深入分析命理格局...', pct: 50 },
-    { at: 70, label: '撰寫詳批報告中...', pct: 65 },
-    { at: 100, label: isHexagram ? '推算卦象應期...' : '精批大運流年...', pct: 80 },
-    { at: 140, label: '最終審閱中...', pct: 90 },
-    { at: 180, label: '即將完成，請稍候...', pct: 95 },
-  ]
+  if (elapsed < 45) {
+    return {
+      stage: 2,
+      title: isEn ? 'Stars & Spirits Converge' : '星曜入宮',
+      desc: isEn
+        ? (isHexagram ? 'Discerning changing lines and mutual resonance...' : 'Celestial stars enter palaces, gathering cosmic Qi...')
+        : (isHexagram ? '參詳變爻，感應動靜之機...' : '星曜入宮，吉凶神煞引聚...'),
+    }
+  }
+  return {
+    stage: 3,
+    title: isEn ? 'Mystic Revelation' : '天機凝聚',
+    desc: isEn
+      ? (isHexagram ? 'Heavenly mechanisms align, oracle taking shape...' : 'Heavenly mechanisms align, fate report unfolding...')
+      : (isHexagram ? '天機凝聚，詳批卦辭將現...' : '天機凝聚，詳批命書將現...'),
+  }
 }
 
 interface MysticalLoaderProps {
-  lang: string
+  lang?: string
   variant?: 'divination' | 'chat' | 'page'
   divinationType?: string
   startTime?: number  // Unix timestamp (ms) for elapsed timer — defaults to Date.now() on mount
@@ -75,9 +75,19 @@ interface MysticalLoaderProps {
    * surfaces where cancelling has no meaning (e.g. polling a pending reading).
    */
   onCancel?: () => void
+  size?: 'sm' | 'md' | 'lg'
+  message?: string
 }
 
-export default function MysticalLoader({ lang, variant = 'divination', divinationType, startTime, onCancel }: MysticalLoaderProps) {
+export default function MysticalLoader({
+  lang = 'zh-TW',
+  variant = 'divination',
+  divinationType,
+  startTime,
+  onCancel,
+  size = 'md',
+  message,
+}: MysticalLoaderProps) {
   const [quoteIndex, setQuoteIndex] = useState(0)
   const quotes = lang === 'en' ? divinationQuotes.en : divinationQuotes['zh-TW']
   const [elapsed, setElapsed] = useState(0)
@@ -88,9 +98,10 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
     playlistRef.current = getRandomPlaylist(divinationType)
   }
   const playlist = playlistRef.current
-  const hasTips = playlist && playlist.length > 0
+  const hasTips = Boolean(playlist && playlist.length > 0)
   const [tipIndex, setTipIndex] = useState(0)
 
+  // Tip rotation: 7 seconds per tip (same pace as divinationQuotes)
   useEffect(() => {
     if (hasTips) {
       const interval = setInterval(() => {
@@ -139,16 +150,17 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
   }
 
   if (variant === 'page') {
+    const iconSize = size === 'sm' ? 28 : size === 'md' ? 36 : 48
     return (
-      <div className="flex flex-col items-center justify-center py-12 gap-4" role="status">
+      <div className="flex flex-col items-center justify-center py-6 gap-3" role="status">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
         >
-          <YinYangIcon size={48} className="drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]" />
+          <YinYangIcon size={iconSize} className="drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]" />
         </motion.div>
-        <p className="text-gold/60 text-sm font-serif">
-          {lang === 'en' ? 'Loading...' : '載入中...'}
+        <p className="text-gold/70 text-sm font-serif">
+          {message || (lang === 'en' ? 'Loading...' : '載入中...')}
         </p>
       </div>
     )
@@ -273,74 +285,90 @@ export default function MysticalLoader({ lang, variant = 'divination', divinatio
         </motion.div>
       )}
 
-      {/* Progress bar */}
+      {/* Three Celestial Nodes (三階氣象儀軌) */}
       {(() => {
-        const stages = getProgressStages(lang, divinationType)
-        let current = [...stages].reverse().find(s => elapsed >= s.at) || stages[0]
-        if (elapsed >= 180) {
-          // Past 3 minutes the stage table is exhausted. Don't park the bar at
-          // a frozen 95% — creep asymptotically toward 99% across the 600s
-          // server ceiling, and switch to an elapsed-aware label that updates
-          // each minute so the user can see the page is alive.
-          const minutes = Math.floor(elapsed / 60)
-          const pct = Math.min(99, 95 + ((elapsed - 180) / 420) * 4)
-          current = {
-            at: 180,
-            pct,
-            label:
-              lang === 'en'
-                ? `Deep reasoning in progress (${minutes} min) — complex charts can take up to 10 minutes`
-                : `深度推理中（已 ${minutes} 分鐘）— 複雜命盤最長可能需要 10 分鐘`,
-          }
-        }
+        const isEn = lang === 'en'
+        const isHex = HEXAGRAM_TYPES.has(divinationType || '')
+        const current = getCelestialRiteStage(elapsed, isEn, isHex)
+        const stagesList = [
+          { num: 1, title: isEn ? 'Order' : '乾坤定序' },
+          { num: 2, title: isEn ? 'Converge' : '星曜入宮' },
+          { num: 3, title: isEn ? 'Reveal' : '天機凝聚' },
+        ]
         return (
           <motion.div
-            className="w-full max-w-xs mx-auto"
+            className="w-full max-w-sm mx-auto px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
           >
-            <div className="flex justify-between items-center mb-1.5">
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={current.label}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-xs font-serif"
-                  style={{ color: 'var(--gold)' }}
-                >
-                  {current.label}
-                </motion.span>
-              </AnimatePresence>
-              <span className="text-xs tabular-nums" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                {Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')}
-              </span>
-            </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(212,168,83,0.1)' }}>
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: 'linear-gradient(90deg, rgba(212,168,83,0.6), rgba(212,168,83,1))' }}
-                initial={{ width: '0%' }}
-                animate={{ width: `${current.pct}%` }}
-                transition={{ duration: 1.5, ease: 'easeOut' }}
+            {/* Connected Stage Nodes */}
+            <div className="flex items-center justify-between relative mb-2">
+              {/* Connecting hairline */}
+              <div
+                className="absolute top-1/2 left-6 right-6 -translate-y-1/2 h-[1px] -z-0 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(90deg, rgba(212,168,83,0.15) 0%, rgba(212,168,83,0.4) 50%, rgba(212,168,83,0.15) 100%)',
+                }}
               />
+              {stagesList.map((st) => {
+                const isActive = current.stage === st.num
+                const isPassed = current.stage > st.num
+                return (
+                  <div key={st.num} className="relative z-10 flex flex-col items-center gap-1.5">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-serif transition-all duration-500 ${
+                        isActive
+                          ? 'border border-gold bg-gold/25 text-gold-light shadow-[0_0_12px_rgba(212,168,83,0.4)] scale-110'
+                          : isPassed
+                          ? 'border border-gold/40 bg-gold/10 text-gold/80'
+                          : 'border border-gold/15 bg-navy-900/60 text-white/30'
+                      }`}
+                    >
+                      {isActive ? '✧' : isPassed ? '✓' : st.num}
+                    </div>
+                    <span
+                      className={`text-[11px] font-serif transition-colors duration-300 ${
+                        isActive ? 'text-gold font-medium' : isPassed ? 'text-gold/70' : 'text-white/35'
+                      }`}
+                    >
+                      {st.title}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Current Stage Descriptive Line */}
+            <div className="text-center min-h-[1.5rem] mt-2">
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={current.desc}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.4 }}
+                  className="text-xs font-serif text-gold/80 leading-relaxed"
+                >
+                  {current.desc}
+                </motion.p>
+              </AnimatePresence>
             </div>
           </motion.div>
         )
       })()}
 
-      {/* Timeout warning — appears after 3 minutes */}
+      {/* Timeout reassurance — appears gently after 3 minutes */}
       {elapsed >= 180 && (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-xs text-center mt-3 max-w-xs mx-auto leading-relaxed"
+          className="text-xs text-center mt-3 max-w-xs mx-auto leading-relaxed font-serif"
           style={{ color: 'var(--text-muted)' }}
         >
           {lang === 'en'
-            ? 'Analysis is taking longer than usual. Your reading is still being processed — please stay on this page.'
-            : '分析時間比平常長，您的解讀仍在處理中 — 請留在此頁面。'}
+            ? 'The celestial path runs deep. Master Xuanji is contemplating the chart layers — please remain peacefully present.'
+            : '天機深邃，宗師正逐層參詳命脈氣候 — 靜候片刻，機緣即顯。'}
         </motion.p>
       )}
 

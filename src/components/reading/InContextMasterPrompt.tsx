@@ -2,6 +2,7 @@
 
 import { useMasterChat } from '@/components/master/MasterChatContext'
 import { motion } from 'framer-motion'
+import { MasterSageIcon } from '@/components/DivinationIcons'
 
 interface InContextMasterPromptProps {
   divinationType: string
@@ -96,22 +97,22 @@ export default function InContextMasterPrompt({
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="card-mystic-featured p-5 sm:p-7 my-6 border border-gold/30 rounded-2xl relative overflow-hidden"
+      className="oriental-sanctuary-card p-5 sm:p-7 my-6 rounded-2xl relative overflow-hidden"
     >
       {/* Subtle corner badge */}
       <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xl" aria-hidden="true">🧙‍♂️</span>
+        <div className="flex items-center gap-2.5">
+          <MasterSageIcon size={24} color="var(--gold)" />
           <h3 className="font-serif text-base sm:text-lg text-gold-light font-medium tracking-wide">
             {isZh ? '玄機大師 · 依盤解惑' : 'Master Xuanji · In-Depth Consultation'}
           </h3>
         </div>
-        <span className="text-[11px] px-2.5 py-0.5 rounded-full border border-gold/20 text-gold/70 bg-gold/5 font-serif hidden sm:inline-block">
+        <span className="text-[11px] px-2.5 py-0.5 rounded-full border border-gold/20 text-gold/80 bg-gold/5 font-serif hidden sm:inline-block">
           {isZh ? '連貫上下文解盤' : 'Context-Aware'}
         </span>
       </div>
 
-      <p className="text-xs sm:text-sm text-white/70 font-light leading-relaxed mb-4">
+      <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-light leading-relaxed mb-4">
         {isZh
           ? '大師已研讀您的這份推演。若心中尚有未明之結，可直接點選下方要點向大師追問：'
           : 'The Master has examined your reading. Click any key inquiry below to continue the consultation in real time:'}
@@ -124,7 +125,7 @@ export default function InContextMasterPrompt({
             key={idx}
             onClick={() => handleAsk(q)}
             disabled={loading}
-            className="w-full text-left p-3 sm:py-3 sm:px-4 rounded-xl bg-navy-900/50 hover:bg-gold/10 border border-white/10 hover:border-gold/40 text-white/85 hover:text-gold-light transition-all duration-200 text-xs sm:text-sm font-light flex items-center justify-between gap-3 group cursor-pointer disabled:opacity-50"
+            className="w-full text-left p-3 sm:py-3 sm:px-4 rounded-xl bg-[var(--accent-bg)] hover:bg-gold/10 border border-gold/20 hover:border-gold/40 text-[var(--text-primary)] hover:text-gold transition-all duration-200 text-xs sm:text-sm font-light flex items-center justify-between gap-3 group cursor-pointer disabled:opacity-50"
           >
             <span className="flex-1 leading-relaxed">
               <span className="text-gold/60 mr-2 font-serif">#{idx + 1}</span>
@@ -138,13 +139,14 @@ export default function InContextMasterPrompt({
       </div>
 
       {/* Manual open prompt */}
-      <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-xs text-white/40">
+      <div className="mt-4 pt-3 border-t border-gold/15 flex items-center justify-between text-xs text-[var(--text-muted)]">
         <span>{isZh ? '亦可自定義向大師提問' : 'Or type your own custom question'}</span>
         <button
           onClick={() => setShape('expanded')}
-          className="text-gold/70 hover:text-gold transition-colors font-medium cursor-pointer"
+          className="text-gold/80 hover:text-gold transition-colors font-medium cursor-pointer inline-flex items-center gap-1.5"
         >
-          {isZh ? '打開大師對話框 💬' : 'Open Master Chat 💬'}
+          <span>{isZh ? '展開大師對話' : 'Open Master Chat'}</span>
+          <span aria-hidden="true">→</span>
         </button>
       </div>
     </motion.div>

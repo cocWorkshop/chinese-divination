@@ -1,18 +1,25 @@
 'use client'
 
 import BirthplaceInput from '@/components/BirthplaceInput'
+import { DivinationIcon } from '@/components/DivinationIcons'
 import { useDivination } from '../DivinationContext'
 import { T, inputCls, labelCls } from '../constants'
 import CalendarToggle from './fields/CalendarToggle'
 import TimeModeInput from './fields/TimeModeInput'
 import FormSection from './fields/FormSection'
+import DualCalendarPreview from './fields/DualCalendarPreview'
 
 export default function BaziForm() {
   const { form, setField, setBirthLat, setBirthLng, setIsSouthernHemisphere, lang } = useDivination()
   return (
     <>
       {/* ── Section: Birth Date & Calendar ── */}
-      <FormSection title={`📅 ${T(lang, '生辰信息', 'Birth Information')}`}>
+      <FormSection title={
+        <span className="flex items-center gap-1.5">
+          <DivinationIcon type="bazi" className="w-4 h-4 text-gold-light" />
+          <span>{T(lang, '生辰資訊', 'Birth Information')}</span>
+        </span>
+      }>
 
         {/* Calendar Toggle + Date on same row (desktop) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -22,6 +29,7 @@ export default function BaziForm() {
             <input id="bazi-birth-date" type="date" className={inputCls} value={form.birthDate} onChange={e => setField('birthDate', e.target.value)} required />
           </div>
         </div>
+        <DualCalendarPreview birthDate={form.birthDate} lunarToggle={form.lunarToggle} lang={lang} />
 
         {/* Time Mode Toggle + Time Input */}
         <TimeModeInput layoutId="timeModeToggle" showHints />

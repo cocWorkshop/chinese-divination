@@ -2,13 +2,26 @@
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import toast from 'react-hot-toast'
 import { useLang } from '../LanguageContext'
+import { useMasterChatActions } from '@/components/master/MasterChatContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import SectionDrawer from './SectionDrawer'
 import StreamingSection from './StreamingSection'
+import StreamingKeyAdvice from './StreamingKeyAdvice'
 import PersonInfoHeader from './PersonInfoHeader'
 import type { DivinationResultProps, LiuYaoData, HexagramData } from '@/types/divination'
 import { T } from '@/lib/i18n'
+import {
+  LiuYaoIcon,
+  FamilyIcon,
+  KeyPredictionIcon,
+  RefreshIcon,
+  SunMoonIcon,
+  ScrollIcon,
+  SparkleIcon,
+  MasterSageIcon,
+} from '@/components/DivinationIcons'
 
 const elementColor: Record<string, string> = {
   '金': 'text-gray-300', '木': 'text-green-400', '水': 'text-blue-400',
@@ -97,17 +110,35 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
 
   // Analysis sections — interpretation is pulled out as overview
   const analysisSections = [
-    { icon: '👥', label: T(lang, '六親分析', 'Six Relatives'), content: d.sixRelativeAnalysis },
-    { icon: '⚖️', label: T(lang, '世應分析', 'Shi-Ying'), content: d.shiYingAnalysis },
-    ...(d.changingAnalysis ? [{ icon: '🔄', label: T(lang, '變卦分析', 'Changing'), content: d.changingAnalysis }] : []),
+    { icon: <FamilyIcon size={16} />, label: T(lang, '六親分析', 'Six Relatives'), content: d.sixRelativeAnalysis },
+    { icon: <KeyPredictionIcon size={16} />, label: T(lang, '世應分析', 'Shi-Ying'), content: d.shiYingAnalysis },
+    ...(d.changingAnalysis ? [{ icon: <RefreshIcon size={16} />, label: T(lang, '變卦分析', 'Changing'), content: d.changingAnalysis }] : []),
   ]
+
+  const masterChat = useMasterChatActions()
+
+  const handleAskMasterAboutHexagram = () => {
+    if (!masterChat) return
+    if (!masterChat.enabled) {
+      toast.error(T(lang, '請先登入後向玄機大師深度解盤', 'Please sign in to consult Master Xuanji'))
+      return
+    }
+    masterChat.setShape('expanded')
+    const orig = d.originalHexagram?.fullName || ''
+    const chg = d.changedHexagram?.fullName ? `，變卦為【${d.changedHexagram.fullName}】` : ''
+    const timingStr = d.timing ? `，應期在【${d.timing}】` : ''
+    const prompt = lang === 'en'
+      ? `Master Xuanji, please delve into my Liu Yao divination result: Original Hexagram 【${orig}】${d.changedHexagram?.fullName ? ` changing to 【${d.changedHexagram.fullName}】` : ''}${d.timing ? ` (Timing: ${d.timing})` : ''}. In relation to my query, what are the subtle shifts between the Shi and Ying lines, changing lines, and tactical actions I should take?`
+      : `請玄機大師為我推求六爻卦象：本卦為【${orig}】${chg}${timingStr}。請結合我所問之事，深入解析世應生剋、動爻化象及動靜變化的深層吉凶與趨吉避凶之策。`
+    masterChat.sendMessage(prompt)
+  }
 
   return (
     <div className="space-y-4 sm:space-y-5">
       <PersonInfoHeader subjectName={subjectName} birthInfo={birthInfo} createdAt={createdAt} />
 
       {/* ═══ ① CHART — hexagram visual + outcome + classical text ═══ */}
-      <SectionDrawer icon="🪙" title={T(lang, '卦象', 'Hexagram')} align="center" size="lg">
+      <SectionDrawer icon={<LiuYaoIcon size={20} />} title={T(lang, '卦象', 'Hexagram')} align="center" size="lg">
         <div className="space-y-4">
           {d.changedHexagram ? (
             <div className="grid grid-cols-2 gap-2 sm:gap-6">
@@ -146,7 +177,7 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
           {d.timing && (
             <div className="rounded-lg p-3 border border-amber-500/30 bg-amber-500/5">
               <h4 className="text-amber-400 font-serif text-sm mb-1.5 flex items-center gap-1.5">
-                <span aria-hidden>🕰️</span>
+                <SunMoonIcon size={16} isDark={true} color="var(--gold)" />
                 <span>{T(lang, '應期', 'Timing')}</span>
               </h4>
               <div className="text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown">
@@ -154,6 +185,21 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
               </div>
             </div>
           )}
+
+          {/* Master Consultation Trigger */}
+          <div className="pt-3 mt-3 border-t border-gold/20 flex items-center justify-between flex-wrap gap-2">
+            <p className="text-[11px] text-[var(--text-muted)] font-serif">
+              {T(lang, '欲求此卦之動爻變化、世應玄機與應期指引？', "Seek Master XuanJi's deeper insight on this hexagram?")}
+            </p>
+            <button
+              onClick={handleAskMasterAboutHexagram}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-serif font-medium shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}
+            >
+              <MasterSageIcon size={14} color="#0a0f1e" />
+              <span>{T(lang, '向玄機大師深入解卦 →', 'Consult Master XuanJi →')}</span>
+            </button>
+          </div>
         </div>
       </SectionDrawer>
 
@@ -168,7 +214,7 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
             className={`px-1 sm:px-2 transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}
           >
             <h3 className="text-gold font-serif text-base mb-3 flex items-center gap-2">
-              <span aria-hidden>📖</span>
+              <ScrollIcon size={18} />
               <span>{T(lang, '卦象解讀', 'Interpretation')}</span>
             </h3>
             <div className="text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown break-words">
@@ -200,25 +246,25 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
       `}</style>
 
       {/* ═══ ④ FOOTER — key points + advice + QA ═══ */}
-      {d.keyPoints && d.keyPoints.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <h3 className="text-gold font-serif text-base mb-2">☯ {T(lang, '要點', 'Key Points')}</h3>
-          <div className="grid gap-2">
-            {d.keyPoints.map((pt, i) => (
-              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">
-                <span className="w-5 h-5 rounded-full bg-gold/20 text-gold text-[10px] flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
-                <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{pt}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+      <StreamingKeyAdvice
+        title={T(lang, '要點', 'Key Points')}
+        icon={<SparkleIcon size={16} className="text-gold" />}
+        items={d.keyPoints}
+        streaming={streaming}
+        delay={0.1}
+      />
+
+      {(d.advice || streaming) && (
+        <StreamingSection
+          icon={<SparkleIcon size={16} className="text-gold" />}
+          title={T(lang, '建議', 'Advice')}
+          content={typeof d.advice === 'string' ? d.advice : undefined}
+          streaming={streaming}
+          dotAnimName="dotPulseLY"
+        />
       )}
 
-      {d.advice && typeof d.advice === 'string' && d.advice.trim() && (
-        <StreamingSection icon="💡" title={T(lang, '建議', 'Advice')} content={d.advice} streaming={streaming} dotAnimName="dotPulseLY" />
-      )}
-
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="liuyao" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />
+      {!streaming && <XuanjiChatCard readingResult={rawResult || ''} readingType="liuyao" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />}
     </div>
   )
 }

@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useLang } from '@/components/LanguageContext'
+import { OAuthButtons } from '@/components/auth/OAuthButtons'
+import YinYangIcon from '@/components/YinYangIcon'
 
 export default function LoginPage() {
   return <Suspense><LoginInner /></Suspense>
@@ -21,12 +23,25 @@ function LoginInner() {
   // looks like a protocol or `//host` is dropped silently.
   const rawNext = searchParams.get('next')
   const safeNext = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null
+  const authError = searchParams.get('error')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showResend, setShowResend] = useState(false)
   const [resending, setResending] = useState(false)
+
+  useEffect(() => {
+    if (authError) {
+      if (authError === 'OAuthAccountNotLinked') {
+        setError(lang === 'zh-TW' ? '此郵箱已綁定其他登入方式，請使用原有方式登入' : 'This email is already associated with another login method.')
+      } else if (authError === 'OAuthCallbackError' || authError === 'OAuthSignin') {
+        setError(lang === 'zh-TW' ? '第三方授權登入失敗，請重試' : 'Third-party sign in failed. Please try again.')
+      } else {
+        setError(lang === 'zh-TW' ? '登入驗證失敗，請重試' : 'Authentication failed. Please try again.')
+      }
+    }
+  }, [authError, lang])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,18 +87,21 @@ function LoginInner() {
 
   return (
     <div className="flex-1 flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
-      <div className="glass-card rounded-2xl p-5 sm:p-8 w-full max-w-md">
+      <div className="oriental-sanctuary-card rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl">
         <div className="text-center mb-8">
-          <div className="text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>玄機</div>
-          <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>
-            {lang === 'zh-TW' ? '登入帳號' : 'Sign In'}
+          <YinYangIcon size={48} className="mx-auto mb-4 text-gold" />
+          <h1 className="text-2xl font-serif text-gold">
+            {lang === 'zh-TW' ? '登入玄機' : 'Sign in to Xuanji'}
           </h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+            {lang === 'zh-TW' ? '探索東方命理哲學與運勢解讀' : 'Explore oriental metaphysical wisdom'}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-white/70 text-sm mb-1">
-              {lang === 'zh-TW' ? '郵箱' : 'Email'}
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
+              {lang === 'zh-TW' ? '電子郵箱' : 'Email'}
             </label>
             <input
               type="email"
@@ -91,12 +109,18 @@ function LoginInner() {
               onChange={e => setEmail(e.target.value)}
               required
               className="w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
+              placeholder="you@example.com"
             />
           </div>
           <div>
-            <label className="block text-white/70 text-sm mb-1">
-              {lang === 'zh-TW' ? '密碼' : 'Password'}
-            </label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                {lang === 'zh-TW' ? '密碼' : 'Password'}
+              </label>
+              <Link href="/forgot-password" className="text-xs text-gold hover:text-gold-light transition-colors">
+                {lang === 'zh-TW' ? '忘記密碼？' : 'Forgot password?'}
+              </Link>
+            </div>
             <input
               type="password"
               value={password}
@@ -104,15 +128,10 @@ function LoginInner() {
               required
               className="w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
             />
-            <div className="mt-1 text-right">
-              <Link href="/forgot-password" className="text-gold/60 text-xs hover:text-gold transition-colors">
-                {lang === 'zh-TW' ? '忘記密碼？' : 'Forgot password?'}
-              </Link>
-            </div>
           </div>
 
           {error && (
-            <div>
+            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
               <p className="text-red-400 text-sm">{error}</p>
               {showResend && (
                 <button
@@ -125,13 +144,13 @@ function LoginInner() {
                       body: JSON.stringify({ email }),
                     })
                     setResending(false)
-                    setError(lang === 'zh-TW' ? '✉ 驗證郵件已重新發送，請查收' : '✉ Verification email resent, please check inbox')
+                    setError(lang === 'zh-TW' ? '驗證郵件已重新發送，請查收信箱' : 'Verification email resent, please check inbox')
                     setShowResend(false)
                   }}
                   disabled={resending}
-                  className="mt-2 text-gold text-sm hover:text-gold-light transition-colors disabled:opacity-50"
+                  className="mt-2 text-gold text-sm hover:text-gold-light transition-colors disabled:opacity-50 min-h-[36px] flex items-center"
                 >
-                  {resending ? '...' : (lang === 'zh-TW' ? '📧 重新發送驗證郵件' : '📧 Resend verification email')}
+                  {resending ? '...' : (lang === 'zh-TW' ? '重新發送驗證郵件' : 'Resend verification email')}
                 </button>
               )}
             </div>
@@ -140,11 +159,17 @@ function LoginInner() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gold text-navy-950 rounded-lg font-semibold hover:bg-gold-light transition-colors disabled:opacity-50"
+            className="w-full py-3.5 min-h-[44px] bg-gradient-to-r from-gold via-gold-light to-gold text-navy-950 rounded-xl font-serif font-bold text-base hover:brightness-105 active:scale-[0.99] transition-all shadow-md shadow-gold/15 disabled:opacity-50"
           >
             {loading ? (lang === 'zh-TW' ? '登入中...' : 'Signing in...') : (lang === 'zh-TW' ? '登入' : 'Sign In')}
           </button>
         </form>
+
+        <OAuthButtons
+          mode="login"
+          callbackUrl={refCode ? `/share/${refCode}` : (safeNext ?? '/divination')}
+          onError={setError}
+        />
 
         <p className="text-center text-white/50 mt-6 text-sm">
           {lang === 'zh-TW' ? '還沒有帳號？' : "Don't have an account?"}{' '}

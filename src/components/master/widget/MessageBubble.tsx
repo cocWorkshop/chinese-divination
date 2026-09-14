@@ -18,16 +18,7 @@ import type { MasterMsg } from '../MasterChatContext'
 import { formatTime } from './formatTime'
 
 import MasterFeedbackPrompt from './MasterFeedbackPrompt'
-
-const READING_CARD_ICONS: Record<string, string> = {
-  bazi: '🏛️',
-  ziwei: '⭐',
-  iching: '☯',
-  qimen: '🧭',
-  liuyao: '🪙',
-  meihua: '🌸',
-  fengshui: '🏯',
-}
+import { DivinationIcon } from '@/components/DivinationIcons'
 
 interface Props {
   msg: MasterMsg
@@ -94,15 +85,15 @@ export default function MessageBubble({
 
   if (msg.kind === 'cta_card' && msg.ctaPayload) {
     const cx = msg.ctaPayload.ctaContext
-    // Build info lines from structured context
+    // Build info lines from structured context with classical tags
     const infoLines: string[] = []
-    if (cx?.target) infoLines.push(`👤 ${cx.target}`)
+    if (cx?.target) infoLines.push(`${isEn ? 'Target: ' : '問測對象：'}${cx.target}`)
     if (cx?.birthDate || cx?.birthTime || cx?.gender) {
       const parts = [cx.birthDate, cx.birthTime, cx.gender].filter(Boolean)
-      infoLines.push(`📅 ${parts.join(' · ')}`)
+      infoLines.push(`${isEn ? 'Birth: ' : '生辰資訊：'}${parts.join(' · ')}`)
     }
-    if (cx?.birthPlace) infoLines.push(`📍 ${cx.birthPlace}`)
-    if (cx?.question) infoLines.push(`❓ ${cx.question.length > 40 ? cx.question.slice(0, 40) + '…' : cx.question}`)
+    if (cx?.birthPlace) infoLines.push(`${isEn ? 'Place: ' : '出生地點：'}${cx.birthPlace}`)
+    if (cx?.question) infoLines.push(`${isEn ? 'Question: ' : '所問之事：'}${cx.question.length > 40 ? cx.question.slice(0, 40) + '…' : cx.question}`)
 
     return (
       <motion.div
@@ -164,8 +155,8 @@ export default function MessageBubble({
           }}
         >
           <div className="flex items-start gap-2.5">
-            <span className="text-base flex-shrink-0 mt-0.5" aria-hidden>
-              {READING_CARD_ICONS[card.divinationType] ?? '📜'}
+            <span className="flex-shrink-0 mt-0.5" aria-hidden>
+              <DivinationIcon type={card.divinationType} size={18} />
             </span>
             <div className="flex-1 min-w-0">
               <div className="font-serif text-sm" style={{ color: 'var(--gold)' }}>

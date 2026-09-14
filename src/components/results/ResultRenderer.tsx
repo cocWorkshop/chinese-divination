@@ -1,17 +1,20 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import ReadingResult from '@/components/ReadingResult'
-import BaziResult from './BaziResult'
-import BaziResultV2 from './BaziResultV2'
-import ZiweiResultV2 from './ZiweiResultV2'
-import IChingResult from './IChingResult'
-import ZiweiResult from './ZiweiResult'
-import QimenResult from './QimenResult'
-import FengshuiResult from './FengshuiResult'
-import OtherResult from './OtherResult'
-import LiuYaoResult from './LiuYaoResult'
 import ResultErrorBoundary from '@/components/ResultErrorBoundary'
+import ChartSkeleton from '@/components/reading/ChartSkeleton'
 import type { ChatMsg } from '@/types/divination'
+
+const BaziResult = dynamic(() => import('./BaziResult'), { loading: () => <ChartSkeleton type="bazi" /> })
+const BaziResultV2 = dynamic(() => import('./BaziResultV2'), { loading: () => <ChartSkeleton type="bazi" /> })
+const ZiweiResultV2 = dynamic(() => import('./ZiweiResultV2'), { loading: () => <ChartSkeleton type="ziwei" /> })
+const ZiweiResult = dynamic(() => import('./ZiweiResult'), { loading: () => <ChartSkeleton type="ziwei" /> })
+const IChingResult = dynamic(() => import('./IChingResult'), { loading: () => <ChartSkeleton type="iching" /> })
+const QimenResult = dynamic(() => import('./QimenResult'), { loading: () => <ChartSkeleton type="qimen" /> })
+const FengshuiResult = dynamic(() => import('./FengshuiResult'), { loading: () => <ChartSkeleton type="fengshui" /> })
+const LiuYaoResult = dynamic(() => import('./LiuYaoResult'), { loading: () => <ChartSkeleton type="liuyao" /> })
+const OtherResult = dynamic(() => import('./OtherResult'), { loading: () => <ChartSkeleton type="other" /> })
 
 export default function ResultRenderer({ result, type, isShared, readingId, chatMessages, subjectName, birthInfo, createdAt, streaming }: {
   result: string; type: string; isShared?: boolean; readingId?: string | null; chatMessages?: ChatMsg[]

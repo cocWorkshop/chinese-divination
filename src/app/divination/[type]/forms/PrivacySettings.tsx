@@ -1,5 +1,6 @@
 'use client'
 
+import { LockSealIcon, AlertIcon } from '@/components/DivinationIcons'
 import { useDivination } from '../DivinationContext'
 import { T } from '../constants'
 
@@ -16,12 +17,17 @@ export default function PrivacySettings() {
   } = useDivination()
 
   return (
-    <details className="border border-gold/20 rounded-xl bg-navy-900/50 group">
-      <summary className="px-4 py-3 cursor-pointer list-none flex items-center justify-between text-white/60 text-xs font-semibold uppercase tracking-wider hover:text-white/80 transition-colors">
-        <span>{T(lang, '🔒 隱私設置', '🔒 Privacy Settings')}</span>
-        <span className="text-gold/40 group-open:rotate-180 transition-transform">▼</span>
+    <details className="oriental-sanctuary-card rounded-xl group shadow-sm">
+      <summary className="px-4 py-3 cursor-pointer list-none flex items-center justify-between text-gold-light/90 text-sm font-serif font-medium tracking-wide hover:text-gold transition-colors">
+        <span className="flex items-center gap-1.5">
+          <LockSealIcon className="w-3.5 h-3.5 text-gold" />
+          <span>{T(lang, '隱私設置', 'Privacy Settings')}</span>
+        </span>
+        <svg className="w-4 h-4 text-gold/60 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
       </summary>
-      <div className="px-4 pb-4 space-y-3">
+      <div className="px-4 pb-4 pt-2 space-y-3 border-t border-gold/10">
 
       {/* Save to History */}
       <label className="flex items-start gap-3 cursor-pointer group">
@@ -80,9 +86,9 @@ export default function PrivacySettings() {
       )}
 
       {(!saveHistory && !saveProfile) && (
-        <p className="text-amber-400/70 text-xs flex items-center gap-1">
-          <span>⚠️</span>
-          {T(lang, '本次占卜結果不會被儲存，請自行記錄', 'This reading will not be stored anywhere. Please note it down if needed.')}
+        <p className="text-amber-400/80 text-xs flex items-center gap-1.5 pt-1">
+          <AlertIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+          <span>{T(lang, '本次占卜結果不會被儲存，請自行記錄', 'This reading will not be stored anywhere. Please note it down if needed.')}</span>
         </p>
       )}
       </div>

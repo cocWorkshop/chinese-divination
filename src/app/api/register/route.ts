@@ -6,10 +6,10 @@ import { generateToken, tokenExpiry, sendVerificationEmail } from '@/lib/email'
 import { logAuth } from '@/lib/authLog'
 import { CURRENT_POLICY_VERSION } from '@/lib/policyVersion'
 import { rateLimit } from '@/lib/rateLimiter'
+import { getClientIp } from '@/lib/clientIp'
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip') || null
+  const ip = getClientIp(req)
   const userAgent = req.headers.get('user-agent') || null
 
   // Rate limit: 3 attempts per hour per IP

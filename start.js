@@ -44,7 +44,7 @@ try {
   console.error('> FATAL: migration failed — refusing to start with a schema/code mismatch.')
   console.error(`> Cause: ${e.message}`)
   console.error('> Inspect with: DATABASE_URL=<prod> npx prisma migrate status')
-  console.error('> Runbook: docs/prisma-migrations-recovery.md (failed-row recovery: migrate resolve --rolled-back <name>)')
+  console.error('> Runbook: docs/archive/prisma-migrations-recovery-202606.md (failed-row recovery: migrate resolve --rolled-back <name>)')
   process.exit(1)
 }
 

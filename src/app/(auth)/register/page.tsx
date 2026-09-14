@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
+import { OAuthButtons } from '@/components/auth/OAuthButtons'
+import { GiftVesselIcon, AlertIcon, SunMoonIcon } from '@/components/DivinationIcons'
 
 export default function RegisterPage() {
   return <Suspense><RegisterInner /></Suspense>
@@ -66,7 +68,7 @@ function RegisterInner() {
       if (data.needsVerification) {
         setVerificationSent(true)
         const totalBonus = (data.registerBonus || 0) + (data.shareBonus || 0)
-        toast.success(lang === 'zh-TW' ? `🎁 註冊成功！已獲得 ${totalBonus} 點機緣` : `🎁 Registered! You got ${totalBonus} Karma`, { duration: 5000 })
+        toast.success(lang === 'zh-TW' ? `註冊成功！已獲得 ${totalBonus} 點機緣` : `Registered! You got ${totalBonus} Karma`, { duration: 5000 })
         return
       }
       router.push('/login')
@@ -115,29 +117,33 @@ function RegisterInner() {
   if (verificationSent) {
     return (
       <div className="flex-1 flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
-        <div className="glass-card rounded-2xl p-5 sm:p-8 w-full max-w-md text-center">
-          <div className="text-5xl mb-4">📧</div>
-          <h1 className="text-2xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
+        <div className="oriental-sanctuary-card rounded-2xl p-6 sm:p-8 w-full max-w-md text-center shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-4 text-gold shadow-lg shadow-gold/5">
+            <SunMoonIcon className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-serif mb-2 text-gold">
             {lang === 'zh-TW' ? '請驗證您的郵箱' : 'Check Your Email'}
           </h1>
-          <p className="text-white/50 text-sm mb-6">
+          <p className="text-white/60 text-sm mb-6 leading-relaxed">
             {lang === 'zh-TW' 
               ? `我們已發送驗證郵件至 ${form.email}，請點擊郵件中的連結完成驗證。`
               : `We've sent a verification email to ${form.email}. Click the link to verify.`}
           </p>
-          <div className="my-5 py-3 px-4 rounded-lg text-left text-xs" style={{ backgroundColor: 'rgba(212, 168, 83, 0.08)', border: '1px solid rgba(212, 168, 83, 0.2)' }}>
-            <p className="font-medium mb-1.5" style={{ color: 'var(--gold)' }}>
-              🎁 {lang === 'zh-TW' ? '您的免費機緣' : 'Your free Karma'}
+          <div className="my-5 py-3 px-4 rounded-xl text-left text-xs bg-gold/5 border border-gold/20">
+            <p className="font-serif font-medium mb-1.5 text-gold flex items-center gap-1.5">
+              <GiftVesselIcon className="w-4 h-4 text-gold" />
+              <span>{lang === 'zh-TW' ? '您的免費機緣' : 'Your free Karma'}</span>
             </p>
             <div className="space-y-1" style={{ color: 'var(--text-secondary)' }}>
               <p>✦ {lang === 'zh-TW' ? `${registerBonus} 點機緣已到帳` : `${registerBonus} Karma granted`}</p>
               <p>✦ {lang === 'zh-TW' ? '每日登入再送機緣' : 'Daily login Karma bonus'}</p>
             </div>
           </div>
-          <div className="my-6 h-px bg-gold/20" />
-          <div className="py-3 px-4 rounded-lg bg-yellow-500/5 border border-yellow-500/15 mb-4">
-            <p className="text-yellow-300/70 text-xs">
-              ⚠️ {lang === 'zh-TW' ? '如果沒有看到郵件，請檢查是否被自動歸入「垃圾郵件」或「促銷」資料夾。' : 'If you don\'t see the email, check your Spam or Promotions folder.'}
+          <div className="my-6 h-px bg-gold/15" />
+          <div className="py-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/25 mb-4 flex items-start gap-2 text-left">
+            <AlertIcon className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-amber-300/80 text-xs leading-relaxed">
+              {lang === 'zh-TW' ? '如果沒有看到郵件，請檢查是否被自動歸入「垃圾郵件」或「促銷」資料夾。' : 'If you don\'t see the email, check your Spam or Promotions folder.'}
             </p>
           </div>
           <p className="text-white/40 text-xs mb-4">
@@ -147,15 +153,15 @@ function RegisterInner() {
             <button
               onClick={handleResend}
               disabled={resending}
-              className="px-5 py-2.5 min-h-[44px] border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-sm disabled:opacity-50"
+              className="px-5 py-2.5 min-h-[44px] border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors text-sm disabled:opacity-50 inline-flex items-center justify-center font-serif"
             >
-              {resending ? '...' : (lang === 'zh-TW' ? '📧 重新發送' : '📧 Resend')}
+              {resending ? '...' : (lang === 'zh-TW' ? '重新發送驗證郵件' : 'Resend Email')}
             </button>
             <Link
               href="/login"
-              className="px-5 py-2.5 min-h-[44px] bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light transition-colors text-sm"
+              className="px-5 py-2.5 min-h-[44px] bg-gold text-navy-950 rounded-xl font-serif font-bold hover:bg-gold-light transition-colors text-sm inline-flex items-center justify-center shadow-md shadow-gold/10"
             >
-              {lang === 'zh-TW' ? '🔑 前往登入' : '🔑 Go to Login'}
+              {lang === 'zh-TW' ? '前往登入' : 'Go to Login'}
             </Link>
           </div>
         </div>
@@ -165,7 +171,7 @@ function RegisterInner() {
 
   return (
     <div className="flex-1 flex items-center justify-center px-4" style={{ background: 'var(--bg-primary)' }}>
-      <div className="glass-card rounded-2xl p-5 sm:p-8 w-full max-w-md">
+      <div className="oriental-sanctuary-card rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl">
         <div className="text-center mb-8">
           <div className="text-4xl font-serif mb-2" style={{ color: 'var(--gold)' }}>玄機</div>
           <h1 className="text-2xl font-serif" style={{ color: 'var(--text-primary)' }}>
@@ -228,11 +234,17 @@ function RegisterInner() {
           <button
             type="submit"
             disabled={loading || !consent}
-            className="w-full py-3 bg-gold text-navy-950 rounded-lg font-semibold hover:bg-gold-light transition-colors disabled:opacity-50"
+            className="w-full py-3.5 min-h-[44px] bg-gradient-to-r from-gold via-gold-light to-gold text-navy-950 rounded-xl font-serif font-bold text-base hover:brightness-105 active:scale-[0.99] transition-all shadow-md shadow-gold/15 disabled:opacity-50"
           >
             {loading ? (lang === 'zh-TW' ? '註冊中...' : 'Registering...') : (lang === 'zh-TW' ? '註冊' : 'Register')}
           </button>
         </form>
+
+        <OAuthButtons
+          mode="register"
+          callbackUrl={referralCode ? `/share/${referralCode}` : '/divination'}
+          onError={(msg) => toast.error(msg)}
+        />
 
         <p className="text-center text-white/50 mt-6 text-sm">
           {lang === 'zh-TW' ? '已有帳號？' : 'Already have an account?'}{' '}

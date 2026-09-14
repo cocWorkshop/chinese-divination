@@ -1,5 +1,6 @@
 'use client'
 
+import { DivinationIcon, RefreshIcon } from '@/components/DivinationIcons'
 import { useDivination } from '../DivinationContext'
 import { T, inputCls, labelCls } from '../constants'
 import FormSection from './fields/FormSection'
@@ -16,7 +17,12 @@ export default function MeihuaForm() {
   }
 
   return (
-    <FormSection title={`🌸 ${T(lang, '梅花易數起卦', 'Plum Blossom Divination')}`}>
+    <FormSection title={
+      <span className="flex items-center gap-1.5">
+        <DivinationIcon type="meihua" className="w-4 h-4 text-gold-light" />
+        <span>{T(lang, '梅花易數起卦', 'Plum Blossom Divination')}</span>
+      </span>
+    }>
       <div>
         <label htmlFor="meihua-question" className={labelCls}>{T(lang, '您的問題', 'Your Question')}</label>
         <textarea
@@ -34,25 +40,27 @@ export default function MeihuaForm() {
         <div className="grid grid-cols-2 gap-3 mb-3">
           <button
             type="button"
-            className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors border ${
+            className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors border min-h-[44px] flex items-center justify-center gap-1.5 ${
               method === 'numbers'
                 ? 'bg-gold/20 border-gold text-gold'
                 : 'bg-navy-900 border-white/10 text-white/60 hover:text-white'
             }`}
             onClick={() => setField('meihuaMethod', 'numbers')}
           >
-            🔢 {T(lang, '報數起卦 (推薦)', 'Number Casting (Recommended)')}
+            <span className="font-serif font-bold text-gold-light/90">〔數〕</span>
+            <span>{T(lang, '報數起卦 (推薦)', 'Number Casting (Recommended)')}</span>
           </button>
           <button
             type="button"
-            className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors border ${
+            className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors border min-h-[44px] flex items-center justify-center gap-1.5 ${
               method === 'time'
                 ? 'bg-gold/20 border-gold text-gold'
                 : 'bg-navy-900 border-white/10 text-white/60 hover:text-white'
             }`}
             onClick={() => setField('meihuaMethod', 'time')}
           >
-            ⏰ {T(lang, '時間起卦', 'Time Casting')}
+            <span className="font-serif font-bold text-gold-light/90">〔時〕</span>
+            <span>{T(lang, '時間起卦', 'Time Casting')}</span>
           </button>
         </div>
 
@@ -65,9 +73,10 @@ export default function MeihuaForm() {
               <button
                 type="button"
                 onClick={handleRandomNumbers}
-                className="text-xs bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 px-2.5 py-1 rounded transition-colors flex items-center gap-1"
+                className="text-xs bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 px-2.5 py-1.5 rounded transition-colors flex items-center gap-1 min-h-[36px]"
               >
-                🎲 {T(lang, '隨機報數', 'Random Numbers')}
+                <RefreshIcon className="w-3 h-3 text-gold" />
+                <span>{T(lang, '隨機報數', 'Random Numbers')}</span>
               </button>
             </div>
             <div className="grid grid-cols-2 gap-3">

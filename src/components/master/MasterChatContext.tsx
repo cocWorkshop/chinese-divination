@@ -129,7 +129,7 @@ function parseReadingCompleteType(content: string): string | null {
   return m ? m[1] : null
 }
 
-type Shape = 'collapsed' | 'expanded'
+export type Shape = 'collapsed' | 'expanded'
 
 /**
  * Greeting state hydrated from GET /api/master. Used by the widget to render
@@ -207,7 +207,22 @@ interface MasterChatContextValue {
   widgetOpener: string
 }
 
+export interface MasterChatActionsValue {
+  enabled: boolean
+  shape: Shape
+  setShape: (s: Shape) => void
+  toggleShape: () => void
+  sendMessage: (content: string) => Promise<void>
+  notifyTyping: (draftLength: number) => void
+  cancelPendingReading: () => void
+  startNewSession: () => Promise<void>
+  clearSession: () => Promise<void>
+  markDisclosureSeen: () => Promise<void>
+  setPortraitEnabled: (enabled: boolean) => Promise<void>
+}
+
 const MasterChatContext = createContext<MasterChatContextValue | null>(null)
+const MasterChatActionsContext = createContext<MasterChatActionsValue | null>(null)
 
 const toolLabels: Record<string, { zh: string; en: string }> = {
   get_user_profile: { zh: '查閱檔案中...', en: 'Reading profile...' },
@@ -1307,13 +1322,54 @@ export function MasterChatProvider({ children }: ProviderProps) {
     ],
   )
 
-  return <MasterChatContext.Provider value={value}>{children}</MasterChatContext.Provider>
+  const actionsValue = useMemo<MasterChatActionsValue>(
+    () => ({
+      enabled,
+      shape,
+      setShape,
+      toggleShape,
+      sendMessage,
+      notifyTyping,
+      cancelPendingReading,
+      startNewSession,
+      clearSession,
+      markDisclosureSeen,
+      setPortraitEnabled,
+    }),
+    [
+      enabled,
+      shape,
+      setShape,
+      toggleShape,
+      sendMessage,
+      notifyTyping,
+      cancelPendingReading,
+      startNewSession,
+      clearSession,
+      markDisclosureSeen,
+      setPortraitEnabled,
+    ],
+  )
+
+  return (
+    <MasterChatActionsContext.Provider value={actionsValue}>
+      <MasterChatContext.Provider value={value}>{children}</MasterChatContext.Provider>
+    </MasterChatActionsContext.Provider>
+  )
 }
 
 export function useMasterChat(): MasterChatContextValue {
   const ctx = useContext(MasterChatContext)
   if (!ctx) {
     throw new Error('useMasterChat must be used within a MasterChatProvider')
+  }
+  return ctx
+}
+
+export function useMasterChatActions(): MasterChatActionsValue {
+  const ctx = useContext(MasterChatActionsContext)
+  if (!ctx) {
+    throw new Error('useMasterChatActions must be used within a MasterChatProvider')
   }
   return ctx
 }

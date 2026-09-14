@@ -8,6 +8,7 @@ import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import type { DivinationResultProps, BaziData, ShenShaEntry, DaYunEntry, QiYunInfo } from '@/types/divination'
 import { T } from '@/lib/i18n'
+import { SunMoonIcon, AlertIcon } from '@/components/DivinationIcons'
 
 const STEM_ELEMENT_MAP: Record<string, string> = {
   '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
@@ -111,11 +112,16 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
         {/* True Solar Time — tiny indicator */}
         {tst && (
           <div className="flex items-center gap-1.5 mb-2 px-1">
-            <span className="text-blue-400 text-[10px]">🕐</span>
+            <SunMoonIcon size={12} className="text-gold flex-shrink-0" />
             <span className="text-[var(--text-muted)] text-[10px]">
               {tst.originalTime} → {tst.correctedTime} ({tst.correctionMinutes >= 0 ? '+' : ''}{tst.correctionMinutes.toFixed(0)}min)
             </span>
-            {tst.shichenChanged && <span className="text-amber-400 text-[10px]">{T(lang, '⚠️時辰已變', '⚠️ Hour shifted')}</span>}
+            {tst.shichenChanged && (
+              <span className="inline-flex items-center gap-0.5 text-amber-400 text-[10px]">
+                <AlertIcon size={10} />
+                <span>{T(lang, '時辰已變', 'Hour shifted')}</span>
+              </span>
+            )}
           </div>
         )}
 

@@ -7,9 +7,16 @@ import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import SectionDrawer from './SectionDrawer'
 import StreamingSection from './StreamingSection'
+import StreamingKeyAdvice from './StreamingKeyAdvice'
 import PersonInfoHeader from './PersonInfoHeader'
 import type { DivinationResultProps, OtherData, MeihuaHexagram } from '@/types/divination'
 import { T } from '@/lib/i18n'
+import {
+  MeiHuaIcon,
+  IChingIcon,
+  SparkleIcon,
+  SunMoonIcon,
+} from '@/components/DivinationIcons'
 
 const outcomeColor: Record<string, string> = {
   '大吉': 'text-green-300 border-green-300/40 bg-green-300/10',
@@ -92,7 +99,7 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
 
       {/* ═══ ① CHART — meihua hexagrams + chart info + 體用關係 ═══ */}
       {hasMeihuaData ? (
-        <SectionDrawer icon="🌸" title={T(lang, '梅花卦象', 'Mei Hua Chart')} align="center" size="lg">
+        <SectionDrawer icon={<MeiHuaIcon size={20} />} title={T(lang, '梅花卦象', 'Mei Hua Chart')} align="center" size="lg">
           <div className="space-y-4">
             {/* Chart info */}
             <div className="glass-card rounded-xl p-3 sm:p-4 border border-amber-400/30 bg-amber-400/5">
@@ -145,7 +152,7 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
         </SectionDrawer>
       ) : (
         /* Fallback: trigram cards for non-meihua types */
-        <SectionDrawer icon="☰" title={T(lang, '卦象', 'Trigrams')} align="center" size="lg">
+        <SectionDrawer icon={<IChingIcon size={20} />} title={T(lang, '卦象', 'Trigrams')} align="center" size="lg">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-gold font-serif">{d.subType === 'liuren' ? T(lang, '六壬神課', 'Liu Ren') : T(lang, '梅花易數', 'Meihua')}</h3>
             <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
@@ -175,7 +182,7 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
             className={`px-1 sm:px-2 transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}>
             <h3 className="text-gold font-serif text-base mb-3 flex items-center gap-2">
-              <span aria-hidden>☰</span>
+              <MeiHuaIcon size={18} />
               <span>{T(lang, '體卦分析', 'Ti Analysis')}</span>
             </h3>
             <div className="text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown break-words">
@@ -193,9 +200,9 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
 
       {/* ═══ ③ ANALYSIS SECTIONS — drawers ═══ */}
       <div className="space-y-2">
-        <StreamingSection icon="☯" title={T(lang, '用卦分析', 'Yong Analysis')} content={d.sections?.inquiry} streaming={streaming} dotAnimName="dotPulseMH" />
-        <StreamingSection icon="⚡" title={T(lang, '體用關係', 'Ti-Yong Relationship')} content={d.sections?.interaction} streaming={streaming} dotAnimName="dotPulseMH" />
-        <StreamingSection icon="⏰" title={T(lang, '時間推斷', 'Timing')} content={d.sections?.timeline} streaming={streaming} dotAnimName="dotPulseMH" />
+        <StreamingSection icon={<IChingIcon size={16} />} title={T(lang, '用卦分析', 'Yong Analysis')} content={d.sections?.inquiry} streaming={streaming} dotAnimName="dotPulseMH" />
+        <StreamingSection icon={<SparkleIcon size={16} className="text-gold" />} title={T(lang, '體用關係', 'Ti-Yong Relationship')} content={d.sections?.interaction} streaming={streaming} dotAnimName="dotPulseMH" />
+        <StreamingSection icon={<SunMoonIcon size={16} isDark={true} color="var(--gold)" />} title={T(lang, '時間推斷', 'Timing')} content={d.sections?.timeline} streaming={streaming} dotAnimName="dotPulseMH" />
       </div>
       <style jsx global>{`
         @keyframes dotPulseMH {
@@ -205,21 +212,15 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
       `}</style>
 
       {/* ═══ ④ FOOTER — advice + QA ═══ */}
-      {d.keyAdvice && d.keyAdvice.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <h3 className="text-gold font-serif text-base mb-2">{T(lang, '核心建議', 'Key Advice')}</h3>
-          <div className="grid gap-2">
-            {d.keyAdvice.map((advice, i) => (
-              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">
-                <span className="w-5 h-5 rounded-full bg-gold/20 text-gold text-[10px] flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
-                <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{advice}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
+      <StreamingKeyAdvice
+        title={T(lang, '核心建議', 'Key Advice')}
+        icon={<SparkleIcon size={16} className="text-gold" />}
+        items={d.keyAdvice}
+        streaming={streaming}
+        delay={0.08}
+      />
 
-      <XuanjiChatCard readingResult={rawResult || ''} readingType={readingType || 'meihua'} readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />
+      {!streaming && <XuanjiChatCard readingResult={rawResult || ''} readingType={readingType || 'meihua'} readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />}
     </div>
   )
 }

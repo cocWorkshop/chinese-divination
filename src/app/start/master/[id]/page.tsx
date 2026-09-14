@@ -26,18 +26,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { MasterSageIcon, KeyPredictionIcon, DivinationIcon } from '@/components/DivinationIcons'
 
 interface ChatMsg {
   role: 'user' | 'assistant'
   content: string
-  timestamp: number
 }
-
-const STARTER_CHIPS = [
-  '我的事業運如何？',
-  '今年的運勢，請細看',
-  '想為配偶也起一張盤',
-]
 
 export default function StartMasterPage() {
   const router = useRouter()
@@ -46,87 +40,109 @@ export default function StartMasterPage() {
 
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [streaming, setStreaming] = useState(false)
+  const [chips, setChips] = useState<string[]>([])
   const [userTurns, setUserTurns] = useState(0)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const checkinFiredRef = useRef(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const initialFiredRef = useRef(false)
+  const abortRef = useRef<AbortController | null>(null)
 
-  // Auto-scroll on new content.
+  // Scroll transcript to bottom on new messages / chunks.
   useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
   }, [messages, streaming])
 
-  // Fire the proactive checkin once on mount — the master speaks first.
+  // Cleanup abort on unmount.
   useEffect(() => {
-    if (checkinFiredRef.current) return
-    checkinFiredRef.current = true
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
+
+  // Mount effect: kick off master check-in turn.
+  useEffect(() => {
+    if (initialFiredRef.current) return
+    initialFiredRef.current = true
     void runTurn({ checkin: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function runTurn(payload: { checkin: true } | { message: string }) {
-    if (streaming) return
+  const runTurn = async (payload: { checkin?: boolean; message?: string }) => {
+    const isUserMessage = Boolean(payload.message)
+    if (isUserMessage && payload.message) {
+      setMessages((prev) => [...prev, { role: 'user', content: payload.message! }])
+    }
     setStreaming(true)
     setErrorMsg(null)
 
-    const isUserMessage = 'message' in payload
-    if (isUserMessage) {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'user', content: payload.message, timestamp: Date.now() },
-      ])
-    }
+    // Prepare an empty assistant slot to stream into.
+    setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
 
-    // Pre-allocate an assistant slot to stream into.
-    setMessages((prev) => [...prev, { role: 'assistant', content: '', timestamp: Date.now() }])
+    const ac = new AbortController()
+    abortRef.current = ac
 
     try {
       const res = await fetch('/api/master', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        signal: ac.signal,
+        headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+        body: JSON.stringify({
+          readingId,
+          ...(payload.checkin ? { checkin: true } : { message: payload.message }),
+        }),
       })
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: 'Request failed' }))
-        setErrorMsg(data.error || '玄機大師暫時無法回應')
-        setStreaming(false)
-        return
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || '大師暫未能回應，請稍後再試')
       }
-      const reader = res.body?.getReader()
-      if (!reader) { setStreaming(false); return }
+
+      if (!res.body) throw new Error('ReadableStream not supported')
+      const reader = res.body.getReader()
       const decoder = new TextDecoder()
-      let buffer = ''
+      let buf = ''
+
       while (true) {
-        const { done, value } = await reader.read()
+        const { value, done } = await reader.read()
         if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() ?? ''
+        buf += decoder.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        buf = lines.pop() ?? ''
+
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue
-          const raw = line.slice(6)
-          if (!raw || raw === '[DONE]') continue
+          const dataStr = line.slice(6).trim()
+          if (!dataStr) continue
+          let parsed: any
           try {
-            const ev = JSON.parse(raw) as { type: string; text?: string; error?: string }
-            if (ev.type === 'content' && ev.text) {
-              setMessages((prev) => {
-                const updated = [...prev]
-                const last = updated[updated.length - 1]
-                if (last && last.role === 'assistant') {
-                  updated[updated.length - 1] = { ...last, content: last.content + ev.text }
-                }
-                return updated
-              })
-            } else if (ev.type === 'error') {
-              setErrorMsg(ev.error || '對話中斷')
-            }
-          } catch { /* ignore malformed frames */ }
+            parsed = JSON.parse(dataStr)
+          } catch {
+            continue
+          }
+
+          if (parsed.type === 'chunk' && typeof parsed.text === 'string') {
+            setMessages((prev) => {
+              if (prev.length === 0) return prev
+              const next = [...prev]
+              const last = next[next.length - 1]
+              if (last && last.role === 'assistant') {
+                next[next.length - 1] = { ...last, content: last.content + parsed.text }
+              }
+              return next
+            })
+          } else if (parsed.type === 'chips' && Array.isArray(parsed.chips)) {
+            setChips(parsed.chips.filter((c: unknown): c is string => typeof c === 'string'))
+          } else if (parsed.type === 'error' && typeof parsed.message === 'string') {
+            setErrorMsg(parsed.message)
+          }
         }
       }
     } catch (e) {
-      setErrorMsg((e as Error).message || '連線失敗')
+      if ((e as Error).name === 'AbortError') return
+      const msg = e instanceof Error ? e.message : '連線中斷'
+      setErrorMsg(msg)
     } finally {
       setStreaming(false)
       if (isUserMessage) setUserTurns((n) => n + 1)
@@ -142,7 +158,7 @@ export default function StartMasterPage() {
     <main className="flex-1 flex flex-col px-4 sm:px-6 py-6 max-w-2xl mx-auto w-full pb-32">
       {/* ── Hook ─────────────────────────────────────────────────────────── */}
       <header className="text-center mb-5">
-        <h2 className="font-serif text-xl mb-1" style={{ color: 'var(--gold)' }}>
+        <h2 className="font-serif text-xl mb-1 text-gold">
           您剛看到的，只是命盤的開端
         </h2>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
@@ -153,8 +169,8 @@ export default function StartMasterPage() {
       {/* ── Transcript ──────────────────────────────────────────────────── */}
       <div
         ref={scrollRef}
-        className="flex-1 min-h-[280px] glass-card rounded-2xl p-4 mb-3 space-y-3 overflow-y-auto"
-        style={{ border: '1px solid var(--card-border)', maxHeight: '50vh' }}
+        className="flex-1 min-h-[280px] oriental-sanctuary-card rounded-2xl p-4 mb-3 space-y-3 overflow-y-auto shadow-md"
+        style={{ maxHeight: '50vh' }}
       >
         {messages.length === 0 && !streaming && (
           <p className="text-xs text-center py-8" style={{ color: 'var(--text-muted)' }}>
@@ -163,16 +179,19 @@ export default function StartMasterPage() {
         )}
         {messages.map((m, i) => {
           const isUser = m.role === 'user'
-          // Skip empty assistant slots that aren't currently streaming.
-          if (!isUser && !m.content && !(streaming && i === messages.length - 1)) return null
           return (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${isUser ? 'justify-end' : 'justify-start items-start gap-2.5'}`}
             >
+              {!isUser && (
+                <div className="w-7 h-7 rounded-full bg-gold/15 border border-gold/40 flex items-center justify-center flex-shrink-0 mt-0.5 text-gold shadow-sm">
+                  <MasterSageIcon className="w-4 h-4" />
+                </div>
+              )}
               <div
                 className="max-w-[85%] rounded-2xl px-3.5 py-2.5"
                 style={{
@@ -186,11 +205,7 @@ export default function StartMasterPage() {
                     style={{ color: 'var(--text-primary)' }}
                   >
                     {m.content}
-                    {/* Live typing cursor — renders only on the streaming
-                        assistant bubble (last message in transcript while
-                        `streaming` is true). Echoes the terminal-style
-                        cursor used in the View 1 typewriter for visual
-                        consistency across the funnel. */}
+                    {/* Live typing cursor */}
                     {!isUser && streaming && i === messages.length - 1 && (
                       <span
                         aria-hidden
@@ -198,45 +213,40 @@ export default function StartMasterPage() {
                         style={{
                           width: '0.55ch',
                           borderBottom: '2px solid var(--gold)',
-                          animation: 'xjMasterCursor 1s step-end infinite',
+                          animation: 'xjCursorBlink 0.9s steps(2, start) infinite',
                         }}
-                      >&nbsp;</span>
+                      />
                     )}
                   </p>
-                ) : streaming ? (
-                  <span className="inline-flex gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_infinite]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_0.2s_infinite]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_0.4s_infinite]" />
-                  </span>
-                ) : null}
+                ) : (
+                  <p className="text-xs font-serif italic" style={{ color: 'var(--text-muted)' }}>
+                    大師正沈吟思索…
+                  </p>
+                )}
               </div>
             </motion.div>
           )
         })}
       </div>
 
-      {/* ── Chip suggestions ─────────────────────────────────────────────── */}
+      {/* ── Chips ─────────────────────────────────────────────────────────── */}
       <AnimatePresence>
-        {!streaming && (
+        {!streaming && chips.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex flex-wrap gap-2 justify-center mb-3"
+            className="flex flex-wrap gap-2 mb-4"
           >
-            {STARTER_CHIPS.map((chip, i) => (
-              <motion.button
-                key={chip}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.07 }}
-                onClick={() => onChipClick(chip)}
-                className="text-xs px-3.5 py-2 rounded-full transition-all hover:bg-[rgba(212,175,55,0.12)] hover:shadow-[0_0_12px_rgba(212,175,55,0.25)] hover:scale-[1.03]"
-                style={{ color: 'var(--gold)', border: '1px solid var(--border-gold)' }}
+            {chips.map((c, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => onChipClick(c)}
+                className="px-3 py-1.5 min-h-[44px] rounded-full text-xs font-serif transition-all hover:scale-[1.02] active:scale-[0.98] border border-gold/30 hover:border-gold hover:bg-gold/10 text-gold-light/90"
               >
-                {chip}
-              </motion.button>
+                {c}
+              </button>
             ))}
           </motion.div>
         )}
@@ -249,20 +259,22 @@ export default function StartMasterPage() {
       {/* ── Three pitch bullets — staggered fade-in for a deliberate reveal ── */}
       <div className="grid sm:grid-cols-3 gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
         {[
-          { icon: '🔮', title: '逐段深析', sub: '點哪段問哪段' },
-          { icon: '🪶', title: '跨命盤互參', sub: '八字、紫微、家人合盤' },
-          { icon: '📜', title: '跨會話記憶', sub: '大師會記得您' },
+          { icon: <KeyPredictionIcon className="w-3.5 h-3.5 text-gold inline-block" />, title: '逐段深析', sub: '點哪段問哪段' },
+          { icon: <DivinationIcon type="bazi" className="w-3.5 h-3.5 text-gold inline-block" />, title: '跨命盤互參', sub: '八字、紫微、家人合盤' },
+          { icon: <MasterSageIcon className="w-3.5 h-3.5 text-gold inline-block" />, title: '跨會話記憶', sub: '大師會記得您' },
         ].map((p, i) => (
           <motion.div
             key={p.title}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.4 + i * 0.08 }}
-            className="rounded-lg p-2.5"
-            style={{ border: '1px solid var(--card-border)', background: 'var(--card-bg)' }}
+            className="oriental-sanctuary-card rounded-xl p-3 shadow-sm"
           >
-            <span className="font-serif" style={{ color: 'var(--gold)' }}>{p.icon} {p.title}</span>
-            <p className="mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>{p.sub}</p>
+            <div className="font-serif text-gold flex items-center gap-1.5 mb-0.5">
+              {p.icon}
+              <span>{p.title}</span>
+            </div>
+            <p className="text-[11px] text-white/50">{p.sub}</p>
           </motion.div>
         ))}
       </div>

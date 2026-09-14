@@ -9,6 +9,8 @@ import { useTheme } from './ThemeProvider'
 import toast from 'react-hot-toast'
 import NotificationBell from './NotificationBell'
 import FeedbackModal from './FeedbackModal'
+import { SunMoonIcon, ScrollIcon } from './DivinationIcons'
+import YinYangIcon from './YinYangIcon'
 
 export default function Navbar() {
   const { data: session } = useSession()
@@ -139,14 +141,16 @@ export default function Navbar() {
               <button
                 onClick={handleShare}
                 disabled={sharing}
-                className="text-white/80 hover:text-gold transition-colors disabled:opacity-50"
+                className="text-white/80 hover:text-gold transition-colors disabled:opacity-50 inline-flex items-center gap-1 font-serif text-sm"
               >
-                {lang === 'en' ? '🔗 Share for Karma' : '🔗 分享賺機緣'}
+                <span className="text-gold/70 text-xs">✧</span>
+                <span>{lang === 'en' ? 'Share for Karma' : '分享賺機緣'}</span>
               </button>
             )}
             {showWiki && (
-              <Link href="/wiki" className="text-white/80 hover:text-gold transition-colors">
-                {lang === 'en' ? 'Wiki' : '知識庫'}
+              <Link href="/wiki" className="text-white/80 hover:text-gold transition-colors inline-flex items-center gap-1 font-serif text-sm">
+                <ScrollIcon size={14} className="text-gold/70" />
+                <span>{lang === 'en' ? 'Wiki' : '知識庫'}</span>
               </Link>
             )}
 
@@ -155,7 +159,7 @@ export default function Navbar() {
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              className="px-2 py-1 rounded border border-gold/40 text-gold/80 hover:border-gold hover:text-gold text-sm transition-colors"
+              className="px-2 py-1.5 rounded-lg border border-gold/30 text-gold/80 hover:border-gold hover:text-gold transition-colors flex items-center justify-center"
               aria-label={theme === 'dark'
                 ? (lang === 'zh-TW' ? '切換為淺色模式' : 'Switch to light mode')
                 : (lang === 'zh-TW' ? '切換為深色模式' : 'Switch to dark mode')}
@@ -163,13 +167,13 @@ export default function Navbar() {
                 ? (lang === 'zh-TW' ? '切換為淺色模式' : 'Switch to light mode')
                 : (lang === 'zh-TW' ? '切換為深色模式' : 'Switch to dark mode')}
             >
-              {theme === 'dark' ? '☀️' : '🌙'}
+              <SunMoonIcon isDark={theme === 'dark'} size={15} className="text-gold" />
             </button>
 
             {/* Language toggle */}
             <button
               onClick={() => setLang(lang === 'zh-TW' ? 'en' : 'zh-TW')}
-              className="px-3 py-1 rounded border border-gold/40 text-gold/80 hover:border-gold hover:text-gold text-sm transition-colors"
+              className="px-2.5 py-1 rounded-lg border border-gold/30 text-gold/80 hover:border-gold hover:text-gold text-xs font-serif transition-colors"
               aria-label={lang === 'zh-TW' ? 'Switch to English' : '切換為繁體中文'}
             >
               {lang === 'zh-TW' ? 'EN' : '繁'}
@@ -310,37 +314,42 @@ export default function Navbar() {
             {lang === 'en' ? 'Karma Shop' : '機緣商店'}
           </Link>
           {session && (
-            <button onClick={() => { handleShare(); setMenuOpen(false) }} className="text-left text-white/80 hover:text-gold py-1.5">
-              {lang === 'en' ? '🔗 Share for Karma' : '🔗 分享賺機緣'}
+            <button onClick={() => { handleShare(); setMenuOpen(false) }} className="text-left text-white/80 hover:text-gold py-1.5 inline-flex items-center gap-2 font-serif text-sm">
+              <span className="text-gold">✧</span>
+              <span>{lang === 'en' ? 'Share for Karma' : '分享賺機緣'}</span>
             </button>
           )}
           {showWiki && (
-            <Link href="/wiki" className="text-white/80 hover:text-gold py-1.5" onClick={() => setMenuOpen(false)}>
-              {lang === 'en' ? '📚 Wiki' : '📚 知識庫'}
+            <Link href="/wiki" className="text-white/80 hover:text-gold py-1.5 inline-flex items-center gap-2 font-serif text-sm" onClick={() => setMenuOpen(false)}>
+              <ScrollIcon size={15} className="text-gold" />
+              <span>{lang === 'en' ? 'Wiki' : '知識庫'}</span>
             </Link>
           )}
           <button
             onClick={() => { toggleTheme(); setMenuOpen(false) }}
-            className="text-left text-gold/80 hover:text-gold py-1.5"
+            className="text-left text-gold/80 hover:text-gold py-1.5 inline-flex items-center gap-2 font-serif text-sm"
           >
-            {theme === 'dark'
-              ? (lang === 'zh-TW' ? '☀️ 淺色模式' : '☀️ Light Mode')
-              : (lang === 'zh-TW' ? '🌙 深色模式' : '🌙 Dark Mode')}
+            <SunMoonIcon isDark={theme === 'dark'} size={15} className="text-gold" />
+            <span>
+              {theme === 'dark'
+                ? (lang === 'zh-TW' ? '淺色模式' : 'Light Mode')
+                : (lang === 'zh-TW' ? '深色模式' : 'Dark Mode')}
+            </span>
           </button>
           <button
             onClick={() => setLang(lang === 'zh-TW' ? 'en' : 'zh-TW')}
-            className="text-left text-gold/80 hover:text-gold py-1.5"
+            className="text-left text-gold/80 hover:text-gold py-1.5 font-serif text-sm"
           >
             {lang === 'zh-TW' ? 'Switch to English' : '切換到繁體中文'}
           </button>
           {session && (
-            <Link href="/profile" className="text-white/80 hover:text-gold py-1.5" onClick={() => setMenuOpen(false)}>
+            <Link href="/profile" className="text-white/80 hover:text-gold py-1.5 font-serif text-sm" onClick={() => setMenuOpen(false)}>
               {lang === 'zh-TW' ? '個人資料' : 'Profile'}
             </Link>
           )}
           {session && (
-            <Link href="/profile?tab=growth" className="text-white/80 hover:text-gold py-1.5 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
-              <span>{growthBadge?.badge || '☯️'}</span>
+            <Link href="/profile?tab=growth" className="text-white/80 hover:text-gold py-1.5 flex items-center gap-2 font-serif text-sm" onClick={() => setMenuOpen(false)}>
+              <span>{growthBadge?.badge || '✧'}</span>
               <span>{growthBadge ? growthBadge.title : (lang === 'zh-TW' ? '術數修為' : 'Divination Mastery')}</span>
             </Link>
           )}

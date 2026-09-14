@@ -58,6 +58,12 @@ const envSchema = z.object({
   SENTRY_DSN: z.string().optional(),
   NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
 
+  // OAuth Providers (optional)
+  AUTH_GOOGLE_ID: z.string().optional(),
+  AUTH_GOOGLE_SECRET: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+
   // '1' = log-retention job reports row counts without writing
   LOG_PURGE_DRY_RUN: z.enum(['1']).optional(),
 })

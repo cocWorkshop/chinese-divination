@@ -421,21 +421,45 @@ graph LR
 
 #### 1.1 簡約 (Minimalism & Breathing Space)
 - **留白与克制**：大面积留白不是空洞，而是让核心卦辞与命盘自由呼吸。拒绝无意义的多重嵌套边框与装饰性图标堆叠。
-- **色彩配比律 (85 / 12 / 3)**：
-  - **85% 墨夜玄黑底色**（`#080C17` 太极虚空底色，`#0D1526` 主卡片表面色，`#111D35` 浮动层与弹窗），深邃沉静，严禁使用纯黑 `#000000` 或泛紫/泛蓝的浮躁暗色。
-  - **12% 晨曦雅金与暖白**（`#D4A853` 纯金，`rgba(255, 255, 255, 0.88)` 暖白高可读文本，`#9A722E` 古刹沉金次级文本与弱边界）。
-  - **3% 灵气点睛色（极度克制点缀）**：
-    - 硃砂御印（`#C0392B`）：用于关键变爻、急所化解、犯太岁印记。
-    - 灵泉青玉（`#2D8A6E`）：用于吉利、平和、守正状态指示。
-- **材质替代光效**：严禁粗暴高饱和的径向大光晕（Radial Gradients）。使用 `0.02~0.03` 不透明度的微噪点/暗水墨宣纸质感（Micro-grain），搭配 `0.5px~1px` 的烫金发丝线（`rgba(212, 168, 83, 0.16)`），赋予界面古墨石砚与宣纸典籍般的实体触感。
+- **色彩配比律 (85 / 12 / 3) 与日月双模意象 (Dual-Theme Yin & Yang)**：
+  全站支持「太极墨夜」与「宣纸暖白」双模式（默认深色，支持一键切换与持久化），统一遵循东方文人墨客与天象观演的色彩比例：
+  - **太极墨夜（Dark Mode / 默认深色）**：
+    - **85% 墨夜玄黑底色**（`#080C17` 太极虚空底层，`#0D1526` 主卡片表面色，`#111D35` 浮动层与弹窗），深邃沉静，严禁使用纯黑 `#000000` 或泛紫/泛蓝的浮躁暗色。
+    - **12% 晨曦雅金与暖白**（`#D4A853` 赤金，`rgba(255, 255, 255, 0.88)` 暖白高可读文本，`#9A722E` 古刹沉金次级文本与弱边界）。
+    - **3% 灵气点睛色**（硃砂御印 `#C0392B`、灵泉青玉 `#2D8A6E`，极度克制点缀变爻与吉凶）。
+  - **宣纸暖白（Light Mode / 雅致文人书卷）**：
+    - **85% 宣纸素绢底色**（`#FAF8F0` 宣纸暖白底色，`#FFFFFF` 案台卡片表面色，`rgba(255, 255, 255, 0.85)` 卡片背景），温润如古籍善本，严禁使用刺眼冷光死白 `#FFFFFF` 作为全屏背景。
+    - **12% 浓墨古褐与深金**（`#2D1F0E` 浓墨主文本，`rgba(45, 31, 14, 0.72)` 次级墨色，`#B8860B` 古金沉韵，`#E8DCC8` 卷轴边框；正文对比度必须符合 WCAG AA $\ge 4.5:1$）。
+    - **3% 灵气点睛色**（硃砂御印 `#C0392B` 印章朱批、灵泉青玉 `#2D8A6E` 平安指示）。
+- **材质替代光效**：严禁粗暴高饱和的径向大光晕（Radial Gradients）。
+  - 深色模式：使用 `0.02~0.03` 不透明度的微噪点/暗水墨质感（Micro-grain），搭配 `0.5px~1px` 的烫金发丝线（`rgba(212, 168, 83, 0.16)`）。
+  - 浅色模式：使用宣纸纹理微噪，搭配淡金卷轴发丝线（`rgba(184, 134, 11, 0.2)`）。
+  - 赋予界面古墨石砚与宣纸典籍般的实体触感。
 
-#### 1.2 直覺 (Intuition & Progressive Disclosure)
+#### 1.2 直覺 (Intuition & Interaction Ergonomics)
 - **三层渐进式认知漏斗（Progressive Disclosure）**：
   命理系统具有极高的专业门槛（天干地支、藏干、十神、十二宫、神煞）。页面严禁一股脑倾倒专业术语，必须建立三层直觉动线：
   1. **第一层（3 秒直觉断语）**：以极具文采与洞察的大白话给出核心定性（例如：“2026 岁次丙午：金水相激，宜守不宜急，立秋后财源渐明”）。
   2. **第二层（30 秒现代图解）**：通过现代数据可视化（五行能量分布条、运势走势折线图、吉凶倾向雷达图）将抽象术数直观具象化。
   3. **第三层（传统专业原盘）**：四柱八字原盘、紫微十二宫盘、六爻爻象等完整专业盘面，**默认优雅折叠**，保留“查看传统盘面”入口，供资深爱好者按需展开深研。
-- **零门槛交互**：生辰录入支持平滑的自然公农历转换与精准轮盘；起卦动线一气呵成；CTA 按钮意图明确（“推演命盘”、“叩问玄机”），绝不让用户在专业术语前产生认知阻抗。
+
+- **极简直觉交互规范（Human-Centered Interaction Ergonomics / 交互四律）**：
+  UI 操作必须天然契合用户的心理模型与物理直觉，**降低思考成本，杜绝反直觉操作**：
+  1. **自然映射与可感知性（Affordance & Natural Mapping）**：
+     - **可点即所见**：所有可点击或展开的元素（命盘宫位、变爻、签卡、折叠面板）必须有直观的视觉线索（鼠标悬停发丝金光、`cursor-pointer`、明确的旋转箭头/展开标记），绝不让用户猜测“这里能不能点”。
+     - **物理动作自然映射**：仪式性交互（摇卦、铜钱翻转、解签、翻牌）的动效方向与节奏必须符合现实物理直觉，声画合拍，严禁突兀弹窗或瞬间跳变破坏心流。
+  2. **即时明确的反馈闭环（Instant & Unambiguous Feedback）**：
+     - **按压态与微动效**：按钮与卡片交互必须配备自然的微缩压感（`active:scale-[0.98]`）与水墨涟漪；
+     - **拒绝假死与沉默**：任何异步推演、生辰排盘或流式请求，必须在点击后 **100ms 内**给出状态响应（如金纹呼吸转动、朱批水墨渐显），禁用态按钮必须清晰说明不可用原因（如“请先选择出生时辰”），禁止无提示置灰。
+  3. **路径清晰与安全可逆（Wayfinding & Forgiving Interactions）**：
+     - **安全退出与防迷失**：深层排盘面板、抽屉（Drawer）与模态弹窗，必须支持“点击遮罩背景（Click-outside）”、“ESC 键”或“右滑手势”安全退出，严禁制造交互死胡同；
+     - **防误触与草稿自愈**：涉及消耗积分（Karma）或不可逆定盘操作前，必须具备清晰的消耗告知；表单录入支持本地草稿自动暂存，网络异常或中断时提供一键“原地重试（Retry）”，避免用户重复填写生辰。
+  4. **拇指黄金区与单线程聚焦（Thumb-Zone & Single-Thread Focus）**：
+     - **移动端拇指友好**：起卦、掷爻、核心 CTA（“推演命盘”、“叩问玄机”）等高频操作按钮，必须置于屏幕下半部拇指黄金可触达区域，避免孤悬于手机顶部角落；
+     - **起卦全屏沉浸**：在起卦推演核心流程中，自动隐退全局次要导航与干扰性 Banner，确保用户在单线程注意力下顺畅完成操作。
+  5. **智能预设与零摩擦录入（Zero-Friction Inputs）**：
+     - 生辰录入支持公历/农历平滑互转并自动联动润月与时辰干支；
+     - 自动检测时区与经纬度推导真太阳时，并支持记住“历史盘主档案”，一键切换，绝不让普通用户在繁琐历法参数前产生阻抗。
 
 #### 1.3 現代神秘 (Modern Oriental Mysticism)
 - **西文精密 + 中文古雅的排印碰撞**：
@@ -467,58 +491,189 @@ graph LR
 
 ---
 
-### 3. 工程落地规范 (CSS Tokens & Tailwind Patterns)
+### 3. 工程落地规范 (CSS Tokens, Themes & Tailwind Patterns)
 
 #### 3.1 核心色彩与样式 Token (`globals.css`)
 ```css
+/* ==========================================================================
+   1. 浅色模式 (Light Theme / 宣纸暖白) - 默认根变量
+   ========================================================================== */
 :root {
-  /* 墨夜基底（深邃沉静，严禁使用纯黑 #000000 或泛紫渐变） */
-  --bg-abyss: #080c17;          /* 太极虚空底层 */
-  --bg-surface: #0d1526;        /* 主卡片表面色 */
-  --bg-elevated: #111d35;       /* 浮动层与弹窗背景 */
-
-  /* 东方雅金（温润内敛，严禁高饱和亮黄与彩虹渐变） */
-  --gold-pure: #d4a853;         /* 主色：晨曦赤金 */
-  --gold-glow: #e8c278;         /* 悬停高光：流金 */
-  --gold-ancient: #9a722e;      /* 古刹沉金：低调次级文字与边界 */
-  --gold-hairline: rgba(212, 168, 83, 0.16); /* 烫金发丝线：极细高贵边框 */
-
-  /* 神妙点睛色（克制使用，点缀吉凶印证） */
-  --vermillion-seal: #c0392b;   /* 硃砂御印：印章、关键化解、犯太岁提示 */
-  --jade-tranquil: #2d8a6e;     /* 灵泉青玉：平安、吉利、守正状态 */
+  --bg-primary: #faf8f0;          /* 宣纸暖白底层 */
+  --bg-surface: #ffffff;          /* 案台卡片表面色 */
+  --bg-card: rgba(255, 255, 255, 0.85); /* 质感卡片底 */
+  --text-primary: #2d1f0e;        /* 浓墨主文本 (高对比度 WCAG AA >= 4.5:1) */
+  --text-secondary: rgba(45, 31, 14, 0.72); /* 墨褐次级文本 */
+  --text-muted: rgba(45, 31, 14, 0.55);     /* 淡墨弱提示文本 */
+  --gold: #b8860b;                /* 雅致古金 */
+  --gold-light: #d4a853;          /* 浅金高光 */
+  --gold-dark: #8b6508;           /* 沉香暗金 */
+  --border-color: #e8dcc8;        /* 宣纸古籍边框线 */
+  --border-gold: rgba(184, 134, 11, 0.3); /* 金丝微边框 */
 
   /* 字体族定义 */
   --font-serif-classical: 'Noto Serif SC', 'Noto Serif TC', 'Songti SC', SimSun, serif;
   --font-sans-modern: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
+
+/* ==========================================================================
+   2. 深色模式 (Dark Theme / 太极墨夜) - html.dark 激活
+   ========================================================================== */
+.dark {
+  --bg-primary: #0a0f1e;          /* 太极虚空底色 (#080c17 ~ #0a0f1e) */
+  --bg-surface: #111d35;          /* 悬浮面板与主卡片背景 */
+  --bg-card: rgba(17, 29, 53, 0.6);/* 半透玻璃卡片 */
+  --text-primary: #ffffff;        /* 纯白高可读正文 */
+  --text-secondary: rgba(255, 255, 255, 0.7); /* 次级文本 */
+  --text-muted: rgba(255, 255, 255, 0.4);     /* 弱提示文本 */
+  --gold: #d4a853;                /* 晨曦纯金 */
+  --gold-light: #e8c278;          /* 悬停流金 */
+  --gold-dark: #b8893a;           /* 古刹沉金 */
+  --border-color: rgba(212, 168, 83, 0.2);    /* 烫金发丝线 */
+  --border-gold: rgba(212, 168, 83, 0.3);
+
+  /* 神妙点睛色（双模式通用） */
+  --vermillion-seal: #c0392b;     /* 硃砂御印：印章、关键变爻、犯太岁提示 */
+  --jade-tranquil: #2d8a6e;       /* 灵泉青玉：平安、吉利、守正状态 */
+}
+
+/* ==========================================================================
+   3. 打印模式 (@media print / Keepsake Document)
+   ========================================================================== */
+@media print {
+  /* 卦单打印作为藏品留存：强制脱去暗色与浮夸装饰，展平为白底宣纸书卷 */
+  nav, footer, [role='dialog'], .no-print, canvas { display: none !important; }
+  body, .dark, :root {
+    --bg-primary: #ffffff;
+    --bg-surface: #ffffff;
+    --text-primary: #1a1a1a;
+  }
+}
 ```
 
-#### 3.2 经典卡片与容器 Tailwind 组合范式
+#### 3.2 ThemeProvider 与日月双模架构 (Theme Switching Architecture)
+全站统一通过 Client Component 进行日/月主题管理，严禁在组件中脱钩：
+- **状态源**：`src/components/ThemeProvider.tsx` 通过 Context 暴露 `useTheme() => { theme: 'dark' | 'light', toggleTheme }`；
+- **DOM 挂载**：初始化及切换时，在 `document.documentElement`（`<html>`）上精准切换 `.dark` / `.light` class，并同步持久化至 `localStorage.getItem('theme')`；
+- **交互入口**：导航栏（`Navbar.tsx`）与公共分享卦单（`PublicReadingClient.tsx`）均集成 `SunMoonIcon` 日月交替按钮；
+- **兜底保障**：`globals.css` 中设有 `:root:not(.dark)` 属性层，防止未加 `dark:` 的历史硬编码类在浅色模式下爆白。
+
+#### 3.3 双模式组件编码铁律 (Dual-Theme Anti-Patterns & Best Practices)
+编写任何 UI 组件时，必须严格遵守以下 4 条铁律，杜绝浅色模式“翻车”：
+1. **严禁硬编码纯白文本**：
+   - ❌ 错误：`className="text-white"`、`className="text-white/80"`（在浅色模式下会导致白底白字，完全不可读）；
+   - ✅ 正确：使用自适应类 `text-[#2d1f0e] dark:text-white` 或直接使用 CSS 变量 `color: var(--text-primary)`。
+2. **严禁硬编码深黑背景**：
+   - ❌ 错误：`className="bg-[#0d1526]"`、`className="bg-[#0a0f1e]"`；
+   - ✅ 正确：`bg-white dark:bg-[#0d1526]` 或 `bg-[var(--bg-surface)]`。
+3. **边框与阴影自适应**：
+   - ❌ 错误：硬编码 `border-white/10` 或 `border-[#d4a853]/20`；
+   - ✅ 正确：`border-[#e8dcc8] dark:border-[#d4a853]/15 shadow-[0_4px_24px_rgba(45,31,14,0.08)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.45)]`。
+4. **语义化 CSS 变量优先**：
+   - 优先使用已在 `:root` / `.dark` 定义的标准语义变量（`var(--bg-primary)`、`var(--text-primary)`、`var(--gold)`）。
+
+#### 3.4 经典卡片与容器 Tailwind 组合范式
 ```tsx
-// 标准东方极简玄机卡片（彻底取代杂色光晕卡片）
-className="relative rounded-2xl bg-gradient-to-b from-[#0d1526]/80 to-[#080c17]/95 
-           border border-[#d4a853]/15 shadow-[0_12px_36px_rgba(0,0,0,0.45)] 
-           hover:border-[#d4a853]/35 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+// 标准东方双模玄机卡片（深浅模式完美自适应）
+className="relative rounded-2xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+           bg-white/85 dark:bg-gradient-to-b dark:from-[#0d1526]/80 dark:to-[#080c17]/95
+           text-[#2d1f0e] dark:text-white
+           border border-[#e8dcc8] dark:border-[#d4a853]/15
+           shadow-[0_4px_24px_rgba(45,31,14,0.08)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.45)]
+           hover:border-[#b8860b]/40 dark:hover:border-[#d4a853]/35"
 ```
 
-#### 3.3 经典文案排版范式 (Typography Pairing)
+#### 3.5 经典文案排版范式 (Typography Pairing)
 ```tsx
-// 卦辞 / 批注箴言（古雅宋体 + 呼吸字距）
-<h3 className="font-serif text-[#d4a853] tracking-widest text-lg leading-relaxed">
+// 卦辞 / 批注箴言（古雅宋体 + 呼吸字距 + 双模自适应金色）
+<h3 className="font-serif text-[#b8860b] dark:text-[#d4a853] tracking-widest text-lg leading-relaxed">
   「 觀 天 之 道 ， 執 天 之 行 ， 盡 矣 。 」
 </h3>
 
 // 数据 / 时辰标签（精密西文无衬线 + 沉金细字）
-<span className="font-sans text-xs uppercase tracking-wider text-[#9a722e]">
+<span className="font-sans text-xs uppercase tracking-wider text-[#8b6508] dark:text-[#9a722e]">
   2026.09.12 · SOLAR TIME 14:32 · JIANGNAN
 </span>
 ```
 
 ---
 
-### 4. 交付自检三问 (The Design Litmus Test)
+### 4. 交付自检四问 (The Design Litmus Test)
 
-在提交任何 UI 代码或 PR 前，工程师与 Agent 必须进行如下 3 项自检：
-1. **看 1 秒钟（直觉检验）**：用户能否在 1 秒内抓住最核心的一句大白话断语，而不是被满屏专业卦盘吓退？
+在提交任何 UI 代码或 PR 前，工程师与 Agent 必须进行如下 4 项自检：
+1. **看 1 秒钟（直觉与交互检验）**：用户能否在 1 秒内抓住最核心的一句大白话断语，而不是被满屏专业卦盘吓退？操作意图是否一眼即明（哪里可点、下一步做什么），完全无需学习或猜测？
 2. **看 3 秒钟（简约检验）**：界面是否存在多余的客服组件、杂色光晕、廉价 Emoji 或刺眼高斯模糊？
 3. **看 10 秒钟（现代神秘检验）**：界面的整体色调、字距节奏与动效，是否让用户内心宁静、感到专业权威并心生敬畏？
+4. **看双模式（双模与打印检验）**：在 Light 模式（宣纸暖白）、Dark 模式（太极墨夜）以及 `Ctrl+P` 打印预览下，界面文字是否清晰可辨（无白底白字、对比度达标），色彩与卡片质感是否和谐典雅？
+
+---
+
+### 5. 机缘规则与商业化命名体系规范 (Karma Economy & Monetization Specification)
+
+全站商业化与点数流转体系必须严格遵循统一的东方命理学命名体系与设计规范，严禁任何现代化游戏币、代币、电商积分或廉价口语污染产品体验。
+
+#### 5.1 统一命名体系与词汇表 (Unified Taxonomy & Nomenclature)
+
+| 概念分类 | 统一标准中文名 | 统一标准英文名 | 严禁使用之非标用词 (Forbidden Anti-Patterns) |
+| :--- | :--- | :--- | :--- |
+| **点数单位** | **机缘** / **机缘点** | **Karma** / **Karma Credits** | 代币, 积分, 金币, 点数, Token, Coins, Credits (泛指) |
+| **大运流年分阶规则**| **大运阶梯法则** / **大运之限** | **Decadal Gating Rule** | 解锁规则, 收费门槛, 阶梯付费, Gating, Paywall |
+| **整体体系** | **机缘体系** / **天机因果法则**| **Karma Economy & Rules** | 收费系统, 支付系统, 商业化规则, 经济模型 |
+| **术数排盘消耗** | **天机启盘** / **启盘机缘** | **Divination Gating Cost** | 算命扣费, 下单支付, 消费, 购买 |
+| **深度请益消耗** | **请益机缘** / **解惑求教** | **Consultation Cost** | 提问收费, 客服点数, 对话扣币 |
+| **初始/日常赠予** | **善缘赠予** / **晨夕感应** | **Karma Inflow & Rewards** | 新人礼包, 签到金币, 薅羊毛, 赠币 |
+| **分享引荐** | **广结善缘** | **Referral Karma** | 邀请返佣, 拉新奖励, 裂变代币 |
+| **扣减动作动词** | **结付** / **借由机缘** | **Honor with Karma** | 购买, 扣款, 消费, 扣除, 付钱 |
+
+#### 5.2 易学哲学根基与设计原理 (Philosophical Foundations)
+
+1. **阴阳太极与因果守恒**：
+   - 易道推演乃探问天道幽微之理，古法筮爻讲求“心诚则灵，卦不走空”。用户在窥探天命因果时，以「机缘」为引借力启盘，契合因果守恒定律，化俗气之金钱交易为文雅之因果结缘。
+2. **“三十年世，立命后运”之大运阶梯法则**：
+   - 古制三十年为一世，亦即人生三大步大运（每步大运管十年）。
+   - **前三步大运（约 0 ~ 30 岁）完全免费**：涵盖求学、立命、初涉俗世之初生阶段，天地有好生之德，玄机平台怀慈悲结缘之心，对这三十年之大运及逐年流年精批完全无门槛开放；
+   - **第四步大运及之后（30 岁+）每步结付 1 机缘点**：三十而立，立业涉世之后，步入后运，每解锁窥探一步大运（含十年流年星度、岁运刑冲克害与行事宜忌），需结付 1 点机缘，即为「大运阶梯法则」。
+
+#### 5.3 综合机缘配置与 Admin 键值矩阵 (Karma Economy Configuration Matrix)
+
+所有数值均在数据库 `AdminSetting` 表中持久化，并由后台管理页面（`/admin/settings`）的「**機緣體系與收費規則 / Karma Economy & Gating Rules**」面板直接动态调整，无需重启服务：
+
+| 维度 | 配置项 Key | 默认值 | 语义名称 (中/英) | 业务说明 |
+| :--- | :--- | :--- | :--- | :--- |
+| **善缘赠予** | `registerBonus` | `6` | 註冊善緣 / Register Karma | 新用户注册成功时自动结缘赠送的点数 |
+| **善缘赠予** | `dailyBonusCredits` | `2` | 晨夕感應 / Daily Login Karma | 每日首次登录平台结缘赠送的点数 |
+| **善缘赠予** | `shareBonus` | `20` | 廣結善緣 / Referral Karma | 邀请好友注册成功后，双方各得之机缘点 |
+| **善缘赠予** | `shareBonusChat` | `5` | 舊版分享兼容 / Legacy Chat Bonus | 兼容早期版本聊天次数的配置项 |
+| **天机启盘** | `cost_bazi` | `5` | 八字命理啟盤 / BaZi Cost | 四柱八字排盘与终生大运精批启盘消耗 |
+| **天机启盘** | `cost_ziwei` | `5` | 紫微斗數排盤 / Zi Wei Cost | 紫微十二宫排盘与格局详批启盘消耗 |
+| **天机启盘** | `cost_qimen` | `5` | 奇門遁甲起局 / Qi Men Cost | 奇门九宫飞布与时空局象启盘消耗 |
+| **天机启盘** | `cost_meihua` | `3` | 梅花易數起卦 / Mei Hua Cost | 先天后天梅花卦象推演启盘消耗 |
+| **天机启盘** | `cost_iching` | `3` | 周易筮爻求筮 / I Ching Cost | 六十四卦文王卦象推演启盘消耗 |
+| **天机启盘** | `cost_liuyao` | `3` | 六爻納甲立卦 / Liu Yao Cost | 纳甲装卦与世应生克推演启盘消耗 |
+| **天机启盘** | `cost_fengshui`| `3` | 堪輿風水定穴 / Feng Shui Cost | 九宫飞星与宅运勘舆排盘消耗 |
+| **深入请益** | `cost_chat` | `2` | 卦盤深入解惑 / In-depth Chat Cost| 命盘/卦象专属深入问答每次消耗 |
+| **深入请益** | `cost_master` | `1` | 請益玄機大師 / Ask Master Cost | 跨时空命理大师长上下文对话每问消耗 |
+| **大运阶梯** | `free_dayun_limit`| `3` | 免費大運步數 / Free DaYun Limit | 前 $N$ 步大运（每步十年）完全免费开放 |
+| **大运阶梯** | `cost_dayun_unlock`| `1` | 大運解鎖機緣 / Decadal Unlock Karma | 超过免费限额后，每解锁一步大运所需机缘 |
+
+#### 5.4 技术实现与调用规范 (Technical Architecture & APIs)
+
+1. **服务单例（Single Source of Truth）**：
+   - `src/lib/creditService.ts`：
+     - `getCost(type: string): Promise<number>`：动态获取当前后台配置的启盘/请益消耗；
+     - `getKarmaRules(): Promise<{ freeDaYunLimit: number; costDayunUnlock: number }>`：获取当前大运阶梯规则；
+     - `deductCredits(userId, type, note): Promise<boolean>`：原子扣减，若余额不足安全拦截，成功后写入 `CreditLog` 审计流。
+2. **纯粹算法与判别核心**：
+   - `src/lib/baziCalculator.ts`：
+     - `isDaYunUnlocked(decadeIndex: number, unlockedDecades: number[], freeLimit: number = 3): boolean`
+     - 判定算法：`decadeIndex < freeLimit || unlockedDecades.includes(decadeIndex)`
+3. **接口契约**：
+   - `GET /api/credits`：客户端拉取当前可用余额、各功能配置成本矩阵与 `rules`（大运阶梯规则参数）；
+   - `POST /api/credits/consume`：原子扣除机缘接口，传入 `{ type: 'dayun_unlock', decadeIndex: number, readingId?: string }`。
+
+#### 5.5 文案与交互礼仪 (Etiquette & Copywriting Standards)
+
+- 严禁出现“余额不足，请充值”、“付费解锁”等生硬电商文案；
+- 余额不足时统一提示：“**機緣點暫缺，可由每日晨夕感應或引薦同道結緣獲取。**”（“Insufficient Karma credits. Please acquire through daily reflection or referrals.”）；
+- 加锁提示卡片必须展现古铜锁印微动效，并辅以《易经》古雅箴言，庄严昭示三十年立命与人生阶段演进意义。
+

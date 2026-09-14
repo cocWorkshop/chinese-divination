@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion'
 import { useDivination } from '../DivinationContext'
 import { T } from '../constants'
+import { PAIPAN_EXPLANATION } from '../../guidanceConfig'
+import HelpTooltip from '@/components/HelpTooltip'
 import BaziForm from './BaziForm'
 import ZiweiForm from './ZiweiForm'
 import IChingForm from './IChingForm'
@@ -45,20 +47,26 @@ export default function DivinationForm() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       onSubmit={handleSubmit}
-      className="glass-card rounded-2xl p-4 sm:p-8 space-y-4 sm:space-y-5"
+      className="oriental-sanctuary-card rounded-2xl p-5 sm:p-8 space-y-5 sm:space-y-6 shadow-xl"
     >
       {/* Mode switch — Full Reading vs Chart Only. Shown to everyone; the
           auth check happens on submit. */}
       {PAIPAN_TYPES.includes(type) && (
-        <div className="flex rounded-full border overflow-hidden w-fit mx-auto" style={{ borderColor: 'var(--border-gold)' }}>
-          <button type="button" onClick={() => setPaipanOnly(false)}
-            className={`px-4 sm:px-4 py-2 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors ${!paipanOnly ? 'bg-gold text-navy-950' : ''}`}
-            style={paipanOnly ? { color: 'var(--text-muted)' } : {}}
-          >{T(lang, '完整解盤', 'Full Reading')}</button>
-          <button type="button" onClick={() => setPaipanOnly(true)}
-            className={`px-4 sm:px-4 py-2 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors ${paipanOnly ? 'bg-gold text-navy-950' : ''}`}
-            style={!paipanOnly ? { color: 'var(--text-muted)' } : {}}
-          >{T(lang, '只排盤（免費）', 'Chart Only (free)')}</button>
+        <div className="flex items-center justify-center gap-2 mx-auto w-fit">
+          <div className="flex rounded-full border overflow-hidden w-fit" style={{ borderColor: 'var(--border-gold)' }}>
+            <button type="button" onClick={() => setPaipanOnly(false)}
+              className={`px-4 sm:px-4 py-2 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors cursor-pointer ${!paipanOnly ? 'bg-gold text-navy-950' : ''}`}
+              style={paipanOnly ? { color: 'var(--text-muted)' } : {}}
+            >{T(lang, PAIPAN_EXPLANATION.fullReadingLabel.zh, PAIPAN_EXPLANATION.fullReadingLabel.en)}</button>
+            <button type="button" onClick={() => setPaipanOnly(true)}
+              className={`px-4 sm:px-4 py-2 sm:py-1.5 text-sm sm:text-xs font-medium transition-colors cursor-pointer ${paipanOnly ? 'bg-gold text-navy-950' : ''}`}
+              style={!paipanOnly ? { color: 'var(--text-muted)' } : {}}
+            >{T(lang, PAIPAN_EXPLANATION.buttonLabel.zh, PAIPAN_EXPLANATION.buttonLabel.en)}</button>
+          </div>
+          <HelpTooltip
+            content={T(lang, PAIPAN_EXPLANATION.tooltip.zh, PAIPAN_EXPLANATION.tooltip.en)}
+            title={T(lang, '只排盤模式說明', 'Chart Only Mode Note')}
+          />
         </div>
       )}
 

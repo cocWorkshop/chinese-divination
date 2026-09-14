@@ -34,96 +34,26 @@
 
 ---
 
-## 三、資料流
+## 三、端到端資料流與狀態轉移 (Data Flow & State Transition)
 
-```
-        ┌───────────┐                       ┌──────────────┐
-   ad → │ View 1   │ ─utm 寫入 sessionStor─ │ sessionStor  │
-        │ /start   │                       │ xj_utm       │
-        └─────┬─────┘                       └──────────────┘
-              │ click
-              ▼
-        ┌───────────┐
-        │ View 2   │
-        │ /start/   │
-        │ cast      │
-        └─────┬─────┘
-              │ POST /api/start/init { email, birthDate, birthTime, gender, utm }
-              ▼
-   ┌──────────────────────────────────────────────────────────┐
-   │ /api/start/init                                          │
-   │  • upsert User by email (case-insensitive)               │
-   │    - new        → tentative=true, credits=trialCredits  │
-   │    - tentative  → reuse (no extra grant)                │
-   │    - real user  → 409 ALREADY_REGISTERED → /login       │
-   │  • create Reading (status=pending, type=bazi, inputData) │
-   │  • Set-Cookie: xj_funnel_session = HMAC(userId+exp)     │
-   │  • Return { readingId, isReturning }                     │
-   └──────────────────────────────────────────────────────────┘
-              │ readingId
-              ▼
-        ┌────────────┐
-        │ View 3    │
-        │ /reading/  │
-        │ [id]       │
-        └─────┬──────┘
-              │ POST /api/divination { readingId, language: 'zh-TW' }   (cookie auth)
-              ▼
-        SSE stream: chart_ready → value_chunk(['sections','overview']) → ['sections','career'] → ...
-        Locked sections rendered as static blurred placeholders.
-              │
-              ▼
-        ┌────────────┐
-        │ View 4    │
-        │ /master/   │
-        │ [id]       │
-        └─────┬──────┘
-              │ POST /api/master { checkin: true }   (cookie auth, master speaks first)
-              │ POST /api/master { message: chip }   (subsequent turns)
-              ▼
-        SSE stream: content (token-by-token), tool_start, tool_end, done
-        Trial credits deducted: 1 per master turn.
-              │
-              ▼
-        ┌────────────┐
-        │ View 5    │
-        │ /unlock/   │
-        │ [id]       │
-        └─────┬──────┘
-              │ POST /api/start/complete { password, name? }   (cookie auth)
-              ▼
-   ┌──────────────────────────────────────────────────────────┐
-   │ /api/start/complete                                      │
-   │  • hash password, set tentative=false                    │
-   │  • signupCompletedAt = now()                             │
-   │  • credits += registerBonus (default 6)                  │
-   │  • emailVerified = false, generate verificationToken    │
-   │  • sendVerificationEmail(...)                            │
-   │  • Clear xj_funnel_session cookie                        │
-   │  • Return { success, email, needsEmailVerification }    │
-   └──────────────────────────────────────────────────────────┘
-              │
-              ▼
-        ┌────────────┐
-        │ View 5b   │
-        │ /verify-   │
-        │ sent       │
-        └────────────┘
-              │ user goes to inbox, clicks link
-              ▼
-        ┌─────────────────────┐    ┌─────────────────┐    ┌────────────┐
-        │ /verify-email page  │ → │ user clicks    │ → │ /login    │
-        │ (existing route)    │    │ "登入" button  │    │            │
-        └─────────────────────┘    └─────────────────┘    └─────┬──────┘
-                                                                │ NextAuth signIn
-                                                                ▼
-                                                          ┌────────────┐
-                                                          │ /dashboard │
-                                                          │ (master    │
-                                                          │ widget    │
-                                                          │ shows full │
-                                                          │ history)   │
-                                                          └────────────┘
+```mermaid
+flowchart TD
+    Ad["廣告流量 (UTM 追蹤)"] --> V1["View 1: /start<br/>(寫入 sessionStorage xj_utm)"]
+    V1 -->|點擊 CTA| V2["View 2: /start/cast<br/>(收集生辰 + Email)"]
+    
+    V2 -->|POST /api/start/init| InitRoute["/api/start/init 閘口<br/>• upsert User (tentative=true, credits=trialCredits)<br/>• 建立 Reading (status=pending, type=bazi)<br/>• 簽發 Set-Cookie: xj_funnel_session = HMAC(userId+exp)"]
+    
+    InitRoute -->|返回 readingId| V3["View 3: /start/reading/[id]<br/>(流式試用排盤)"]
+    V3 -->|POST /api/divination (Cookie Auth)| SSE1["SSE Stream:<br/>• chart_ready (四柱墨滲)<br/>• overview & career 解讀流式打字<br/>• 其餘 5 個章節顯示鎖定 Shimmer"]
+    
+    SSE1 -->|點擊下一步| V4["View 4: /start/master/[id]<br/>(大師 Demo 互動)"]
+    V4 -->|POST /api/master (Cookie Auth)| SSE2["大師對話 Stream:<br/>• 自動 checkin 開場問候<br/>• 3 個快速對話 Chip<br/>• 消耗 trial credits (1點/輪)"]
+    
+    SSE2 -->|點擊解鎖全部| V5["View 5: /start/unlock/[id]<br/>(設密碼 + 轉化)"]
+    V5 -->|POST /api/start/complete| CompleteRoute["/api/start/complete 轉正<br/>• User tentative 轉 false<br/>• 原子發放 Welcome 註冊機緣 (50點)<br/>• 關聯 Reading 歸屬<br/>• 發送 Resend 郵件驗證信<br/>• 清除 funnel cookie"]
+    
+    CompleteRoute -->|跳轉| V5b["View 5b: /start/verify-sent<br/>(查收信件 Splash)"]
+    V5b -->|用戶點擊郵箱連結| Verified["驗證成功 → /login → /dashboard<br/>(暢享完整解盤與對話)"]
 ```
 
 **注意**：
