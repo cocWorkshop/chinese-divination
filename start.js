@@ -14,6 +14,22 @@ http.createServer = function(...args) {
   return server
 }
 
+// Sanitize critical environment variables (Docker --env-file retains surrounding quotes)
+for (const key of [
+  'DATABASE_URL',
+  'NEXTAUTH_URL',
+  'NEXTAUTH_SECRET',
+  'OPENROUTER_API_KEY',
+  'RESEND_API_KEY',
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'PORT'
+]) {
+  if (process.env[key]) {
+    process.env[key] = process.env[key].trim().replace(/^["']|["']$/g, '')
+  }
+}
+
 // Run pending database migrations before starting.
 //
 // FAIL FAST (architecture plan I2): a failed `migrate deploy` used to be

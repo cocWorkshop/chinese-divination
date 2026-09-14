@@ -73,6 +73,13 @@ export type Env = z.infer<typeof envSchema>
 function validate(): void {
   if (process.env.SKIP_ENV_VALIDATION === '1' || process.env.NODE_ENV === 'test') return
 
+  // Strip accidental surrounding quotes from env files (e.g. docker --env-file)
+  for (const [k, v] of Object.entries(process.env)) {
+    if (typeof v === 'string' && ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'")))) {
+      process.env[k] = v.slice(1, -1)
+    }
+  }
+
   const result = envSchema.safeParse(process.env)
   if (result.success) return
 

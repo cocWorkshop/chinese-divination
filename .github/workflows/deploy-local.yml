@@ -37,11 +37,17 @@ jobs:
           docker stop chinese-divination-test || true
           docker rm chinese-divination-test || true
 
-          # 加载环境变量文件（优先使用 .env.production，回退至 .env）
+          # 加载环境变量文件（优先使用宿主机测试配置 /home/elvin/.env.chinese-divination-test，回退至 .env.production 或 .env）
           ENV_FILE_FLAG=""
-          if [ -f .env.production ]; then
+          if [ -f /home/elvin/.env.chinese-divination-test ]; then
+            echo "📄 Using /home/elvin/.env.chinese-divination-test"
+            ENV_FILE_FLAG="--env-file /home/elvin/.env.chinese-divination-test"
+          elif [ -f .env.production ]; then
             echo "📄 Using .env.production"
             ENV_FILE_FLAG="--env-file .env.production"
+          elif [ -f /home/elvin/projects/chinese-divination/.env.production ]; then
+            echo "📄 Using /home/elvin/projects/chinese-divination/.env.production"
+            ENV_FILE_FLAG="--env-file /home/elvin/projects/chinese-divination/.env.production"
           elif [ -f .env ]; then
             echo "📄 Using .env"
             ENV_FILE_FLAG="--env-file .env"
@@ -50,11 +56,11 @@ jobs:
           fi
 
           echo "🚀 Running new container: chinese-divination-test..."
-          # 配置说明（继承自 docker-compose.yml）：
-          # - --network host: 直连宿主机网络，确保容器可访问宿主机 PostgreSQL (localhost:5432)
+          # 配置说明：
+          # - --network host: 直连宿主机网络，确保可直接访问宿主机 PostgreSQL (127.0.0.1:5432) 和本地 8088 端口
           # - --memory 2g: 限制内存防止内存泄漏导致宿主机故障
-          # - -e PORT=8088: 监听本地 8088 测试端口
-          # - --health-*: 继承 compose 的健康检查策略与 90s 启动缓冲
+          # - -e PORT=8088: 监听 8088 端口
+          # - --health-*: 健康检查策略与 90s 启动缓冲
           docker run -d \
             --name chinese-divination-test \
             --restart unless-stopped \
@@ -74,10 +80,12 @@ jobs:
       - name: Verify Deployment Health
         run: |
           echo "⏳ Waiting for container startup and database migrations..."
-          for i in $(seq 1 15); do
+          for i in $(seq 1 30); do
             STATUS=$(docker inspect --format '{{.State.Status}}' chinese-divination-test 2>/dev/null || echo "not_found")
-            if [ "$STATUS" = "exited" ] || [ "$STATUS" = "dead" ]; then
-              echo "❌ Container crashed during startup! Showing recent logs:"
+            RESTART_COUNT=$(docker inspect --format '{{.RestartCount}}' chinese-divination-test 2>/dev/null || echo "0")
+
+            if [ "$STATUS" = "exited" ] || [ "$STATUS" = "dead" ] || [ "$RESTART_COUNT" -gt 0 ]; then
+              echo "❌ Container crashed during startup! (Status: $STATUS, RestartCount: $RESTART_COUNT)"
               docker logs --tail 50 chinese-divination-test
               exit 1
             fi
@@ -89,12 +97,13 @@ jobs:
               exit 0
             fi
 
-            echo "Waiting for service to be healthy (attempt $i/15)..."
+            echo "Waiting for service to be healthy (attempt $i/30)..."
             sleep 2
           done
 
-          echo "⚠️ Health check timed out after 30s. Checking container status & logs:"
-          docker logs --tail 30 chinese-divination-test
+          echo "❌ Health check timed out after 60s. Container failed to become healthy:"
+          docker logs --tail 50 chinese-divination-test
+          exit 1
 
       - name: Prune Dangling Images
         if: always()
