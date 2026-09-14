@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { T } from '@/lib/i18n'
+import { LinkIcon, ShareIcon, CopyIcon } from '@/components/DivinationIcons'
 
 async function copyToClipboard(text: string): Promise<boolean> {
   try {
@@ -58,6 +59,20 @@ export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW
     setLoading(false)
   }
 
+  const revoke = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/readings/${readingId}/share`, { method: 'DELETE' })
+      if (res.ok) {
+        setUrl(null)
+        toast.success(T(lang, '已停止分享，連結已失效', 'Sharing stopped — link revoked'))
+      } else {
+        toast.error(T(lang, '操作失敗', 'Operation failed'))
+      }
+    } catch { toast.error(T(lang, '操作失敗', 'Operation failed')) }
+    setLoading(false)
+  }
+
   // Compact pill — used in the result card's header corner.
   if (variant === 'inline') {
     return (
@@ -66,39 +81,59 @@ export default function ShareResultButton({ readingId, shareToken, lang = 'zh-TW
           ? () => { copyToClipboard(url).then(ok => { if (ok) toast.success(T(lang, '連結已複製！', 'Link copied!')) }) }
           : generate}
         disabled={loading}
-        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
-        style={{ backgroundColor: 'rgba(212, 168, 83, 0.1)', color: 'var(--gold)', border: '1px solid rgba(212, 168, 83, 0.25)' }}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs rounded-lg transition-colors disabled:opacity-50 flex-shrink-0 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30"
       >
-        {loading ? '...' : url ? `🔗 ${T(lang, '複製連結', 'Copy link')}` : `📤 ${T(lang, '分享', 'Share')}`}
+        {loading ? (
+          '...'
+        ) : url ? (
+          <>
+            <LinkIcon className="w-3.5 h-3.5" />
+            <span>{T(lang, '複製連結', 'Copy link')}</span>
+          </>
+        ) : (
+          <>
+            <ShareIcon className="w-3.5 h-3.5" />
+            <span>{T(lang, '分享', 'Share')}</span>
+          </>
+        )}
       </button>
     )
   }
 
   if (url) {
     return (
-      <div className="mt-3 pt-3 border-t flex items-center gap-2 flex-wrap" style={{ borderColor: 'var(--card-border)' }}>
-        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>🔗</span>
-        <code className="text-xs break-all px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--gold)' }}>{url}</code>
+      <div className="mt-3 pt-3 border-t border-[var(--card-border)] flex items-center gap-2 flex-wrap">
+        <LinkIcon className="w-4 h-4 text-gold/70 flex-shrink-0" />
+        <code className="text-xs break-all px-2 py-1 rounded bg-[var(--accent-bg)] text-gold border border-gold/20 flex-1">{url}</code>
         <button
           onClick={() => { copyToClipboard(url).then(ok => { if (ok) toast.success(T(lang, '已複製', 'Copied!')) }) }}
-          className="px-2 py-0.5 text-xs rounded transition-colors"
-          style={{ backgroundColor: 'rgba(212, 168, 83, 0.1)', color: 'var(--gold)' }}
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 min-h-[32px] text-xs rounded transition-colors bg-gold/15 hover:bg-gold/25 text-gold border border-gold/30"
+          title={T(lang, '複製連結', 'Copy link')}
         >
-          📋
+          <CopyIcon className="w-3.5 h-3.5" />
+          <span>{T(lang, '複製', 'Copy')}</span>
+        </button>
+        <button
+          onClick={revoke}
+          disabled={loading}
+          className="px-2.5 py-1.5 min-h-[32px] text-xs rounded transition-colors disabled:opacity-50 bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30"
+          title={T(lang, '停止分享並使連結失效', 'Stop sharing and revoke the link')}
+        >
+          {T(lang, '停止分享', 'Stop sharing')}
         </button>
       </div>
     )
   }
 
   return (
-    <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--card-border)' }}>
+    <div className="mt-3 pt-3 border-t border-[var(--card-border)]">
       <button
         onClick={generate}
         disabled={loading}
-        className="px-3 py-1.5 text-xs rounded-lg transition-colors disabled:opacity-50"
-        style={{ backgroundColor: 'rgba(212, 168, 83, 0.1)', color: 'var(--gold)', border: '1px solid rgba(212, 168, 83, 0.2)' }}
+        className="inline-flex items-center gap-2 px-3 py-1.5 min-h-[36px] text-xs rounded-lg transition-colors disabled:opacity-50 bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30"
       >
-        {loading ? '...' : `📤 ${T(lang, '分享結果', 'Share Result')}`}
+        <ShareIcon className="w-3.5 h-3.5" />
+        <span>{loading ? '...' : T(lang, '分享結果', 'Share Result')}</span>
       </button>
     </div>
   )

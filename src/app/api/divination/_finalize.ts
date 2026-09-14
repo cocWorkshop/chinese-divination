@@ -16,7 +16,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
-import { deductCredits } from '@/lib/rateLimit'
+import { deductCredits } from '@/lib/creditService'
 import { markCompleted, markFailed } from '@/lib/readings/lifecycle'
 import type { RequestLogger } from '@/lib/logger'
 import { validateHandlerOutput, type DivinationContext, type DivinationHandler } from './handlers'

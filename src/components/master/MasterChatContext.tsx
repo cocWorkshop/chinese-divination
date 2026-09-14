@@ -82,9 +82,11 @@ export interface MasterMsg {
   content: string
   timestamp: string
   /** Optional special-rendering kind. Default is text. */
-  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting' | 'system_note'
+  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting' | 'system_note' | 'feedback_prompt'
   ctaPayload?: CtaCardPayload
   readingCardPayload?: ReadingCardPayload
+  feedbackPromptReason?: 'slow_response' | 'milestone' | 'timeout'
+  turnDurationMs?: number
 }
 
 export interface ToolStatus {
@@ -127,7 +129,7 @@ function parseReadingCompleteType(content: string): string | null {
   return m ? m[1] : null
 }
 
-type Shape = 'collapsed' | 'expanded'
+export type Shape = 'collapsed' | 'expanded'
 
 /**
  * Greeting state hydrated from GET /api/master. Used by the widget to render
@@ -205,7 +207,22 @@ interface MasterChatContextValue {
   widgetOpener: string
 }
 
+export interface MasterChatActionsValue {
+  enabled: boolean
+  shape: Shape
+  setShape: (s: Shape) => void
+  toggleShape: () => void
+  sendMessage: (content: string) => Promise<void>
+  notifyTyping: (draftLength: number) => void
+  cancelPendingReading: () => void
+  startNewSession: () => Promise<void>
+  clearSession: () => Promise<void>
+  markDisclosureSeen: () => Promise<void>
+  setPortraitEnabled: (enabled: boolean) => Promise<void>
+}
+
 const MasterChatContext = createContext<MasterChatContextValue | null>(null)
+const MasterChatActionsContext = createContext<MasterChatActionsValue | null>(null)
 
 const toolLabels: Record<string, { zh: string; en: string }> = {
   get_user_profile: { zh: '查閱檔案中...', en: 'Reading profile...' },
@@ -586,6 +603,10 @@ export function MasterChatProvider({ children }: ProviderProps) {
                 tool?: string
                 error?: string
                 payload?: CtaCardPayload | ReadingCardPayload
+                durationMs?: number
+                ttftMs?: number | null
+                reason?: string
+                isTimeout?: boolean
               }
 
               if (event.type === 'content') {
@@ -686,6 +707,33 @@ export function MasterChatProvider({ children }: ProviderProps) {
                   kind: 'reading_card',
                   readingCardPayload: payload,
                 })
+              } else if (event.type === 'metrics') {
+                // Track turn latency metrics emitted by server
+                const duration = typeof event.durationMs === 'number' ? event.durationMs : undefined
+                if (duration) {
+                  setMessages((prev) => {
+                    const updated = [...prev]
+                    if (updated.length > 0) {
+                      const last = updated[updated.length - 1]
+                      if (last && last.role === 'assistant') {
+                        updated[updated.length - 1] = { ...last, turnDurationMs: duration }
+                      }
+                    }
+                    return updated
+                  })
+                }
+              } else if (event.type === 'feedback_prompt') {
+                const reason = event.reason as 'slow_response' | 'milestone' | 'timeout'
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    role: 'assistant',
+                    content: '',
+                    timestamp: new Date().toISOString(),
+                    kind: 'feedback_prompt',
+                    feedbackPromptReason: reason,
+                  },
+                ])
               } else if (event.type === 'error') {
                 setMessages((prev) => {
                   const updated = [...prev]
@@ -1274,13 +1322,54 @@ export function MasterChatProvider({ children }: ProviderProps) {
     ],
   )
 
-  return <MasterChatContext.Provider value={value}>{children}</MasterChatContext.Provider>
+  const actionsValue = useMemo<MasterChatActionsValue>(
+    () => ({
+      enabled,
+      shape,
+      setShape,
+      toggleShape,
+      sendMessage,
+      notifyTyping,
+      cancelPendingReading,
+      startNewSession,
+      clearSession,
+      markDisclosureSeen,
+      setPortraitEnabled,
+    }),
+    [
+      enabled,
+      shape,
+      setShape,
+      toggleShape,
+      sendMessage,
+      notifyTyping,
+      cancelPendingReading,
+      startNewSession,
+      clearSession,
+      markDisclosureSeen,
+      setPortraitEnabled,
+    ],
+  )
+
+  return (
+    <MasterChatActionsContext.Provider value={actionsValue}>
+      <MasterChatContext.Provider value={value}>{children}</MasterChatContext.Provider>
+    </MasterChatActionsContext.Provider>
+  )
 }
 
 export function useMasterChat(): MasterChatContextValue {
   const ctx = useContext(MasterChatContext)
   if (!ctx) {
     throw new Error('useMasterChat must be used within a MasterChatProvider')
+  }
+  return ctx
+}
+
+export function useMasterChatActions(): MasterChatActionsValue {
+  const ctx = useContext(MasterChatActionsContext)
+  if (!ctx) {
+    throw new Error('useMasterChatActions must be used within a MasterChatProvider')
   }
   return ctx
 }

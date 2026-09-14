@@ -1,5 +1,6 @@
 'use client'
 
+import { DivinationIcon } from '@/components/DivinationIcons'
 import { useDivination } from '../DivinationContext'
 import { T, inputCls, labelCls } from '../constants'
 import FormSection from './fields/FormSection'
@@ -8,7 +9,12 @@ import FormSection from './fields/FormSection'
 export default function OtherForm() {
   const { form, setField, lang } = useDivination()
   return (
-    <FormSection title={`📖 ${T(lang, '占問', 'Inquiry')}`}>
+    <FormSection title={
+      <span className="flex items-center gap-1.5">
+        <DivinationIcon type="other" className="w-4 h-4 text-gold-light" />
+        <span>{T(lang, '占問', 'Inquiry')}</span>
+      </span>
+    }>
       <div>
         <label htmlFor="other-sub-type" className={labelCls}>{T(lang, '占卜類型', 'Sub-type')}</label>
         <select id="other-sub-type" className={inputCls} value={form.subType} onChange={e => setField('subType', e.target.value)}>

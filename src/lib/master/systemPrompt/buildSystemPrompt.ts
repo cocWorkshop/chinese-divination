@@ -23,6 +23,7 @@ import path from 'path'
 import { loadMasterPersona } from './persona'
 import { buildCapabilityCatalog } from './capabilityCatalog'
 import { buildSkillsCatalog } from '../skills'
+import { generateCalendarReferenceTable } from '@/lib/currentMoment'
 
 export type TurnType = 'message' | 'reflection' | 'checkin'
 
@@ -95,10 +96,17 @@ export function buildMasterSystemPrompt(input: BuildMasterSystemPromptInput): st
 }
 
 function buildContextBlock(input: BuildMasterSystemPromptInput): string {
+  const parsed = Date.parse(input.currentDateTime)
+  const baseDate = !isNaN(parsed) ? new Date(parsed) : new Date()
+  const calTable = generateCalendarReferenceTable(baseDate, 14, -480)
+
   return [
     '## Current moment — authoritative; anchor all time reasoning here',
     `- Now (現在): ${input.currentDateTime}`,
     `- Language: ${input.lang}`,
-    'Resolve 今天／今年／本月、流年大運、年齡、應期、擇日 against the moment above — never against an assumed or training-cutoff date.',
+    'Resolve 今天／今年／本月、流年大運、年齡、應期、擇日 against the moment and pre-computed calendar table below — never against an assumed or training-cutoff date.',
+    '',
+    '### Calendar Reference Table (Next 14 Days)',
+    calTable,
   ].join('\n')
 }

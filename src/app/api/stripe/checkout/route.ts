@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 import { CREDIT_PACKS, type PackId } from '@/lib/creditPacks'
+import { rateLimit } from '@/lib/rateLimiter'
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -10,8 +11,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const packId = body.packId as PackId
+  if (!rateLimit(`stripe-checkout:${session.user.id}`, 8, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many checkout requests. Please try again shortly.' }, { status: 429 })
+  }
+
+  const raw = await req.json().catch(() => ({}))
+  const packId = raw?.packId as PackId
   const pack = CREDIT_PACKS[packId]
   if (!pack) {
     return NextResponse.json({ error: 'Invalid pack' }, { status: 400 })

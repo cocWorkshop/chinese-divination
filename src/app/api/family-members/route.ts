@@ -23,6 +23,10 @@ const memberFieldsSchema = z.object({
   birthEnvironment: z.string().max(500).nullish(),
 })
 
+const deleteMemberSchema = z.object({
+  id: z.string().min(1, 'ID is required'),
+})
+
 function invalidInput(error: z.ZodError): NextResponse {
   return NextResponse.json(
     { error: 'Invalid input', issues: error.issues.map(i => `${i.path.join('.')}: ${i.message}`) },
@@ -150,10 +154,15 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { id } = await req.json()
-  if (!id) {
-    return NextResponse.json({ error: 'ID is required' }, { status: 400 })
+  const raw = await req.json().catch(() => null)
+  const parsed = deleteMemberSchema.safeParse(raw)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message || 'ID is required' },
+      { status: 400 }
+    )
   }
+  const { id } = parsed.data
 
   const existing = await prisma.familyMember.findFirst({ where: { id, userId: session.user.id } })
   if (!existing) {

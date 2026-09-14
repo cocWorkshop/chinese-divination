@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logAuth } from '@/lib/authLog'
+import { getClientIp } from '@/lib/clientIp'
 
 export async function POST(req: NextRequest) {
   const { token, rating, feedback } = await req.json()
@@ -28,11 +29,14 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
+  const ip = getClientIp(req)
   const userAgent = req.headers.get('user-agent') || null
 
   // Delete auth logs for this email
   await prisma.authLog.deleteMany({ where: { email: user.email } })
+
+  // Delete LLM logs containing user queries & divination conversations (GDPR Article 17)
+  await prisma.llmLog.deleteMany({ where: { userId: user.id } })
 
   // Delete user (cascades to readings, familyMembers, rateLimits, shareLinks, etc.)
   await prisma.user.delete({ where: { id: user.id } })

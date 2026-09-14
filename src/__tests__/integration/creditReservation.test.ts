@@ -11,7 +11,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { prisma } from '@/lib/prisma'
-import { holdCredits, getCost } from '@/lib/rateLimit'
+import { holdCredits, getCost } from '@/lib/creditService'
 import { markCompleted, markFailed, refundHold, cleanupStaleReadings } from '@/lib/readings/lifecycle'
 
 const TEST_EMAIL = `test-credit-reservation-${process.pid}@test.local`

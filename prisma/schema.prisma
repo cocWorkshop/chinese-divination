@@ -84,8 +84,33 @@ model User {
   masterMessages          MasterChatMessage[]
   portrait                UserPortrait?
   portraitHistory         UserPortraitHistory[]
+  accounts                Account[]
   adminAccessLogsAsAdmin  AdminAccessLog[] @relation("AdminAccessLog_admin")
   adminAccessLogsAsTarget AdminAccessLog[] @relation("AdminAccessLog_target")
+}
+
+/// OAuth accounts (Google, Apple, Microsoft, etc.) linked to a User.
+/// Compatible with Auth.js / NextAuth standard schema.
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Reading {
@@ -117,6 +142,13 @@ model Reading {
   @@index([createdAt])
   @@index([userId, deletedAt])
   @@index([type])
+  // FK lookups by family member (chat history, divination checks) and the
+  // ON DELETE SET NULL cascade — Postgres does not auto-index FK columns.
+  @@index([familyMemberId])
+  // The stale-pending sweeper (every 10 min) and admin status filters query
+  // `status` + createdAt; status is dominated by 'completed' so the composite
+  // keeps those scans index-driven.
+  @@index([status, createdAt])
 }
 
 model ReadingFeedback {
@@ -168,7 +200,7 @@ model RateLimit {
   updatedAt   DateTime @updatedAt
 
   @@unique([userId, windowStart, modelTier])
-  @@index([userId, windowStart])
+  // @@index([userId, windowStart]) dropped — prefix of the unique above (audit P13).
 }
 
 model ShareLink {
@@ -243,7 +275,7 @@ model Compensation {
 
   @@index([email])
   @@index([status])
-  @@index([token])
+  // @@index([token]) dropped — token @unique already backs lookups (audit P13).
 }
 
 model AuthLog {
@@ -336,6 +368,8 @@ model CreditLog {
   @@index([userId])
   @@index([createdAt])
   @@index([action])
+  // History / admin pagination filter by userId and order by createdAt desc.
+  @@index([userId, createdAt])
 }
 
 model WikiArticle {
@@ -371,7 +405,7 @@ model GiftLink {
 
   claims      GiftClaim[]
 
-  @@index([code])
+  // @@index([code]) dropped — code @unique already backs lookups (audit P13).
   @@index([createdAt])
 }
 
@@ -419,10 +453,10 @@ model MasterSession {
   /// Last-seen client timezone offset (Date.getTimezoneOffset() minutes; UTC+8 → -480).
   /// Timezone fallback for server-initiated turns (check-ins / reflections).
   tzOffsetMin      Int?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  @@index([userId])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  // userId @unique above already backs lookups — the former redundant
+  // @@index([userId]) was dropped (audit P13).
 }
 
 // ─── Master memory tables (Phase 1+) ──────────────────────────────────────
@@ -446,7 +480,10 @@ model MasterChatMessage {
   archivedAt    DateTime? // soft-archive flag for "Start new session" reset
   createdAt     DateTime @default(now())
 
-  @@index([userId, sessionId, turnIndex])
+  // Unique: turnIndex is written via aggregate max+1 — the constraint turns
+  // a concurrent append race into a P2002 the store retries (audit P2),
+  // instead of silently duplicate ordering keys.
+  @@unique([userId, sessionId, turnIndex])
   @@index([userId, sessionId, archivedAt])
   @@index([userId, createdAt])
 }

@@ -19,6 +19,7 @@ import { motion } from 'framer-motion'
 import { useMasterChat } from '../MasterChatContext'
 import { useLang } from '@/components/LanguageContext'
 import { withCtaNonce } from '@/lib/master/ctaNav'
+import { MasterSageIcon, CloseIcon } from '@/components/DivinationIcons'
 
 export type GateIntent = { kind: 'open' } | { kind: 'send'; message: string }
 
@@ -121,11 +122,11 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate, focusOnMo
               title={isEn ? 'Tap to return to the divination form' : '點擊返回占卜表單'}
             >
               <span
-                className="text-2xl flex-shrink-0 leading-none"
+                className="flex-shrink-0 leading-none"
                 style={{ filter: 'drop-shadow(0 1px 3px rgba(212,175,55,0.35))' }}
                 aria-hidden
               >
-                🧙‍♂️
+                <MasterSageIcon size={26} color="var(--gold)" />
               </span>
               <span className="relative flex-shrink-0 w-2 h-2">
                 <span
@@ -159,12 +160,11 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate, focusOnMo
                 )
                 if (ok) cancelPendingReading()
               }}
-              className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-xs transition-colors hover:bg-[rgba(255,255,255,0.08)]"
-              style={{ color: 'var(--text-muted)' }}
+              className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-xs transition-colors hover:bg-[rgba(255,255,255,0.08)] text-[var(--text-muted)]"
               title={isEn ? 'Cancel this redirect' : '取消這次跳轉'}
               aria-label={isEn ? 'Cancel pending reading' : '取消等待中的占卜'}
             >
-              ✕
+              <CloseIcon size={14} />
             </button>
           </div>
         )
@@ -181,11 +181,11 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate, focusOnMo
               circle wrapper added a competing edge against the bar border;
               dropping it lets the icon read as a presence cue, not a UI chip. */}
           <span
-            className="flex-shrink-0 text-2xl leading-none transition-transform group-hover:scale-110"
+            className="flex-shrink-0 leading-none transition-transform group-hover:scale-110"
             style={{ filter: 'drop-shadow(0 1px 3px rgba(212,175,55,0.35))' }}
             aria-hidden
           >
-            🧙‍♂️
+            <MasterSageIcon size={26} color="var(--gold)" />
           </span>
 
           {/* Opener text — inline, no nested bubble. The outer bar carries the

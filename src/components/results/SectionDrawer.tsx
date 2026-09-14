@@ -9,8 +9,7 @@
  * the streaming UX (sections fill in as they arrive).
  *
  * Each drawer owns its own `open` state — no parent coordination
- * required. Replaces the older "one-section-at-a-time" accordion that
- * lived inline in QimenResult / FengshuiResult / OtherResult.
+ * required. Replaces the older "one-section-at-a-time" accordion.
  *
  * Used by Bazi V2, Ziwei V2, Liu Yao, Qi Men, Feng Shui, Mei Hua,
  * I Ching V2 — anywhere a result has multiple long-form prose sections.
@@ -20,7 +19,7 @@ import { useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface SectionDrawerProps {
-  /** Emoji or single character icon shown in the title row. */
+  /** Icon or graphic shown in the title row. */
   icon?: ReactNode
   /** Title text — translated by the caller before passing in. */
   title: ReactNode
@@ -61,46 +60,47 @@ export default function SectionDrawer({
   const isLg = size === 'lg'
 
   return (
-    <div className={`glass-card rounded-xl border ${isLg ? 'border-gold/40' : 'border-gold/20'} overflow-hidden`}>
+    <div className={`oriental-sanctuary-card rounded-xl overflow-hidden mb-3 transition-all duration-300 ${isLg ? 'border-gold/40 shadow-lg' : 'border-gold/20'}`}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`w-full ${isLg ? 'px-4 sm:px-5 py-4 sm:py-5' : 'px-4 sm:px-5 py-3 sm:py-4'} flex items-center gap-2 ${isCenter ? 'justify-center' : 'text-left'}`}
+        className={`w-full ${isLg ? 'px-4 sm:px-6 py-4 sm:py-5 min-h-[52px]' : 'px-4 sm:px-5 py-3 sm:py-3.5 min-h-[44px]'} flex items-center gap-2.5 ${isCenter ? 'justify-center' : 'text-left'} transition-colors hover:bg-gold/5 focus:outline-none`}
       >
-        {/* When centered, title block sits in the middle and chevron
-            absolutely-positions to the right. When left-aligned, chevron
-            shares the row at the right end. */}
         {isCenter ? (
           <>
             <span className="flex-1" />
-            <span className={`text-gold font-serif flex items-center gap-2 ${isLg ? 'text-base sm:text-lg' : ''}`}>
-              {icon != null && <span aria-hidden>{icon}</span>}
+            <span className={`text-gold font-serif flex items-center gap-2.5 ${isLg ? 'text-base sm:text-lg tracking-wide font-semibold' : 'text-sm sm:text-base'}`}>
+              {icon != null && <span className="flex-shrink-0" aria-hidden>{icon}</span>}
               <span>{title}</span>
             </span>
             {trailing != null && <span className="flex-shrink-0">{trailing}</span>}
             <span className="flex-1 flex justify-end">
               <span
-                className="text-white/40 transition-transform"
+                className="text-gold/50 transition-transform duration-300 flex-shrink-0"
                 style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 aria-hidden
               >
-                ▼
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
               </span>
             </span>
           </>
         ) : (
           <>
-            <span className={`text-gold font-serif flex items-center gap-2 flex-1 min-w-0 ${isLg ? 'text-base sm:text-lg' : ''}`}>
-              {icon != null && <span aria-hidden>{icon}</span>}
+            <span className={`text-gold font-serif flex items-center gap-2.5 flex-1 min-w-0 ${isLg ? 'text-base sm:text-lg tracking-wide font-semibold' : 'text-sm sm:text-base'}`}>
+              {icon != null && <span className="flex-shrink-0 text-gold/90" aria-hidden>{icon}</span>}
               <span className="truncate">{title}</span>
             </span>
             {trailing != null && <span className="flex-shrink-0">{trailing}</span>}
             <span
-              className="text-white/40 flex-shrink-0 transition-transform"
+              className="text-gold/50 flex-shrink-0 transition-transform duration-300 ml-1"
               style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
               aria-hidden
             >
-              ▼
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
             </span>
           </>
         )}
@@ -115,7 +115,7 @@ export default function SectionDrawer({
             transition={{ duration: 0.25 }}
             className="overflow-hidden"
           >
-            <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-gold/10 overflow-x-auto">
+            <div className="px-4 sm:px-6 pb-5 pt-3 border-t border-gold/10 overflow-x-auto">
               {children}
             </div>
           </motion.div>

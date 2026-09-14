@@ -20,6 +20,7 @@ import { renderGreeting } from '@/lib/master/greetings'
 import { withCtaNonce } from '@/lib/master/ctaNav'
 import MessageBubble from './MessageBubble'
 import type { GateIntent } from './CollapsedBar'
+import { MasterSageIcon, SunMoonIcon, CloseIcon } from '@/components/DivinationIcons'
 
 interface Props {
   needsMemoryGate: boolean
@@ -41,9 +42,12 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
     widgetOpener,
     notifyTyping,
     interruptCooldownUntil,
+    portraitEnabled,
+    setPortraitEnabled,
   } = useMasterChat()
 
   const [input, setInput] = useState('')
+  const [showMemoryPanel, setShowMemoryPanel] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const userScrolledRef = useRef(false)
@@ -201,24 +205,37 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
           >
             <div className="flex items-center gap-2.5">
               <span
-                className="text-xl leading-none"
+                className="leading-none"
                 style={{ filter: 'drop-shadow(0 1px 3px rgba(212,175,55,0.4))' }}
                 aria-hidden
               >
-                🧙‍♂️
+                <MasterSageIcon size={24} color="var(--gold)" />
               </span>
               <span className="font-serif text-lg tracking-wide" style={{ color: 'var(--gold)' }}>
-                {isEn ? 'Master Xuanji' : '玄機大師'}
+                {showMemoryPanel
+                  ? (isEn ? 'Memory Settings' : '記憶設定')
+                  : (isEn ? 'Master Xuanji' : '玄機大師')}
               </span>
-              {loading && <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse" />}
+              {loading && !showMemoryPanel && <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse" />}
               <button
-                onClick={() => { setShape('collapsed'); router.push('/profile/portrait') }}
-                className="text-[10px] px-2 py-0.5 rounded-full transition-colors hover:bg-[rgba(212,175,55,0.08)]"
-                style={{ color: 'var(--text-muted)', border: '1px solid var(--card-border)' }}
-                title={isEn ? 'Memory settings' : '記憶設定'}
-                aria-label={isEn ? 'Memory settings' : '記憶設定'}
+                onClick={() => setShowMemoryPanel(!showMemoryPanel)}
+                className={`text-[11px] px-2.5 py-0.5 rounded-full transition-all flex items-center gap-1.5 ${
+                  showMemoryPanel
+                    ? 'bg-[rgba(212,168,83,0.18)] text-[var(--gold)] border-[var(--gold)] font-medium'
+                    : 'text-[var(--text-muted)] hover:bg-[rgba(212,175,55,0.08)]'
+                }`}
+                style={{ border: '1px solid var(--card-border)' }}
+                title={showMemoryPanel ? (isEn ? 'Return to chat' : '返回對話') : (isEn ? 'Memory settings' : '記憶設定')}
+                aria-label={showMemoryPanel ? (isEn ? 'Return to chat' : '返回對話') : (isEn ? 'Memory settings' : '記憶設定')}
               >
-                {isEn ? 'Memory' : '記憶'}
+                <span>{showMemoryPanel ? (isEn ? '← Chat' : '← 返回對話') : (isEn ? 'Memory' : '記憶')}</span>
+                {!showMemoryPanel && (
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      portraitEnabled ? 'bg-emerald-400' : 'bg-red-400'
+                    }`}
+                  />
+                )}
               </button>
             </div>
             <div className="flex items-center gap-1">
@@ -229,165 +246,241 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                 title={isEn ? 'Start a new chat' : '開始新對話'}
                 aria-label={isEn ? 'Start a new chat' : '開始新對話'}
               >
-                <span aria-hidden>🌙</span>
+                <SunMoonIcon size={14} isDark={false} color="var(--gold)" />
                 <span>{isEn ? 'New chat' : '新對話'}</span>
               </button>
               <button
                 onClick={() => setShape('collapsed')}
-                className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-lg"
+                className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                 style={{ color: 'var(--text-muted)' }}
                 aria-label={isEn ? 'Close chat' : '收合對話'}
               >
-                ✕
+                <CloseIcon size={16} />
               </button>
             </div>
           </div>
 
-          {/* Transcript */}
-          <div
-            ref={scrollRef}
-            onScroll={handleScroll}
-            className="relative flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4 scrollbar-thin"
-            aria-live="polite"
-            aria-label="Chat messages"
-          >
-            {showWelcome && (
-              <div className="flex flex-col items-center text-center pt-8 pb-4">
-                <div className="w-16 h-px mb-6" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
-                <p
-                  className="font-serif text-sm sm:text-base leading-relaxed whitespace-pre-line max-w-md"
-                  style={{ color: 'var(--text-primary, #e0e0e0)' }}
-                >
-                  {greeting.text}
-                </p>
-                <div className="w-16 h-px mt-6" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
+          {showMemoryPanel ? (
+            <div className="relative flex-1 flex flex-col p-5 sm:p-6 overflow-y-auto" style={{ background: 'var(--bg-primary)' }}>
+              <div className="max-w-md mx-auto w-full space-y-5 my-auto">
+                <div className="text-center space-y-2">
+                  <div className="inline-flex p-3 rounded-full bg-[rgba(212,168,83,0.1)] border border-[rgba(212,168,83,0.25)]">
+                    <MasterSageIcon size={32} color="var(--gold)" />
+                  </div>
+                  <h3 className="text-xl font-serif text-[var(--gold)]">
+                    {isEn ? 'Master Memory Governance' : '大師記憶管治'}
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                    {isEn
+                      ? 'Master Xuanji notes your reading context and preferences to provide deeper astrological counsel.'
+                      : '玄機大師會銘記您的命造八字、問測偏好與歷次對談，為您提供更精準契合的命理推演。'}
+                  </p>
+                </div>
 
-                <div className="flex flex-wrap justify-center gap-2 mt-6">
-                  {greeting.suggestions.map((s, i) => (
+                <div className="oriental-sanctuary-card p-5 space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-xs font-serif text-[var(--text-muted)]">
+                        {isEn ? 'Current Status' : '當前記憶狀態'}
+                      </div>
+                      <div className="text-sm font-medium mt-1">
+                        {portraitEnabled ? (
+                          <span className="stamp-gold text-xs">{isEn ? 'Active' : '已啟用 · 運作中'}</span>
+                        ) : (
+                          <span className="stamp-vermillion text-xs">{isEn ? 'Paused' : '已暫停 · 封存中'}</span>
+                        )}
+                      </div>
+                    </div>
                     <button
-                      key={i}
-                      onClick={() => handleSend(s)}
-                      className="text-xs px-3.5 py-2 rounded-full border hover:bg-[rgba(212,175,55,0.08)] transition-all"
-                      style={{ color: 'var(--gold)', borderColor: 'var(--border-gold, rgba(212,175,55,0.2))' }}
+                      onClick={() => setPortraitEnabled(!portraitEnabled)}
+                      className="px-4 py-2 rounded-xl text-xs font-serif font-medium transition-all min-h-[40px] flex items-center justify-center active:scale-[0.98]"
+                      style={{
+                        background: portraitEnabled ? 'rgba(192, 57, 43, 0.15)' : 'var(--gold)',
+                        color: portraitEnabled ? '#ef4444' : '#080c17',
+                        border: portraitEnabled ? '1px solid rgba(192, 57, 43, 0.4)' : 'none',
+                      }}
                     >
-                      {s}
+                      {portraitEnabled
+                        ? (isEn ? 'Pause Memory' : '暫停記憶')
+                        : (isEn ? 'Enable Memory' : '開啟記憶')}
                     </button>
-                  ))}
+                  </div>
+
+                  <div className="verse-callout text-[11px] text-[var(--text-muted)]">
+                    {isEn
+                      ? 'Memory is strictly used to deepen your personal divination guidance and remains strictly confidential.'
+                      : '記憶僅用於延續問測心流，嚴守道家隱私戒律，絕不外洩。'}
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <button
+                    onClick={() => setShowMemoryPanel(false)}
+                    className="w-full py-3 rounded-xl text-sm font-serif font-medium transition-all min-h-[44px] flex items-center justify-center gap-2 shadow-lg hover:brightness-110 active:scale-[0.98]"
+                    style={{ background: 'var(--gold)', color: '#080c17' }}
+                  >
+                    <span>✦</span>
+                    <span>{isEn ? 'Save & Return to Chat' : '完成並返回對話'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowMemoryPanel(false)
+                      setShape('collapsed')
+                      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search)
+                      router.push(`/profile/portrait?from=master&returnUrl=${returnUrl}`)
+                    }}
+                    className="w-full py-2.5 rounded-xl text-xs font-serif transition-all min-h-[40px] flex items-center justify-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--gold)] border border-[rgba(212,168,83,0.2)] hover:border-[rgba(212,168,83,0.4)] hover:bg-[rgba(212,168,83,0.04)]"
+                  >
+                    <span>{isEn ? 'Open Full Memory Settings Page ↗' : '前往完整記憶設定頁面 ↗'}</span>
+                  </button>
                 </div>
               </div>
-            )}
+            </div>
+          ) : (
+            <>
+              {/* Transcript */}
+              <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="relative flex-1 overflow-y-auto px-4 sm:px-5 py-5 space-y-4 scrollbar-thin"
+                aria-live="polite"
+                aria-label="Chat messages"
+              >
+                {showWelcome && (
+                  <div className="flex flex-col items-center text-center pt-8 pb-4">
+                    <div className="w-16 h-px mb-6" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
+                    <p
+                      className="font-serif text-sm sm:text-base leading-relaxed whitespace-pre-line max-w-md"
+                      style={{ color: 'var(--text-primary, #e0e0e0)' }}
+                    >
+                      {greeting.text}
+                    </p>
+                    <div className="w-16 h-px mt-6" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
 
-            {messages.map((msg, i) => (
-              <MessageBubble
-                key={i}
-                msg={msg}
-                isLastMessage={i === messages.length - 1}
-                loading={loading}
-                isEn={isEn}
-                onCtaClick={handleCtaClick}
-                onReadingCardClick={handleReadingCardClick}
-              />
-            ))}
-
-            {/* Tool running indicator */}
-            <AnimatePresence>
-              {toolStatus && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex justify-start"
-                  role="status"
-                >
-                  <div className="rounded-2xl px-4 py-3" style={{ border: '1px solid var(--border-gold)', background: 'var(--accent-bg)' }}>
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-5 h-5 flex items-center justify-center">
-                        <div
-                          className="absolute inset-0 rounded-full"
-                          style={{ background: 'var(--gold)', opacity: 0.15, animation: 'toolPulse 1.5s ease infinite' }}
-                        />
-                        <div className="w-2 h-2 rounded-full" style={{ background: 'var(--gold)' }} />
-                      </div>
-                      <span className="text-sm font-serif" style={{ color: 'var(--gold)' }}>
-                        {toolStatus.label}
-                      </span>
+                    <div className="flex flex-wrap justify-center gap-2 mt-6">
+                      {greeting.suggestions.map((s, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleSend(s)}
+                          className="text-xs px-3.5 py-2 rounded-full border hover:bg-[rgba(212,175,55,0.08)] transition-all"
+                          style={{ color: 'var(--gold)', borderColor: 'var(--border-gold, rgba(212,175,55,0.2))' }}
+                        >
+                          {s}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                )}
 
-          {/* Input row */}
-          <div className="relative px-4 sm:px-5 py-3" style={{ borderTop: '1px solid var(--card-border)' }}>
-            <AnimatePresence>
-              {cooldownLeft > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  role="status"
-                  className="mb-2 px-3 py-2 rounded-lg text-xs leading-relaxed"
-                  style={{
-                    color: 'var(--text-secondary)',
-                    border: '1px solid var(--card-border)',
-                    background: 'var(--accent-bg)',
-                  }}
-                >
-                  {isEn
-                    ? `Your last message wasn't sent — too many interruptions. Let the current reply finish, or try again in ~${cooldownLeft}s.`
-                    : `剛才的訊息未送出 — 打斷過於頻繁。請等當前回應結束，或約 ${cooldownLeft} 秒後再試。`}
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <div className="flex gap-2 items-end">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value)
-                  // Tell the provider the user is composing so proactive
-                  // turns (reflection / activation checkin) hold off.
-                  notifyTyping(e.target.value.length)
-                }}
-                onKeyDown={handleKeyDown}
-                onFocus={(e) => {
-                  // If memory was paused while the widget was still expanded
-                  // (e.g. user toggled on /profile/portrait), block typing and
-                  // pop the gate.
-                  if (needsMemoryGate) {
-                    onRequestGate({ kind: 'open' })
-                    e.currentTarget.blur()
-                  }
-                }}
-                placeholder={isEn ? 'Ask the Master...' : '請問大師...'}
-                rows={1}
-                className="flex-1 resize-none rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-1 transition-all"
-                style={{
-                  color: 'var(--text-primary)',
-                  backgroundColor: 'var(--card-bg)',
-                  border: '1px solid var(--card-border)',
-                  maxHeight: '120px',
-                }}
-                disabled={loading || needsMemoryGate}
-              />
-              <button
-                onClick={() => {
-                  if (needsMemoryGate) {
-                    onRequestGate({ kind: 'open' })
-                    return
-                  }
-                  handleSend()
-                }}
-                disabled={loading || (!needsMemoryGate && !input.trim())}
-                className="rounded-xl px-4 py-2.5 text-sm font-medium transition-all disabled:opacity-20 hover:shadow-[0_0_15px_rgba(212,175,55,0.3)]"
-                style={{ backgroundColor: 'var(--gold)', color: '#000' }}
-              >
-                {isEn ? 'Send' : '發送'}
-              </button>
-            </div>
-          </div>
+                {messages.map((msg, i) => (
+                  <MessageBubble
+                    key={i}
+                    msg={msg}
+                    isLastMessage={i === messages.length - 1}
+                    loading={loading}
+                    isEn={isEn}
+                    onCtaClick={handleCtaClick}
+                    onReadingCardClick={handleReadingCardClick}
+                  />
+                ))}
+
+                {/* Tool running indicator */}
+                <AnimatePresence>
+                  {toolStatus && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.3 }}
+                      className="flex justify-start"
+                      role="status"
+                    >
+                      <div className="rounded-2xl px-4 py-3" style={{ border: '1px solid var(--border-gold)', background: 'var(--accent-bg)' }}>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-5 h-5 flex items-center justify-center">
+                            <div
+                              className="absolute inset-0 rounded-full"
+                              style={{ background: 'var(--gold)', opacity: 0.15, animation: 'toolPulse 1.5s ease infinite' }}
+                            />
+                            <div className="w-2 h-2 rounded-full" style={{ background: 'var(--gold)' }} />
+                          </div>
+                          <span className="text-sm font-serif" style={{ color: 'var(--gold)' }}>
+                            {toolStatus.label}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Input row */}
+              <div className="relative px-4 sm:px-5 py-3" style={{ borderTop: '1px solid var(--card-border)' }}>
+                <AnimatePresence>
+                  {cooldownLeft > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      role="status"
+                      className="mb-2 px-3 py-2 rounded-lg text-xs leading-relaxed"
+                      style={{
+                        color: 'var(--text-secondary)',
+                        border: '1px solid var(--card-border)',
+                        background: 'var(--accent-bg)',
+                      }}
+                    >
+                      {isEn
+                        ? `Your last message wasn't sent — too many interruptions. Let the current reply finish, or try again in ~${cooldownLeft}s.`
+                        : `剛才的訊息未送出 — 打斷過於頻繁。請等當前回應結束，或約 ${cooldownLeft} 秒後再試。`}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div className="flex gap-2 items-end">
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => {
+                      setInput(e.target.value)
+                      notifyTyping(e.target.value.length)
+                    }}
+                    onKeyDown={handleKeyDown}
+                    onFocus={(e) => {
+                      if (needsMemoryGate) {
+                        onRequestGate({ kind: 'open' })
+                        e.currentTarget.blur()
+                      }
+                    }}
+                    placeholder={isEn ? 'Ask the Master...' : '請問大師...'}
+                    rows={1}
+                    className="flex-1 resize-none rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-1 transition-all"
+                    style={{
+                      color: 'var(--text-primary)',
+                      backgroundColor: 'var(--card-bg)',
+                      border: '1px solid var(--card-border)',
+                      maxHeight: '120px',
+                    }}
+                    disabled={loading || needsMemoryGate}
+                  />
+                  <button
+                    onClick={() => {
+                      if (needsMemoryGate) {
+                        onRequestGate({ kind: 'open' })
+                        return
+                      }
+                      handleSend()
+                    }}
+                    disabled={loading || (!needsMemoryGate && !input.trim())}
+                    className="rounded-xl px-4 py-2.5 text-sm font-medium transition-all disabled:opacity-20 hover:shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+                    style={{ backgroundColor: 'var(--gold)', color: '#000' }}
+                  >
+                    {isEn ? 'Send' : '發送'}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
         </motion.div>
 

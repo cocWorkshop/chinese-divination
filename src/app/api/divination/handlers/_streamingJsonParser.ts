@@ -73,6 +73,7 @@ export class StreamingJsonParser {
   private buffer = ''         // active key OR string-value chars
   private literalBuf = ''     // active number/bool/null chars
   private escape = false      // last char was `\` inside a string
+  private pendingChunk = ''   // unflushed string-value chars (see queueChunk)
 
   push(input: string, emit: EmitFn): void {
     if (this.isStopped()) return
@@ -80,6 +81,12 @@ export class StreamingJsonParser {
       this.consumeChar(input[i], emit)
       if (this.isStopped()) return
     }
+    // One value_chunk per push (= per LLM delta) instead of one per
+    // character: a typical reading streams ~25-30K chars, and per-char
+    // events meant ~30K SSE frames (~3MB framing overhead) per reading.
+    // Flushing at the push boundary preserves the live-typing granularity —
+    // deltas arrive exactly as often as the provider sends them.
+    this.flushChunk(emit)
   }
 
   private isStopped(): boolean {
@@ -183,20 +190,22 @@ export class StreamingJsonParser {
         if (this.escape) {
           const decoded = unescape(ch)
           this.buffer += decoded
-          this.emitChunk(decoded, emit)
+          this.queueChunk(decoded)
           this.escape = false
           return
         }
         if (ch === '\\') { this.escape = true; return }
         if (ch === '"') {
-          // Value done.
+          // Value done. Flush any batched chars first so the chunk stream
+          // precedes value_done for this path.
+          this.flushChunk(emit)
           emit({ type: 'value_done', path: this.currentPath(), value: this.buffer })
           this.buffer = ''
           this.afterValue(emit)
           return
         }
         this.buffer += ch
-        this.emitChunk(ch, emit)
+        this.queueChunk(ch)
         return
       }
 
@@ -266,9 +275,16 @@ export class StreamingJsonParser {
     return path
   }
 
-  private emitChunk(text: string, emit: EmitFn): void {
+  /** Batch string-value chars; flushed per push() / at value close. */
+  private queueChunk(text: string): void {
     if (!text) return
-    emit({ type: 'value_chunk', path: this.currentPath(), text })
+    this.pendingChunk += text
+  }
+
+  private flushChunk(emit: EmitFn): void {
+    if (!this.pendingChunk) return
+    emit({ type: 'value_chunk', path: this.currentPath(), text: this.pendingChunk })
+    this.pendingChunk = ''
   }
 
   private afterValue(emit: EmitFn): void {

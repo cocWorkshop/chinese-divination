@@ -11,30 +11,58 @@ export function isNativeApp(): boolean {
 
 /**
  * Trigger haptic feedback (light impact)
- * No-op on web.
+ * Uses Capacitor Haptics in native app, with Web Vibration API fallback on supported mobile browsers.
  */
 export async function hapticLight() {
-  if (!isNativeApp()) return
-  const { Haptics, ImpactStyle } = await import('@capacitor/haptics')
-  await Haptics.impact({ style: ImpactStyle.Light })
+  if (isNativeApp()) {
+    try {
+      const { Haptics, ImpactStyle } = await import('@capacitor/haptics')
+      await Haptics.impact({ style: ImpactStyle.Light })
+      return
+    } catch { /* fallback to web */ }
+  }
+  if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+    try { navigator.vibrate(12) } catch {}
+  }
 }
 
 /**
  * Trigger haptic feedback (medium impact) — for divination results
  */
 export async function hapticMedium() {
-  if (!isNativeApp()) return
-  const { Haptics, ImpactStyle } = await import('@capacitor/haptics')
-  await Haptics.impact({ style: ImpactStyle.Medium })
+  if (isNativeApp()) {
+    try {
+      const { Haptics, ImpactStyle } = await import('@capacitor/haptics')
+      await Haptics.impact({ style: ImpactStyle.Medium })
+      return
+    } catch { /* fallback to web */ }
+  }
+  if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+    try { navigator.vibrate(28) } catch {}
+  }
 }
 
 /**
- * Trigger haptic feedback (heavy impact) — for dice rolling
+ * Trigger haptic feedback (heavy impact) — for coin tossing & dice rolling
  */
 export async function hapticHeavy() {
-  if (!isNativeApp()) return
-  const { Haptics, ImpactStyle } = await import('@capacitor/haptics')
-  await Haptics.impact({ style: ImpactStyle.Heavy })
+  if (isNativeApp()) {
+    try {
+      const { Haptics, ImpactStyle } = await import('@capacitor/haptics')
+      await Haptics.impact({ style: ImpactStyle.Heavy })
+      return
+    } catch { /* fallback to web */ }
+  }
+  if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+    try { navigator.vibrate([40, 30, 25]) } catch {}
+  }
+}
+
+export const haptics = {
+  light: hapticLight,
+  medium: hapticMedium,
+  heavy: hapticHeavy,
+  diceToss: hapticHeavy,
 }
 
 /**

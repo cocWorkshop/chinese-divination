@@ -9,10 +9,10 @@ import type { ReactNode } from 'react'
  */
 export default function FormSection({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
-    <div className="border border-gold/20 rounded-xl p-4 bg-navy-900/50 space-y-4">
-      <p className="text-white/60 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+    <div className="oriental-sanctuary-card rounded-xl p-4 sm:p-5 space-y-4 shadow-sm">
+      <div className="text-gold-light/90 text-sm font-serif font-medium tracking-wide flex items-center gap-2 border-b border-gold/10 pb-2.5">
         {title}
-      </p>
+      </div>
       {children}
     </div>
   )

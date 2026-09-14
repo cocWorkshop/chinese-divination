@@ -93,6 +93,24 @@ export interface DaYunKeyYear {
   event: string
 }
 
+export interface AnnualFortuneYear {
+  year: number
+  age: number
+  ganZhi: string
+  tenGod?: string
+  isLucky?: boolean | null
+  theme: string
+  fortune: string
+  career?: string
+  wealth?: string
+  romance?: string
+  health?: string
+  interaction?: string
+  advice?: string
+}
+
+export type DetailedAnnualFortunesMap = Record<string, AnnualFortuneYear[]>
+
 export interface DaYunAnalysisEntry {
   stem: string; branch: string
   startAge: number; endAge: number; startYear: number; endYear: number
@@ -137,10 +155,14 @@ export interface BaziDataV2 {
   fetalOrigin?: string
   ownSign?: string
   bodySign?: string
+  taiYuan?: { stem: string; branch: string; pillar: string; nayin: string }
+  mingGong?: { stem: string; branch: string; pillar: string; nayin: string }
+  shenGong?: { stem: string; branch: string; pillar: string; nayin: string }
   // Pillar-shaped data for 命宫/身宫/胎元 (rendered as extra columns).
   ownSignPillar?: Pillar
   bodySignPillar?: Pillar
   fetalOriginPillar?: Pillar
+  detailedAnnualFortunes?: DetailedAnnualFortunesMap
 }
 
 export interface LiuNianEntry {
@@ -208,6 +230,7 @@ export interface ZiweiData {
   luckyInfo: { numbers: number[]; colors: string[]; directions: string[] }
   ziweiChart?: ZiweiChartInfo
   paipanOnly?: boolean
+  detailedAnnualFortunes?: DetailedAnnualFortunesMap
 }
 
 // ─── QimenResult Types ───

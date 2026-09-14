@@ -71,34 +71,56 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
     return NextResponse.json({ error: 'already_claimed', message: '您已領取過此禮品' }, { status: 400 })
   }
 
-  // Grant credits + record claim in transaction
-  const [updatedUser] = await prisma.$transaction([
-    prisma.user.update({
-      where: { id: session.user.id },
-      data: { credits: { increment: link.credits } },
-      select: { credits: true },
-    }),
-    prisma.giftClaim.create({
-      data: {
-        giftLinkId: link.id,
-        userId: session.user.id,
-        credits: link.credits,
-      },
-    }),
-    prisma.giftLink.update({
-      where: { id: link.id },
-      data: { claimCount: { increment: 1 } },
-    }),
-  ])
+  // Grant credits + record claim in one transaction. The pre-checks above
+  // are fast paths only — inside the tx, atomicity comes from:
+  //   * giftClaim.create hitting the (giftLinkId,userId) unique constraint
+  //     on a same-user race (P2002 → whole tx rolls back);
+  //   * the guarded updateMany reserving the claim seat — concurrent claims
+  //     on the last slot can't both pass `claimCount < maxClaims`.
+  try {
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      await tx.giftClaim.create({
+        data: {
+          giftLinkId: link.id,
+          userId: session.user.id,
+          credits: link.credits,
+        },
+      })
 
-  logCreditChange({
-    userId: session.user.id,
-    action: 'grant_gift',
-    amount: link.credits,
-    balance: updatedUser.credits,
-    source: `gift:${link.code}`,
-    note: link.note || undefined,
-  })
+      const seat = await tx.giftLink.updateMany({
+        where: {
+          id: link.id,
+          // maxClaims = 0 means unlimited
+          OR: [{ maxClaims: 0 }, { claimCount: { lt: link.maxClaims } }],
+        },
+        data: { claimCount: { increment: 1 } },
+      })
+      if (seat.count === 0) throw new Error('GIFT_EXHAUSTED')
 
-  return NextResponse.json({ success: true, credits: link.credits })
+      return tx.user.update({
+        where: { id: session.user.id },
+        data: { credits: { increment: link.credits } },
+        select: { credits: true },
+      })
+    })
+
+    logCreditChange({
+      userId: session.user.id,
+      action: 'grant_gift',
+      amount: link.credits,
+      balance: updatedUser.credits,
+      source: `gift:${link.code}`,
+      note: link.note || undefined,
+    })
+
+    return NextResponse.json({ success: true, credits: link.credits })
+  } catch (e) {
+    if ((e as { code?: string }).code === 'P2002') {
+      return NextResponse.json({ error: 'already_claimed', message: '您已領取過此禮品' }, { status: 400 })
+    }
+    if (e instanceof Error && e.message === 'GIFT_EXHAUSTED') {
+      return NextResponse.json({ error: 'exhausted', message: '此連結已被領完' }, { status: 400 })
+    }
+    throw e
+  }
 }

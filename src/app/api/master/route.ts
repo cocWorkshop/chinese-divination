@@ -4,7 +4,7 @@ export const maxDuration = 600
 import { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { checkCredits, deductCredits } from '@/lib/rateLimit'
+import { checkCredits, deductCredits, refundMasterCredits } from '@/lib/creditService'
 import { resolveLLMConfig } from '@/lib/llm'
 import type { Message } from '@/lib/llm'
 import { buildMasterSystemPrompt } from '@/lib/master'
@@ -22,6 +22,8 @@ import {
 import { compressHistory } from '@/lib/master/compression'
 import { loadPortrait, deletePortrait } from '@/lib/master/portraitStore'
 import { renderPersonalizedPrompt } from '@/lib/master/personalizedPrompt'
+import { calculateGrowth } from '@/lib/growth/growthSystem'
+import { checkMasterDailyLimit } from '@/lib/master/dailyLimiter'
 import { runMasterTurn, type EngineEvent, type CheckinHint } from '@/lib/master/turnEngine'
 import { SolarDay, SolarTime } from 'tyme4ts'
 import { FUNNEL_COOKIE_NAME, verifyFunnelToken } from '@/lib/funnelSession'
@@ -174,23 +176,43 @@ export async function POST(req: NextRequest) {
       select: { language: true },
     })
     const lang: 'zh-TW' | 'en' = user?.language === 'en' ? 'en' : 'zh-TW'
+    const clientTz = typeof body.tzOffsetMin === 'number' && Number.isFinite(body.tzOffsetMin)
+      ? body.tzOffsetMin
+      : null
+
+    // Daily turn limit check (Issue #148: 控制用户每日聊天总长度)
+    // Applies to user-initiated messages (exempting server-initiated checkin/reflection)
+    if (!isCheckin && !isReflection) {
+      const dailyLimit = await checkMasterDailyLimit(userId, lang, clientTz)
+      if (!dailyLimit.allowed) {
+        return new Response(
+          JSON.stringify({
+            error: dailyLimit.message,
+            dailyLimitReached: true,
+            maxLimit: dailyLimit.maxLimit,
+          }),
+          { status: 429, headers: { 'Content-Type': 'application/json' } },
+        )
+      }
+    }
+
     // Inputs for the "now" the Master sees. The instant comes from the client
     // when present (else server clock); the timezone offset is resolved below
     // against the stored value so server-initiated turns stay correct.
     const clientInstant = typeof body.clientTime === 'string' && !Number.isNaN(Date.parse(body.clientTime))
       ? new Date(body.clientTime)
       : new Date()
-    const clientTz = typeof body.tzOffsetMin === 'number' && Number.isFinite(body.tzOffsetMin)
-      ? body.tzOffsetMin
-      : null
 
     // Ensure a MasterSession row exists for this user — it tracks the
     // per-user master usage counter (totalCreditsUsed). Chat history and
     // portrait live in dedicated tables (MasterChatMessage / UserPortrait).
-    let masterSession = await prisma.masterSession.findUnique({ where: { userId } })
-    if (!masterSession) {
-      masterSession = await prisma.masterSession.create({ data: { userId, tzOffsetMin: clientTz ?? undefined } })
-    }
+    // Upsert, not find-then-create: two concurrent first turns would
+    // otherwise race a P2002 on the userId unique constraint into a 500.
+    const masterSession = await prisma.masterSession.upsert({
+      where: { userId },
+      create: { userId, tzOffsetMin: clientTz ?? undefined },
+      update: {},
+    })
 
     // Resolve the timezone: this request's client offset wins; otherwise fall
     // back to the user's last-seen offset (so server-initiated check-ins are
@@ -221,13 +243,14 @@ export async function POST(req: NextRequest) {
     // Turn limit — prevent runaway sessions. Configurable via AdminSetting
     // 'masterMaxTurns', defaults to 50. Checkins and reflections are exempt
     // (they're system-initiated, not user-initiated).
+    let currentTurnCount = 0
     if (!isCheckin && !isReflection) {
       const maxTurnsSetting = await prisma.adminSetting.findUnique({ where: { key: 'masterMaxTurns' } })
       const maxTurns = parseInt(maxTurnsSetting?.value || '50', 10) || 50
-      const turnCount = await prisma.masterChatMessage.count({
+      currentTurnCount = await prisma.masterChatMessage.count({
         where: { userId, sessionId: sessionId!, role: 'user' },
       })
-      if (turnCount >= maxTurns) {
+      if (currentTurnCount >= maxTurns) {
         const msg = lang === 'en'
           ? 'The Master needs to rest and gather his thoughts. Let\'s continue our conversation next time — start a "New Chat" whenever you\'re ready. Everything I\'ve learned about you is safely kept.'
           : '老夫今日耗神頗多，需閉目養息片刻。\n\n下次再會時，點「新對話」即可續接 —— 你說過的，我都記著。'
@@ -257,20 +280,31 @@ export async function POST(req: NextRequest) {
     // is false or the portrait is missing/empty, personalizedPrompt stays
     // null and the system prompt composer omits the block entirely
     // (cold-start path).
-    const portraitRow = await loadPortrait(userId)
+    // Load portrait + render personalized prompt block with growth realm context.
+    // If portraitEnabled is false or missing, growth context can still provide
+    // the user's metaphysical realm to Master Xuanji.
+    const [portraitRow, growthUser] = await Promise.all([
+      loadPortrait(userId),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { usageDivination: true, usageMaster: true, usageChat: true },
+      }),
+    ])
+    const growth = growthUser ? calculateGrowth(growthUser) : null
     let personalizedPrompt: string | null = null
-    if (portraitRow) {
-      personalizedPrompt =
-        portraitRow.generatedPrompt ??
-        renderPersonalizedPrompt(
-          {
-            topics: portraitRow.topics,
-            preferences: portraitRow.preferences,
-            lifeContext: portraitRow.lifeContext,
-            toneNotes: portraitRow.toneNotes,
-          },
-          lang,
-        )
+    if (portraitRow || growth) {
+      personalizedPrompt = renderPersonalizedPrompt(
+        portraitRow
+          ? {
+              topics: portraitRow.topics,
+              preferences: portraitRow.preferences,
+              lifeContext: portraitRow.lifeContext,
+              toneNotes: portraitRow.toneNotes,
+            }
+          : null,
+        lang,
+        growth ? { tier: growth.tier, title: growth.currentRealm.title[lang === 'en' ? 'en' : 'zh-TW'] } : null,
+      )
     }
 
     // Compose system prompt with progressive disclosure:
@@ -307,7 +341,9 @@ export async function POST(req: NextRequest) {
       log.info({ estimatedTokens: compressed.estimatedTokens }, 'history compressed')
     }
 
-    // Deduct credit before streaming (matches prior behaviour).
+    // Deduct credit before streaming (matches prior behaviour). On failure
+    // (engine error event) the turn is refunded via refundMasterCredits —
+    // the divination hold/refund discipline applied to master (audit P4).
     const deducted = await deductCredits(userId, 'master')
     if (!deducted) return jsonError('Failed to deduct credits', 429)
 
@@ -316,7 +352,16 @@ export async function POST(req: NextRequest) {
     // Pipe the engine's event stream to SSE. The engine handles errors by
     // yielding `{ type: 'error' }` — the route never sees a thrown exception
     // from the streaming loop.
-    return sseResponse(async ({ send, close }) => {
+    return sseResponse(async ({ send, heartbeat, close }) => {
+      // 15s keepalive — during a long first LLM call (30-90s to first token
+      // with reasoning + tools) nothing else flows, and default proxy read
+      // timeouts (nginx: 60s) would kill the connection mid-turn. Mirrors
+      // the divination route's heartbeat.
+      const keepalive = setInterval(() => heartbeat(), 15_000)
+      // Failed turn → the user got nothing for the deducted credit: refund
+      // once (LLM error / timeout / client abort all surface as the
+      // engine's error event).
+      let failureRefunded = false
       try {
         for await (const event of runMasterTurn({
           userId,
@@ -331,10 +376,20 @@ export async function POST(req: NextRequest) {
           masterSessionPk: masterSession!.id,
           lang,
           requestId: log.requestId,
+          // Client disconnected (cancel button / unmount / network drop) →
+          // abort the in-flight LLM call instead of burning the full
+          // tool-loop token spend into the void.
+          signal: req.signal,
+          turnCount: currentTurnCount + 1,
         })) {
           send(event satisfies EngineEvent)
+          if (event.type === 'error' && !failureRefunded) {
+            failureRefunded = true
+            await refundMasterCredits(userId, log.requestId)
+          }
         }
       } finally {
+        clearInterval(keepalive)
         close()
       }
     })

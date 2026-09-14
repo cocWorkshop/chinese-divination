@@ -13,6 +13,8 @@ export function mergeMeihuaChart(
   chart: MeihuaChart
 ): void {
   llmResult.meihuaChart = {
+    method: chart.method || 'time',
+    numbers: chart.numbers,
     lunarYear: chart.lunarYear,
     lunarMonth: chart.lunarMonth,
     lunarDay: chart.lunarDay,
@@ -45,6 +47,33 @@ export function mergeMeihuaChart(
 
 /** Shared meihua user-message body (after the calculation JSON). */
 export function meihuaChartJson(chart: MeihuaChart): string {
+  if (chart.method === 'numbers') {
+    const [num1, num2] = chart.numbers || [1, 1]
+    return JSON.stringify({
+      method: 'numbers',
+      numbers: { num1, num2 },
+      calculation: {
+        upperGua: `${num1} % 8 = ${chart.upperNum} (${chart.benGua.upper.name})`,
+        lowerGua: `${num2} % 8 = ${chart.lowerNum} (${chart.benGua.lower.name})`,
+        changingLine: `(${num1} + ${num2}) % 6 = ${chart.changingLine}`,
+      },
+      benGua: { name: chart.benGua.name, upper: chart.benGua.upper.name, lower: chart.benGua.lower.name, lines: chart.benGua.lines },
+      huGua: { name: chart.huGua.name, upper: chart.huGua.upper.name, lower: chart.huGua.lower.name },
+      bianGua: { name: chart.bianGua.name, upper: chart.bianGua.upper.name, lower: chart.bianGua.lower.name },
+      tiYong: {
+        tiGua: `${chart.tiGua.name}(${chart.tiGua.element})`,
+        yongGua: `${chart.yongGua.name}(${chart.yongGua.element})`,
+        relation: chart.tiYongRelation,
+        analysis: chart.tiYongAnalysis,
+      },
+    }, null, 2)
+  }
+
+  const yNum = chart.yearNum ?? 0
+  const mNum = chart.monthNum ?? 0
+  const dNum = chart.dayNum ?? 0
+  const hNum = chart.hourNum ?? 0
+
   return JSON.stringify({
     timeNumbers: {
       lunarYear: chart.lunarYear,
@@ -57,8 +86,8 @@ export function meihuaChartJson(chart: MeihuaChart): string {
       hourNum: chart.hourNum,
     },
     calculation: {
-      upperSum: `${chart.yearNum}+${chart.monthNum}+${chart.dayNum}=${chart.yearNum + chart.monthNum + chart.dayNum}, %8=${chart.upperNum}`,
-      lowerSum: `${chart.yearNum}+${chart.monthNum}+${chart.dayNum}+${chart.hourNum}=${chart.yearNum + chart.monthNum + chart.dayNum + chart.hourNum}, %8=${chart.lowerNum}`,
+      upperSum: `${yNum}+${mNum}+${dNum}=${yNum + mNum + dNum}, %8=${chart.upperNum}`,
+      lowerSum: `${yNum}+${mNum}+${dNum}+${hNum}=${yNum + mNum + dNum + hNum}, %8=${chart.lowerNum}`,
       changingLine: chart.changingLine,
     },
     benGua: { name: chart.benGua.name, upper: chart.benGua.upper.name, lower: chart.benGua.lower.name, lines: chart.benGua.lines },

@@ -45,7 +45,6 @@ export function extractBirthInputs(inputData: Record<string, unknown>): BirthInp
         const solarDate = lunarDate.getSolar()
         solarBirthDate = `${solarDate.getYear()}-${String(solarDate.getMonth()).padStart(2, '0')}-${String(solarDate.getDay()).padStart(2, '0')}`
         lunarOriginal = rawBirthDate
-        console.log(`Lunar ${rawBirthDate} → Solar ${solarBirthDate}`)
       } catch (lunarErr) {
         // On failure, leave solarBirthDate UNSET rather than falling back to the
         // raw lunar string — feeding a lunar date to the solar calculators

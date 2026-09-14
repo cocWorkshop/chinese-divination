@@ -11,10 +11,12 @@
     "test": "vitest",
     "test:ci": "vitest run",
     "test:unit": "vitest run --exclude src/__tests__/integration/**",
+    "test:integration": "vitest run integration",
+    "test:coverage": "vitest run --coverage",
     "predeploy-check": "npm run type-check && npm run lint && npm run test:ci",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:push": "echo WARNING: db push drifts migration history - local throwaway DBs ONLY (see docs/prisma-migrations-recovery.md) && prisma db push",
+    "db:push": "echo WARNING: db push drifts migration history - local throwaway DBs ONLY (see docs/archive/prisma-migrations-recovery-202606.md) && prisma db push",
     "db:backup": "node db_backup/backup.mjs",
     "db:restore": "node db_backup/restore.mjs"
   },
@@ -56,10 +58,12 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@vitest/coverage-v8": "^4.1.1",
     "autoprefixer": "^10.0.1",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",

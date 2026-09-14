@@ -58,14 +58,14 @@ export interface FamilyMember {
 }
 
 export const typeInfo: Record<string, { zhName: string; twName: string; enName: string; symbol: string }> = {
-  bazi: { zhName: '八字命理', twName: '八字命理', enName: 'BaZi Analysis', symbol: '🏛️' },
-  iching: { zhName: '易经占卜', twName: '易經占卜', enName: 'I Ching Oracle', symbol: '📖' },
-  liuyao: { zhName: '六爻占卜', twName: '六爻占卜', enName: 'Liu Yao Divination', symbol: '🪙' },
-  ziwei: { zhName: '紫微斗数', twName: '紫微斗數', enName: 'Zi Wei Dou Shu', symbol: '⭐' },
-  qimen: { zhName: '奇门遁甲', twName: '奇門遁甲', enName: 'Qi Men Dun Jia', symbol: '🧭' },
-  fengshui: { zhName: '风水布局', twName: '風水佈局', enName: 'Feng Shui Analysis', symbol: '🏯' },
-  meihua: { zhName: '梅花易数', twName: '梅花易數', enName: 'Plum Blossom Numerology', symbol: '🌸' },
-  other: { zhName: '梅花六壬', twName: '梅花六壬', enName: 'Plum Blossom & Liu Ren', symbol: '🌸' },
+  bazi: { zhName: '八字命理', twName: '八字命理', enName: 'BaZi Analysis', symbol: '☯' },
+  iching: { zhName: '易经占卜', twName: '易經占卜', enName: 'I Ching Oracle', symbol: '☰' },
+  liuyao: { zhName: '六爻占卜', twName: '六爻占卜', enName: 'Liu Yao Divination', symbol: '爻' },
+  ziwei: { zhName: '紫微斗数', twName: '紫微斗數', enName: 'Zi Wei Dou Shu', symbol: '紫' },
+  qimen: { zhName: '奇门遁甲', twName: '奇門遁甲', enName: 'Qi Men Dun Jia', symbol: '遁' },
+  fengshui: { zhName: '风水布局', twName: '風水佈局', enName: 'Feng Shui Analysis', symbol: '坎' },
+  meihua: { zhName: '梅花易数', twName: '梅花易數', enName: 'Plum Blossom Numerology', symbol: '梅' },
+  other: { zhName: '梅花六壬', twName: '梅花六壬', enName: 'Plum Blossom & Liu Ren', symbol: '壬' },
 }
 
 // Helper for bilingual text

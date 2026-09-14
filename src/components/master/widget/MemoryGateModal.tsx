@@ -10,6 +10,7 @@
 
 import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { MasterSageIcon } from '@/components/DivinationIcons'
 
 interface Props {
   visible: boolean
@@ -65,7 +66,9 @@ export default function MemoryGateModal({ visible, isEn, onResolve }: Props) {
             aria-labelledby="memory-gate-title"
           >
             <div className="flex items-start gap-3 mb-4">
-              <span className="text-2xl flex-shrink-0" aria-hidden>🧙‍♂️</span>
+              <span className="flex-shrink-0" aria-hidden>
+                <MasterSageIcon size={28} color="var(--gold)" />
+              </span>
               <div>
                 <h3 id="memory-gate-title" className="font-serif text-base mb-1" style={{ color: 'var(--gold)' }}>
                   {isEn ? 'Enable Master memory?' : '開啟大師記憶？'}

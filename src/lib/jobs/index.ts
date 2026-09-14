@@ -13,6 +13,7 @@
 
 import { logger } from '../logger'
 import { runLogRetention } from './logRetention'
+import { runMasterChatRetention } from './masterChatRetention'
 import { cleanupStaleReadings } from '../readings/lifecycle'
 
 const MINUTE_MS = 60 * 1000
@@ -33,7 +34,15 @@ const JOBS: JobDef[] = [
   // Fails + refunds pending readings stuck >15 min (was a fire-and-forget
   // side effect inside /api/divination/init).
   { name: 'staleReadings', run: cleanupStaleReadings, intervalMs: 10 * MINUTE_MS },
+  // Hard-deletes archived MasterChatMessage rows past the retention window
+  // (default 180d) — archived rows are never re-read but were never deleted.
+  { name: 'masterChatRetention', run: runMasterChatRetention, intervalMs: DAY_MS },
 ]
+
+// Per-job re-entrancy guard: setInterval fires regardless of whether the
+// previous tick finished; skipping overlapping ticks avoids duplicate work
+// and duplicate log noise.
+const running = new Map<JobDef, boolean>()
 
 export function startJobs(): void {
   if (started) return
@@ -41,14 +50,29 @@ export function startJobs(): void {
 
   for (const job of JOBS) {
     const tick = async () => {
+      if (running.get(job)) {
+        logger.warn({ job: job.name }, 'job tick skipped (previous run still in progress)')
+        return
+      }
+      running.set(job, true)
       const t0 = Date.now()
       logger.info({ job: job.name }, 'job started')
-      await job.run() // jobs own their error handling; never throws
-      logger.info({ job: job.name, durationMs: Date.now() - t0 }, 'job finished')
+      try {
+        await job.run() // jobs own their error handling; never throws
+      } finally {
+        running.set(job, false)
+        logger.info({ job: job.name, durationMs: Date.now() - t0 }, 'job finished')
+      }
     }
     setTimeout(() => {
-      void tick()
-      setInterval(() => void tick(), job.intervalMs).unref()
+      // .catch makes the "never throws" contract structural: a future
+      // rejecting job would otherwise surface as an unhandled rejection,
+      // which crashes Node by default.
+      void tick().catch((err) => logger.error({ job: job.name, err }, 'job crashed'))
+      setInterval(
+        () => void tick().catch((err) => logger.error({ job: job.name, err }, 'job crashed')),
+        job.intervalMs
+      ).unref()
     }, STARTUP_DELAY_MS).unref()
   }
 

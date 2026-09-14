@@ -96,9 +96,10 @@ export async function GET() {
       timeMode: true, calendarType: true,
       exactTime: true, birthEnvironment: true,
       birthLat: true, birthLng: true,
-      role: true, isAdmin: true,
+      role: true, isAdmin: true, password: true,
     },
   })
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  return NextResponse.json(user)
+  const { password, ...rest } = user
+  return NextResponse.json({ ...rest, hasPassword: Boolean(password) })
 }

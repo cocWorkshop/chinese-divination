@@ -11,7 +11,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     const { id } = await params
-    const { rating, feedback } = await req.json()
+    const body = await req.json()
+    const { rating } = body
+    // undefined = "not provided, don't touch"; string capped at 2000; any
+    // other type = clear the field.
+    const feedback = body.feedback === undefined
+      ? undefined
+      : (typeof body.feedback === 'string' ? body.feedback.slice(0, 2000) : null)
 
     if (rating !== undefined && rating !== null && (typeof rating !== 'number' || rating < 1 || rating > 5)) {
       return NextResponse.json({ error: 'Rating must be 1-5' }, { status: 400 })
@@ -54,8 +60,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json(fb)
   } catch (e: unknown) {
-    const err = e as Error
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    console.error('Feedback POST error:', e)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
 
@@ -74,7 +80,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json(fb || { rating: null, feedback: null })
   } catch (e: unknown) {
-    const err = e as Error
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    console.error('Feedback GET error:', e)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

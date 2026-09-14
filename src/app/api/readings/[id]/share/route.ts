@@ -35,3 +35,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   return NextResponse.json({ token })
 }
+
+/**
+ * Revoke the share link (audit P5). Clears shareToken — the public page
+ * (/r/[token]) immediately 404s for that link. Previously the only way to
+ * un-share was soft-deleting the whole reading.
+ */
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
+  const revoked = await prisma.reading.updateMany({
+    where: { id, userId: session.user.id, deletedAt: null, shareToken: { not: null } },
+    data: { shareToken: null },
+  })
+
+  // 0 rows = not found OR already un-shared — both are success states for
+  // the caller (idempotent revoke).
+  return NextResponse.json({ success: true, revoked: revoked.count > 0 })
+}

@@ -14,7 +14,8 @@ AGENT_TASK.md
 
 
 .playwright-mcp
-.claude/worktreestsconfig.tsbuildinfo
+.claude/worktrees
+tsconfig.tsbuildinfo
 prod_delta.sql
 .claude/
 
@@ -26,3 +27,4 @@ db_backup/*.gz
 db_backup/*.zip
 db_backup/*.json
 db_backup/*.json.gz
+coverage/

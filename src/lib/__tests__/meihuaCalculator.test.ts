@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calculateMeihua } from '../meihuaCalculator'
+import { calculateMeihua, calculateMeihuaByNumbers } from '../meihuaCalculator'
 
 describe('calculateMeihua', () => {
   it('returns a valid chart with all required fields', () => {
@@ -149,3 +149,87 @@ describe('calculateMeihua', () => {
     expect(m.bianGua.name).toBe('天雷无妄')              // 益 动四爻 → 无妄
   })
 })
+
+describe('calculateMeihuaByNumbers (Issue #155: 报数起卦法)', () => {
+  it('correctly calculates the exact example from Issue #155 (numbers: 33, 66)', () => {
+    // 33 / 8 = 4 余 1 → 上卦 1 (乾)
+    // 66 / 8 = 8 余 2 → 下卦 2 (兑)
+    // 本卦: 上乾下兑 → 天泽履
+    // 互卦: 本卦 2,3,4爻为下(离), 3,4,5爻为上(巽) → 风火家人
+    // 动爻: (33 + 66) % 6 = 99 % 6 = 3 → 第 3 爻动
+    // 变卦: 天泽履动第3爻 → 乾为天
+    const chart = calculateMeihuaByNumbers(33, 66)
+
+    expect(chart.upperNum).toBe(1)
+    expect(chart.lowerNum).toBe(2)
+    expect(chart.changingLine).toBe(3)
+
+    expect(chart.benGua.name).toBe('天泽履')
+    expect(chart.benGua.upper.name).toBe('乾')
+    expect(chart.benGua.lower.name).toBe('兑')
+
+    expect(chart.huGua.name).toBe('风火家人')
+    expect(chart.huGua.upper.name).toBe('巽')
+    expect(chart.huGua.lower.name).toBe('离')
+
+    expect(chart.bianGua.name).toBe('乾为天')
+    expect(chart.bianGua.upper.name).toBe('乾')
+    expect(chart.bianGua.lower.name).toBe('乾')
+
+    // 动爻在下卦(3) → 上卦为体(乾金), 下卦为用(兑金) → 比和
+    expect(chart.tiGua.name).toBe('乾')
+    expect(chart.yongGua.name).toBe('兑')
+    expect(chart.tiYongRelation).toBe('体用比和')
+    expect(chart.method).toBe('numbers')
+    expect(chart.numbers).toEqual([33, 66])
+  })
+
+  it('handles numbers divisible by 8 (mod 8 == 0 → 8 坤) and divisible by 6 (mod 6 == 0 → 6)', () => {
+    // 16 % 8 == 0 → 8 坤
+    // 24 % 8 == 0 → 8 坤
+    // 动爻: (16 + 24) % 6 = 40 % 6 = 4 → 第 4 爻动
+    const chart = calculateMeihuaByNumbers(16, 24)
+    expect(chart.upperNum).toBe(8)
+    expect(chart.lowerNum).toBe(8)
+    expect(chart.changingLine).toBe(4)
+    expect(chart.benGua.name).toBe('坤为地')
+    // 重卦互卦依然为坤为地
+    expect(chart.huGua.name).toBe('坤为地')
+    // 坤为地(0,0,0,0,0,0) 动第4爻(0-indexed: 3) → (0,0,0,1,0,0) → 雷地豫
+    expect(chart.bianGua.name).toBe('雷地豫')
+    // 体用卦取自本卦: 本卦为坤为地(上坤下坤)，动爻在上卦(4) → 下卦为体(坤土), 上卦为用(坤土) → 体用比和
+    expect(chart.tiGua.name).toBe('坤')
+    expect(chart.yongGua.name).toBe('坤')
+    expect(chart.tiYongRelation).toBe('体用比和')
+  })
+
+  it('correctly assigns ti and yong when moving line is in upper trigram (lines 4-6)', () => {
+    // 17 % 8 = 1 (乾), 24 % 8 = 8 (坤) → 本卦 天地否 (上乾下坤)
+    // (17 + 24) % 6 = 41 % 6 = 5 → 动爻为 5
+    // 动爻在第5爻(上卦) → 下卦为体(坤土), 上卦为用(乾金)
+    // 土生金 → 体生用
+    const chart = calculateMeihuaByNumbers(17, 24)
+    expect(chart.upperNum).toBe(1)
+    expect(chart.lowerNum).toBe(8)
+    expect(chart.changingLine).toBe(5)
+    expect(chart.benGua.name).toBe('天地否')
+    expect(chart.tiGua.name).toBe('坤')
+    expect(chart.yongGua.name).toBe('乾')
+    expect(chart.tiYongRelation).toBe('体生用')
+  })
+
+  it('handles sum divisible by 6 (changingLine should be 6, not 0)', () => {
+    // 8 + 16 = 24 % 6 == 0 → 动爻为 6
+    const chart = calculateMeihuaByNumbers(8, 16)
+    expect(chart.changingLine).toBe(6)
+    // 坤为地 动第6爻 → 地山谦? 6爻翻转: (0,0,0,0,0,1) 上艮下坤 → 山地剥
+    expect(chart.bianGua.name).toBe('山地剥')
+  })
+
+  it('validates number input ranges and rounds decimals if given', () => {
+    const chart = calculateMeihuaByNumbers(1.2, 8.8)
+    expect(chart.upperNum).toBe(1) // round(1.2) = 1
+    expect(chart.lowerNum).toBe(1) // round(8.8) = 9 % 8 = 1
+  })
+})
+

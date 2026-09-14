@@ -41,7 +41,7 @@ export function DivinationProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession()
   const { lang } = useLang()
 
-  const info: TypeInfo = typeInfo[type] || { enName: 'Divination', symbol: '📖' }
+  const info: TypeInfo = typeInfo[type] || { enName: 'Divination', symbol: '卦' }
 
   const formState = useDivinationForm(type, lang)
   const init = useDivinationInit({

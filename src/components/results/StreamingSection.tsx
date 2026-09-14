@@ -19,8 +19,8 @@ import { useLang } from '../LanguageContext'
 import { T } from '@/lib/i18n'
 
 interface StreamingSectionProps {
-  /** Section icon (emoji). */
-  icon: string
+  /** Section icon (vector icon or node). */
+  icon?: React.ReactNode
   /** Section title (already translated by caller). */
   title: string
   /** Section content text (from LLM). */

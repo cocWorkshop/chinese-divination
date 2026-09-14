@@ -241,3 +241,22 @@ describe('buildMasterSystemPrompt — personalized prompt block (Phase 4)', () =
     expect(typeof buildMasterSystemPrompt).toBe('function')
   })
 })
+
+describe('buildMasterSystemPrompt — divination guidance & timely closure (Issue #148)', () => {
+  it('contains guidance to actively redirect ungrounded inquiries to divination', () => {
+    const prompt = buildMasterSystemPrompt(baseInput)
+    expect(prompt).toContain('Guiding to divination — proactive redirection')
+    expect(prompt).toContain('prefill_divination_form')
+    expect(prompt).toMatch(/空談無益，卦象方見真機/)
+  })
+
+  it('contains timely closure rules when user expresses fatigue or farewell', () => {
+    const prompt = buildMasterSystemPrompt(baseInput)
+    expect(prompt).toContain('Timely closure & farewell — letting the conversation rest')
+    expect(prompt).toContain('DO NOT ask any follow-up questions')
+    expect(prompt).toMatch(/累了/)
+    expect(prompt).toMatch(/再见|再見/)
+    expect(prompt).toMatch(/晚安/)
+  })
+})
+

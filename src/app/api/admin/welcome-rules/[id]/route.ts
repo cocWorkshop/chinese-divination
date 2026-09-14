@@ -2,29 +2,37 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/adminAuth'
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   const { error } = await requireAdmin()
   if (error) return error
 
-  const body = await req.json()
+  const { id } = await params
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
   const rule = await prisma.welcomeRule.update({
-    where: { id: params.id },
+    where: { id },
     data: {
-      name: body.name,
-      condition: body.condition,
-      messages: body.messages,
-      recommendType: body.recommendType ?? null,
-      priority: body.priority,
-      enabled: body.enabled,
+      name: typeof body.name === 'string' ? body.name : undefined,
+      condition: typeof body.condition === 'string' ? body.condition : undefined,
+      messages: typeof body.messages === 'string' ? body.messages : undefined,
+      recommendType: typeof body.recommendType === 'string' ? body.recommendType : null,
+      priority: typeof body.priority === 'number' ? body.priority : undefined,
+      enabled: typeof body.enabled === 'boolean' ? body.enabled : undefined,
     },
   })
   return NextResponse.json(rule)
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   const { error } = await requireAdmin()
   if (error) return error
 
-  await prisma.welcomeRule.delete({ where: { id: params.id } })
+  const { id } = await params
+  await prisma.welcomeRule.delete({ where: { id } })
   return NextResponse.json({ success: true })
 }

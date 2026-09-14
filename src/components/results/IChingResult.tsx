@@ -7,7 +7,9 @@ import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import SectionDrawer from './SectionDrawer'
 import StreamingSection from './StreamingSection'
+import StreamingKeyAdvice from './StreamingKeyAdvice'
 import PersonInfoHeader from './PersonInfoHeader'
+import { DivinationIcon, RefreshIcon, NoticeIcon, KeyPredictionIcon, SparkleIcon } from '@/components/DivinationIcons'
 import type { DivinationResultProps, IChingData } from '@/types/divination'
 import { T } from '@/lib/i18n'
 
@@ -140,7 +142,7 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}
             className={`px-1 sm:px-2 transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}>
             <h3 className="text-gold font-serif text-base mb-3 flex items-center gap-2">
-              <span aria-hidden>📖</span>
+              <DivinationIcon type="iching" className="w-4 h-4 text-gold" />
               <span>{T(lang, '卦象解讀', 'Interpretation')}</span>
             </h3>
             <div className="text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown break-words">
@@ -159,7 +161,7 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
       {/* ═══ ③ ANALYSIS SECTIONS — drawers ═══ */}
       <div className="space-y-2">
         {d.changingLines && d.changingLines.length > 0 && (
-          <SectionDrawer icon="✦" title={T(lang, '變爻', 'Changing Lines')}>
+          <SectionDrawer icon={<SparkleIcon className="w-4 h-4 text-gold" />} title={T(lang, '變爻', 'Changing Lines')}>
             <div className="space-y-3">
               {d.changingLines.map((cl, i) => {
                 const idx = (cl.position ?? 1) - 1
@@ -181,15 +183,15 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
         )}
 
         {d.variant && d.variantInsight && (
-          <SectionDrawer icon="🔄" title={T(lang, '之卦走向', 'Variant Direction')}>
+          <SectionDrawer icon={<RefreshIcon className="w-4 h-4 text-gold-light" />} title={T(lang, '之卦走向', 'Variant Direction')}>
             <div className="text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{d.variantInsight}</ReactMarkdown>
             </div>
           </SectionDrawer>
         )}
 
-        {d.advice && (
-          <StreamingSection icon="💡" title={T(lang, '指導建議', 'Guidance')} content={d.advice} streaming={streaming} dotAnimName="dotPulseIC" />
+        {(d.advice || streaming) && (
+          <StreamingSection icon={<NoticeIcon className="w-4 h-4 text-gold-light" />} title={T(lang, '指導建議', 'Guidance')} content={d.advice} streaming={streaming} dotAnimName="dotPulseIC" />
         )}
       </div>
       <style jsx global>{`
@@ -200,21 +202,16 @@ export default function IChingResult({ data, rawResult, isShared, readingId, cha
       `}</style>
 
       {/* ═══ ④ FOOTER — key points + QA ═══ */}
-      {d.keyPoints && d.keyPoints.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <h3 className="text-gold font-serif text-base mb-2">🔑 {T(lang, '要點', 'Key Points')}</h3>
-          <div className="grid gap-2">
-            {d.keyPoints.map((pt, i) => (
-              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">
-                <span className="w-5 h-5 rounded-full bg-gold/20 text-gold text-[10px] flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
-                <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{pt}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
+      <StreamingKeyAdvice
+        title={T(lang, '要點', 'Key Points')}
+        icon={<KeyPredictionIcon className="w-4 h-4 text-gold" />}
+        items={d.keyPoints}
+        streaming={streaming}
+        delay={0.1}
+        variant="oriental"
+      />
 
-      <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />
+      {!streaming && <XuanjiChatCard readingResult={rawResult || ''} readingType="iching" readingId={readingId} isShared={isShared} chatMessages={chatMessages} delay={0.12} />}
     </div>
   )
 }

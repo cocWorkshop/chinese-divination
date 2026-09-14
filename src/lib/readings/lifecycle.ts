@@ -16,6 +16,7 @@
  */
 
 import { prisma } from '../prisma'
+import type { Prisma } from '@prisma/client'
 import { logCreditChange } from '../creditLogger'
 import { logger } from '../logger'
 
@@ -37,21 +38,27 @@ export async function markCompleted(
 /**
  * Mark a reading failed (never clobbers a completed one) and refund any held
  * credits exactly once. Safe to call multiple times / concurrently.
+ *
+ * The status flip and the refund run in ONE transaction — a process crash
+ * between them would otherwise leave a failed reading whose hold was never
+ * refunded (the stale sweeper only scans `pending` rows).
  */
 export async function markFailed(
   readingId: string,
   opts: { reason: string; llmRawOutput?: string }
 ): Promise<void> {
   try {
-    await prisma.reading.updateMany({
-      where: { id: readingId, status: { not: 'completed' } },
-      data: {
-        status: 'failed',
-        result: opts.reason,
-        ...(opts.llmRawOutput !== undefined ? { llmRawOutput: opts.llmRawOutput } : {}),
-      },
+    await prisma.$transaction(async (tx) => {
+      await tx.reading.updateMany({
+        where: { id: readingId, status: { not: 'completed' } },
+        data: {
+          status: 'failed',
+          result: opts.reason,
+          ...(opts.llmRawOutput !== undefined ? { llmRawOutput: opts.llmRawOutput } : {}),
+        },
+      })
+      await refundHold(readingId, tx)
     })
-    await refundHold(readingId)
   } catch (err) {
     log.error({ err, readingId }, 'markFailed error')
   }
@@ -63,11 +70,15 @@ export async function markFailed(
  * No-op for readings without a hold. Never called for completed readings by
  * the flows above; guarded here too for safety.
  */
-export async function refundHold(readingId: string): Promise<number> {
+export async function refundHold(
+  readingId: string,
+  tx?: Prisma.TransactionClient
+): Promise<number> {
   // Single statement: SELECT … FOR UPDATE claims the row, the UPDATE zeroes it,
   // and RETURNING reports the PRE-update amount via the CTE. Concurrent callers
   // serialize on the row lock; the loser sees creditsHeld=0 and gets no rows.
-  const result = await prisma.$queryRaw<Array<{ held: number; userId: string; type: string }>>`
+  const db = tx ?? prisma
+  const result = await db.$queryRaw<Array<{ held: number; userId: string; type: string }>>`
     WITH claimed AS (
       SELECT id, "creditsHeld", "userId", type FROM "Reading"
       WHERE id = ${readingId} AND "creditsHeld" > 0 AND status <> 'completed'
@@ -82,7 +93,7 @@ export async function refundHold(readingId: string): Promise<number> {
   if (!result || result.length === 0) return 0
   const { held, userId, type } = result[0]
   if (held <= 0) return 0
-  const updated = await prisma.user.update({
+  const updated = await db.user.update({
     where: { id: userId },
     data: { credits: { increment: held } },
     select: { credits: true },

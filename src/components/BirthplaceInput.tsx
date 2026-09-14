@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLang } from './LanguageContext'
 import { POPULAR_CITIES, type CityPreset } from '@/lib/cities'
 import { T } from '@/lib/i18n'
+import { AlertIcon } from '@/components/DivinationIcons'
 
 interface NominatimResult {
   place_id: number
@@ -229,9 +230,9 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
 
       {/* Error message */}
       {searchError && (
-        <p role="status" className="mt-1 text-amber-400 dark:text-amber-400 light:text-amber-600 text-xs flex items-center gap-1">
-          <span>⚠️</span>
-          {T(lang, '在線搜尋失敗，請從常用城市中選擇或重試', 'Online search failed, please select from popular cities or retry')}
+        <p role="status" className="mt-1 text-amber-400 dark:text-amber-400 light:text-amber-600 text-xs flex items-center gap-1.5">
+          <AlertIcon size={14} className="flex-shrink-0" />
+          <span>{T(lang, '在線搜尋失敗，請從常用城市中選擇或重試', 'Online search failed, please select from popular cities or retry')}</span>
         </p>
       )}
 
@@ -323,9 +324,9 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
       )}
 
       {isSouthern && (
-        <p role="status" className="mt-1.5 text-amber-400 dark:text-amber-400 light:text-amber-600 text-xs flex items-center gap-1">
-          <span>⚠️</span>
-          {T(lang, '暫不支持南半球出生地的八字排盤', 'Southern hemisphere birth charts are not yet supported')}
+        <p role="status" className="mt-1.5 text-amber-400 dark:text-amber-400 light:text-amber-600 text-xs flex items-center gap-1.5">
+          <AlertIcon size={14} className="flex-shrink-0" />
+          <span>{T(lang, '暫不支持南半球出生地的八字排盤', 'Southern hemisphere birth charts are not yet supported')}</span>
         </p>
       )}
     </div>

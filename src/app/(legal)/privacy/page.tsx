@@ -2,6 +2,7 @@
 
 import { useLang } from '@/components/LanguageContext'
 import Link from 'next/link'
+import BackButton from '@/components/BackButton'
 import { T } from '@/lib/i18n'
 
 const POLICY_VERSION = '1.1'
@@ -11,13 +12,33 @@ export default function PrivacyPolicyPage() {
   const { lang } = useLang()
 
   return (
-    <div className="flex-1 px-4 py-12" style={{ background: 'var(--bg-primary)' }}>
-      <div className="max-w-3xl mx-auto">
-        <div className="glass-card rounded-2xl p-8 md:p-12 border" style={{ borderColor: 'var(--card-border)' }}>
-          <h1 className="text-3xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
+    <div className="flex-1 px-4 py-8 sm:py-12 pb-24" style={{ background: 'var(--bg-primary)' }}>
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* Top Navigation Bar */}
+        <div className="flex items-center justify-between gap-3 pb-3 border-b border-[rgba(212,168,83,0.16)]">
+          <div className="flex items-center gap-3">
+            <BackButton fallbackHref="/" />
+            <nav className="flex items-center gap-1.5 text-xs text-white/50 font-serif" aria-label="Breadcrumb">
+              <Link href="/" className="hover:text-gold transition-colors">
+                {T(lang, '首頁', 'Home')}
+              </Link>
+              <span>/</span>
+              <span className="text-gold">{T(lang, '隱私政策', 'Privacy Policy')}</span>
+            </nav>
+          </div>
+          <Link
+            href="/terms"
+            className="text-xs font-serif text-white/60 hover:text-gold transition-colors"
+          >
+            {T(lang, '服務條款 →', 'Terms of Service →')}
+          </Link>
+        </div>
+
+        <div className="oriental-sanctuary-card rounded-2xl p-6 sm:p-10 border border-gold/20 shadow-xl">
+          <h1 className="text-2xl sm:text-3xl font-serif mb-2" style={{ color: 'var(--gold)' }}>
             {T(lang, '隱私政策', 'Privacy Policy')}
           </h1>
-          <p className="text-sm mb-8" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs sm:text-sm mb-8 font-serif" style={{ color: 'var(--text-muted)' }}>
             {T(lang, `版本 ${POLICY_VERSION} · 生效日期：${EFFECTIVE_DATE}`, `Version ${POLICY_VERSION} · Effective: ${EFFECTIVE_DATE}`)}
           </p>
 

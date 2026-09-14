@@ -1,44 +1,42 @@
 'use client'
 
 /**
- * StepIndicator — 5-dot funnel progress, derived from the current pathname.
- *
- * The funnel is linear:
- *   1. /start              hook
- *   2. /start/cast         form
- *   3. /start/reading/[id] streaming reading
- *   4. /start/master/[id]  master demo
- *   5. /start/unlock/[id]  unlock
- *
- * /start/verify-sent is post-funnel (signup completed) — we render the
- * indicator at full (5/5) on that page. Users who navigate here bypassing
- * earlier views (e.g. from a deep link) still see consistent progress.
- *
- * Pure visual cue — no clicks, no nav. Sized small so it doesn't compete
- * with the hero / form on each view.
+ * StepIndicator — Dynamic progress dots derived from current pathname and step query param.
  */
 
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-const STEPS = 5
-
-function indexFromPath(pathname: string): number {
-  if (pathname === '/start') return 1
-  if (pathname.startsWith('/start/cast')) return 2
-  if (pathname.startsWith('/start/reading')) return 3
-  if (pathname.startsWith('/start/master')) return 4
-  if (pathname.startsWith('/start/unlock')) return 5
-  if (pathname.startsWith('/start/verify-sent')) return 5
-  return 1
-}
-
-export default function StepIndicator() {
+function StepIndicatorInner() {
   const pathname = usePathname() || '/start'
-  const current = indexFromPath(pathname)
+  const searchParams = useSearchParams()
+  const stepParam = searchParams?.get('step')
+
+  let current = 1
+  let total = 3
+
+  if (pathname === '/start') {
+    total = 3
+    if (stepParam === 'spark') current = 2
+    else if (stepParam === 'roadmap') current = 3
+    else current = 1
+  } else if (pathname.startsWith('/start/cast')) {
+    total = 5
+    current = 2
+  } else if (pathname.startsWith('/start/reading')) {
+    total = 5
+    current = 3
+  } else if (pathname.startsWith('/start/master')) {
+    total = 5
+    current = 4
+  } else if (pathname.startsWith('/start/unlock') || pathname.startsWith('/start/verify-sent')) {
+    total = 5
+    current = 5
+  }
 
   return (
-    <div className="flex items-center justify-center gap-1.5 py-3" aria-label={`Step ${current} of ${STEPS}`}>
-      {Array.from({ length: STEPS }, (_, i) => {
+    <div className="flex items-center justify-center gap-1.5 py-3" aria-label={`Step ${current} of ${total}`}>
+      {Array.from({ length: total }, (_, i) => {
         const stepNum = i + 1
         const isActive = stepNum === current
         const isPast = stepNum < current
@@ -48,7 +46,7 @@ export default function StepIndicator() {
             key={i}
             className="block rounded-full transition-all duration-300"
             style={{
-              width: isActive ? 22 : 6,
+              width: isActive ? 24 : 6,
               height: 6,
               background: filled ? 'var(--gold)' : 'rgba(212,175,55,0.18)',
               opacity: isActive ? 1 : isPast ? 0.65 : 0.5,
@@ -58,5 +56,13 @@ export default function StepIndicator() {
         )
       })}
     </div>
+  )
+}
+
+export default function StepIndicator() {
+  return (
+    <Suspense fallback={<div className="h-9" />}>
+      <StepIndicatorInner />
+    </Suspense>
   )
 }

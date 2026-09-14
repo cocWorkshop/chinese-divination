@@ -27,6 +27,9 @@ export function useDivinationForm(type: string, lang: string) {
     yearBuilt: '',
     ownerInfo: '',
     readingDateTime: (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) })(),
+    meihuaMethod: 'numbers',
+    num1: '',
+    num2: '',
     liuyaoLines: '', // JSON string of 6 lines, each {coins: [0|1, 0|1, 0|1], value: 6|7|8|9}
     ichingLines: '', // same shape as liuyaoLines — proper three-coin cast (replaces legacy single-number `hexagram` field)
     subType: 'meihua',
@@ -94,7 +97,7 @@ export function useDivinationForm(type: string, lang: string) {
       if (Object.keys(updates).length === 0) return
       setForm(f => ({ ...f, ...updates }))
       paramsHydratedRef.current = true // keep /api/init auto-fill from clobbering the draft
-      toast(T(lang, '已恢復未完成的表單草稿', 'Restored your unfinished draft'), { icon: '📝', duration: 3000 })
+      toast(T(lang, '已恢復未完成的表單草稿', 'Restored your unfinished draft'), { duration: 3000 })
     } catch { /* corrupt draft — ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -130,6 +133,7 @@ export function useDivinationForm(type: string, lang: string) {
       // Event-type fields — used by the failed-reading retry flow, which
       // re-seeds the form from the original reading's inputData.
       'readingDateTime', 'direction', 'yearBuilt', 'ownerInfo', 'hexagram',
+      'meihuaMethod', 'num1', 'num2',
     ] as const
     for (const k of formKeys) {
       const v = searchParams.get(k)
@@ -190,7 +194,7 @@ export function useDivinationForm(type: string, lang: string) {
     if (Object.keys(updates).length > 0 || target) {
       // Generic wording — hydration is used by both the Master CTA flow and
       // the failed-reading retry flow.
-      toast(T(lang, '已自動填入先前資訊', 'Fields pre-filled'), { icon: '✨', duration: 3000 })
+      toast(T(lang, '已自動填入先前資訊', 'Fields pre-filled'), { duration: 3000 })
     }
   }, [searchParams, lang])
 

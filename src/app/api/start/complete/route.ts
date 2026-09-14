@@ -89,8 +89,11 @@ export async function POST(req: NextRequest) {
   const hashed = await hash(password, 12)
   const vToken = generateToken()
 
-  await prisma.user.update({
-    where: { id: user.id },
+  // Conditional update — `tentative: true` in the WHERE makes the
+  // conversion single-shot: two concurrent submissions can't both pass the
+  // check above and grant the register bonus twice.
+  const converted = await prisma.user.updateMany({
+    where: { id: user.id, tentative: true },
     data: {
       password: hashed,
       tentative: false,
@@ -109,6 +112,12 @@ export async function POST(req: NextRequest) {
       ...(name ? { name } : {}),
     },
   })
+
+  if (converted.count === 0) {
+    // Lost the conversion race — another concurrent request just converted
+    // this user. Treat as success but this request grants nothing.
+    return NextResponse.json({ success: true, alreadyCompleted: true, email: user.email })
+  }
 
   // Send verification email — non-blocking. If it fails, the user can use
   // /api/resend-verification from the verify-sent splash to retry.

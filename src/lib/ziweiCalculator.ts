@@ -170,62 +170,54 @@ export function calculateZiwei(
   }).filter(d => d.range[0] > 0 || d.range[1] > 0) // filter out invalid decades
     .sort((a, b) => a.range[0] - b.range[0])
 
-  // Compute 流年 using iztro horoscope API
-  const currentYear = new Date().getFullYear()
+  // Compute 流年 directly from year ganzhi. The previous implementation
+  // called chart.horoscope() per year — 80 heavy computations per chart —
+  // only to read back data derivable from the year stem/branch: the mutagen
+  // table below is the same standard 禄权科忌 table iztro uses, and the old
+  // code sampled mid-year (June) dates which never cross the 立春 boundary,
+  // so (year - 4) modular arithmetic is exactly equivalent.
   const birthYear = y
   const liuNian: ZiweiLiuNianEntry[] = []
+  const YEAR_STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
+  const YEAR_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
 
   // Compute 80 years for UI timeline
   for (let i = 0; i < 80; i++) {
     const targetYear = birthYear + 1 + i  // age 1 to 80
     const age = targetYear - birthYear
-    try {
-      const h = chart.horoscope(`${targetYear}-6-15`)  // mid-year date
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const yearly = h.yearly as any
-      if (!yearly) continue
+    const yearStem = YEAR_STEMS[(targetYear - 4) % 10]
+    const earthlyBranch = YEAR_BRANCHES[(targetYear - 4) % 12]
+    const table = SIHUA_TABLE[yearStem]
 
-      const yearlyMutagen: string[] = yearly.mutagen || []
-      const earthlyBranch: string = yearly.earthlyBranch || ''
+    // Determine which palaces get 化禄 and 化忌
+    let huaLuPalace = ''
+    let huaJiPalace = ''
 
-      // Determine which palaces get 化禄 and 化忌
-      // yearly.palaceNames is the re-ordered palace list for this year
-      // index 0 = 命宫 position for this year
-      const palaceNames: string[] = yearly.palaceNames || []
-      const yearStem = yearly.heavenlyStem || ''
-      const table = SIHUA_TABLE[yearStem]
-
-      let huaLuPalace = ''
-      let huaJiPalace = ''
-
-      if (table) {
-        // Find which natal palace the 化禄星 and 化忌星 sit in
-        const luStar = table[0]
-        const jiStar = table[3]
-        for (const p of palaces) {
-          const allNames = [...p.majorStars, ...p.minorStars, ...p.adjectiveStars].map(s => s.name)
-          if (allNames.includes(luStar) && !huaLuPalace) huaLuPalace = p.name
-          if (allNames.includes(jiStar) && !huaJiPalace) huaJiPalace = p.name
-        }
+    if (table) {
+      // Find which natal palace the 化禄星 and 化忌星 sit in
+      const luStar = table[0]
+      const jiStar = table[3]
+      for (const p of palaces) {
+        const allNames = [...p.majorStars, ...p.minorStars, ...p.adjectiveStars].map(s => s.name)
+        if (allNames.includes(luStar) && !huaLuPalace) huaLuPalace = p.name
+        if (allNames.includes(jiStar) && !huaJiPalace) huaJiPalace = p.name
       }
-
-      // isLucky: green if 化禄 hits key palace, red if 化忌 hits key palace
-      let isLucky: boolean | null = null
-      if (KEY_PALACES.includes(huaJiPalace)) isLucky = false
-      else if (KEY_PALACES.includes(huaLuPalace)) isLucky = true
-
-      liuNian.push({
-        year: targetYear,
-        age,
-        earthlyBranch,
-        yearlyMutagen,
-        huaLuPalace,
-        huaJiPalace,
-        isLucky,
-      })
-    } catch {
-      // Skip years that fail (e.g., out of range)
     }
+
+    // isLucky: green if 化禄 hits key palace, red if 化忌 hits key palace
+    let isLucky: boolean | null = null
+    if (KEY_PALACES.includes(huaJiPalace)) isLucky = false
+    else if (KEY_PALACES.includes(huaLuPalace)) isLucky = true
+
+    liuNian.push({
+      year: targetYear,
+      age,
+      earthlyBranch,
+      yearlyMutagen: table ?? [],
+      huaLuPalace,
+      huaJiPalace,
+      isLucky,
+    })
   }
 
   return {

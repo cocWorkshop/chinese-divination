@@ -6,10 +6,10 @@ import { generateToken, tokenExpiry, sendVerificationEmail } from '@/lib/email'
 import { logAuth } from '@/lib/authLog'
 import { CURRENT_POLICY_VERSION } from '@/lib/policyVersion'
 import { rateLimit } from '@/lib/rateLimiter'
+import { getClientIp } from '@/lib/clientIp'
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip') || null
+  const ip = getClientIp(req)
   const userAgent = req.headers.get('user-agent') || null
 
   // Rate limit: 3 attempts per hour per IP
@@ -78,18 +78,21 @@ export async function POST(req: NextRequest) {
 
     // Grant bonus to sharer and mark link as used
     if (shareLink && !shareLink.used) {
-      await prisma.$transaction([
-        prisma.shareLink.update({
-          where: { code: shareLink.code },
+      await prisma.$transaction(async (tx) => {
+        // Conditional update — concurrent registrations with the same
+        // referral code can't both flip `used` and double-credit the sharer.
+        const won = await tx.shareLink.updateMany({
+          where: { code: shareLink.code, used: false },
           data: { used: true, usedBy: user.id, usedAt: new Date() },
-        }),
-        prisma.user.update({
+        })
+        if (won.count === 0) return
+        await tx.user.update({
           where: { id: shareLink.userId },
           data: {
             credits: { increment: shareBonus },
           },
-        }),
-      ])
+        })
+      })
     }
 
     await logAuth({ action: 'register', status: 'success', email, userId: user.id, ip, userAgent })

@@ -1,315 +1,151 @@
-# 玄機大師 — 互動體驗機制
+# 玄機大師 — 互動體驗機制與狀態機規範 (Master Interaction Features)
 
-記錄三個讓 master chat「像在跟真人聊天」的機制：**打斷與追問**、**用戶取消 CTA**、**閒置反思**。三者共用同一條 `runTurn` 路徑，差異只在 payload + state 機。
-
----
-
-## 1. 打斷與追問（Interruption / Follow-up）
-
-### 場景
-
-用戶在 master 還在 streaming 輸出時，又想說點什麼。兩種情境：
-- **A. LLM 已經吐字**：master 講到一半，用戶「等等，我問的是…」
-- **B. LLM 還沒吐字**：剛 POST 出去、token 還沒回來，用戶補了一句「對了還有…」
-
-兩種情境共用同一條代碼路徑：用戶輸入入隊 → debounce 1500ms → flushPendingSends 偵測 in-flight → abort + 重新 runTurn。
-
-### 數據流
-
-```
-用戶打字 → sendMessage()
-            ↓ 入 pendingSendsRef + 顯示 user 氣泡
-            ↓ 重置 BURST_DEBOUNCE_MS (1500ms) 計時器
-            ↓
-      [1500ms 用戶停止輸入]
-            ↓
-       flushPendingSends()
-            ↓
-       sendingRef.current === true？
-       ├─ NO  → runTurn(queued) 普通流程
-       └─ YES → 進入「打斷」分支
-                ↓
-                rate-limit 檢查（60s 內最多 6 次打斷）
-                ├─ 超限 → toast「打斷過於頻繁」+ 丟棄 queue
-                └─ 通過 → 繼續
-                          ↓
-                          標記前一條 assistant 訊息加 `*…(被打斷)*` 後綴
-                          ↓
-                          abortRef.current.abort()  ← 取消 fetch
-                          ↓
-                          await turnDoneRef.current  ← 等舊 runTurn cleanup
-                          ↓
-                          runTurn(queued)  ← 啟新一輪含用戶新輸入
-```
-
-### 關鍵 ref / 常量
-
-| 名稱 | 位置 | 作用 |
-|---|---|---|
-| `sendingRef.current` | MasterChatContext | true = 有 turn 在跑 |
-| `abortRef.current` | MasterChatContext | 當前 fetch 的 AbortController |
-| `turnDoneRef.current` | MasterChatContext | 當前 turn 的 cleanup Promise；abort 後 await 它確保 sendingRef 已 reset |
-| `interruptHistoryRef.current` | MasterChatContext | 滑動 60s 窗口內所有打斷的 timestamp |
-| `MAX_INTERRUPTS_PER_WINDOW = 6` | MasterChatContext | 60s 內合法打斷上限 |
-| `INTERRUPT_WINDOW_MS = 60_000` | MasterChatContext | 滑動窗大小 |
-
-### 為什麼不需要改 server
-
-- master 路由的 user message 是在 stream **開始前**寫入 DB 的
-- assistant turn 是在 stream **結束時**寫入 DB 的
-- abort 發生在中間 → DB 有用戶舊訊息但沒有半條 assistant turn → 沒有污染
-- 新一輪 runTurn 從 DB 讀的 history 是完整的；連續兩條 user role 訊息（舊的+新的）合在一起，OpenAI / Anthropic 都能正常處理，自然當作"用戶補充說明"重新作答
-
-### 為什麼用 turnDoneRef + Promise 而不是 polling
-
-舊 runTurn 的 finally block 末尾呼叫 `resolveTurn()`。新 runTurn 的 `if (sendingRef.current) return` 早 bail 永遠不會誤觸發，因為 `await turnDoneRef.current` 已經保證了 cleanup 完成。比 `while (sendingRef) await sleep(50)` 精確 O(1)。
-
-### 已扣機緣 vs 重做
-
-每次 `runTurn` 都對應 server 端一次 `deductCredits` 呼叫。打斷 + 重啟 = 扣兩次。**這是有意的**：
-- 用真錢做天然速率限制
-- 真實的"我打斷想補充"通常 1-2 次封頂
-- 惡意刷打斷會花錢 → 自我修正
-- 上面那個 `MAX_INTERRUPTS_PER_WINDOW` 是冗餘上限（60s 內最多扣 6 次機緣）
+> **版本**：v2.1  
+> **層級**：對話交互系統工程架構手冊 (Conversational Interaction Architecture)  
+> **範圍**：打斷與追問、CTA 卡片生命週期與反轉、閒置智能反思、激活續接機制
 
 ---
 
-## 2. 用戶取消 CTA（Pending-reading reversal）
+## 一、設計理念與真人感交互目標
 
-### 場景
+「玄機大師」並非傳統被動式「一問一答」的客服 Chatbot，其定位為一位**沈穩、有洞察力、且具備真實人際交互節奏的現代術數命理宗師**。
 
-master 發了一張 CTA 卡片（例如「點下面這個給你太太排八字」），用戶點開了 form 頁面，反悔，不想填了。原本 master 會卡在 `pendingReading` 狀態無限等待，沒有任何方式叫他放下。
+在人際交流中，真人對話具有非對稱性與動態特徵：
+- **用戶會連發短消息**（Burst Send）：打完「在嗎」緊接著打「想問下今年事業」；
+- **用戶會隨時插話打斷**（Interruption）：在大師長篇分析時，用戶可能發現重點偏移並立即追問；
+- **對話會沉澱與反思**（Reflection）：聊完一段落後，大師可能在 1~2 分鐘後「突然想到」另一個關聯的命盤細節；
+- **場景具備記憶與續接**（Activation Resume）：隔天展開視窗時，大師能依據昨天的進展自然開啟話題。
 
-### UI
-
-折疊狀態的 master 底欄在 `pendingReading` 期間顯示：
-
-```
-🧙‍♂️  ●  候您完成八字排盤 · 完成後自動續接              [✕]
-```
-
-- 主區（avatar + 狀態文字）：點擊回到 form 頁
-- 右側 `✕`：點擊 → confirm 對話框 → 確認後取消
-
-### 數據流
-
-```
-用戶點 ✕ → window.confirm「要放棄這次八字占卜嗎？」
-              ↓ 確認
-        cancelPendingReading()
-              ↓
-        setPendingReading(null)
-              ↓
-        runTurn({ messages: ['[用戶取消] 用戶取消了 X 的占卜...'] })
-              ↓
-        master 收到合成 user message → 走 master.md 的「user cancelled」分支
-        → 回覆「好，先放下這個」+ 換話題
-        → 不再發出相同 CTA
-```
-
-### Master 端行為（master.md 規定）
-
-收到 `[用戶取消]` 訊息時：
-1. 簡短承認（"好，先放下這個"）
-2. **不要重複發出相同的 CTA**
-3. 用現有資料回應，或換話題
-
-### 關鍵點
-
-- `xuanji:readingComplete` 與 `[用戶取消]` 是兩個對稱信號 — 一個告訴 master「成功了，繼續」，一個告訴 master「失敗了，放下」
-- 兩個信號都是合成 user message，server 端跟普通 user 訊息一樣處理（持久化到 DB）
-- 多步驟 CTA 流程下（例如八字合盤需要本人 + 配偶 + 父母三張盤），用戶可以取消其中任何一張，master 會接受並繼續工作
+為支撐上述體驗，系統構建了**統一的狀態驅動交互引擎 (Master Turn Engine)**。
 
 ---
 
-## 3. 閒置反思（Idle Reflection）
+## 二、大師交互全局狀態機 (Global Interaction FSM)
 
-### 場景
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE: 載入歷史對話
 
-用戶在展開的對話框裡停了下來（不是關閉，是還在看著螢幕），90 秒沒有輸入。master 掃一眼最近 3-5 輪對話，找一個值得補充的東西，自己接一兩句話。
+    IDLE --> BURST_BUFFERING: 用戶輸入 (sendMessage)
+    BURST_BUFFERING --> BURST_BUFFERING: 1500ms 內連續鍵入 (重置計時器)
+    BURST_BUFFERING --> RUNNING_TURN: 防抖時間到 → flushPendingSends()
 
-兩個典型情境：
-- **A. 補充說明**：master 答完問題後想到「對了，剛才提到的 X 其實還可以說 Y」
-- **B. 接住沒收尾的話頭**：master 之前開了個話頭沒講完
+    state RUNNING_TURN {
+        [*] --> FETCHING: POST /api/master (stream)
+        FETCHING --> STREAMING: 接收到首個 SSE 事件
+        STREAMING --> STREAMING: 逐字/逐氣泡更新 MessageBubble
+        STREAMING --> TURN_COMPLETED: 接收到 [DONE]
+    }
 
-### 一次性原則
+    RUNNING_TURN --> INTERRUPTED: 運行期間用戶再次輸入
+    INTERRUPTED --> RUNNING_TURN: abortRef.abort() → 加注 *(被打斷)* → 重啟 runTurn
 
-- 90 秒沒輸入 → master 反思一次（不管說沒說有用的東西）
-- 反思之後再 90 秒沒輸入 → **不再反思**（我們判定用戶離開了）
-- 用戶下次再輸入任何東西 → 計數器歸零，下次 idle 又可以反思一次
+    TURN_COMPLETED --> PENDING_CTA: 大師發送了 CTA 卡片 (引導排盤)
+    TURN_COMPLETED --> REFLECTION_SCHEDULING: 滿足反思門禁條件
+    TURN_COMPLETED --> IDLE: 普通收尾
 
-這個 "ONE-SHOT per silent stretch" 原則是核心，避免顯得需要陪伴或者霸佔注意力。
+    PENDING_CTA --> RUNNING_TURN: 用戶完成排盤 (readingComplete) 或 點擊取消 (cancelPendingReading)
 
-### 狀態機
+    REFLECTION_SCHEDULING --> EMITTING_REFLECTION: 75~120s 隨機抖動且無新輸入
+    REFLECTION_SCHEDULING --> IDLE: 用戶主動輸入打斷定時器
+    EMITTING_REFLECTION --> IDLE: 吐出「對了…」補充氣泡
 
+    IDLE --> ACTIVATION_RESUME: 用戶收合長久後重新展開視窗
+    ACTIVATION_RESUME --> RUNNING_TURN: 發起自動問候或進度盤問
 ```
-States (per chat session):
-- READY       reflection_attempts === 0, can reflect on next idle
-- DEAD        reflection_attempts === 1, no more reflection until user types
-
-Transitions:
-  master reply finished + widget expanded → schedule 90s timer
-  user types (any non-reflection turn fires) → reset counter to 0 (back to READY)
-  90s timer fires + READY + still expanded + master not busy → trigger reflection turn
-  reflection turn fires → counter += 1 → DEAD
-  widget collapsed → cancel timer (state preserved)
-  widget re-expanded → useEffect refires → re-schedules if state allows
-```
-
-### 數據流
-
-```
-master 回覆 done → loading=false
-          ↓
-   useEffect 偵測到 (loading=false + last msg=assistant + expanded)
-          ↓
-   scheduleReflection()
-          ↓
-   reflectionAttemptsRef.current >= 1?
-   ├─ YES → return (DEAD)
-   └─ NO  → shouldReflect()? → setTimeout 75_000 + random(0-45_000)ms
-                ↓
-            [計時]
-            ├─ 用戶打字 → flushPendingSends → runTurn({ messages }) 
-            │                                ↓
-            │                          重置 reflectionAttemptsRef = 0
-            │                          下個 useEffect cycle 重新排程
-            │
-            └─ 計時器到期 → triggerReflection()
-                              ↓
-                        reflectionAttemptsRef.current += 1  (= 1)
-                        runTurn({ reflection: true })
-                              ↓
-                        POST /api/master with reflection: true
-                              ↓
-                        backend 注入「## 反思時刻」appendix 到 system prompt
-                        + 注入合成 user msg `[reflection_trigger]`
-                              ↓
-                        LLM 流回應；持久化跟普通 turn 一樣
-                              ↓
-                        loading=false 又觸發 useEffect → scheduleReflection
-                              ↓
-                        但 reflectionAttemptsRef.current === 1 → return (DEAD)
-```
-
-### 關鍵 ref / 常量
-
-| 名稱 | 位置 | 作用 |
-|---|---|---|
-| `reflectionTimerRef.current` | MasterChatContext | setTimeout handle |
-| `reflectionAttemptsRef.current` | MasterChatContext | 0 = READY, 1 = DEAD |
-| `REFLECTION_IDLE_MS_BASE = 75_000` | MasterChatContext | 反思觸發基礎延遲 |
-| `REFLECTION_IDLE_MS_JITTER = 45_000` | MasterChatContext | 隨機抖動 (0-45s) 使觸發更自然 |
-| `shouldReflect()` | MasterChatContext | 內容感知門控 — 跳過「好」「ok」「謝謝」等結束語 |
-
-### 為什麼是 75-120 秒 + 內容感知
-
-延遲使用 75s 基礎 + 0-45s 隨機抖動（75-120 秒），避免機械感。
-
-同時增加了**內容感知門控**（`shouldReflect()`）：
-- 如果用戶最後一條消息是結束語（好/ok/謝謝/再見等）→ **不觸發**
-- 如果用戶最後一條消息 < 5 字 → **不觸發**
-- 觸發時再次檢查，防止用戶在等待期間發了結束語
-
-這避免了用戶說「好的謝謝」後大師還追著說話的尷尬。
-
-### Master 端行為（master.md 規定）
-
-收到 `[reflection_trigger]` 時：
-1. 掃最近 3-5 輪對話，找 ONE 個具體值得補的東西
-2. 找到了 → 「對了 / 我再想了一下」開頭，1-2 個短氣泡，**留空白**收尾（不要硬問問題）
-3. 找不到值得補的東西 → 一句短結尾打住（"先這樣，你想到什麼再說。"）
-4. 硬規則：最多 2 個氣泡；不打招呼；不總結之前說過的；不問「還有什麼想問的嗎」
-
-### 為什麼一定要"沒值得說的就閉嘴"
-
-LLM 默認傾向：被觸發了就要說點什麼，避免空白。對普通對話這是好事，對反思這是災難——強行擠出來的反思會顯得 master 不安、需要存在感、像個業務員。寧可錯過也不要硬擠。
-
-prompt 裡明確「找不到 → 一句短結尾打住」是為了給 LLM 顯式許可：可以什麼都不說。
-
-### 為什麼「反思之後不再反思」
-
-如果反思了，用戶沒回，那就兩種可能：
-- A. 用戶真的已經離開了
-- B. 用戶在思考，還會回來
-
-兩種情況下，**繼續反思都是錯的**：
-- 對 A：浪費 LLM 呼叫
-- 對 B：用戶正在好好想，master 又冒出來會打斷思路
-
-所以一次就夠。下次用戶主動回來 → 重置 counter → 又可以反思一次。
-
-### 折疊 / 展開的處理
-
-- `shape !== 'expanded'` 時不安排反思（用戶沒在看，發了也沒人看到）
-- 但 counter 不重置 — 用戶展開後如果之前已經反思過了，仍然 DEAD
-- 如果想「展開即重置」可以再加邏輯，但目前的行為更保守：用戶手動發訊息才證明真的回來了
 
 ---
 
-## 三者的共通協議
+## 三、四大核心交互機制詳解
 
-### 同一條 `runTurn` 入口
+### 1. 打斷與追問 (Interruption / Follow-up)
 
-```ts
-runTurn(payload: 
-  | { messages: string[] }   // 用戶 active turn（包括追問、合成的 readingComplete / 取消訊息）
-  | { checkin: true }        // 主動開場
-  | { reflection: true }     // 閒置反思
-)
+#### 業務場景
+- **場景 A (LLM 輸出中插話)**：大師講到一半，用戶突然說「等等，我問的是我女朋友的事」；
+- **場景 B (請求在空中補話)**：剛發送問題，用戶立馬補發「對了，我是農曆生日」。
+
+#### 數據流與並發控制時序
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 用戶
+    participant UI as MasterChatContext (React)
+    participant Engine as /api/master (Next.js)
+    participant LLM as LLM 網關
+
+    User->>UI: 發送第 1 條消息
+    UI->>UI: 啟動 BURST_DEBOUNCE_MS (1500ms)
+    User->>UI: 800ms 後發送第 2 條補充
+    UI->>UI: 重置 1500ms 定時器
+    Note over UI: 1500ms 無操作 → 觸發發送
+    UI->>Engine: POST /api/master (包含合併消息)
+    Engine->>LLM: streamLLM 開始吐字
+    
+    User->>UI: 突然輸入新消息 (打斷！)
+    UI->>UI: 頻控檢查 (60s 滑動窗口最多 6 次打斷)
+    UI->>UI: 標記當前 Assistant 氣泡加注 *…(被打斷)*
+    UI->>UI: abortRef.current.abort()
+    UI->>Engine: 斷開 HTTP 連接 (req.signal 觸發)
+    Engine-->>LLM: 瞬間中斷上游 LLM 調用
+    UI->>UI: await turnDoneRef.current (等待舊任務清理完畢)
+    UI->>Engine: 重新 POST /api/master (攜帶打斷上下文重啟)
 ```
 
-POST 到 `/api/master` 的 body 對應 `messages: string[]`、`checkin: true`、`reflection: true`。後端用對應的 prompt appendix 包裝。
-
-### 同一個 SSE 事件協議
-
-跟 streaming 部分一樣：`content` / `bubble_break` / `tool_start` / `tool_end` / `cta_card` / `reading_card` / `done` / `error`。前端收到 event 的處理跟普通 turn 完全一樣。
-
-### 同一個 turn lifecycle (`turnDoneRef`)
-
-任何 turn（不管 user / checkin / reflection）的 `runTurn` 都會：
-1. 開頭：`sendingRef = true`，建立 `turnDoneRef = new Promise(...)`
-2. finally：`resolveTurn()`，`sendingRef = false`，`setLoading(false)`
-
-打斷邏輯永遠 await `turnDoneRef.current`，無視當前 turn 是哪種類型 → 統一處理。
-
-### 不會互相重入
-
-- 任何 runTurn 的 `if (sendingRef.current) return` 早 bail 防止重入
-- 反思的 schedule 在 `if (sendingRef.current) return` 也會 bail，避免在 master 還在說話時插隊
+#### 數據庫一致性保證
+- **無髒數據寫入**：用戶消息在 Stream **啟動前**即刻寫入 `MasterChatMessage`；Assistant 消息僅在 Stream **完全成功閉合時**才寫入數據庫。打斷發生在中間時，數據庫只有用戶輸入而無半截 Assistant 記錄，下一次請求將兩條連續 User 消息作為上下文一併提交，模型自然視為「用戶補充更正」。
+- **扣費策略**：每次 `runTurn` 均在服務端扣除 1 機緣點數。打斷重啟會消耗新額度，作為天然的防惡意刷屏機制。
 
 ---
 
-## 速率 / 成本評估
+### 2. CTA 卡片生命週期與反轉 (CTA Lifecycle & Reversal)
 
-| 動作 | 觸發頻率上限 | 每次成本 |
-|---|---|---|
-| 用戶 sendMessage | 受 1500ms debounce + LLM 回應時間限制 | 1 次 LLM 呼叫 + 機緣 |
-| 用戶打斷 | 60s 內最多 6 次（rate limit） | 同上 |
-| 取消 CTA | 用戶手動觸發，需 confirm | 同上 |
-| 主動 checkin | 開啟 widget 時，2h gap + 5min cooldown | 同上 |
-| 閒置反思 | 90s 後自動觸發，每靜默期最多 1 次 | 同上 |
+#### 業務場景
+當大師建議用戶進行深度排盤（如「點擊下方卡片排八字」），對話進入 `pendingReading` 狀態。用戶若中途反悔關閉表單，大師底欄將提供顯式的「放棄」操作。
 
-最壞情況：用戶開了 widget → master 反思（1 次） → 用戶答 → master 答 → 用戶閒置 → 反思（1 次）→ 答 → ... 每輪對話最多多耗 1 次 LLM。對機緣消耗的影響可控。
-
----
-
-## 改動文件索引
-
-- [divination-refs/master.md](../divination-refs/master.md) — 持久化 prompt 規則：Reflection 章節 + 多步驟 CTA / cancel 分支處理
-- [src/app/api/master/route.ts](../src/app/api/master/route.ts) — 後端：`reflection: true` body 識別、`buildReflectionAppendix(lang)` 函數
-- [src/lib/master/turnEngine.ts](../src/lib/master/turnEngine.ts) — 引擎：`isReflection` flag → 注入 `[reflection_trigger]` 合成 user message
-- [src/components/master/MasterChatContext.tsx](../src/components/master/MasterChatContext.tsx) — 前端：
-  - `turnDoneRef` / `interruptHistoryRef` (打斷)
-  - `cancelPendingReading()` (取消 CTA)
-  - `reflectionTimerRef` / `reflectionAttemptsRef` / `scheduleReflection` / `triggerReflection` (反思)
-- [src/components/master/widget/CollapsedBar.tsx](../src/components/master/widget/CollapsedBar.tsx) — UI：取消 CTA 的 ✕ 按鈕
+#### 狀態反轉流
+1. 用戶點擊底欄 `[✕]` 按鈕，彈出確認對話框；
+2. 確認取消後，調用 `cancelPendingReading()`：
+   - 清除本地 `pendingReading` 鎖；
+   - 插入一條虛擬系統通知：「已取消本次排盤引導」；
+   - 自動合成觸發調用：`runTurn({ silentPrompt: '[用戶取消了本次排盤，請以溫和包容的語氣接話]' })`；
+3. 大師接收該指令後，自動轉向其他話題或安撫情緒，對話無縫繼續。
 
 ---
 
-## 下一步可改進的點
+### 3. 閒置智能反思 (Idle Reflection — 「對了…」氣泡)
 
-1. **打斷時保留 server 端的部分 assistant turn**：當前打斷時前端標記 `*…(被打斷)*`，但 server 端不持久化半條 turn。如果想讓「被打斷」的內容也進 chat history（給後續 turn 提供更完整的脈絡），需要在 abort 時讓 client 把已收到的部分 content 傳給 server 做 truncated save。
-2. **反思時間自適應**：根據 portrait 學到「這個用戶通常多快回應」動態調整 90s。慢速思考的用戶可以給 120-150s，快速對話的可以縮到 60s。
-3. **反思的「值不值得」判斷下推到 server**：當前是 prompt 規則 + LLM 自覺。可以加一道 server 端輕量分類（基於最後一條 assistant 內容的長度 / 訊息數），如果 chat 很短就直接跳過反思 LLM 呼叫，省一輪 token。
-4. **取消後的 grace period**：用戶取消 CTA 後 5 分鐘內，master 不要再 emit 同類型的 CTA（即使 prerequisites 還在缺）。需要前端記憶「最近取消的 type」並在 system prompt 加 hint。
+#### 業務目標
+在大師結束回答後，模擬真人命理師「看盤入神、靈光乍現」的思考過程，在 75~120 秒後主動追發一條短氣泡（1~2 句話）。
+
+#### 內容感知門控 (Content-Aware Gating)
+並非所有對話都能觸發反思。為防打擾，必須同時滿足四大嚴格門禁：
+1. **話題相關性**：最後一輪對話必須涉及具體命盤（八字、紫微、大運等），純寒暄與問候不反思；
+2. **非收尾狀態**：對話結尾不能包含「祝您順遂」、「保重」等告別標籤；
+3. **無待決事項**：無進行中的 CTA 卡片；
+4. **隨機抖動**：在 75,000ms ~ 120,000ms 區間隨機選取觸發時刻（Jittered Delay），若期間用戶有任何新打字動作，反思定時器立即自我銷毀。
+
+---
+
+### 4. 激活續接機制 (Activation Resume)
+
+當用戶隔夜或數小時後重新展開已折疊的對話浮窗時，系統啟動**兩階段分流決策**：
+
+```
+用戶展開對話浮窗 (expand widget)
+      ↓
+檢查冷卻時間 (>2 小時且歷史消息 > 0)
+      ↓
+┌───────────────────────────────────────────────┐
+│ Stage 1: 結構化確定性快徑 (Fast-Path)          │
+│ 檢查最後一條 assistant 是否為待完成的 CTA 卡片   │
+│   ├─ 是且已在其他分頁完成 → 觸發 readingComplete  │
+│   └─ 是但超期未完成 → 提示是否需要協助          │
+└───────────────────────────────────────────────┘
+      ↓ 未命中 CTA
+┌───────────────────────────────────────────────┐
+│ Stage 2: 語義情境自適應搭話 (LLM Adaptive)      │
+│   ├─ 上次用戶說了話但遇網絡中斷無回覆 → 主動補答│
+│   ├─ 逢重大節氣更替 (立春/冬至) → 結合節令問候 │
+│   └─ 對話已自然收尾 → 保持沈默，靜候用戶提問   │
+└───────────────────────────────────────────────┘
+```

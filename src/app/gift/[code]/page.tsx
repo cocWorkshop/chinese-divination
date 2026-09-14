@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import YinYangIcon from '@/components/YinYangIcon'
 import { useLang } from '@/components/LanguageContext'
+import { GiftVesselIcon, SparkleIcon, CheckSealIcon, LockSealIcon, AlertIcon, CloseIcon, SunMoonIcon } from '@/components/DivinationIcons'
 
 type GiftStatus = 'loading' | 'ready' | 'already_claimed' | 'expired' | 'exhausted' | 'invalid' | 'claiming' | 'success' | 'error' | 'need_login'
 
@@ -63,73 +64,131 @@ export default function GiftClaimPage() {
     }
   }
 
-  const statusConfig: Record<string, { icon: string; title: string; desc: string; color: string }> = isEn
-    ? {
-        loading: { icon: '⏳', title: 'Loading...', desc: '', color: 'text-white/60' },
-        ready: { icon: '🎁', title: `Claim ${credits} Karma`, desc: note || 'Tap the button to claim your Karma', color: 'text-gold' },
-        claiming: { icon: '⏳', title: 'Claiming...', desc: 'Please wait', color: 'text-white/60' },
-        success: { icon: '✨', title: `Claimed ${credits} Karma!`, desc: 'Karma added to your account', color: 'text-green-400' },
-        already_claimed: { icon: '✅', title: 'Already claimed', desc: 'You have already claimed this gift', color: 'text-blue-400' },
-        expired: { icon: '⏰', title: 'Expired', desc: 'This link has expired', color: 'text-red-400' },
-        exhausted: { icon: '📭', title: 'All claimed', desc: 'This gift has been fully claimed', color: 'text-orange-400' },
-        invalid: { icon: '❌', title: 'Invalid link', desc: 'This link does not exist or has expired', color: 'text-red-400' },
-        need_login: { icon: '🔒', title: 'Please log in', desc: 'Log in to claim your Karma', color: 'text-yellow-400' },
-        error: { icon: '⚠️', title: 'Claim failed', desc: errorMsg, color: 'text-red-400' },
-      }
-    : {
-        loading: { icon: '⏳', title: '加載中...', desc: '', color: 'text-white/60' },
-        ready: { icon: '🎁', title: `領取 ${credits} 機緣`, desc: note || '點擊下方按鈕領取您的機緣點數', color: 'text-gold' },
-        claiming: { icon: '⏳', title: '領取中...', desc: '請稍候', color: 'text-white/60' },
-        success: { icon: '✨', title: `成功領取 ${credits} 機緣！`, desc: '機緣已添加到您的帳戶', color: 'text-green-400' },
-        already_claimed: { icon: '✅', title: '已領取', desc: '您已領取過此禮品', color: 'text-blue-400' },
-        expired: { icon: '⏰', title: '已過期', desc: '此連結已過期', color: 'text-red-400' },
-        exhausted: { icon: '📭', title: '已領完', desc: '此禮品已被領完', color: 'text-orange-400' },
-        invalid: { icon: '❌', title: '無效連結', desc: '此連結不存在或已失效', color: 'text-red-400' },
-        need_login: { icon: '🔒', title: '請先登入', desc: '登入後即可領取機緣', color: 'text-yellow-400' },
-        error: { icon: '⚠️', title: '領取失敗', desc: errorMsg, color: 'text-red-400' },
-      }
+  const renderIcon = () => {
+    switch (status) {
+      case 'ready':
+        return <GiftVesselIcon size={44} className="text-gold animate-bounce" />
+      case 'success':
+        return <CheckSealIcon size={44} className="text-emerald-400" />
+      case 'already_claimed':
+        return <CheckSealIcon size={44} className="text-cyan-400" />
+      case 'need_login':
+        return <LockSealIcon size={44} className="text-gold" />
+      case 'expired':
+      case 'exhausted':
+        return <SunMoonIcon size={44} className="text-white/40" />
+      case 'invalid':
+        return <CloseIcon size={44} className="text-red-400" />
+      case 'error':
+        return <AlertIcon size={44} className="text-red-400" />
+      default:
+        return <YinYangIcon size={44} className="animate-pulse" />
+    }
+  }
 
-  const cfg = statusConfig[status] || statusConfig.invalid
+  const getStatusText = () => {
+    if (isEn) {
+      switch (status) {
+        case 'loading': return { title: 'Loading...', desc: '', color: 'text-white/60' }
+        case 'ready': return { title: `Claim ${credits} Karma`, desc: note || 'Tap the button to claim your Karma', color: 'text-gold' }
+        case 'claiming': return { title: 'Claiming...', desc: 'Please wait', color: 'text-white/60' }
+        case 'success': return { title: `Claimed ${credits} Karma!`, desc: 'Karma added to your account', color: 'text-emerald-400' }
+        case 'already_claimed': return { title: 'Already claimed', desc: 'You have already claimed this gift', color: 'text-cyan-400' }
+        case 'expired': return { title: 'Expired', desc: 'This link has expired', color: 'text-red-400' }
+        case 'exhausted': return { title: 'All claimed', desc: 'This gift has been fully claimed', color: 'text-amber-400' }
+        case 'invalid': return { title: 'Invalid link', desc: 'This link does not exist or has expired', color: 'text-red-400' }
+        case 'need_login': return { title: 'Please log in', desc: 'Log in to claim your Karma', color: 'text-gold' }
+        case 'error': return { title: 'Claim failed', desc: errorMsg, color: 'text-red-400' }
+      }
+    } else {
+      switch (status) {
+        case 'loading': return { title: '加載中...', desc: '', color: 'text-white/60' }
+        case 'ready': return { title: `領取 ${credits} 機緣`, desc: note || '點擊下方按鈕領取您的機緣點數', color: 'text-gold' }
+        case 'claiming': return { title: '領取中...', desc: '請稍候', color: 'text-white/60' }
+        case 'success': return { title: `成功領取 ${credits} 機緣！`, desc: '機緣已添加到您的帳戶', color: 'text-emerald-400' }
+        case 'already_claimed': return { title: '已領取', desc: '您已領取過此禮品', color: 'text-cyan-400' }
+        case 'expired': return { title: '已過期', desc: '此連結已過期', color: 'text-red-400' }
+        case 'exhausted': return { title: '已領完', desc: '此禮品已被領完', color: 'text-amber-400' }
+        case 'invalid': return { title: '無效連結', desc: '此連結不存在或已失效', color: 'text-red-400' }
+        case 'need_login': return { title: '請先登入', desc: '登入後即可領取機緣', color: 'text-gold' }
+        case 'error': return { title: '領取失敗', desc: errorMsg, color: 'text-red-400' }
+      }
+    }
+  }
+
+  const info = getStatusText()
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg-primary)' }}>
-      <div className="max-w-sm w-full rounded-2xl p-8 text-center space-y-6"
-        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+      <div className="max-w-md w-full oriental-sanctuary-card rounded-2xl p-8 sm:p-10 text-center space-y-6 border border-gold/30 shadow-2xl">
+        <div className="w-16 h-16 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-2">
+          {renderIcon()}
+        </div>
 
-        <YinYangIcon size={48} className="mx-auto" />
-
-        <div className="text-5xl">{cfg.icon}</div>
-        <h1 className={`text-xl font-serif ${cfg.color}`}>{cfg.title}</h1>
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{cfg.desc}</p>
+        <h1 className={`text-xl font-serif ${info.color}`}>{info.title}</h1>
+        {info.desc && <p className="text-sm text-white/60 leading-relaxed font-serif">{info.desc}</p>}
 
         {maxClaims > 0 && (status === 'ready' || status === 'already_claimed' || status === 'exhausted') && (
-          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-xs text-gold/70 font-mono">
             {isEn ? `Claimed ${claimCount} / ${maxClaims}` : `已領取 ${claimCount} / ${maxClaims}`}
           </p>
         )}
 
         {status === 'ready' && (
-          <button onClick={handleClaim}
-            className="w-full py-3 rounded-xl font-medium text-sm transition-all"
-            style={{ backgroundColor: 'var(--gold)', color: '#000' }}>
-            {isEn ? '🎁 Claim now' : '🎁 立即領取'}
+          <button
+            onClick={handleClaim}
+            className="w-full min-h-[48px] py-3 rounded-xl font-serif font-semibold text-sm transition-all bg-gold hover:bg-gold-light text-navy-950 shadow-md inline-flex items-center justify-center gap-2"
+          >
+            <GiftVesselIcon size={18} />
+            <span>{isEn ? 'Claim now' : '立即領取'}</span>
           </button>
         )}
 
         {status === 'need_login' && (
-          <button onClick={() => router.push(`/login?callbackUrl=/gift/${code}`)}
-            className="w-full py-3 rounded-xl font-medium text-sm transition-all"
-            style={{ backgroundColor: 'var(--gold)', color: '#000' }}>
-            {isEn ? '🔑 Log in' : '🔑 前往登入'}
+          <button
+            onClick={() => router.push(`/login?callbackUrl=/gift/${code}`)}
+            className="w-full min-h-[48px] py-3 rounded-xl font-serif font-semibold text-sm transition-all bg-gold hover:bg-gold-light text-navy-950 shadow-md inline-flex items-center justify-center gap-2"
+          >
+            <LockSealIcon size={18} />
+            <span>{isEn ? 'Log in' : '前往登入'}</span>
           </button>
         )}
 
         {status === 'success' && (
-          <button onClick={() => router.push('/')}
-            className="w-full py-3 rounded-xl font-medium text-sm transition-all"
-            style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--gold)', border: '1px solid var(--card-border)' }}>
-            {isEn ? '🏠 Back to home' : '🏠 返回首頁'}
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => router.push('/divination')}
+              className="w-full sm:w-auto flex-1 min-h-[44px] py-2.5 px-4 rounded-xl font-serif font-semibold text-sm transition-all bg-gold hover:bg-gold-light text-navy-950 shadow-md inline-flex items-center justify-center gap-2"
+            >
+              <SparkleIcon size={16} />
+              <span>{isEn ? 'Start Divination' : '開始占卜'}</span>
+              <span>→</span>
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="w-full sm:w-auto flex-1 min-h-[44px] py-2.5 px-4 rounded-xl font-serif font-medium text-sm transition-all bg-white/5 hover:bg-white/10 text-white/70 border border-white/10 inline-flex items-center justify-center gap-2"
+            >
+              <span>{isEn ? 'Back to home' : '返回首頁'}</span>
+            </button>
+          </div>
+        )}
+
+        {['already_claimed', 'expired', 'exhausted', 'invalid', 'error'].includes(status) && (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => router.push('/divination')}
+              className="w-full sm:w-auto flex-1 min-h-[44px] py-2.5 px-4 rounded-xl font-serif font-semibold text-sm transition-all bg-gold hover:bg-gold-light text-navy-950 shadow-md inline-flex items-center justify-center gap-2"
+            >
+              <span>{isEn ? 'Explore Divinations' : '前往占卜大廳'}</span>
+              <span>→</span>
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="w-full sm:w-auto flex-1 min-h-[44px] py-2.5 px-4 rounded-xl font-serif font-medium text-sm transition-all bg-white/5 hover:bg-white/10 text-white/70 border border-white/10 inline-flex items-center justify-center gap-2"
+            >
+              <span>{isEn ? 'Back to home' : '返回首頁'}</span>
+            </button>
+          </div>
         )}
       </div>
     </div>

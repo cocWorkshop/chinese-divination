@@ -1,5 +1,6 @@
 'use client'
 
+import { DivinationIcon } from '@/components/DivinationIcons'
 import { useDivination } from '../DivinationContext'
 import { T, inputCls, labelCls } from '../constants'
 import FormSection from './fields/FormSection'
@@ -7,7 +8,12 @@ import FormSection from './fields/FormSection'
 export default function QimenForm() {
   const { form, setField, lang } = useDivination()
   return (
-    <FormSection title={`🧭 ${T(lang, '占問', 'Inquiry')}`}>
+    <FormSection title={
+      <span className="flex items-center gap-1.5">
+        <DivinationIcon type="qimen" className="w-4 h-4 text-gold-light" />
+        <span>{T(lang, '占問', 'Inquiry')}</span>
+      </span>
+    }>
       <div>
         <label htmlFor="qimen-question" className={labelCls}>{T(lang, '您的問題', 'Your Question')}</label>
         <textarea id="qimen-question" className={inputCls + ' h-24 resize-none'} value={form.question} onChange={e => setField('question', e.target.value)} required placeholder={T(lang, '詳述想詢問的事項...', 'Describe your situation...')} />

@@ -68,6 +68,8 @@ export default function AdminSettings() {
     cost_fengshui: '3',
     cost_chat: '2',
     cost_master: '1',
+    cost_dayun_unlock: '1',
+    free_dayun_limit: '3',
     showWikiNav: 'false',
   })
   const [loading, setLoading] = useState(true)
@@ -204,27 +206,72 @@ export default function AdminSettings() {
           </div>
         </div>
 
-        {/* Share Settings */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
-            <span>🔗</span> 分享設置 / Share Settings
-          </h2>
-          {numberField('registerBonus', '註冊贈送機緣 / Register bonus Karma', '新用戶註冊時贈送的機緣點數')}
-          {numberField('shareBonus', '分享獎勵機緣 / Karma per share', '分享者和受邀者各獲得此數量的機緣')}
-          {numberField('shareBonusChat', '分享獎勵機緣(聊天) / Share bonus chat (legacy)', '舊版兼容')}
-          {numberField('dailyBonusCredits', '每日登入機緣 / Daily login Karma', '每日首次登入贈送的機緣點數')}
+        {/* Karma Economy & Gating Rules / 機緣體系與收費規則 */}
+        <div className="glass-card rounded-xl p-6 space-y-6">
+          <div className="border-b border-white/10 pb-4">
+            <h2 className="text-xl font-bold text-gold flex items-center gap-2">
+              <span>☯</span> 機緣體系與收費規則 / Karma Economy & Gating Rules
+            </h2>
+            <p className="text-white/50 text-xs mt-1 leading-relaxed">
+              全站統一以「機緣」（Karma Credits）衡量天機因果流轉。包含善緣結付（註冊、每日登入、分享引薦）、天機啟盤（各術數排盤起卦）、大師請益以及大運階梯解鎖機制。
+            </p>
+          </div>
 
-          <h3 className="text-lg font-bold text-gold mt-6 mb-2">✨ 各功能消耗機緣 / Karma Costs</h3>
-          {numberField('cost_bazi', '八字命理 / BaZi', '預設 5 點')}
-          {numberField('cost_ziwei', '紫微斗數 / Zi Wei', '預設 5 點')}
-          {numberField('cost_qimen', '奇門遁甲 / Qi Men', '預設 5 點')}
-          {numberField('cost_meihua', '梅花易數 / Mei Hua', '預設 3 點')}
-          {numberField('cost_iching', '易經占卜 / I Ching', '預設 3 點')}
-          {numberField('cost_liuyao', '六爻占卜 / Liu Yao', '預設 3 點')}
-          {numberField('cost_fengshui', '風水 / Feng Shui', '預設 3 點')}
-          {numberField('cost_chat', '問答聊天 / Chat', '預設 2 點')}
-          {numberField('cost_master', '問問大師 / Ask Master', '預設 1 點')}
+          {/* Section 1: Inflows / 善緣贈予 */}
+          <div>
+            <h3 className="text-sm font-semibold text-white/90 flex items-center gap-2 mb-3">
+              <span className="text-amber-400">✦</span> 因果流轉 · 善緣贈予 (Inflows & Rewards)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {numberField('registerBonus', '註冊善緣 / Register Karma', '新用戶首次註冊結緣贈送之機緣點數')}
+              {numberField('dailyBonusCredits', '晨夕感應 / Daily Login Karma', '每日首次登入結緣修習贈送之機緣點數')}
+              {numberField('shareBonus', '廣結善緣 / Referral Karma', '分享引薦同道結緣，邀請人與受邀人各得機緣')}
+              {numberField('shareBonusChat', '舊版分享兼容 / Legacy Chat Bonus', '舊版引薦聊天額度（向前兼容）')}
+            </div>
+          </div>
+
+          {/* Section 2: Outflows / 天機啟盤消耗 */}
+          <div className="border-t border-white/10 pt-5">
+            <h3 className="text-sm font-semibold text-white/90 flex items-center gap-2 mb-3">
+              <span className="text-amber-400">✦</span> 天機啟盤 · 消耗規則 (Divination & Consultation Costs)
+            </h3>
+            <p className="text-white/40 text-xs mb-3">每次啟動命盤排盤、起卦筮爻或深入諮商時所扣減之機緣點數。</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {numberField('cost_bazi', '八字命理啟盤 / BaZi', '預設 5 點機緣')}
+              {numberField('cost_ziwei', '紫微斗數排盤 / Zi Wei', '預設 5 點機緣')}
+              {numberField('cost_qimen', '奇門遁甲起局 / Qi Men', '預設 5 點機緣')}
+              {numberField('cost_meihua', '梅花易數起卦 / Mei Hua', '預設 3 點機緣')}
+              {numberField('cost_iching', '周易筮爻求筮 / I Ching', '預設 3 點機緣')}
+              {numberField('cost_liuyao', '六爻納甲立卦 / Liu Yao', '預設 3 點機緣')}
+              {numberField('cost_fengshui', '堪輿風水定穴 / Feng Shui', '預設 3 點機緣')}
+              {numberField('cost_chat', '卦盤深入解惑 / In-depth Chat', '預設 2 點機緣 / 次')}
+              {numberField('cost_master', '請益玄機大師 / Ask Master', '預設 1 點機緣 / 問')}
+            </div>
+          </div>
+
+          {/* Section 3: Decadal Gating / 大運階梯解鎖 */}
+          <div className="border-t border-white/10 pt-5">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-white/90 flex items-center gap-2">
+                <span className="text-amber-400">✦</span> 大運階梯解鎖規則 (Decadal Gating)
+              </h3>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-gold/10 text-gold border border-gold/20">
+                三十年世 · 階梯解鎖
+              </span>
+            </div>
+            <div className="p-3.5 rounded-lg bg-navy-950/60 border border-gold/20 text-xs text-white/70 leading-relaxed mb-4">
+              <p className="text-gold/90 font-medium mb-1">古籍云：“三十年為一世，立命而後通變。”</p>
+              <p>
+                古制三十年為一世。在八字命理及紫微斗數之大運/大限批算中，規約前 <strong>{settings.free_dayun_limit || '3'}</strong> 步大運（凡三十年，涵蓋求學、立命、初涉俗世）完全免費開放精批；自第 <strong>{Number(settings.free_dayun_limit || 3) + 1}</strong> 步大運及之後，每窺探一步大運（十年流年星度詳批）需結付相應機緣。
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {numberField('free_dayun_limit', '免費開放大運步數 / Free DaYun Decades Limit', '預設 3 步（前三十年大運免費，覆蓋青少年至立業期）')}
+              {numberField('cost_dayun_unlock', '大運解鎖機緣 / Decadal Unlock Karma', '每解鎖一步大運（十年精批）所需結付之機緣點數，預設 1 點')}
+            </div>
+          </div>
         </div>
+
 
         {/* Divination Visibility */}
         <div className="glass-card rounded-xl p-6">

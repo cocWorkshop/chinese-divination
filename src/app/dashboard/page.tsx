@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
+import type { UserGrowthProfile } from '@/lib/growth/types'
 import { publish } from '@/lib/events'
 import YinYangIcon from '@/components/YinYangIcon'
+import { DivinationIcon, AlertIcon } from '@/components/DivinationIcons'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
@@ -48,28 +51,6 @@ const typeLabels: Record<string, { 'zh-TW': string; en: string }> = {
   meihua: { 'zh-TW': '梅花易數', en: 'Mei Hua' },
   fengshui: { 'zh-TW': '風水佈局', en: 'Feng Shui' },
   other: { 'zh-TW': '其他', en: 'Others' },
-}
-
-const typeIcons: Record<string, string> = {
-  bazi: '🏛️',
-  ziwei: '⭐',
-  iching: '☯',
-  qimen: '🧭',
-  liuyao: '🪙',
-  meihua: '🌸',
-  fengshui: '🏯',
-  other: '📖',
-}
-
-const typeBorderColor: Record<string, string> = {
-  bazi: 'rgba(212,175,55,0.6)',
-  ziwei: 'rgba(147,112,219,0.6)',
-  iching: 'rgba(100,149,237,0.6)',
-  qimen: 'rgba(220,120,60,0.6)',
-  liuyao: 'rgba(100,149,237,0.6)',
-  meihua: 'rgba(236,130,180,0.6)',
-  fengshui: 'rgba(76,175,80,0.6)',
-  other: 'rgba(160,160,160,0.6)',
 }
 
 const shichenLabels: Record<string, { 'zh-TW': string; en: string }> = {
@@ -142,6 +123,16 @@ export default function DashboardPage() {
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const { setShape: setMasterShape, enabled: masterEnabled } = useMasterChat()
+  const [growth, setGrowth] = useState<UserGrowthProfile | null>(null)
+
+  useEffect(() => {
+    if (session?.user) {
+      fetch('/api/user/growth')
+        .then(r => r.ok ? r.json() : null)
+        .then(setGrowth)
+        .catch(() => {})
+    }
+  }, [session])
 
 
 
@@ -268,6 +259,42 @@ export default function DashboardPage() {
             ? `共 ${readings.length} 條記錄${activeTypeFilter ? ` · 篩選：${typeLabels[activeTypeFilter]?.['zh-TW'] ?? activeTypeFilter}` : ''}`
             : `${readings.length} readings${activeTypeFilter ? ` · Filter: ${typeLabels[activeTypeFilter]?.en ?? activeTypeFilter}` : ''}`}
         </p>
+
+        {/* Cultivation Realm Progress Ribbon */}
+        {growth && (
+          <Link
+            href="/profile?tab=growth"
+            className="mb-4 p-3.5 sm:p-4 rounded-xl glass-card flex items-center justify-between border border-gold/25 hover:border-gold/50 transition-all group"
+            style={{ background: 'linear-gradient(90deg, rgba(212,168,83,0.1), rgba(10,17,40,0.6))' }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl sm:text-3xl w-10 h-10 rounded-lg bg-gold/15 border border-gold/30 flex items-center justify-center flex-shrink-0">
+                {growth.currentRealm.badge}
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-serif text-gold text-sm sm:text-base font-semibold">
+                    {growth.currentRealm.title[lang === 'en' ? 'en' : 'zh-TW']}
+                  </span>
+                  <span className="text-[10px] text-white/60 bg-white/10 px-1.5 py-0.5 rounded font-mono">
+                    {growth.xp} XP
+                  </span>
+                </div>
+                <p className="text-xs text-white/70 mt-0.5 font-sans">
+                  {growth.nextRealm
+                    ? (lang === 'zh-TW'
+                        ? `距下一階【${growth.nextRealm.name['zh-TW']}】還需 ${growth.xpToNextLevel} 道行 (${growth.levelProgressPercent}%)`
+                        : `${growth.xpToNextLevel} XP to ${growth.nextRealm.name.en} (${growth.levelProgressPercent}%)`)
+                    : (lang === 'zh-TW' ? '已臻至高境界 · 天人合一' : 'Pinnacle Reached: Unity with the Tao')}
+                </p>
+              </div>
+            </div>
+            <span className="text-xs text-gold/80 group-hover:text-gold flex items-center gap-1 font-serif flex-shrink-0">
+              <span className="hidden sm:inline">{lang === 'zh-TW' ? '修為圖譜' : 'Mastery'}</span>
+              <span>→</span>
+            </span>
+          </Link>
+        )}
         {/* Type filter chips */}
         <div className="flex gap-2 overflow-x-auto lg:flex-wrap pb-2 scrollbar-hide -mx-1 px-1">
           <button
@@ -290,14 +317,14 @@ export default function DashboardPage() {
                 <button
                   key={key}
                   onClick={() => { setActiveTypeFilter(active ? null : key); setVisibleCount(15) }}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 font-serif"
                   style={{
                     background: active ? 'var(--gold)' : 'transparent',
                     color: active ? '#000' : 'var(--text-muted)',
                     border: `1px solid ${active ? 'var(--gold)' : 'var(--card-border)'}`,
                   }}
                 >
-                  <span>{typeIcons[key] ?? '📖'}</span>
+                  <DivinationIcon type={key} size={14} className={active ? 'text-navy-950' : 'text-gold'} />
                   <span>{lang === 'zh-TW' ? label['zh-TW'] : label.en}</span>
                   <span style={{ opacity: 0.6 }}>({count})</span>
                 </button>
@@ -336,8 +363,7 @@ export default function DashboardPage() {
               animate={{ opacity: isDeleting ? 0.5 : 1, y: 0 }}
               exit={{ opacity: 0, x: 40, scale: 0.95, transition: { duration: 0.25 } }}
               transition={{ delay: i * 0.05 }}
-              className="glass-card rounded-2xl overflow-hidden w-full min-w-0 relative scroll-mt-24"
-              style={{ borderLeft: `3px solid ${typeBorderColor[r.type] || typeBorderColor.other}` }}
+              className="oriental-sanctuary-card overflow-hidden w-full min-w-0 relative scroll-mt-24 border-l-2 border-l-gold/40"
             >
               {isDeleting && (
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-20 pointer-events-none">
@@ -349,24 +375,25 @@ export default function DashboardPage() {
               )}
               <button
                 type="button"
-                className={`w-full text-left p-5 cursor-pointer hover:bg-white/5 transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''} ${isDeleting ? 'pointer-events-none' : ''}`}
+                className={`w-full text-left p-5 cursor-pointer hover:bg-white/[0.03] transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''} ${isDeleting ? 'pointer-events-none' : ''}`}
                 onClick={() => router.push(`/reading/${r.id}`)}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="px-2 py-0.5 bg-gold/20 text-gold text-xs rounded-full mr-2 inline-flex items-center gap-1">
-                      <span>{typeIcons[r.type] ?? '📖'}</span>
-                      {typeLabels[r.type]?.[lang === 'en' ? 'en' : 'zh-TW'] || r.type}
+                    <span className="px-2.5 py-0.5 bg-gold/15 border border-gold/25 text-gold text-xs rounded-full mr-2 inline-flex items-center gap-1.5 font-serif">
+                      <DivinationIcon type={r.type} size={13} className="text-gold" />
+                      <span>{typeLabels[r.type]?.[lang === 'en' ? 'en' : 'zh-TW'] || r.type}</span>
                     </span>
                     {r.status === 'pending' && (
-                      <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-300 text-xs rounded-full mr-2 inline-flex items-center gap-1">
-                        <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
-                        {lang === 'en' ? 'Processing...' : '解讀中...'}
+                      <span className="px-2.5 py-0.5 bg-gold/15 border border-gold/30 text-gold text-xs rounded-full mr-2 inline-flex items-center gap-1.5 font-serif">
+                        <span className="text-gold/80 text-xs">✧</span>
+                        <span>{lang === 'en' ? 'Processing...' : '解讀中...'}</span>
                       </span>
                     )}
                     {r.status === 'failed' && (
-                      <span className="px-2 py-0.5 bg-red-500/20 text-red-300 text-xs rounded-full mr-2">
-                        {lang === 'en' ? 'Failed' : '解讀失敗'}
+                      <span className="px-2.5 py-0.5 bg-red-500/15 border border-red-500/30 text-red-300 text-xs rounded-full mr-2 inline-flex items-center gap-1 font-serif">
+                        <AlertIcon size={11} className="text-red-400" />
+                        <span>{lang === 'en' ? 'Failed' : '解讀失敗'}</span>
                       </span>
                     )}
                     {r.targetType === 'family' && r.familyMember && (
@@ -445,7 +472,7 @@ export default function DashboardPage() {
                         try {
                           const parsed = JSON.parse(r.result)
                           if (parsed.paipanOnly) {
-                            return lang === 'en' ? 'Paipan only (no AI interpretation)' : '只排盤（無AI解盤）'
+                            return lang === 'en' ? 'Chart calculation only (no AI reading)' : '只排盤（無AI解盤）'
                           }
                           const summary = parsed.sections?.overview
                             || parsed.sections?.overall       // fengshui uses 'overall' not 'overview'

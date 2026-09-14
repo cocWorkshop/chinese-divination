@@ -8,6 +8,7 @@ import { useLang } from '../LanguageContext'
 import XuanjiChatCard from './XuanjiChatCard'
 import type { DivinationResultProps, ZiweiData, ZiweiPalaceData, ZiweiStar } from '@/types/divination'
 import { T } from '@/lib/i18n'
+import { SparkleIcon, AlertIcon, SunMoonIcon } from '@/components/DivinationIcons'
 
 const mutagenColor: Record<string, string> = {
   '禄': 'text-green-400',
@@ -463,7 +464,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                 border: `1px solid ${p.level?.includes('上') ? 'rgba(234,179,8,0.3)' : (p.level?.includes('下') || p.level?.includes('凶')) ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'}`,
               }}
               title={p.description}>
-              {p.level?.includes('上') ? '🏆' : (p.level?.includes('下') || p.level?.includes('凶')) ? '⚠️' : '⭐'} {p.name}（{p.level}）
+              {p.level?.includes('上') ? <SparkleIcon size={12} className="inline mr-1" /> : (p.level?.includes('下') || p.level?.includes('凶')) ? <AlertIcon size={12} className="inline mr-1" /> : <SunMoonIcon size={12} className="inline mr-1" />} {p.name}（{p.level}）
             </span>
           ))}
         </div>

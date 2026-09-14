@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Stable viewport width: guarantees that fixed elements (e.g. MasterFab)
+   and centered layouts sit at the exact same horizontal position regardless of
+   whether a page has scrollable content or fits within the viewport. */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 /* Native app safe areas (Capacitor / PWA) */
 body {
   padding-top: env(safe-area-inset-top);
@@ -130,16 +138,40 @@ body {
 }
 
 :root:not(.dark) .text-white { color: var(--text-primary) !important; }
-:root:not(.dark) .text-white\/90 { color: rgba(45, 31, 14, 0.9) !important; }
-:root:not(.dark) .text-white\/80 { color: rgba(45, 31, 14, 0.8) !important; }
-:root:not(.dark) .text-white\/70 { color: rgba(45, 31, 14, 0.7) !important; }
-:root:not(.dark) .text-white\/60 { color: rgba(45, 31, 14, 0.6) !important; }
-:root:not(.dark) .text-white\/50 { color: rgba(45, 31, 14, 0.5) !important; }
-:root:not(.dark) .text-white\/40 { color: rgba(45, 31, 14, 0.4) !important; }
-:root:not(.dark) .text-white\/30 { color: rgba(45, 31, 14, 0.3) !important; }
-:root:not(.dark) .text-gold { color: var(--gold) !important; }
-:root:not(.dark) .text-gold\/60 { color: rgba(184, 134, 11, 0.6) !important; }
-:root:not(.dark) .text-gold\/80 { color: rgba(184, 134, 11, 0.8) !important; }
+:root:not(.dark) .text-white\/95 { color: rgba(45, 31, 14, 0.95) !important; }
+:root:not(.dark) .text-white\/90 { color: rgba(45, 31, 14, 0.90) !important; }
+:root:not(.dark) .text-white\/85 { color: rgba(45, 31, 14, 0.85) !important; }
+:root:not(.dark) .text-white\/80 { color: rgba(45, 31, 14, 0.80) !important; }
+:root:not(.dark) .text-white\/75 { color: rgba(45, 31, 14, 0.75) !important; }
+:root:not(.dark) .text-white\/70 { color: rgba(45, 31, 14, 0.72) !important; }
+:root:not(.dark) .text-white\/65 { color: rgba(45, 31, 14, 0.68) !important; }
+:root:not(.dark) .text-white\/60 { color: rgba(45, 31, 14, 0.65) !important; }
+:root:not(.dark) .text-white\/55 { color: rgba(45, 31, 14, 0.60) !important; }
+:root:not(.dark) .text-white\/50 { color: rgba(45, 31, 14, 0.58) !important; }
+:root:not(.dark) .text-white\/45 { color: rgba(45, 31, 14, 0.55) !important; }
+:root:not(.dark) .text-white\/40 { color: rgba(45, 31, 14, 0.52) !important; }
+:root:not(.dark) .text-white\/35 { color: rgba(45, 31, 14, 0.48) !important; }
+:root:not(.dark) .text-white\/30 { color: rgba(45, 31, 14, 0.45) !important; }
+:root:not(.dark) .text-white\/25 { color: rgba(45, 31, 14, 0.40) !important; }
+:root:not(.dark) .text-white\/20 { color: rgba(45, 31, 14, 0.35) !important; }
+:root:not(.dark) .text-white\/10 { color: rgba(45, 31, 14, 0.25) !important; }
+
+/* Gold typography overrides for light mode: minimum 4.5:1 WCAG AA contrast against #faf8f0 & #ffffff */
+:root:not(.dark) .text-gold { color: #8b6508 !important; }
+:root:not(.dark) .text-gold-light { color: #8b6508 !important; }
+:root:not(.dark) .text-gold-light\/90 { color: #8b6508 !important; }
+:root:not(.dark) .text-gold-light\/80 { color: #8b6508 !important; }
+:root:not(.dark) .text-gold-light\/70 { color: #8b6508 !important; }
+:root:not(.dark) .text-gold-dark { color: #705000 !important; }
+:root:not(.dark) .text-gold\/95 { color: #8b6508 !important; }
+:root:not(.dark) .text-gold\/90 { color: #8b6508 !important; }
+:root:not(.dark) .text-gold\/85 { color: #8b6508 !important; }
+:root:not(.dark) .text-gold\/80 { color: #8b6508 !important; }
+:root:not(.dark) .text-gold\/70 { color: #8b6508 !important; }
+:root:not(.dark) .text-gold\/60 { color: #8b6508 !important; }
+:root:not(.dark) .text-gold\/50 { color: rgba(139, 101, 8, 0.80) !important; }
+:root:not(.dark) .text-gold\/40 { color: rgba(139, 101, 8, 0.70) !important; }
+:root:not(.dark) .text-gold\/30 { color: rgba(139, 101, 8, 0.55) !important; }
 
 /* Background overrides */
 :root:not(.dark) .bg-navy-950 { background-color: var(--bg-primary) !important; }
@@ -152,15 +184,39 @@ body {
 :root:not(.dark) .bg-navy-700 { background-color: #ede5d0 !important; }
 :root:not(.dark) .bg-gold\/5 { background-color: rgba(184, 134, 11, 0.05) !important; }
 :root:not(.dark) .bg-gold\/10 { background-color: rgba(184, 134, 11, 0.08) !important; }
-:root:not(.dark) .bg-gold\/20 { background-color: rgba(184, 134, 11, 0.1) !important; }
+:root:not(.dark) .bg-gold\/15 { background-color: rgba(184, 134, 11, 0.12) !important; }
+:root:not(.dark) .bg-gold\/20 { background-color: rgba(184, 134, 11, 0.16) !important; }
+:root:not(.dark) .bg-gold\/25 { background-color: rgba(184, 134, 11, 0.20) !important; }
 :root:not(.dark) .bg-gold { background-color: var(--gold) !important; }
-:root:not(.dark) .bg-white\/5 { background-color: rgba(45, 31, 14, 0.03) !important; }
-:root:not(.dark) .bg-white\/10 { background-color: rgba(45, 31, 14, 0.05) !important; }
+:root:not(.dark) .bg-gold-light { background-color: var(--gold) !important; }
+:root:not(.dark) .bg-white\/\[0\.03\] { background-color: rgba(45, 31, 14, 0.03) !important; }
+:root:not(.dark) .bg-white\/\[0\.04\] { background-color: rgba(45, 31, 14, 0.04) !important; }
+:root:not(.dark) .bg-white\/\[0\.05\] { background-color: rgba(45, 31, 14, 0.05) !important; }
+:root:not(.dark) .bg-white\/5 { background-color: rgba(45, 31, 14, 0.04) !important; }
+:root:not(.dark) .bg-white\/10 { background-color: rgba(45, 31, 14, 0.06) !important; }
+:root:not(.dark) .bg-white\/15 { background-color: rgba(45, 31, 14, 0.08) !important; }
+:root:not(.dark) .bg-white\/20 { background-color: rgba(45, 31, 14, 0.10) !important; }
 :root:not(.dark) .bg-purple-500\/20 { background-color: rgba(139, 92, 246, 0.12) !important; }
 :root:not(.dark) .bg-blue-400\/5 { background-color: rgba(59, 130, 246, 0.05) !important; }
 :root:not(.dark) .text-orange-400 { color: #ea580c !important; }
 :root:not(.dark) .text-amber-400\/70 { color: rgba(180, 83, 9, 0.7) !important; }
 :root:not(.dark) .text-purple-300 { color: rgba(109, 40, 217, 0.8) !important; }
+
+/* Status and badge contrast overrides for light mode (WCAG AA >= 4.5:1) */
+:root:not(.dark) .text-emerald-300,
+:root:not(.dark) .text-emerald-400 { color: #047857 !important; }
+:root:not(.dark) .text-rose-300,
+:root:not(.dark) .text-rose-400 { color: #be123c !important; }
+:root:not(.dark) .text-amber-300,
+:root:not(.dark) .text-amber-400 { color: #b45309 !important; }
+:root:not(.dark) .text-blue-300,
+:root:not(.dark) .text-blue-400 { color: #1d4ed8 !important; }
+:root:not(.dark) .text-cyan-300,
+:root:not(.dark) .text-cyan-400 { color: #0e7490 !important; }
+:root:not(.dark) .text-gray-300,
+:root:not(.dark) .text-gray-400 { color: #4b5563 !important; }
+:root:not(.dark) .text-stone-300,
+:root:not(.dark) .text-stone-400 { color: #57534e !important; }
 
 /* Element bg overrides for light mode */
 :root:not(.dark) .bg-green-400\/10 { background-color: rgba(34, 197, 94, 0.08) !important; }
@@ -175,10 +231,18 @@ body {
 :root:not(.dark) .border-gray-300\/30 { border-color: rgba(156, 163, 175, 0.3) !important; }
 
 /* Border overrides */
-:root:not(.dark) .border-gold\/20 { border-color: rgba(184, 134, 11, 0.2) !important; }
-:root:not(.dark) .border-gold\/30 { border-color: rgba(184, 134, 11, 0.25) !important; }
-:root:not(.dark) .border-white\/10 { border-color: rgba(45, 31, 14, 0.1) !important; }
-:root:not(.dark) .border-white\/20 { border-color: rgba(45, 31, 14, 0.15) !important; }
+:root:not(.dark) .border-gold\/10 { border-color: rgba(184, 134, 11, 0.15) !important; }
+:root:not(.dark) .border-gold\/15 { border-color: rgba(184, 134, 11, 0.20) !important; }
+:root:not(.dark) .border-gold\/20 { border-color: rgba(184, 134, 11, 0.25) !important; }
+:root:not(.dark) .border-gold\/25 { border-color: rgba(184, 134, 11, 0.30) !important; }
+:root:not(.dark) .border-gold\/30 { border-color: rgba(184, 134, 11, 0.35) !important; }
+:root:not(.dark) .border-gold\/40 { border-color: rgba(184, 134, 11, 0.45) !important; }
+:root:not(.dark) .border-gold { border-color: rgba(184, 134, 11, 0.6) !important; }
+:root:not(.dark) .border-white\/10 { border-color: rgba(45, 31, 14, 0.12) !important; }
+:root:not(.dark) .border-white\/15 { border-color: rgba(45, 31, 14, 0.15) !important; }
+:root:not(.dark) .border-white\/20 { border-color: rgba(45, 31, 14, 0.20) !important; }
+:root:not(.dark) .border-white\/25 { border-color: rgba(45, 31, 14, 0.25) !important; }
+:root:not(.dark) .border-white\/30 { border-color: rgba(45, 31, 14, 0.30) !important; }
 
 /* Input overrides */
 :root:not(.dark) input,
@@ -192,11 +256,18 @@ body {
 /* Placeholder */
 :root:not(.dark) input::placeholder,
 :root:not(.dark) textarea::placeholder {
-  color: rgba(45, 31, 14, 0.4) !important;
+  color: rgba(45, 31, 14, 0.45) !important;
 }
 
 /* Hover overrides */
-:root:not(.dark) .hover\:text-gold:hover { color: var(--gold) !important; }
+:root:not(.dark) .hover\:text-gold:hover { color: #8b6508 !important; }
+:root:not(.dark) .hover\:text-gold-light:hover { color: #705000 !important; }
+:root:not(.dark) .hover\:text-white:hover { color: #2d1f0e !important; }
+:root:not(.dark) .hover\:text-white\/70:hover { color: rgba(45, 31, 14, 0.8) !important; }
+:root:not(.dark) .hover\:text-white\/80:hover { color: rgba(45, 31, 14, 0.9) !important; }
+:root:not(.dark) .group:hover .group-hover\:text-gold { color: #8b6508 !important; }
+:root:not(.dark) .group:hover .group-hover\:text-gold-light { color: #705000 !important; }
+:root:not(.dark) .group:hover .group-hover\:text-white { color: #2d1f0e !important; }
 :root:not(.dark) .hover\:bg-white\/5:hover { background-color: rgba(45, 31, 14, 0.04) !important; }
 :root:not(.dark) .hover\:bg-navy-700:hover { background-color: #ede5d0 !important; }
 
@@ -333,3 +404,187 @@ body {
 .ziwei-markdown th, .ziwei-markdown td { border: 1px solid rgba(255,255,255,0.15); padding: 0.3em 0.5em; }
 .ziwei-markdown th { background: rgba(255,255,255,0.05); color: var(--gold, #d4a853); }
 .ziwei-markdown hr { border-color: rgba(255,255,255,0.1); margin: 0.8em 0; }
+
+/* ─── Modern Oriental Mystical Design Utilities ─── */
+@keyframes celestialRotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.celestial-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  border: 1px dashed rgba(212, 168, 83, 0.12);
+  pointer-events: none;
+  animation: celestialRotate 180s linear infinite;
+}
+
+.stamp-vermillion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #c0392b;
+  color: #c0392b;
+  border-radius: 4px;
+  font-family: var(--font-noto-serif);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  transform: rotate(-3deg);
+  box-shadow: 0 0 8px rgba(192, 57, 43, 0.25), inset 0 0 4px rgba(192, 57, 43, 0.15);
+  background: rgba(192, 57, 43, 0.05);
+}
+
+.card-mystic-l1 {
+  background: rgba(13, 21, 38, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 168, 83, 0.18);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-mystic-l1:hover {
+  border-color: rgba(212, 168, 83, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 40px -8px rgba(212, 168, 83, 0.15), inset 0 0 20px rgba(212, 168, 83, 0.03);
+}
+
+.card-mystic-featured {
+  background: linear-gradient(145deg, rgba(212, 168, 83, 0.08) 0%, rgba(13, 21, 38, 0.85) 50%, rgba(212, 168, 83, 0.04) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 168, 83, 0.35);
+  border-radius: 1.5rem;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45), inset 0 0 30px rgba(212, 168, 83, 0.06);
+}
+
+.oriental-sanctuary-card {
+  background: linear-gradient(180deg, rgba(13, 21, 38, 0.78) 0%, rgba(8, 12, 23, 0.94) 100%);
+  border: 1px solid rgba(212, 168, 83, 0.16);
+  box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(212, 168, 83, 0.18);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.oriental-sanctuary-card:hover {
+  border-color: rgba(212, 168, 83, 0.38);
+  box-shadow: 0 16px 48px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(212, 168, 83, 0.32);
+  transform: translateY(-2px);
+}
+
+.stamp-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(212, 168, 83, 0.5);
+  color: #e8c278;
+  border-radius: 4px;
+  font-family: var(--font-noto-serif);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  padding: 2px 7px;
+  background: rgba(212, 168, 83, 0.08);
+  box-shadow: inset 0 0 4px rgba(212, 168, 83, 0.12);
+}
+
+.hairline-gold {
+  border: 1px solid rgba(212, 168, 83, 0.16);
+}
+
+.verse-callout {
+  position: relative;
+  padding-left: 1.25rem;
+  border-left: 2px solid #d4a853;
+  font-family: var(--font-noto-serif);
+  font-style: normal;
+  color: var(--text-primary);
+  line-height: 1.85;
+}
+
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Light mode overrides for Oriental Sanctuary & Mystical Cards ─── */
+:root:not(.dark) .oriental-sanctuary-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(250, 246, 238, 0.96) 100%);
+  border: 1px solid rgba(184, 134, 11, 0.22);
+  box-shadow: 0 8px 30px rgba(45, 31, 14, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+}
+
+:root:not(.dark) .oriental-sanctuary-card:hover {
+  border-color: rgba(184, 134, 11, 0.45);
+  box-shadow: 0 14px 38px rgba(184, 134, 11, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 1);
+}
+
+:root:not(.dark) .card-mystic-l1 {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(184, 134, 11, 0.2);
+  box-shadow: 0 6px 24px rgba(45, 31, 14, 0.06);
+}
+
+:root:not(.dark) .card-mystic-l1:hover {
+  border-color: rgba(184, 134, 11, 0.45);
+  box-shadow: 0 12px 32px rgba(184, 134, 11, 0.12);
+}
+
+:root:not(.dark) .card-mystic-featured {
+  background: linear-gradient(145deg, rgba(184, 134, 11, 0.08) 0%, rgba(255, 255, 255, 0.95) 50%, rgba(184, 134, 11, 0.04) 100%);
+  border: 1px solid rgba(184, 134, 11, 0.32);
+  box-shadow: 0 10px 36px rgba(184, 134, 11, 0.1), inset 0 0 20px rgba(184, 134, 11, 0.04);
+}
+
+:root:not(.dark) .stamp-gold {
+  border: 1px solid rgba(184, 134, 11, 0.45);
+  color: #8b6508;
+  background: rgba(184, 134, 11, 0.1);
+  box-shadow: inset 0 0 4px rgba(184, 134, 11, 0.15);
+}
+
+:root:not(.dark) .verse-callout {
+  border-left-color: var(--gold);
+  color: var(--text-primary);
+}
+
+:root:not(.dark) .hairline-gold {
+  border-color: rgba(184, 134, 11, 0.22);
+}
+
+/* Ziwei and general markdown light mode rules */
+:root:not(.dark) .ziwei-markdown strong {
+  color: var(--text-primary);
+}
+:root:not(.dark) .ziwei-markdown blockquote {
+  border-left: 2px solid var(--gold);
+  color: var(--text-secondary);
+}
+:root:not(.dark) .ziwei-markdown th,
+:root:not(.dark) .ziwei-markdown td {
+  border-color: var(--border-color);
+}
+:root:not(.dark) .ziwei-markdown th {
+  background: rgba(184, 134, 11, 0.06);
+  color: var(--gold);
+}
+:root:not(.dark) .ziwei-markdown hr {
+  border-color: var(--border-color);
+}
+
+/* Light mode utility overrides for backgrounds */
+:root:not(.dark) .bg-navy-900\/60 { background-color: rgba(255, 255, 255, 0.7) !important; }
+:root:not(.dark) .bg-black\/20 { background-color: rgba(184, 134, 11, 0.05) !important; }
+:root:not(.dark) .bg-black\/30 { background-color: rgba(184, 134, 11, 0.08) !important; }
+:root:not(.dark) .border-white\/5 { border-color: rgba(184, 134, 11, 0.12) !important; }
+
