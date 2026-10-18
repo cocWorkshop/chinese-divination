@@ -10,6 +10,7 @@ interface UserRow {
   name: string | null
   isAdmin: boolean
   isPaid: boolean
+  paidAt: string | null
   role: string
   divinationCredits: number
   chatCredits: number
@@ -19,7 +20,7 @@ interface UserRow {
   usageDivination: number
   usageChat: number
   usageMaster: number
-  _count: { readings: number }
+  _count: { readings: number; payments?: number }
 }
 
 export default function AdminUsers() {
@@ -103,19 +104,49 @@ export default function AdminUsers() {
             {users.map(u => (
               <tr key={u.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
                 <td className="px-4 py-3">
-                  <div className="text-white/80">{u.name || '—'}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-white/80 font-medium">{u.name || '—'}</span>
+                    {u.isPaid && (
+                      <span
+                        className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium cursor-help"
+                        title={u.paidAt ? `已付费 · 首次结缘: ${new Date(u.paidAt).toLocaleDateString('zh-CN')} (订单: ${u._count?.payments || 0})` : '已付费用户'}
+                      >
+                        👑 尊享缘主
+                      </span>
+                    )}
+                  </div>
                   <div className="text-white/40 text-xs">{u.email}</div>
-                  <div className="text-white/30 text-xs">{new Date(u.createdAt).toLocaleDateString('zh-CN')}</div>
+                  <div className="text-white/30 text-xs flex items-center gap-2">
+                    <span>注册: {new Date(u.createdAt).toLocaleDateString('zh-CN')}</span>
+                    {u.paidAt && (
+                      <span className="text-amber-400/60 font-mono">
+                        · 付费: {new Date(u.paidAt).toLocaleDateString('zh-CN')}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <button
-                    onClick={() => update(u.id, { isAdmin: !u.isAdmin })}
-                    className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-                      u.isAdmin ? 'bg-gold/20 text-gold hover:bg-gold/30' : 'bg-white/10 text-white/50 hover:bg-white/20'
-                    }`}
-                  >
-                    {u.isAdmin ? 'Admin' : 'User'}
-                  </button>
+                  <div className="inline-flex items-center gap-1">
+                    <button
+                      onClick={() => update(u.id, { isAdmin: !u.isAdmin })}
+                      className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                        u.isAdmin ? 'bg-gold/20 text-gold hover:bg-gold/30' : 'bg-white/10 text-white/50 hover:bg-white/20'
+                      }`}
+                    >
+                      {u.isAdmin ? 'Admin' : 'User'}
+                    </button>
+                    <button
+                      onClick={() => update(u.id, { isPaid: !u.isPaid })}
+                      className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                        u.isPaid
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'
+                          : 'bg-white/5 text-white/40 hover:bg-white/10'
+                      }`}
+                      title={u.isPaid ? '点击取消付费标记' : '点击标记为付费用户'}
+                    >
+                      {u.isPaid ? '已付费' : '免费'}
+                    </button>
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-center text-white/70">
                   <span title="占卜次數">🔮{u.usageDivination}</span>

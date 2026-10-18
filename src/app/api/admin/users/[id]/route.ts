@@ -28,7 +28,19 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const updateData: Record<string, unknown> = {}
   if (isAdmin !== undefined) updateData.isAdmin = Boolean(isAdmin)
-  if (isPaid !== undefined) updateData.isPaid = Boolean(isPaid)
+  if (isPaid !== undefined) {
+    const isPaidBool = Boolean(isPaid)
+    updateData.isPaid = isPaidBool
+    if (isPaidBool) {
+      const targetUser = await prisma.user.findUnique({
+        where: { id: targetId },
+        select: { paidAt: true },
+      })
+      if (!targetUser?.paidAt) {
+        updateData.paidAt = new Date()
+      }
+    }
+  }
   if (role !== undefined && typeof role === 'string' && ['user', 'admin'].includes(role)) updateData.role = role
   if (divinationCredits !== undefined) updateData.divinationCredits = Math.max(0, parseInt(String(divinationCredits)))
   if (chatCredits !== undefined) updateData.chatCredits = Math.max(0, parseInt(String(chatCredits)))

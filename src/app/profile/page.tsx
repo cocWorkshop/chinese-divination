@@ -165,6 +165,9 @@ export default function ProfilePage() {
   const [creditLogPage, setCreditLogPage] = useState(1)
   const [creditLogPages, setCreditLogPages] = useState(1)
   const [creditLogLoading, setCreditLogLoading] = useState(false)
+  const [userPayments, setUserPayments] = useState<{ id: string; stripeSessionId: string | null; packId: string | null; amount: number; currency: string; credits: number; status: string; note: string | null; createdAt: string }[]>([])
+  const [isPaidUser, setIsPaidUser] = useState(false)
+  const [paidAtDate, setPaidAtDate] = useState<string | null>(null)
 
   const handleDeleteAccount = useCallback(async () => {
     if (hasPassword && !deletePassword) return
@@ -233,6 +236,12 @@ export default function ProfilePage() {
           if (typeof data.hasPassword === 'boolean') {
             setHasPassword(data.hasPassword)
           }
+          if (typeof data.isPaid === 'boolean') {
+            setIsPaidUser(data.isPaid)
+          }
+          if (data.paidAt) {
+            setPaidAtDate(data.paidAt)
+          }
         }
       }).catch(catchAndReport('/api/profile'))
       fetch('/api/family-members').then(r => r.json()).then(data => setFamilyMembers(data.members || [])).catch(catchAndReport('/api/family-members'))
@@ -244,6 +253,11 @@ export default function ProfilePage() {
         setCreditLogs(data.logs || [])
         setCreditLogPages(data.pages || 1)
       }).catch(catchAndReport('/api/credits/history'))
+      fetch('/api/user/payments').then(r => r.json()).then(data => {
+        if (data.payments) setUserPayments(data.payments)
+        if (typeof data.isPaid === 'boolean') setIsPaidUser(data.isPaid)
+        if (data.paidAt) setPaidAtDate(data.paidAt)
+      }).catch(catchAndReport('/api/user/payments'))
     }
   }, [session])
 
@@ -355,15 +369,38 @@ export default function ProfilePage() {
 
       {/* Page Header Card */}
       <div className="oriental-sanctuary-card p-6 sm:p-8 mb-6 text-center relative overflow-hidden">
-        <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center text-xl font-serif font-bold text-gold"
+        <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center text-xl font-serif font-bold text-gold relative"
           style={{ background: 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.05))', border: '1.5px solid rgba(212,168,83,0.4)' }}>
           {session?.user?.name?.[0] || '玄'}
+          {isPaidUser && (
+            <span
+              className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-tr from-amber-500 to-amber-300 rounded-full flex items-center justify-center text-xs text-navy-950 font-bold shadow-md"
+              title={T(lang, '尊享結緣緣主', 'Paid Patron')}
+            >
+              ✦
+            </span>
+          )}
         </div>
-        <h1 className="text-2xl sm:text-3xl font-serif text-gold-light">
-          {T(lang, '個人命盤檔案', 'Profile')}
-        </h1>
+        <div className="flex items-center justify-center gap-2">
+          <h1 className="text-2xl sm:text-3xl font-serif text-gold-light">
+            {T(lang, '個人命盤檔案', 'Profile')}
+          </h1>
+          {isPaidUser && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-serif bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/20 text-amber-300 border border-amber-400/30 shadow-sm">
+              <span>👑</span>
+              <span>{T(lang, '尊享結緣緣主', 'VIP Patron')}</span>
+            </span>
+          )}
+        </div>
         {session?.user?.email && (
-          <p className="text-white/40 text-xs font-serif mt-1">{session.user.email}</p>
+          <p className="text-white/40 text-xs font-serif mt-1">
+            {session.user.email}
+            {isPaidUser && paidAtDate && (
+              <span className="text-amber-400/60 ml-2 font-mono">
+                · {T(lang, '自', 'Since')} {new Date(paidAtDate).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')}
+              </span>
+            )}
+          </p>
         )}
       </div>
 
@@ -836,14 +873,103 @@ export default function ProfilePage() {
           {/* Current balance */}
           {credits && (
             <div className="glass-card rounded-2xl p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-white/60">{T(lang, '當前機緣', 'Current Karma')}</span>
-                <span className="text-2xl text-gold font-mono font-bold">
-                  {credits.credits === 999 ? '∞' : credits.credits} ✨
-                </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm text-white/60">{T(lang, '當前機緣', 'Current Karma')}</div>
+                  {isPaidUser && (
+                    <div className="text-xs text-amber-300 font-serif mt-1 flex items-center gap-1.5">
+                      <span>👑</span>
+                      <span>{T(lang, '尊享結緣緣主', 'VIP Patron')}</span>
+                      {paidAtDate && (
+                        <span className="text-white/40 font-mono text-[11px]">
+                          ({new Date(paidAtDate).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')})
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl text-gold font-mono font-bold">
+                    {credits.credits === 999 ? '∞' : credits.credits} ✨
+                  </span>
+                  <Link
+                    href="/subscribe"
+                    className="px-3.5 py-1.5 rounded-lg text-xs font-serif bg-gold/20 text-gold border border-gold/40 hover:bg-gold/30 transition-colors"
+                  >
+                    {T(lang, '結緣充值', 'Karma Shop')}
+                  </Link>
+                </div>
               </div>
             </div>
           )}
+
+          {/* Real Payment Orders Section */}
+          <div className="oriental-sanctuary-card rounded-2xl border border-gold/20">
+            <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
+              <div className="flex items-center gap-3">
+                <span className="text-lg">💳</span>
+                <h2 className="text-lg font-serif text-gold">{T(lang, '結緣訂單記錄', 'Payment Orders')}</h2>
+              </div>
+              {isPaidUser && userPayments.length > 0 && (
+                <span className="text-xs text-amber-300/90 font-mono bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                  {T(lang, '累計結緣', 'Total Paid')}: ${(userPayments.reduce((acc, p) => acc + (p.status === 'completed' ? p.amount : 0), 0) / 100).toFixed(2)} USD
+                </span>
+              )}
+            </div>
+            <div className="p-4 sm:p-6">
+              {userPayments.length === 0 ? (
+                <div className="text-center py-6 text-white/40 text-sm">
+                  <p>{T(lang, '尚無結緣訂單記錄', 'No payment orders yet')}</p>
+                  <Link
+                    href="/subscribe"
+                    className="inline-block mt-3 px-4 py-1.5 rounded-lg text-xs font-serif bg-gold/15 text-gold border border-gold/30 hover:bg-gold/25 transition-colors"
+                  >
+                    {T(lang, '前往結緣獲取機緣', 'Karma Shop')}
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {userPayments.map(order => (
+                    <div key={order.id} className="rounded-lg px-4 py-3 border border-gold/10 bg-navy-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-medium text-amber-300">
+                            ${(order.amount / 100).toFixed(2)} {order.currency.toUpperCase()}
+                          </span>
+                          <span className="text-white/30 text-xs">·</span>
+                          <span className="text-xs text-green-400 font-mono">+{order.credits} Karma</span>
+                          <span className="text-white/30 text-xs">·</span>
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${
+                            order.status === 'completed'
+                              ? 'bg-green-500/15 text-green-400 border border-green-500/30'
+                              : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                          }`}>
+                            {order.status === 'completed' ? T(lang, '已結緣', 'Completed') : order.status}
+                          </span>
+                        </div>
+                        <div className="text-white/30 text-[11px] font-mono mt-1">
+                          {order.stripeSessionId ? `No: ${order.stripeSessionId.replace('cs_test_', '').replace('cs_live_', '').slice(0, 16)}...` : `ID: ${order.id}`}
+                          <span className="mx-1.5">·</span>
+                          {new Date(order.createdAt).toLocaleString(lang === 'en' ? 'en-US' : 'zh-TW', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-xs font-serif text-gold/80 px-2 py-0.5 rounded bg-gold/10 border border-gold/20 font-mono">
+                          {order.packId || 'pack'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Ledger */}
           <div className="oriental-sanctuary-card rounded-2xl border border-gold/20">

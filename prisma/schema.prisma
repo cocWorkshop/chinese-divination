@@ -30,6 +30,7 @@ model User {
   birthLng         Float?
   isAdmin      Boolean     @default(false)
   isPaid       Boolean     @default(false)
+  paidAt       DateTime?
   role         String      @default("user") // user | admin
   credits            Int       @default(3)  // unified credit points
   divinationCredits  Int       @default(3)  // deprecated — kept for migration
@@ -85,6 +86,7 @@ model User {
   portrait                UserPortrait?
   portraitHistory         UserPortraitHistory[]
   accounts                Account[]
+  payments                PaymentRecord[]
   adminAccessLogsAsAdmin  AdminAccessLog[] @relation("AdminAccessLog_admin")
   adminAccessLogsAsTarget AdminAccessLog[] @relation("AdminAccessLog_target")
 }
@@ -543,3 +545,27 @@ model AdminAccessLog {
   @@index([adminUserId, createdAt])
   @@index([targetUserId, createdAt])
 }
+
+/// 记录用户的真实支付/结缘订单明细 (Stripe Checkout 等)
+model PaymentRecord {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeSessionId       String?   @unique
+  stripePaymentIntentId String?
+  stripeCustomerId      String?
+  packId                String?   // "pack10" | "pack100" | "pack200"
+  amount                Int       // 金额 (以分为单位，例如 891 表示 $8.91)
+  currency              String    @default("usd")
+  credits               Int       // 购买获得的机缘点数 (例如 10, 100, 220)
+  status                String    @default("completed") // "completed" | "refunded"
+  note                  String?
+  metadata              Json?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+}
+

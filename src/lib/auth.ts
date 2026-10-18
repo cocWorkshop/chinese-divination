@@ -64,6 +64,7 @@ const providers: Provider[] = [
         email: user.email,
         name: user.name,
         isAdmin: user.isAdmin,
+        isPaid: user.isPaid,
       }
     },
   }),
@@ -109,14 +110,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Stale-claim risk (admin demoted mid-session) is contained by the
         // authoritative requireAdmin() DB check in every /api/admin route.
         token.isAdmin = (user as any).isAdmin === true
+        if ((user as any).isPaid !== undefined) {
+          token.isPaid = (user as any).isPaid === true
+        } else {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { isPaid: true },
+          })
+          token.isPaid = dbUser?.isPaid === true
+        }
       } else if (!token.id && token.email) {
         const dbUser = await prisma.user.findFirst({
           where: { email: { equals: (token.email as string).toLowerCase().trim(), mode: 'insensitive' } },
-          select: { id: true, isAdmin: true },
+          select: { id: true, isAdmin: true, isPaid: true },
         })
         if (dbUser) {
           token.id = dbUser.id
           token.isAdmin = dbUser.isAdmin === true
+          token.isPaid = dbUser.isPaid === true
         }
       }
       return token
@@ -127,6 +138,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // JWT augmentation doesn't reach the re-exported @auth/core
         // interface — cast, same as token.id above.
         if (token.isAdmin !== undefined) session.user.isAdmin = token.isAdmin as boolean
+        if (token.isPaid !== undefined) session.user.isPaid = token.isPaid as boolean
       }
       return session
     },

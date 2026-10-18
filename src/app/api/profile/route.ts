@@ -96,7 +96,7 @@ export async function GET() {
       timeMode: true, calendarType: true,
       exactTime: true, birthEnvironment: true,
       birthLat: true, birthLng: true,
-      role: true, isAdmin: true, password: true,
+      role: true, isAdmin: true, isPaid: true, paidAt: true, credits: true, password: true,
     },
   })
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 })

@@ -23,11 +23,11 @@ export async function GET(req: NextRequest) {
       skip: (page - 1) * limit,
       take: limit,
       select: {
-        id: true, email: true, name: true, isAdmin: true, isPaid: true, role: true,
+        id: true, email: true, name: true, isAdmin: true, isPaid: true, paidAt: true, role: true,
         divinationCredits: true, chatCredits: true, credits: true,
         usageDivination: true, usageChat: true, usageMaster: true,
         createdAt: true, language: true,
-        _count: { select: { readings: true } },
+        _count: { select: { readings: true, payments: true } },
       },
     }),
     prisma.user.count({ where }),

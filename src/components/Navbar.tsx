@@ -187,12 +187,26 @@ export default function Navbar() {
                   aria-label={lang === 'zh-TW' ? '用戶選單' : 'User menu'}
                   aria-expanded={userMenuOpen}
                 >
-                  <span className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold">
+                  <span className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold relative">
                     {session.user?.name?.[0] || session.user?.email?.[0] || '?'}
+                    {session.user?.isPaid && (
+                      <span
+                        className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-gradient-to-tr from-amber-500 to-amber-300 rounded-full flex items-center justify-center text-[8px] text-navy-950 font-bold shadow"
+                        title={lang === 'zh-TW' ? '尊享結緣緣主' : 'Paid Patron'}
+                      >
+                        ✦
+                      </span>
+                    )}
                   </span>
                 </button>
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-52 rounded-lg shadow-xl" style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-gold)' }}>
+                    {session.user?.isPaid && (
+                      <div className="px-4 py-2 border-b flex items-center gap-1.5 text-xs text-amber-300 font-serif bg-gradient-to-r from-amber-500/10 to-transparent" style={{ borderColor: 'rgba(212,168,83,0.15)' }}>
+                        <span>👑</span>
+                        <span>{lang === 'zh-TW' ? '尊享結緣緣主' : 'VIP Patron'}</span>
+                      </div>
+                    )}
                     {growthBadge && (
                       <Link
                         href="/profile?tab=growth"
@@ -343,8 +357,13 @@ export default function Navbar() {
             {lang === 'zh-TW' ? 'Switch to English' : '切換到繁體中文'}
           </button>
           {session && (
-            <Link href="/profile" className="text-white/80 hover:text-gold py-1.5 font-serif text-sm" onClick={() => setMenuOpen(false)}>
-              {lang === 'zh-TW' ? '個人資料' : 'Profile'}
+            <Link href="/profile" className="text-white/80 hover:text-gold py-1.5 font-serif text-sm flex items-center justify-between" onClick={() => setMenuOpen(false)}>
+              <span>{lang === 'zh-TW' ? '個人資料' : 'Profile'}</span>
+              {session.user?.isPaid && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-sans">
+                  👑 {lang === 'zh-TW' ? '尊享緣主' : 'VIP'}
+                </span>
+              )}
             </Link>
           )}
           {session && (

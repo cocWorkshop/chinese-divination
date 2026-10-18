@@ -25,38 +25,68 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = session.metadata?.userId
+    const packId = session.metadata?.packId || null
     const credits = parseInt(session.metadata?.credits || '0', 10)
     // Legacy fallback: if old packs used divinationCredits/chatCredits
     const legacyDiv = parseInt(session.metadata?.divinationCredits || '0', 10)
     const legacyChat = parseInt(session.metadata?.chatCredits || '0', 10)
     const totalCredits = credits > 0 ? credits : (legacyDiv + legacyChat)
+    const amount = session.amount_total ?? (session.amount_subtotal ?? 0)
+    const currency = (session.currency || 'usd').toLowerCase()
+    const stripePaymentIntentId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.payment_intent?.id || null
+    const stripeCustomerId = typeof session.customer === 'string'
+      ? session.customer
+      : session.customer?.id || null
 
     if (userId && totalCredits > 0) {
-      // Idempotency: the Stripe session ID is the dedup key. The marker insert and
-      // the credit grant run in ONE transaction so they commit or roll back
-      // together — previously the marker was written first, so a failed grant left
-      // the marker behind and Stripe's retry was skipped as a "duplicate",
-      // silently losing purchased credits. Now the marker exists only if credits
-      // were actually granted, so a P2002 here reliably means "already granted".
+      // Idempotency: both the PaymentRecord (unique stripeSessionId) and
+      // the AdminSetting marker insert and user update run in ONE transaction.
+      // A P2002 here reliably means this checkout session was already processed.
       const eventKey = `stripe_processed:${session.id}`
       let newBalance: number
       try {
         const updatedUser = await prisma.$transaction(async (tx) => {
+          await tx.paymentRecord.create({
+            data: {
+              userId,
+              stripeSessionId: session.id,
+              stripePaymentIntentId,
+              stripeCustomerId,
+              packId,
+              amount,
+              currency,
+              credits: totalCredits,
+              status: 'completed',
+              metadata: session.metadata ? JSON.parse(JSON.stringify(session.metadata)) : undefined,
+            },
+          })
           await tx.adminSetting.create({ data: { key: eventKey, value: new Date().toISOString() } })
+
+          const existingUser = await tx.user.findUnique({
+            where: { id: userId },
+            select: { paidAt: true },
+          })
+
           return tx.user.update({
             where: { id: userId },
-            data: { credits: { increment: totalCredits } },
+            data: {
+              credits: { increment: totalCredits },
+              isPaid: true,
+              paidAt: existingUser?.paidAt || new Date(),
+            },
             select: { credits: true },
           })
         })
         newBalance = updatedUser.credits
       } catch (e) {
         if ((e as { code?: string }).code === 'P2002') {
-          // Marker already committed by a prior successful grant → genuine replay.
+          // Marker or PaymentRecord already committed by a prior successful grant → genuine replay.
           console.log(`[stripe] Duplicate webhook skipped: ${session.id}`)
           return NextResponse.json({ received: true, duplicate: true })
         }
-        // Grant failed and rolled back (marker not persisted) → 500 so Stripe retries.
+        // Grant failed and rolled back (marker/record not persisted) → 500 so Stripe retries.
         console.error(`[stripe] Credit grant failed, will retry: session=${session.id}`, e)
         return NextResponse.json({ error: 'Grant failed' }, { status: 500 })
       }
@@ -69,6 +99,19 @@ export async function POST(req: NextRequest) {
         source: `stripe:${session.id}`,
       })
       console.log(`[stripe] Credits granted: user=${userId} credits=${totalCredits} session=${session.id}`)
+    }
+  }
+
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object as Stripe.Charge
+    const paymentIntentId = typeof charge.payment_intent === 'string'
+      ? charge.payment_intent
+      : charge.payment_intent?.id
+    if (paymentIntentId) {
+      await prisma.paymentRecord.updateMany({
+        where: { stripePaymentIntentId: paymentIntentId },
+        data: { status: 'refunded' },
+      })
     }
   }
 

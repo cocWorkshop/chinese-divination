@@ -32,6 +32,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { href: '/admin', label: '概覽', enLabel: 'Overview', icon: '📊' },
     { href: '/admin/users', label: '用戶管理', enLabel: 'Users', icon: '👥' },
+    { href: '/admin/payments', label: '結緣訂單', enLabel: 'Payments', icon: '💳' },
     { href: '/admin/logs', label: '系統日誌', enLabel: 'System Logs', icon: '📋' },
     { href: '/admin/feedback', label: '用戶反饋', enLabel: 'Feedback', icon: '💬' },
     { href: '/admin/compensation', label: '用戶補償', enLabel: 'Compensation', icon: '🎁' },
