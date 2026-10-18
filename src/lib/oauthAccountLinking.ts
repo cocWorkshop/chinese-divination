@@ -82,6 +82,14 @@ export async function handleOAuthSignIn({
   })
 
   if (existingUser) {
+    // AUD-04 / ISS-04: Ensure email is verified by provider before linking to existing account.
+    // If provider does not attest email_verified === true, refuse linking to prevent ATO.
+    const isProviderVerified = (profile as any)?.email_verified === true || (profile as any)?.emailVerified === true
+    if (!isProviderVerified) {
+      console.warn(`[OAuth] Refusing account linking for ${email}: provider email not verified`)
+      return null
+    }
+
     // Security defense against Pre-Account Takeover:
     // If an attacker pre-registered `existingUser.email` with credentials, the
     // account exists in the DB but was never verified (`emailVerified === false`).
@@ -126,13 +134,21 @@ export async function handleOAuthSignIn({
     return { id: existingUser.id, isAdmin: existingUser.isAdmin }
   }
 
-  // 3. User does not exist -> provision new User with Account
+  // PROD-4 / ISS-24: Align OAuth initial credits with registerBonus (default 6)
+  let initialCredits = 6
+  try {
+    const bonusSetting = await prisma.adminSetting?.findUnique?.({ where: { key: 'registerBonus' } })
+    if (bonusSetting?.value) {
+      initialCredits = parseInt(bonusSetting.value, 10) || 6
+    }
+  } catch {}
+
   const newUser = await prisma.user.create({
     data: {
       email,
       name: user?.name || profile?.name || null,
       emailVerified: true,
-      credits: 3,
+      credits: initialCredits,
       role: 'user',
       signupCompletedAt: new Date(),
       accounts: {

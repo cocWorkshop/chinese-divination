@@ -18,6 +18,7 @@ const { authMock, prismaMock, emailMock, bcryptMock } = vi.hoisted(() => ({
     siteFeedback: {
       create: vi.fn(),
     },
+    $transaction: vi.fn(async (cb: any) => cb(prismaMock)),
   },
   emailMock: {
     generateToken: vi.fn(() => 'del_token_abc'),

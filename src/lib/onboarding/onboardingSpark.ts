@@ -267,7 +267,10 @@ export function generateOnboardingSpark(input: OnboardingInput): OnboardingSpark
       input.birthTime,
       input.birthPlace || '未知',
       input.gender || 'male',
-      input.exactTime
+      input.exactTime,
+      null,
+      null,
+      { liuNianCount: 0 }
     )
 
     const dayStem = chart.dayMaster.stem

@@ -322,21 +322,22 @@ export default function FatePosterModal({
   }, [isOpen, qrDataUrl, ratio, renderCanvas])
 
   // Download high-resolution PNG
-  const handleDownload = async () => {
+  const handleDownload = async (targetRatio?: PosterRatio) => {
+    const effectiveRatio = targetRatio ?? ratio
     setDownloading(true)
     try {
-      const blob = await generateBlob(ratio)
+      const blob = await generateBlob(effectiveRatio)
       if (!blob) throw new Error('Blob generation failed')
 
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      const ratioTag = ratio === '9:16' ? 'story' : 'card'
+      const ratioTag = effectiveRatio === '9:16' ? 'story' : 'card'
       a.download = `xuanji-fate-${divinationType}-${ratioTag}-${readingId.slice(0, 6)}.png`
       a.click()
       URL.revokeObjectURL(url)
       toast.success(
-        isZh ? `已保存 ${POSTER_RATIOS[ratio].nameZh}！` : `Saved ${POSTER_RATIOS[ratio].nameEn}!`
+        isZh ? `已保存 ${POSTER_RATIOS[effectiveRatio].nameZh}！` : `Saved ${POSTER_RATIOS[effectiveRatio].nameEn}!`
       )
     } catch (e) {
       console.error('Failed to generate poster:', e)
@@ -573,7 +574,7 @@ export default function FatePosterModal({
                     <button
                       onClick={() => {
                         setRatio('3:4')
-                        handleDownload()
+                        handleDownload('3:4')
                       }}
                       className="py-1.5 px-2.5 rounded-lg bg-green-600/20 border border-green-500/30 hover:bg-green-600/30 text-green-600 dark:text-green-200 text-xs font-medium transition-all text-center cursor-pointer"
                     >
@@ -606,7 +607,7 @@ export default function FatePosterModal({
                     <button
                       onClick={() => {
                         setRatio('9:16')
-                        handleDownload()
+                        handleDownload('9:16')
                       }}
                       className="py-1.5 px-2.5 rounded-lg bg-pink-600/20 border border-pink-500/30 hover:bg-pink-600/30 text-pink-600 dark:text-pink-200 text-xs font-medium transition-all text-center cursor-pointer"
                     >
@@ -639,7 +640,7 @@ export default function FatePosterModal({
                     <button
                       onClick={() => {
                         setRatio('9:16')
-                        handleDownload()
+                        handleDownload('9:16')
                       }}
                       className="py-1.5 px-2.5 rounded-lg bg-sky-600/20 border border-sky-500/30 hover:bg-sky-600/30 text-sky-600 dark:text-sky-200 text-xs font-medium transition-all text-center cursor-pointer"
                     >
@@ -661,7 +662,7 @@ export default function FatePosterModal({
           <div className="flex flex-col gap-2 pt-2 border-t border-gold/15">
             <div className="flex gap-2">
               <button
-                onClick={handleDownload}
+                onClick={() => handleDownload()}
                 disabled={downloading}
                 className="flex-1 py-2.5 px-3 rounded-xl bg-gold text-navy-950 font-medium text-xs sm:text-sm hover:bg-gold-light transition-all shadow-md shadow-gold/10 flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >

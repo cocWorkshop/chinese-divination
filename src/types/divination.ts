@@ -163,6 +163,7 @@ export interface BaziDataV2 {
   bodySignPillar?: Pillar
   fetalOriginPillar?: Pillar
   detailedAnnualFortunes?: DetailedAnnualFortunesMap
+  unlockedDecades?: number[]
 }
 
 export interface LiuNianEntry {

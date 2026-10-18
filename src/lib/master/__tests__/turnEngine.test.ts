@@ -263,4 +263,46 @@ describe('runMasterTurn', () => {
     expect(errorEvent.error).toBe('LLM connection failure')
     expect(appendMasterChatMessageMock).not.toHaveBeenCalled()
   })
+
+  it('exempts isCheckin and isReflection from totalCreditsUsed increments (AUD-01)', async () => {
+    streamLLMMock.mockReturnValue(
+      makeStream([
+        { type: 'content', text: '今日運勢提醒' },
+        { type: 'done', finishReason: 'stop' },
+      ])
+    )
+
+    // Checkin turn
+    const genCheckin = runMasterTurn({
+      userId: 'user_1',
+      sessionId: 'session_1',
+      isCheckin: true,
+      isReflection: false,
+      systemPrompt: 'System',
+      initialMessages: [],
+      model: 'openai/gpt-4o',
+      toolCtx: {} as any,
+      masterSessionPk: 'pk_123',
+      lang: 'zh-TW',
+    })
+    for await (const _ of genCheckin) {}
+    expect(masterSessionUpdateMock).not.toHaveBeenCalled()
+
+    // Reflection turn
+    const genReflection = runMasterTurn({
+      userId: 'user_1',
+      sessionId: 'session_1',
+      isCheckin: false,
+      isReflection: true,
+      systemPrompt: 'System',
+      initialMessages: [],
+      model: 'openai/gpt-4o',
+      toolCtx: {} as any,
+      masterSessionPk: 'pk_123',
+      lang: 'zh-TW',
+    })
+    for await (const _ of genReflection) {}
+    expect(masterSessionUpdateMock).not.toHaveBeenCalled()
+  })
 })
+

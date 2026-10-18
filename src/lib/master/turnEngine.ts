@@ -343,11 +343,13 @@ export async function* runMasterTurn(
       tokenCount: estimateTokens(assistantContent),
     })
 
-    // Bump per-user master usage counter.
-    await prisma.masterSession.update({
-      where: { id: input.masterSessionPk },
-      data: { totalCreditsUsed: { increment: 1 } },
-    })
+    // Bump per-user master usage counter (exempting server-initiated checkin/reflection, AUD-01).
+    if (!input.isCheckin && !input.isReflection) {
+      await prisma.masterSession.update({
+        where: { id: input.masterSessionPk },
+        data: { totalCreditsUsed: { increment: 1 } },
+      })
+    }
 
     const metrics = monitor.finish()
     logger.info(

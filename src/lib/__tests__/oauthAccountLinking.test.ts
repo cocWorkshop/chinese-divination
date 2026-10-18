@@ -14,6 +14,9 @@ vi.mock('../prisma', () => ({
       create: vi.fn(),
       update: vi.fn(),
     },
+    adminSetting: {
+      findUnique: vi.fn(),
+    },
     $transaction: vi.fn(async (cb: any) => cb(prisma)),
   },
 }))
@@ -103,6 +106,7 @@ describe('oauthAccountLinking - handleOAuthSignIn', () => {
       profile: {
         email: 'Hello@EXAMPLE.COM',
         name: 'Google Name',
+        email_verified: true,
       },
     })
 
@@ -151,6 +155,7 @@ describe('oauthAccountLinking - handleOAuthSignIn', () => {
       profile: {
         email: 'victim@example.com',
         name: 'Legitimate Owner',
+        email_verified: true,
       },
     })
 
@@ -192,12 +197,42 @@ describe('oauthAccountLinking - handleOAuthSignIn', () => {
       profile: {
         email: 'legit@example.com',
         name: 'Legit User',
+        email_verified: true,
       },
     })
 
     expect(res).toEqual({ id: 'usr_verified_legit', isAdmin: false })
     const updateCall = vi.mocked(prisma.user.update).mock.calls[0][0]
     expect(updateCall.data).not.toHaveProperty('password')
+  })
+
+  it('rejects account linking when provider email is not verified (AUD-04 / ISS-04)', async () => {
+    vi.mocked(prisma.account.findUnique).mockResolvedValueOnce(null)
+
+    const mockExistingUser = {
+      id: 'usr_target',
+      email: 'target@example.com',
+      isAdmin: false,
+      emailVerified: true,
+    }
+
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce(mockExistingUser as any)
+
+    const res = await handleOAuthSignIn({
+      account: {
+        provider: 'untrusted_oauth',
+        providerAccountId: 'untrusted_123',
+        type: 'oauth',
+      },
+      profile: {
+        email: 'target@example.com',
+        email_verified: false,
+      },
+    })
+
+    expect(res).toBeNull()
+    expect(prisma.account.create).not.toHaveBeenCalled()
+    expect(prisma.user.update).not.toHaveBeenCalled()
   })
 
   it('provisions new User and Account when neither account nor user exists', async () => {
@@ -231,7 +266,7 @@ describe('oauthAccountLinking - handleOAuthSignIn', () => {
         email: 'newuser@example.com',
         name: 'New Google User',
         emailVerified: true,
-        credits: 3,
+        credits: 6,
         role: 'user',
         accounts: {
           create: expect.objectContaining({

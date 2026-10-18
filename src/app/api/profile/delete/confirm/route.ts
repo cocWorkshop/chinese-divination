@@ -32,14 +32,17 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
   const userAgent = req.headers.get('user-agent') || null
 
-  // Delete auth logs for this email
-  await prisma.authLog.deleteMany({ where: { email: user.email } })
+  // AUD-10 / ISS-10: Transactionalize account deletion and GDPR cleanup
+  await prisma.$transaction(async (tx) => {
+    // Delete auth logs for this email
+    await tx.authLog.deleteMany({ where: { email: user.email } })
 
-  // Delete LLM logs containing user queries & divination conversations (GDPR Article 17)
-  await prisma.llmLog.deleteMany({ where: { userId: user.id } })
+    // Delete LLM logs containing user queries & divination conversations (GDPR Article 17)
+    await tx.llmLog.deleteMany({ where: { userId: user.id } })
 
-  // Delete user (cascades to readings, familyMembers, rateLimits, shareLinks, etc.)
-  await prisma.user.delete({ where: { id: user.id } })
+    // Delete user (cascades to readings, familyMembers, rateLimits, shareLinks, etc.)
+    await tx.user.delete({ where: { id: user.id } })
+  })
 
   // Log the deletion
   await logAuth({ action: 'logout', status: 'success', email: user.email, reason: 'account_deleted', ip, userAgent })

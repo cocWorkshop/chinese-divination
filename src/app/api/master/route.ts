@@ -344,8 +344,12 @@ export async function POST(req: NextRequest) {
     // Deduct credit before streaming (matches prior behaviour). On failure
     // (engine error event) the turn is refunded via refundMasterCredits —
     // the divination hold/refund discipline applied to master (audit P4).
-    const deducted = await deductCredits(userId, 'master')
-    if (!deducted) return jsonError('Failed to deduct credits', 429)
+    // AUD-01 / ISS-01: Server-initiated checkin and reflection are free to the user.
+    let deducted = false
+    if (!isCheckin && !isReflection) {
+      deducted = await deductCredits(userId, 'master')
+      if (!deducted) return jsonError('Failed to deduct credits', 429)
+    }
 
     const toolCtx: ToolContext = { userId, lang, prisma }
 
@@ -383,7 +387,7 @@ export async function POST(req: NextRequest) {
           turnCount: currentTurnCount + 1,
         })) {
           send(event satisfies EngineEvent)
-          if (event.type === 'error' && !failureRefunded) {
+          if (event.type === 'error' && !failureRefunded && deducted) {
             failureRefunded = true
             await refundMasterCredits(userId, log.requestId)
           }

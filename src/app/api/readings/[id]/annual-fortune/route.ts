@@ -12,6 +12,7 @@ import {
   buildZiweiAnnualFortunePrompt,
 } from '@/lib/divination/annualFortunePrompts'
 import type { AnnualFortuneYear } from '@/types/divination'
+import { isDaYunUnlocked } from '@/lib/baziCalculator'
 
 const requestSchema = z.object({
   type: z.enum(['bazi', 'ziwei']),
@@ -117,6 +118,19 @@ export async function POST(
       fortunes: existingFortunesMap[decadeKey],
       cached: true,
     })
+  }
+
+  // AUD-02 / ISS-02: Server-side gating. Decade must be unlocked (first 3 decades free, >=3 requires credit unlock).
+  const currentUnlocked = (readingData.unlockedDecades as number[]) || []
+  if (!isDaYunUnlocked(decadeIndex, currentUnlocked)) {
+    return NextResponse.json(
+      {
+        error: 'PAYMENT_REQUIRED',
+        message: 'This decade annual fortune is locked. Please unlock it with credits first.',
+        decadeIndex,
+      },
+      { status: 402 }
+    )
   }
 
   // Build prompt according to divination type

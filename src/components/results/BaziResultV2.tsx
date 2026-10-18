@@ -84,13 +84,8 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
   })
 
   const [unlockedDecades, setUnlockedDecades] = useState<number[]>(() => {
-    if (typeof window === 'undefined') return [0, 1, 2]
-    try {
-      const key = `xuanji_unlocked_dayun_${readingId || 'local'}`
-      const saved = localStorage.getItem(key)
-      if (saved) return JSON.parse(saved)
-    } catch {}
-    return [0, 1, 2]
+    const fromData = Array.isArray(d.unlockedDecades) ? d.unlockedDecades : []
+    return Array.from(new Set([0, 1, 2, ...fromData]))
   })
 
   const [activeLiuNianYear, setActiveLiuNianYear] = useState<number | null>(null)
@@ -176,7 +171,11 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
     }
   }
 
+  const [unlockingDecade, setUnlockingDecade] = useState<number | null>(null)
+
   const handleUnlockDecade = async (decadeIdx: number) => {
+    if (unlockingDecade !== null) return
+    setUnlockingDecade(decadeIdx)
     try {
       const res = await fetch('/api/credits/consume', {
         method: 'POST',
@@ -187,19 +186,27 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
           readingId: readingId || undefined,
         }),
       })
-      if (!res.ok && res.status === 402) {
-        toast.error(T(lang, '機緣點不足，請獲取更多機緣後重試', 'Insufficient Karma credits. Please acquire more credits.'))
+      if (!res.ok) {
+        if (res.status === 402) {
+          toast.error(T(lang, '機緣點不足，請獲取更多機緣後重試', 'Insufficient Karma credits. Please acquire more credits.'))
+        } else {
+          toast.error(T(lang, '解鎖失敗，請稍後重試', 'Unlock failed. Please retry.'))
+        }
         return
       }
-    } catch {}
-
-    const next = Array.from(new Set([...unlockedDecades, decadeIdx]))
-    setUnlockedDecades(next)
-    try {
-      const key = `xuanji_unlocked_dayun_${readingId || 'local'}`
-      localStorage.setItem(key, JSON.stringify(next))
-    } catch {}
-    toast.success(T(lang, '已成功解鎖該步大運十年流年深度精批！', 'Decade annual fortune unlocked!'))
+      const data = await res.json()
+      if (!data.success) {
+        toast.error(T(lang, '解鎖失敗，請稍後重試', 'Unlock failed. Please retry.'))
+        return
+      }
+      const next = data.unlockedDecades || Array.from(new Set([...unlockedDecades, decadeIdx]))
+      setUnlockedDecades(next)
+      toast.success(T(lang, '已成功解鎖該步大運十年流年深度精批！', 'Decade annual fortune unlocked!'))
+    } catch {
+      toast.error(T(lang, '網絡異常，請檢查網絡後重試', 'Network error. Please try again.'))
+    } finally {
+      setUnlockingDecade(null)
+    }
   }
 
   const pillars = [

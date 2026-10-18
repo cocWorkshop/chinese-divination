@@ -163,7 +163,7 @@ export default function ReadingResultCard({
       )}
 
       {/* Aesthetic Oriental Fate Poster Modal */}
-      {canShare && (
+      {canShare && showPoster && (
         <FatePosterModal
           isOpen={showPoster}
           onClose={() => setShowPoster(false)}

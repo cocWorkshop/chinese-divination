@@ -24,13 +24,25 @@ export async function POST(req: NextRequest) {
 
   const { code } = parsed.data
 
+  // AUD-09 / ISS-08: Require email verification before claiming share bonus to prevent bot farms
+  const claimerUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { emailVerified: true },
+  })
+  if (!claimerUser?.emailVerified) {
+    return NextResponse.json(
+      { error: 'Email verification required', message: '請先驗證您的電子郵件後再領取分享善緣 / Please verify your email before claiming share bonus' },
+      { status: 403 }
+    )
+  }
+
   const link = await prisma.shareLink.findUnique({ where: { code } })
   if (!link) return NextResponse.json({ error: 'Invalid share code' }, { status: 404 })
   if (link.used) return NextResponse.json({ error: 'Already claimed' }, { status: 409 })
   if (link.userId === session.user.id) return NextResponse.json({ error: 'Cannot claim own link' }, { status: 400 })
 
   const bonusSetting = await prisma.adminSetting.findUnique({ where: { key: 'shareBonus' } })
-  const bonus = parseInt(bonusSetting?.value ?? '5')
+  const bonus = parseInt(bonusSetting?.value ?? '5', 10) || 5
 
   // Atomic claim: the conditional `used: false` updateMany is the real guard.
   // Concurrent requests for the same code race on this single row write — only

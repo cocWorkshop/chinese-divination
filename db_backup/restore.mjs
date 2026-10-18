@@ -22,8 +22,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 
-// 默认目标数据库连接 URL（直接内置，不直接引用 .env）
-const DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@10.0.0.237:5432/divination_dev";
+// 默认目标数据库连接 URL（优先读取环境变量，默认开发库）
+const DEFAULT_DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgres@10.0.0.237:5432/divination_dev";
 
 // 解析命令行参数
 function parseArgs() {
@@ -140,8 +140,16 @@ async function main() {
   console.log(`\x1b[90m[恢复备份源] ${backupFilePath}\x1b[0m`);
   console.log(`\x1b[90m[文件大小] ${formatBytes(fileStats.size)}\x1b[0m\n`);
 
-  // 安全确认
-  if (!force) {
+  // 安全确认 (AUD-06: 强化生产库恢复护栏)
+  const isProductionTarget = targetUrl.includes('divination_db') || targetUrl.includes('prod');
+  if (isProductionTarget) {
+    console.log('\x1b[41m\x1b[37m[高危警告] 检测到目标数据库为生产库 (divination_db)！\x1b[0m');
+    const answer = await askConfirmation('【生产环境安全保护】确定要将数据恢复并覆盖至生产数据库吗？请输入 "RESTORE-PROD": ');
+    if (answer !== 'RESTORE-PROD') {
+      console.log('安全保护生效：输入不匹配，已终止对生产库的恢复。');
+      process.exit(1);
+    }
+  } else if (!force) {
     console.log('\x1b[33m[警告] 此操作将重置/清空目标数据库中的所有数据并恢复备份！\x1b[0m');
     const answer = await askConfirmation('确认继续执行恢复吗？(y/N): ');
     if (answer !== 'y' && answer !== 'yes') {
@@ -172,11 +180,11 @@ async function main() {
   console.log(`  备份表总数:   \x1b[32m${backupData.tableCount || backupData.tables.length}\x1b[0m 张`);
   console.log(`  备份记录总数: \x1b[32m${backupData.totalRows || '计算中'}\x1b[0m 行`);
 
-  // 同步 Prisma Schema（保证即使是空库也能一键生成全部数据表与索引）
+  // 同步 Prisma Schema（AUD-06: 使用 migrate deploy 保证迁移历史完整，杜绝 db push 漂移）
   if (!skipSchemaPush) {
-    console.log('\n\x1b[33m[2/4] 正在同步 Prisma 数据库表结构 (prisma db push)...\x1b[0m');
+    console.log('\n\x1b[33m[2/4] 正在同步 Prisma 数据库迁移 (prisma migrate deploy)...\x1b[0m');
     try {
-      execSync('npx prisma db push --skip-generate --accept-data-loss', {
+      execSync('npx prisma migrate deploy', {
         cwd: projectRoot,
         env: {
           ...process.env,
@@ -184,9 +192,9 @@ async function main() {
         },
         stdio: 'pipe'
       });
-      console.log('  \x1b[32m✓\x1b[0m 数据表结构、索引与约束已确保就绪');
+      console.log('  \x1b[32m✓\x1b[0m 数据库迁移已全部应用完毕');
     } catch (pushErr) {
-      console.log(`  \x1b[90m(提示: 架构自动同步跳过或已是最新: ${pushErr.message.split('\n')[0]})\x1b[0m`);
+      console.log(`  \x1b[90m(提示: 迁移执行输出: ${pushErr.message.split('\n')[0]})\x1b[0m`);
     }
   } else {
     console.log('\n\x1b[33m[2/4] 跳过架构同步...\x1b[0m');

@@ -2,9 +2,21 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { rateLimit } from '@/lib/rateLimiter'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
+
+  // ISS-07 / S1: Validate token format before hitting database
+  if (!token || !/^[A-Za-z0-9_-]{8,64}$/.test(token)) {
+    return NextResponse.json({ error: 'Invalid token format' }, { status: 400 })
+  }
+
+  // Rate limiting by client IP (30 req / min)
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous'
+  if (!rateLimit(`public-reading:${ip}`, 30, 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+  }
 
   const reading = await prisma.reading.findFirst({
     where: { shareToken: token, deletedAt: null },

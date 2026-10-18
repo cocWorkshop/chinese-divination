@@ -107,6 +107,23 @@ export async function refundHold(
     note: `refund hold reading=${readingId}`,
   })
   log.info({ readingId, userId, refunded: held }, 'hold refunded')
+
+  // AUD-27 / ISS-27: Create visible Notification for user so refunds are transparent
+  try {
+    await db.notification.create({
+      data: {
+        title: '占卜推演退款提醒',
+        titleEn: 'Divination Karma Refunded',
+        content: `您的【${type}】占卜未能順利完成，已將預扣的 ${held} 點機緣全額退還至您的帳戶。`,
+        contentEn: `Your 【${type}】 reading could not be completed. The ${held} held Karma credits have been fully refunded to your balance.`,
+        type: 'info',
+        target: `user:${userId}`,
+      },
+    })
+  } catch (notifErr) {
+    log.warn({ notifErr, readingId }, 'failed to create refund notification')
+  }
+
   return held
 }
 

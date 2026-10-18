@@ -18,8 +18,8 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 默认数据库连接 URL（直接内置，不直接引用 .env）
-const DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@10.0.0.237:5432/divination_db";
+// 默认数据库连接 URL（直接内置生产库，不直接引用 .env 中的开发库配置）
+const DEFAULT_DATABASE_URL = process.env.BACKUP_DATABASE_URL || "postgresql://postgres:postgres@10.0.0.237:5432/divination_db";
 
 // 解析命令行参数
 function parseArgs() {
@@ -44,7 +44,7 @@ PostgreSQL 跨平台数据库备份工具
   npm run db:backup
 
 选项:
-  -u, --url <url>      指定数据库连接字符串 (默认内置开发库 URL)
+  -u, --url <url>      指定数据库连接字符串 (默认内置生产库 URL)
   -o, --out <dir>      指定备份文件输出目录 (默认: db_backup)
   --uncompressed       输出未压缩的 .json 格式 (默认输出 .json.gz)
   -h, --help           显示此帮助信息

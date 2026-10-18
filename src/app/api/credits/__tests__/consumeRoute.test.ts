@@ -8,6 +8,10 @@ const { authMock, prismaMock, deductCreditsMock, getCostMock } = vi.hoisted(() =
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    reading: {
+      findFirst: vi.fn(),
+      update: vi.fn(),
+    },
     creditLog: {
       create: vi.fn(),
     },
@@ -56,6 +60,12 @@ describe('POST /api/credits/consume (Karma Deduction & Decadal Gating Rule)', ()
     })
     getCostMock.mockResolvedValueOnce(1)
     deductCreditsMock.mockResolvedValueOnce(true)
+    prismaMock.reading.findFirst.mockResolvedValueOnce({
+      id: 'reading_abc',
+      userId: 'user_123',
+      result: JSON.stringify({ unlockedDecades: [0, 1, 2] }),
+    })
+    prismaMock.reading.update.mockResolvedValueOnce({})
     prismaMock.user.findUnique.mockResolvedValueOnce({
       credits: 9,
       isAdmin: false,
@@ -76,6 +86,7 @@ describe('POST /api/credits/consume (Karma Deduction & Decadal Gating Rule)', ()
     expect(json.success).toBe(true)
     expect(json.remaining).toBe(9)
     expect(json.deducted).toBe(1)
+    expect(json.unlockedDecades).toEqual([0, 1, 2, 3])
     expect(deductCreditsMock).toHaveBeenCalledWith(
       'user_123',
       'dayun_unlock',

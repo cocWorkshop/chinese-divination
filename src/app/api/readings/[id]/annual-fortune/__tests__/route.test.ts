@@ -154,4 +154,30 @@ describe('POST /api/readings/:id/annual-fortune', () => {
       }),
     })
   })
+
+  it('returns 402 PAYMENT_REQUIRED when decadeIndex >= 3 and not unlocked (AUD-02)', async () => {
+    authMock.mockResolvedValueOnce({ user: { id: 'u1' } })
+    prismaMock.reading.findFirst.mockResolvedValueOnce({
+      id: 'r1',
+      userId: 'u1',
+      result: JSON.stringify({
+        unlockedDecades: [0, 1, 2],
+      }),
+    })
+
+    const req = new NextRequest('http://localhost:8088/api/readings/r1/annual-fortune', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'bazi',
+        decadeIndex: 3,
+        decadeInfo: { startYear: 2055, endYear: 2064, startAge: 55, endAge: 64 },
+      }),
+    })
+
+    const res = await POST(req, { params: Promise.resolve({ id: 'r1' }) })
+    expect(res.status).toBe(402)
+    const json = await res.json()
+    expect(json.error).toBe('PAYMENT_REQUIRED')
+    expect(completeLLMMock).not.toHaveBeenCalled()
+  })
 })

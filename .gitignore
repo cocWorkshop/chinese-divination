@@ -28,3 +28,6 @@ db_backup/*.zip
 db_backup/*.json
 db_backup/*.json.gz
 coverage/
+scripts/*.ps1
+scripts/heartbeat_url.txt
+

@@ -15,8 +15,8 @@ export async function GET() {
   })
 
   const targetFilter = user?.isPaid
-    ? { in: ['all', 'paid'] }
-    : { in: ['all', 'free'] }
+    ? { in: ['all', 'paid', `user:${session.user.id}`] }
+    : { in: ['all', 'free', `user:${session.user.id}`] }
 
   const total = await prisma.notification.count({
     where: {
