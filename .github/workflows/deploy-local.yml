@@ -29,7 +29,7 @@ jobs:
       - name: Build Docker Image
         run: |
           echo "🔨 Building Docker image chinese-divination:latest..."
-          docker build -t chinese-divination:latest .
+          docker build --network=host -t chinese-divination:latest .
 
       - name: Deploy Container
         run: |
