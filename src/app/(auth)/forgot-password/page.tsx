@@ -5,6 +5,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { useLang } from '@/components/LanguageContext'
 import { AlertIcon, SunMoonIcon, LockSealIcon } from '@/components/DivinationIcons'
+import { T } from '@/lib/i18n'
 
 export default function ForgotPasswordPage() {
   const { lang } = useLang()
@@ -24,7 +25,7 @@ export default function ForgotPasswordPage() {
       })
       setSent(true)
     } catch {
-      toast.error(lang === 'zh-TW' ? '發送失敗，請稍後再試' : 'Failed to send, please try again')
+      toast.error(T(lang, '發送失敗，請稍後再試', 'Failed to send, please try again'))
     } finally {
       setLoading(false)
     }
@@ -38,24 +39,26 @@ export default function ForgotPasswordPage() {
             <SunMoonIcon className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-serif mb-2 text-gold">
-            {lang === 'zh-TW' ? '郵件已發送' : 'Email Sent'}
+            {T(lang, '郵件已發送', 'Email Sent')}
           </h1>
-          <p className="text-white/60 text-sm mb-4 leading-relaxed">
-            {lang === 'zh-TW'
-              ? `如果 ${email} 對應的帳號存在，您將收到密碼重置郵件。`
-              : `If an account exists for ${email}, you will receive a reset email.`}
+          <p className="text-foreground/60 text-sm mb-4 leading-relaxed">
+            {T(
+              lang,
+              `如果 ${email} 對應的帳號存在，您將收到密碼重置郵件。`,
+              `If an account exists for ${email}, you will receive a reset email.`
+            )}
           </p>
           <div className="py-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/25 mb-6 flex items-start gap-2 text-left">
             <AlertIcon className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-amber-300/80 text-xs leading-relaxed">
-              {lang === 'zh-TW' ? '如果沒有看到郵件，請檢查垃圾郵件資料夾。連結 1 小時內有效。' : 'Check your spam folder if you don\'t see it. Link expires in 1 hour.'}
+              {T(lang, '如果沒有看到郵件，請檢查垃圾郵件資料夾。連結 1 小時內有效。', 'Check your spam folder if you don\'t see it. Link expires in 1 hour.')}
             </p>
           </div>
           <Link
             href="/login"
             className="inline-flex items-center justify-center px-6 py-3 min-h-[44px] bg-gold text-navy-950 rounded-xl font-serif font-bold hover:bg-gold-light transition-colors shadow-md shadow-gold/10 text-sm"
           >
-            {lang === 'zh-TW' ? '返回登入' : 'Back to Login'}
+            {T(lang, '返回登入', 'Back to Login')}
           </Link>
         </div>
       </div>
@@ -70,24 +73,24 @@ export default function ForgotPasswordPage() {
             <LockSealIcon className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-serif text-gold">
-            {lang === 'zh-TW' ? '忘記密碼' : 'Forgot Password'}
+            {T(lang, '忘記密碼', 'Forgot Password')}
           </h1>
-          <p className="text-white/60 text-sm mt-2 font-serif">
-            {lang === 'zh-TW' ? '輸入您的註冊郵箱，我們將發送重置連結。' : 'Enter your email and we\'ll send a reset link.'}
+          <p className="text-foreground/60 text-sm mt-2 font-serif">
+            {T(lang, '輸入您的註冊郵箱，我們將發送重置連結。', 'Enter your email and we\'ll send a reset link.')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-white/70 text-sm mb-1">
-              {lang === 'zh-TW' ? '郵箱' : 'Email'}
+            <label className="block text-foreground/70 text-sm mb-1">
+              {T(lang, '郵箱', 'Email')}
             </label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
+              className="w-full px-4 py-3 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none focus:border-gold/60 transition-colors"
             />
           </div>
           <button
@@ -96,14 +99,14 @@ export default function ForgotPasswordPage() {
             className="w-full py-3.5 min-h-[44px] bg-gradient-to-r from-gold via-gold-light to-gold text-navy-950 rounded-xl font-serif font-bold text-base hover:brightness-105 active:scale-[0.99] transition-all shadow-md shadow-gold/15 disabled:opacity-50"
           >
             {loading
-              ? (lang === 'zh-TW' ? '發送中...' : 'Sending...')
-              : (lang === 'zh-TW' ? '發送重置郵件' : 'Send Reset Email')}
+              ? (T(lang, '發送中...', 'Sending...'))
+              : (T(lang, '發送重置郵件', 'Send Reset Email'))}
           </button>
         </form>
 
-        <p className="text-center text-white/50 mt-6 text-sm">
+        <p className="text-center text-foreground/50 mt-6 text-sm">
           <Link href="/login" className="text-gold hover:text-gold-light font-serif">
-            {lang === 'zh-TW' ? '← 返回登入' : '← Back to Login'}
+            {T(lang, '← 返回登入', '← Back to Login')}
           </Link>
         </p>
       </div>

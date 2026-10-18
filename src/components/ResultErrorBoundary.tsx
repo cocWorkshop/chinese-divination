@@ -65,7 +65,7 @@ export default class ResultErrorBoundary extends Component<Props, State> {
           <h3 className="text-lg font-serif text-gold mb-2">
             {isChunk ? '頁面版本已更新' : (this.props.fallbackTitle || '結果顯示異常')}
           </h3>
-          <p className="text-white/60 text-sm mb-4">
+          <p className="text-foreground/60 text-sm mb-4">
             {isChunk
               ? '網站剛剛更新了新版本，請刷新頁面即可正常使用。'
               : '此部分內容載入失敗，其他功能不受影響。'}
@@ -79,8 +79,8 @@ export default class ResultErrorBoundary extends Component<Props, State> {
           </button>
           {this.state.error && (
             <details className="mt-4 text-left">
-              <summary className="text-white/30 text-xs cursor-pointer">技術詳情</summary>
-              <pre className="text-white/20 text-xs mt-2 overflow-auto max-h-32 p-2 rounded bg-black/30">
+              <summary className="text-foreground/30 text-xs cursor-pointer">技術詳情</summary>
+              <pre className="text-foreground/20 text-xs mt-2 overflow-auto max-h-32 p-2 rounded bg-black/30">
                 {this.state.error.message}
               </pre>
             </details>

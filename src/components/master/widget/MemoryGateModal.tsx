@@ -11,6 +11,8 @@
 import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MasterSageIcon } from '@/components/DivinationIcons'
+import { registerOverlay } from '@/lib/overlayStack'
+import { TEN } from '@/lib/i18n'
 
 interface Props {
   visible: boolean
@@ -21,9 +23,17 @@ interface Props {
 export default function MemoryGateModal({ visible, isEn, onResolve }: Props) {
   const declineRef = useRef<HTMLButtonElement>(null)
   const enableRef = useRef<HTMLButtonElement>(null)
+  const onResolveRef = useRef(onResolve)
+  onResolveRef.current = onResolve
 
   useEffect(() => {
     if (visible) setTimeout(() => enableRef.current?.focus(), 50)
+  }, [visible])
+
+  // Android hardware-back / global back: dismiss = decline.
+  useEffect(() => {
+    if (!visible) return
+    return registerOverlay('memory-gate', () => onResolveRef.current('decline'))
   }, [visible])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -46,8 +56,7 @@ export default function MemoryGateModal({ visible, isEn, onResolve }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-scrim"
           onClick={() => onResolve('decline')}
           onKeyDown={handleKeyDown}
         >
@@ -71,12 +80,14 @@ export default function MemoryGateModal({ visible, isEn, onResolve }: Props) {
               </span>
               <div>
                 <h3 id="memory-gate-title" className="font-serif text-base mb-1" style={{ color: 'var(--gold)' }}>
-                  {isEn ? 'Enable Master memory?' : '開啟大師記憶？'}
+                  {TEN(isEn, '開啟大師記憶？', 'Enable Master memory?')}
                 </h3>
                 <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary, #d0d0d0)' }}>
-                  {isEn
-                    ? 'Master Xuanji remembers your preferences and reading context for better advice. You can manage the memory function anytime in your profile.'
-                    : '玄機大師會記住你的偏好和命盤背景，提供更精準的建議。你可以隨時在個人資料中管理記憶功能。'}
+                  {TEN(
+                    isEn,
+                    '玄機大師會記住你的偏好和命盤背景，提供更精準的建議。你可以隨時在個人資料中管理記憶功能。',
+                    'Master Xuanji remembers your preferences and reading context for better advice. You can manage the memory function anytime in your profile.',
+                  )}
                 </p>
               </div>
             </div>
@@ -87,7 +98,7 @@ export default function MemoryGateModal({ visible, isEn, onResolve }: Props) {
                 className="flex-1 px-4 py-2.5 rounded-xl text-sm transition-colors"
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--card-border)' }}
               >
-                {isEn ? 'Not now' : '暫不開啟'}
+                {TEN(isEn, '暫不開啟', 'Not now')}
               </button>
               <button
                 ref={enableRef}
@@ -95,7 +106,7 @@ export default function MemoryGateModal({ visible, isEn, onResolve }: Props) {
                 className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-all"
                 style={{ background: 'var(--gold)', color: '#000' }}
               >
-                {isEn ? 'Enable' : '開啟'}
+                {TEN(isEn, '開啟', 'Enable')}
               </button>
             </div>
           </motion.div>

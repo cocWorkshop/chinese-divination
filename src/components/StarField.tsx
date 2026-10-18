@@ -45,8 +45,16 @@ export default function StarField() {
     let animId: number
     let paused = false
 
+    // 宣紙 (light) mode needs no stars: the canvas is CSS-hidden via .xj-stars,
+    // and we skip the rAF work entirely while the theme class says light.
+    let isDark = document.documentElement.classList.contains('dark')
+    const themeObserver = new MutationObserver(() => {
+      isDark = document.documentElement.classList.contains('dark')
+    })
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+
     const draw = () => {
-      if (paused) { animId = requestAnimationFrame(draw); return }
+      if (paused || !isDark) { animId = requestAnimationFrame(draw); return }
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       stars.forEach((s) => {
         s.a += s.da
@@ -72,6 +80,7 @@ export default function StarField() {
 
     return () => {
       cancelAnimationFrame(animId)
+      themeObserver.disconnect()
       document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('resize', handleResize)
     }
@@ -80,7 +89,7 @@ export default function StarField() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 pointer-events-none"
+      className="xj-stars absolute inset-0 pointer-events-none"
       style={{ zIndex: 0 }}
     />
   )

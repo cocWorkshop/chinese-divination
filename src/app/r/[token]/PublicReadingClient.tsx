@@ -10,6 +10,7 @@ import { catchAndReport } from '@/lib/errorReporter'
 import { useTheme } from '@/components/ThemeProvider'
 import { DivinationIcon, SunMoonIcon } from '@/components/DivinationIcons'
 import FullPageFlameEffect from '@/components/reading/FullPageFlameEffect'
+import { T } from '@/lib/i18n'
 
 const typeLabels: Record<string, { zh: string; en: string }> = {
   bazi: { zh: '八字命理', en: 'BaZi Analysis' },
@@ -136,13 +137,13 @@ export default function PublicReadingClient({ token: initialToken }: { token?: s
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
               <SunMoonIcon size={14} isDark={theme === 'dark'} />
-              <span>{theme === 'dark' ? (lang === 'en' ? 'Light' : '明亮') : (lang === 'en' ? 'Dark' : '幽暗')}</span>
+              <span>{theme === 'dark' ? (T(lang, '明亮', 'Light')) : (T(lang, '幽暗', 'Dark'))}</span>
             </button>
             <Link
               href="/divination"
               className="px-3 py-1.5 text-xs rounded-lg bg-gold text-navy-950 font-medium hover:bg-gold-light transition-colors"
             >
-              {lang === 'en' ? 'Try Free' : '免費體驗'}
+              {T(lang, '免費體驗', 'Try Free')}
             </Link>
           </div>
         </div>
@@ -151,25 +152,25 @@ export default function PublicReadingClient({ token: initialToken }: { token?: s
         <div className="oriental-sanctuary-card rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 text-center relative overflow-hidden">
           <div className="mb-2"><DivinationIcon type={data.type} size={36} /></div>
           <h1 className="text-2xl font-serif text-gold mb-1">
-            {typeLabel ? (lang === 'en' ? typeLabel.en : typeLabel.zh) : data.type}
+            {typeLabel ? T(lang, typeLabel.zh, typeLabel.en) : data.type}
           </h1>
           {data.question && (
             <p className="text-[var(--text-secondary)] text-sm mt-2">{data.question}</p>
           )}
           <div className="flex flex-wrap justify-center gap-4 mt-3 text-xs text-[var(--text-muted)] font-serif">
-            <span>{lang === 'en' ? 'Date: ' : '推演時間：'}{new Date(data.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')}</span>
-            {data.subjectName && <span>{lang === 'en' ? 'Querent: ' : '命主：'}{data.subjectName}</span>}
+            <span>{T(lang, '推演時間：', 'Date: ')}{new Date(data.createdAt).toLocaleDateString(T(lang, 'zh-TW', 'en-US'))}</span>
+            {data.subjectName && <span>{T(lang, '命主：', 'Querent: ')}{data.subjectName}</span>}
           </div>
           {data.birthInfo && (data.type === 'bazi' || data.type === 'ziwei' || data.type === 'qimen' || data.type === 'other') && (
             <div className="flex flex-wrap justify-center gap-4 mt-2 text-xs text-[var(--text-secondary)] border-t border-gold/10 pt-2">
               {data.birthInfo.birthDate && (
-                <span>{lang === 'en' ? 'Birth: ' : '生辰：'}{data.birthInfo.birthDate}{data.birthInfo.calendarType === 'lunar' ? ' (農曆)' : ''}</span>
+                <span>{T(lang, '生辰：', 'Birth: ')}{data.birthInfo.birthDate}{data.birthInfo.calendarType === 'lunar' ? ' (農曆)' : ''}</span>
               )}
               {data.birthInfo.birthTime && (
-                <span>{lang === 'en' ? 'Hour: ' : '時辰：'}{timeLabels[data.birthInfo.birthTime] || data.birthInfo.birthTime}</span>
+                <span>{T(lang, '時辰：', 'Hour: ')}{timeLabels[data.birthInfo.birthTime] || data.birthInfo.birthTime}</span>
               )}
               {data.birthInfo.gender && (
-                <span>{lang === 'en' ? 'Gender: ' : '乾坤：'}{lang === 'en' ? genderLabels[data.birthInfo.gender]?.en : genderLabels[data.birthInfo.gender]?.zh}</span>
+                <span>{T(lang, '乾坤：', 'Gender: ')}{T(lang, genderLabels[data.birthInfo.gender]?.zh, genderLabels[data.birthInfo.gender]?.en)}</span>
               )}
             </div>
           )}
@@ -183,15 +184,19 @@ export default function PublicReadingClient({ token: initialToken }: { token?: s
         {/* CTA */}
         <div className="oriental-sanctuary-card rounded-2xl p-4 sm:p-6 text-center">
           <p className="text-[var(--text-secondary)] text-sm mb-2">
-            {lang === 'en'
-              ? 'Want your own divination? Try Xuanji for free!'
-              : '想知道自己的命運？來玄機免費體驗！'}
+            {T(
+              lang,
+              '想知道自己的命運？來玄機免費體驗！',
+              'Want your own divination? Try Xuanji for free!'
+            )}
           </p>
           {shareBonus && (
             <p className="text-xs mb-4" style={{ color: 'var(--gold)' }}>
-              {lang === 'en'
-                ? `Register now and get ${shareBonus.registerBonus || 6} Karma for free!`
-                : `新用戶註冊即獲得 ${shareBonus.registerBonus || 6} 點機緣！`}
+              {T(
+                lang,
+                `新用戶註冊即獲得 ${shareBonus.registerBonus || 6} 點機緣！`,
+                `Register now and get ${shareBonus.registerBonus || 6} Karma for free!`
+              )}
             </p>
           )}
           <div className="flex justify-center gap-3">
@@ -199,13 +204,13 @@ export default function PublicReadingClient({ token: initialToken }: { token?: s
               href="/register"
               className="px-6 py-2.5 bg-gold text-navy-950 rounded-xl font-semibold hover:bg-gold-light transition-colors"
             >
-              {lang === 'en' ? 'Register Free' : '免費註冊'}
+              {T(lang, '免費註冊', 'Register Free')}
             </Link>
             <Link
               href="/divination"
               className="px-6 py-2.5 border border-gold/30 text-gold rounded-xl hover:bg-gold/10 transition-colors"
             >
-              {lang === 'en' ? 'Try Now' : '立即體驗'}
+              {T(lang, '立即體驗', 'Try Now')}
             </Link>
           </div>
         </div>

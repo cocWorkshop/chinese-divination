@@ -274,7 +274,7 @@ export default function StartMasterPage() {
               {p.icon}
               <span>{p.title}</span>
             </div>
-            <p className="text-[11px] text-white/50">{p.sub}</p>
+            <p className="text-[11px] text-foreground/50">{p.sub}</p>
           </motion.div>
         ))}
       </div>

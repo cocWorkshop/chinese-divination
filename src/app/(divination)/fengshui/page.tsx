@@ -116,7 +116,7 @@ export default function FengshuiPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppJsonLd) }}
       />
 
-      <div className="min-h-screen bg-navy-950">
+      <div className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto px-4 py-16">
           {/* Hero Section */}
           <section className="text-center mb-16">
@@ -126,18 +126,18 @@ export default function FengshuiPage() {
             <p className="text-2xl md:text-3xl text-gold/80 font-serif">
               風水佈局
             </p>
-            <p className="mt-6 text-lg text-white/60 max-w-2xl mx-auto">
+            <p className="mt-6 text-lg text-foreground/60 max-w-2xl mx-auto">
               Ancient spatial wisdom meets modern AI to help you create
               environments that nurture health, wealth, and well-being.
             </p>
           </section>
 
           {/* English Content */}
-          <section className="glass-card p-8 md:p-12 rounded-2xl mb-12">
+          <section className="card-quiet p-8 md:p-12 rounded-2xl mb-12">
             <h2 className="text-2xl font-bold text-gold mb-6 font-serif">
               What Is Feng Shui?
             </h2>
-            <p className="text-white/80 leading-relaxed mb-6">
+            <p className="text-foreground/80 leading-relaxed mb-6">
               Feng Shui, literally translated as &quot;wind and water,&quot; is one of
               the oldest and most enduring arts of Chinese metaphysics. Rooted
               in over three thousand years of observation and practice, Feng
@@ -155,7 +155,7 @@ export default function FengshuiPage() {
             <h2 className="text-2xl font-bold text-gold mb-6 font-serif">
               Key Concepts: Qi, Yin and Yang, and the Five Elements
             </h2>
-            <p className="text-white/80 leading-relaxed mb-6">
+            <p className="text-foreground/80 leading-relaxed mb-6">
               At the heart of Feng Shui lies the concept of Qi, the invisible
               force that connects every living being to the natural world. Qi
               enters a building through doors and windows, meanders along
@@ -178,7 +178,7 @@ export default function FengshuiPage() {
             <h2 className="text-2xl font-bold text-gold mb-6 font-serif">
               The Bagua Map and Spatial Analysis
             </h2>
-            <p className="text-white/80 leading-relaxed mb-6">
+            <p className="text-foreground/80 leading-relaxed mb-6">
               The Bagua map is the primary diagnostic tool in Feng Shui
               analysis. This octagonal grid divides any space into eight
               sectors, each corresponding to a fundamental aspect of human life:
@@ -199,7 +199,7 @@ export default function FengshuiPage() {
             <h2 className="text-2xl font-bold text-gold mb-6 font-serif">
               AI-Powered Feng Shui Analysis
             </h2>
-            <p className="text-white/80 leading-relaxed">
+            <p className="text-foreground/80 leading-relaxed">
               Our AI Feng Shui analysis brings the depth of traditional
               practice into the modern era. By providing information about your
               space — its layout, compass orientation, and the activities that
@@ -225,33 +225,33 @@ export default function FengshuiPage() {
           </div>
 
           {/* Chinese Content */}
-          <section className="glass-card p-8 md:p-12 rounded-2xl mb-12">
+          <section className="card-quiet p-8 md:p-12 rounded-2xl mb-12">
             <h2 className="text-2xl font-bold text-gold mb-6 font-serif">
               風水的起源與意義
             </h2>
-            <p className="text-white/80 leading-relaxed mb-6">
+            <p className="text-foreground/80 leading-relaxed mb-6">
               風水，又稱堪輿，是中國古代流傳數千年的環境哲學。「風」代表氣流與能量的運動，「水」象徵財富與生命的滋養。風水學認為，人所居住和工作的空間與自然環境之間存在著深刻的能量聯繫。通過合理佈局和調整空間結構，可以引導「氣」的順暢流動，從而促進居住者的健康、事業和人際關係。風水不僅是一門玄學，更是一套融合天文、地理、建築與人文智慧的綜合體系。
             </p>
 
             <h2 className="text-2xl font-bold text-gold mb-6 font-serif">
               核心理論：氣、陰陽與五行
             </h2>
-            <p className="text-white/80 leading-relaxed mb-6">
+            <p className="text-foreground/80 leading-relaxed mb-6">
               氣是風水學的根本概念，它無形無色，卻無處不在。氣通過門窗進入建築，沿著走廊和房間流動，影響著每一位居住者的運勢。陰陽學說強調平衡與和諧——臥室宜偏陰，適合採用柔和的燈光和冷色調，營造安寧的休息環境；而書房或辦公室則宜偏陽，採用明亮的照明和暖色系，激發創造力與工作效率。五行理論——木、火、土、金、水——則為每個空間提供了更精細的調整方案。每種元素對應特定的顏色、形狀、材質和方位，風水師通過五行的生剋關係來優化空間的能量配置。
             </p>
 
             <h2 className="text-2xl font-bold text-gold mb-6 font-serif">
               八卦與空間分析
             </h2>
-            <p className="text-white/80 leading-relaxed mb-6">
+            <p className="text-foreground/80 leading-relaxed mb-6">
               八卦圖是風水分析的核心工具，它將空間劃分為八個方位，分別對應人生的八大領域：事業、智慧、家庭、財富、聲譽、感情、創造力和貴人。通過將八卦圖與建築的朝向和入口位置對齊，風水師可以精準判斷空間中每個區域所影響的生活層面，並提供針對性的改善建議。
             </p>
 
             <h2 className="text-2xl font-bold text-gold mb-6 font-serif">
-              AI 智能風水分析
+              玄機堪輿智慧解析
             </h2>
-            <p className="text-white/80 leading-relaxed">
-              我們的 AI 風水分析系統融合了傳統風水智慧與現代人工智能技術。您只需提供空間的基本信息——佈局、朝向和用途——系統便會生成一份詳盡的風水報告。報告涵蓋八卦方位分析、五行平衡評估，以及具體可行的改善建議。無論您是希望提升財運、改善健康、增進感情，還是單純想營造一個更和諧的居住環境，我們的 AI 系統都能為您提供量身定制的風水指導，助您打造理想的生活空間。
+            <p className="text-foreground/80 leading-relaxed">
+              玄機堪輿體系融合傳統風水智慧與縝密的現代推演。您只需提供空間的基本信息——佈局、朝向和用途——便能生成一份詳盡的風水報告。報告涵蓋八卦方位分析、五行平衡評估，以及具體可行的改善建議。無論您是希望提升財運、改善健康、增進感情，還是單純想營造一個更和諧的居住環境，玄機大師都能為您提供量身定制的風水指導，助您打造理想的生活空間。
             </p>
           </section>
 
@@ -263,13 +263,13 @@ export default function FengshuiPage() {
             >
               Start Your Feng Shui Analysis
             </Link>
-            <p className="mt-4 text-white/50 text-sm">
+            <p className="mt-4 text-foreground/50 text-sm">
               Free AI-powered reading — no account required
             </p>
           </div>
 
           {/* FAQ Section */}
-          <section className="glass-card p-8 md:p-12 rounded-2xl">
+          <section className="card-quiet p-8 md:p-12 rounded-2xl">
             <h2 className="text-2xl font-bold text-gold mb-8 font-serif text-center">
               Frequently Asked Questions
             </h2>
@@ -279,7 +279,7 @@ export default function FengshuiPage() {
                   <h3 className="text-lg font-semibold text-gold/90 mb-3">
                     {faq.question}
                   </h3>
-                  <p className="text-white/80 leading-relaxed">{faq.answer}</p>
+                  <p className="text-foreground/80 leading-relaxed">{faq.answer}</p>
                 </div>
               ))}
             </div>

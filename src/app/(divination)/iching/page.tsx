@@ -108,7 +108,7 @@ const webAppJsonLd = {
 
 export default function IChingLandingPage() {
   return (
-    <div className="min-h-screen bg-navy-950">
+    <div className="min-h-screen bg-background">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -122,14 +122,14 @@ export default function IChingLandingPage() {
       {/* Hero Section */}
       <section className="relative py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <div className="glass-card rounded-2xl p-8 md:p-12">
+          <div className="card-quiet rounded-2xl p-8 md:p-12">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif text-gold mb-4 leading-tight">
               I Ching Oracle — Book of Changes
             </h1>
             <p className="text-2xl md:text-3xl font-serif text-gold/80 mb-6">
               易經占卜
             </p>
-            <p className="text-lg text-white/70 max-w-2xl mx-auto">
+            <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
               Consult the oldest and most revered divination system in the world.
               Let the wisdom of the 64 hexagrams illuminate your path forward.
             </p>
@@ -139,11 +139,11 @@ export default function IChingLandingPage() {
 
       {/* English Content */}
       <section className="max-w-4xl mx-auto px-4 py-16">
-        <div className="glass-card rounded-2xl p-8 md:p-10 space-y-6">
+        <div className="card-quiet rounded-2xl p-8 md:p-10 space-y-6">
           <h2 className="text-2xl md:text-3xl font-serif text-gold mb-4">
             What Is the I Ching?
           </h2>
-          <p className="text-white/80 leading-relaxed">
+          <p className="text-foreground/80 leading-relaxed">
             The I Ching, also known as the Yi Jing or the Book of Changes, is one of the oldest texts
             in recorded history. Originating over 3,000 years ago during the Western Zhou dynasty
             (approximately 1000 BCE), it began as a divination manual used by court officials and
@@ -157,7 +157,7 @@ export default function IChingLandingPage() {
           <h2 className="text-2xl md:text-3xl font-serif text-gold mb-4">
             The 64 Hexagrams and the Trigram System
           </h2>
-          <p className="text-white/80 leading-relaxed">
+          <p className="text-foreground/80 leading-relaxed">
             At the heart of the I Ching lies a system of 64 hexagrams, each composed of six
             horizontal lines stacked upon one another. Each line is either solid (representing Yang,
             the active and creative principle) or broken (representing Yin, the receptive and yielding
@@ -173,7 +173,7 @@ export default function IChingLandingPage() {
           <h2 className="text-2xl md:text-3xl font-serif text-gold mb-4">
             How I Ching Divination Works
           </h2>
-          <p className="text-white/80 leading-relaxed">
+          <p className="text-foreground/80 leading-relaxed">
             Traditional I Ching divination involves a ritual process of casting. The most ancient
             method uses 50 yarrow stalks, divided and counted through a series of steps to generate
             each line of a hexagram. A more accessible method, popularized during the Han dynasty,
@@ -189,7 +189,7 @@ export default function IChingLandingPage() {
           <h2 className="text-2xl md:text-3xl font-serif text-gold mb-4">
             AI-Powered Interpretation
           </h2>
-          <p className="text-white/80 leading-relaxed">
+          <p className="text-foreground/80 leading-relaxed">
             On our platform, we combine the time-honored casting process with advanced AI
             interpretation. When you ask a question, our system generates your hexagram using
             authentic randomization methods that honor the probabilistic structure of the original
@@ -216,25 +216,25 @@ export default function IChingLandingPage() {
 
       {/* Chinese Content */}
       <section className="max-w-4xl mx-auto px-4 py-16">
-        <div className="glass-card rounded-2xl p-8 md:p-10 space-y-6">
+        <div className="card-quiet rounded-2xl p-8 md:p-10 space-y-6">
           <h2 className="text-2xl md:text-3xl font-serif text-gold mb-4">
             易經簡介
           </h2>
-          <p className="text-white/80 leading-relaxed">
+          <p className="text-foreground/80 leading-relaxed">
             《易經》又稱《周易》，是中華文明最古老、最重要的經典之一。它誕生於三千多年前的西周時期，最初是供王室與官員進行占卜決策的工具。經過孔子及歷代儒者的整理與詮釋，《易經》早已超越了單純的占卜手冊，成為中國哲學、文學、科學與藝術的根基。其核心思想認為，宇宙萬物皆處於不斷變化之中，唯有理解變化的規律，才能順應天道、把握時機。
           </p>
 
           <h2 className="text-2xl md:text-3xl font-serif text-gold mb-4">
             六十四卦與八卦體系
           </h2>
-          <p className="text-white/80 leading-relaxed">
+          <p className="text-foreground/80 leading-relaxed">
             易經的核心是由六十四個卦象組成的完整體系。每個卦象由六條橫線（爻）上下排列而成，每條爻分為陽爻（實線，代表剛健、主動）與陰爻（虛線，代表柔順、包容）。六爻又分為上下兩組三爻，即上卦與下卦，各自對應八卦之一：乾（天）、坤（地）、坎（水）、離（火）、艮（山）、兌（澤）、巽（風）、震（雷）。八卦兩兩相合，形成六十四種卦象，象徵人生中所有可能的情境與變化。每一卦都附有卦辭、象辭和逐爻的爻辭，為求問者提供精準而深邃的指引。
           </p>
 
           <h2 className="text-2xl md:text-3xl font-serif text-gold mb-4">
             AI 智慧解卦
           </h2>
-          <p className="text-white/80 leading-relaxed">
+          <p className="text-foreground/80 leading-relaxed">
             在玄機平台上，我們將傳統的起卦方法與先進的人工智慧技術相結合。當您提出問題時，系統會依據傳統蓍草占卜的機率結構，以嚴謹的隨機演算法生成卦象。AI隨後結合《十翼》等經典注疏以及歷代學者的詮釋，針對您的本卦、變爻與之卦進行全面分析，最終呈現一份既忠實於古典智慧、又貼合您具體問題的個人化解讀。無論您是在感情、事業還是自我成長方面尋求指引，易經的智慧都將為您點亮前行的方向。
           </p>
         </div>
@@ -242,11 +242,11 @@ export default function IChingLandingPage() {
 
       {/* CTA Section */}
       <section className="max-w-4xl mx-auto px-4 py-12 text-center">
-        <div className="glass-card rounded-2xl p-8 md:p-10">
+        <div className="card-quiet rounded-2xl p-8 md:p-10">
           <h2 className="text-2xl md:text-3xl font-serif text-gold mb-4">
             Begin Your I Ching Reading
           </h2>
-          <p className="text-white/70 mb-8 max-w-xl mx-auto">
+          <p className="text-foreground/70 mb-8 max-w-xl mx-auto">
             Focus your mind, form your question, and let the ancient wisdom of the Book of Changes
             guide you. Your hexagram awaits.
           </p>
@@ -266,11 +266,11 @@ export default function IChingLandingPage() {
         </h2>
         <div className="space-y-6">
           {faqs.map((faq, index) => (
-            <div key={index} className="glass-card rounded-2xl p-8">
+            <div key={index} className="card-quiet rounded-2xl p-8">
               <h3 className="text-xl font-semibold text-gold mb-3">
                 {faq.question}
               </h3>
-              <p className="text-white/80 leading-relaxed">{faq.answer}</p>
+              <p className="text-foreground/80 leading-relaxed">{faq.answer}</p>
             </div>
           ))}
         </div>

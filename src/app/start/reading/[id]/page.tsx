@@ -158,7 +158,7 @@ export default function StartReadingPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="glass-card rounded-2xl p-5 mb-5"
+          className="card-quiet rounded-2xl p-5 mb-5"
           style={{ border: '1px solid var(--card-border)' }}
         >
           <h3 className="font-serif text-base mb-3" style={{ color: 'var(--gold)' }}>
@@ -233,7 +233,7 @@ export default function StartReadingPage() {
 
       {/* ── Casting placeholder (before chart arrives) ──────────────────────── */}
       {!chart && streamPhase === 'casting' && (
-        <div className="glass-card rounded-2xl p-8 mb-5 text-center" style={{ border: '1px solid var(--card-border)' }}>
+        <div className="card-quiet rounded-2xl p-8 mb-5 text-center" style={{ border: '1px solid var(--card-border)' }}>
           <div className="inline-flex gap-1 mb-3">
             <span className="w-2 h-2 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_infinite]" />
             <span className="w-2 h-2 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_0.2s_infinite]" />
@@ -324,7 +324,7 @@ export default function StartReadingPage() {
 
       {/* ── Error state ─────────────────────────────────────────────────────── */}
       {streamPhase === 'error' && (
-        <div className="glass-card rounded-2xl p-5 text-center" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
+        <div className="card-quiet rounded-2xl p-5 text-center" style={{ border: '1px solid rgba(239,68,68,0.3)' }}>
           <p className="text-sm text-red-400">{errorMsg}</p>
           <button
             onClick={() => router.push('/start/cast')}

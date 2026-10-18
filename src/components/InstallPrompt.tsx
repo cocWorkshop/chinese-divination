@@ -81,7 +81,7 @@ export default function InstallPrompt() {
           className="fixed bottom-4 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-sm z-50"
         >
           <div
-            className="glass-card rounded-2xl p-4 flex items-start gap-3 shadow-2xl"
+            className="card-quiet rounded-2xl p-4 flex items-start gap-3 shadow-2xl"
             style={{ borderColor: 'var(--border-gold)', borderWidth: '1px', backgroundColor: 'var(--bg-secondary, #1a1a2e)' }}
           >
             {/* App icon */}
@@ -120,7 +120,7 @@ export default function InstallPrompt() {
             {/* Close button */}
             <button
               onClick={handleDismiss}
-              className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+              className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-foreground/10 transition-colors"
               style={{ color: 'var(--text-muted)' }}
             >
               ✕

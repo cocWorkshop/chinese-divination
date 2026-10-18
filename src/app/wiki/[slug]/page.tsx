@@ -67,7 +67,7 @@ export default function WikiArticlePage() {
 
   if (notFound || !article) return (
     <div className="flex-1 flex flex-col items-center justify-center gap-4 py-24" style={{ background: 'var(--bg-primary)' }}>
-      <p className="text-white/50 font-serif">{T(lang, '文章不存在或已下架', 'Article not found')}</p>
+      <p className="text-foreground/50 font-serif">{T(lang, '文章不存在或已下架', 'Article not found')}</p>
       <Link href="/wiki" className="text-sm font-serif hover:underline" style={{ color: 'var(--gold)' }}>
         ← {T(lang, '返回知識庫', 'Back to Wiki')}
       </Link>
@@ -85,12 +85,12 @@ export default function WikiArticlePage() {
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[rgba(212,168,83,0.16)]">
           <div className="flex items-center gap-3">
             <BackButton fallbackHref="/wiki" label={T(lang, '返回知識庫', 'Back to Wiki')} />
-            <nav className="flex items-center gap-1.5 text-xs text-white/50 font-serif" aria-label="Breadcrumb">
+            <nav className="flex items-center gap-1.5 text-xs text-foreground/50 font-serif" aria-label="Breadcrumb">
               <Link href="/wiki" className="hover:text-gold transition-colors">
                 {T(lang, '知識庫', 'Wiki')}
               </Link>
               <span>/</span>
-              <span>{isEn ? catInfo.en : catInfo.zh}</span>
+              <span>{T(lang, catInfo.zh, catInfo.en)}</span>
             </nav>
           </div>
 
@@ -100,7 +100,7 @@ export default function WikiArticlePage() {
               className="px-3.5 py-1.5 rounded-full text-xs font-serif flex items-center gap-1.5 transition-all border border-gold/30 hover:border-gold/60 text-gold bg-gold/10 hover:bg-gold/20 min-h-[36px]"
             >
               <DivinationIcon type={article.category} size={14} color="currentColor" />
-              <span>{isEn ? ctaConfig.ctaEn : ctaConfig.ctaZh}</span>
+              <span>{T(lang, ctaConfig.ctaZh, ctaConfig.ctaEn)}</span>
             </Link>
           </div>
         </div>
@@ -117,17 +117,17 @@ export default function WikiArticlePage() {
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="stamp-gold text-[10px]">
-              {isEn ? catInfo.en : catInfo.zh}
+              {T(lang, catInfo.zh, catInfo.en)}
             </span>
-            <span className="text-xs text-white/40 font-serif">
-              {T(lang, '更新於', 'Updated')} {new Date(article.updatedAt).toLocaleDateString(isEn ? 'en-US' : 'zh-TW')}
+            <span className="text-xs text-foreground/40 font-serif">
+              {T(lang, '更新於', 'Updated')} {new Date(article.updatedAt).toLocaleDateString(T(lang, 'zh-TW', 'en-US'))}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-serif text-[var(--gold)]">
             {article.title}
           </h1>
           {article.summary && (
-            <p className="text-sm font-serif text-white/70 leading-relaxed pt-1">
+            <p className="text-sm font-serif text-foreground/70 leading-relaxed pt-1">
               {article.summary}
             </p>
           )}
@@ -145,7 +145,7 @@ export default function WikiArticlePage() {
             prose-a:text-gold-light prose-a:underline hover:prose-a:text-gold
             prose-strong:text-gold-light prose-strong:font-serif
             prose-table:text-sm prose-th:text-gold prose-th:font-serif
-            prose-blockquote:border-gold/50 prose-blockquote:text-white/80 prose-blockquote:font-serif">
+            prose-blockquote:border-gold/50 prose-blockquote:text-foreground/80 prose-blockquote:font-serif">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{article.content}</ReactMarkdown>
           </div>
         </motion.article>
@@ -158,10 +158,10 @@ export default function WikiArticlePage() {
             </div>
             <div>
               <h3 className="font-serif text-sm sm:text-base text-gold font-medium">
-                {isEn ? ctaConfig.ctaEn : ctaConfig.ctaZh}
+                {T(lang, ctaConfig.ctaZh, ctaConfig.ctaEn)}
               </h3>
-              <p className="text-xs text-white/60 mt-0.5 font-serif">
-                {isEn ? ctaConfig.descEn : ctaConfig.descZh}
+              <p className="text-xs text-foreground/60 mt-0.5 font-serif">
+                {T(lang, ctaConfig.descZh, ctaConfig.descEn)}
               </p>
             </div>
           </div>

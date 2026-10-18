@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { SunMoonIcon } from '@/components/DivinationIcons'
+import ModalShell from '@/components/ui/ModalShell'
 import { useDivination } from '../DivinationContext'
 import { T } from '../constants'
 
@@ -22,16 +23,16 @@ export default function CacheDialog() {
   const subject = type === 'ziwei' ? T(lang, '紫微', 'Zi Wei') : T(lang, '八字', 'BaZi')
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
-      onClick={() => setShowCacheDialog(false)}
-      role="dialog"
-      aria-modal="true"
+    <ModalShell
+      isOpen
+      onClose={() => setShowCacheDialog(false)}
+      label={T(lang, `歷史${subject}紀錄提醒`, `Existing ${subject} Reading Found`)}
+      dismissOnBackdrop
+      overlayClassName="backdrop-blur-md"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.92 }}
         animate={{ opacity: 1, scale: 1 }}
-        onClick={(e) => e.stopPropagation()}
         className="oriental-sanctuary-card p-6 sm:p-7 rounded-2xl max-w-md w-full text-center space-y-5 shadow-2xl"
       >
         <div className="w-14 h-14 rounded-2xl bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto text-gold shadow-md">
@@ -68,6 +69,6 @@ export default function CacheDialog() {
           {T(lang, '取消', 'Cancel')}
         </button>
       </motion.div>
-    </div>
+    </ModalShell>
   )
 }

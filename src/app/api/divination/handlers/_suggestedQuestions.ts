@@ -1,3 +1,5 @@
+import { T } from '@/lib/i18n'
+
 /**
  * Language-aware + age/gender-contextualized suggested-question prompts.
  *
@@ -15,12 +17,13 @@ export function getSuggestedQuestionsPrompt(
   language: string,
   userContext?: SuggestedQuestionsContext
 ): string[] {
-  const isEn = language === 'en'
-  const maxLen = isEn ? '(max 15 words)' : '(15字内)'
+  const maxLen = T(language, '(15字内)', '(max 15 words)')
   const ageGenderHint = userContext?.age
-    ? (isEn
-      ? `The subject is ${userContext.gender === 'female' ? 'female' : 'male'}, age ${userContext.age}. Tailor questions to their life stage (career, marriage, children, retirement etc. as appropriate).`
-      : `此人为${userContext.gender === 'female' ? '女' : '男'}性，${userContext.age}岁。请结合其年龄阶段（事业、婚姻、子女、健康等）设计最可能引起好奇的问题。`)
+    ? T(
+        language,
+        `此人为${userContext.gender === 'female' ? '女' : '男'}性，${userContext.age}岁。请结合其年龄阶段（事业、婚姻、子女、健康等）设计最可能引起好奇的问题。`,
+        `The subject is ${userContext.gender === 'female' ? 'female' : 'male'}, age ${userContext.age}. Tailor questions to their life stage (career, marriage, children, retirement etc. as appropriate).`,
+      )
     : ''
 
   const promptMap: Record<string, { zh: string[]; en: string[] }> = {
@@ -71,5 +74,5 @@ export function getSuggestedQuestionsPrompt(
   }
 
   const prompts = promptMap[type] || promptMap.other
-  return isEn ? prompts.en : prompts.zh
+  return T(language, prompts.zh, prompts.en)
 }

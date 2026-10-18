@@ -90,7 +90,7 @@ export default function QimenPage() {
   }
 
   return (
-    <div className="min-h-screen bg-navy-950">
+    <div className="min-h-screen bg-background">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -113,18 +113,18 @@ export default function QimenPage() {
           >
             奇門遁甲
           </p>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto">
+          <p className="text-lg text-foreground/60 max-w-2xl mx-auto">
             The supreme strategic divination system of ancient China, used by
             legendary generals and imperial advisors for over two thousand years.
           </p>
         </section>
 
         {/* English Content */}
-        <section className="glass-card p-8 md:p-10 mb-12">
+        <section className="card-quiet p-8 md:p-10 mb-12">
           <h2 className="text-2xl font-serif text-gold mb-6">
             Origins in Military Strategy
           </h2>
-          <p className="text-white/80 leading-relaxed mb-6">
+          <p className="text-foreground/80 leading-relaxed mb-6">
             Qi Men Dun Jia, literally translated as &ldquo;Mysterious Gates
             Escaping Techniques,&rdquo; is one of the three supreme arts of
             Chinese metaphysics alongside Da Liu Ren and Tai Yi Shen Shu. Its
@@ -144,7 +144,7 @@ export default function QimenPage() {
           <h2 className="text-2xl font-serif text-gold mb-6">
             The Structure: Palaces, Doors, Gods, and Wonders
           </h2>
-          <p className="text-white/80 leading-relaxed mb-6">
+          <p className="text-foreground/80 leading-relaxed mb-6">
             At the heart of Qi Men Dun Jia lies the Lo Shu magic square,
             divided into Nine Palaces that correspond to the eight cardinal and
             intercardinal directions plus a central palace. Layered upon this
@@ -164,7 +164,7 @@ export default function QimenPage() {
           <h2 className="text-2xl font-serif text-gold mb-6">
             How Qi Men Dun Jia Works for Timing Decisions
           </h2>
-          <p className="text-white/80 leading-relaxed mb-6">
+          <p className="text-foreground/80 leading-relaxed mb-6">
             A Qi Men Dun Jia chart is erected for a specific moment in time.
             Based on the solar term, the hour, and the day, each component is
             assigned to one of the Nine Palaces. The practitioner then reads
@@ -183,7 +183,7 @@ export default function QimenPage() {
           <h2 className="text-2xl font-serif text-gold mb-6">
             Modern Applications
           </h2>
-          <p className="text-white/80 leading-relaxed mb-6">
+          <p className="text-foreground/80 leading-relaxed mb-6">
             In the modern world, Qi Men Dun Jia has evolved far beyond the
             battlefield. Entrepreneurs across East Asia consult Qi Men charts
             before launching companies, entering negotiations, or expanding
@@ -209,32 +209,32 @@ export default function QimenPage() {
         </div>
 
         {/* Chinese Content */}
-        <section className="glass-card p-8 md:p-10 mb-12" lang="zh">
+        <section className="card-quiet p-8 md:p-10 mb-12" lang="zh">
           <h2 className="text-2xl font-serif text-gold mb-6">
             奇門遁甲的起源
           </h2>
-          <p className="text-white/80 leading-relaxed mb-6">
+          <p className="text-foreground/80 leading-relaxed mb-6">
             奇門遁甲被誉为中国古代最高层次的预测学之一，与大六壬、太乙神数并称“三式”。相传其源于上古时期，由九天玄女传授黄帝，用以在涿鹿之战中击败蚩尤。后经历代圣贤不断完善，姜太公、张良、诸葛亮、刘伯温等传奇人物皆精通此术。在中国历史上，奇门遁甲长期作为帝王之术被严格保密，民间流传甚少，直到近现代才逐渐公开传播。作为一套融合天文、地理、数学与哲学的综合体系，它承载了中华文明数千年的智慧结晶。
           </p>
 
           <h2 className="text-2xl font-serif text-gold mb-6">
             九宫、八门与三奇六仪
           </h2>
-          <p className="text-white/80 leading-relaxed mb-6">
+          <p className="text-foreground/80 leading-relaxed mb-6">
             奇门遁甲以洛书九宫为基础框架，将天盘、地盘、人盘、神盘四层信息叠加于九个宫位之中。八门——休、生、伤、杜、景、死、惊、开——代表人事层面的吉凶状态，每扇门都有其独特的能量属性。八神——值符、腾蛇、太阴、六合、白虎、玄武、九地、九天——则象征天界力量对事态的影响。三奇（乙、丙、丁）为吉祥天干，能够化解困境、开启机遇；六仪（戊、己、庚、辛、壬、癸）则代表隐藏与防御的力量。这些元素在九宫中的不同组合，构成了一幅动态的时空能量图。
           </p>
 
           <h2 className="text-2xl font-serif text-gold mb-6">
             择时与方位的实战运用
           </h2>
-          <p className="text-white/80 leading-relaxed mb-6">
+          <p className="text-foreground/80 leading-relaxed mb-6">
             奇门遁甲最核心的功能在于择时择方。通过排盘分析特定时刻九宫中各元素的组合关系，术者能够判断哪个方位蕴含最有利的能量，哪个时间段最适合采取行动。无论是商务谈判、出行旅途、签约合作还是重大抉择，奇门遁甲都能提供精准的时机与方位建议。在实际操作中，吉门、吉星、吉神三者同宫的方位为大吉之方，而凶门、凶星相叠之处则应尽量回避。掌握了这套系统，就如同拥有了一张看透时间与空间能量流动的地图。
           </p>
 
           <h2 className="text-2xl font-serif text-gold mb-6">
             现代生活中的奇门智慧
           </h2>
-          <p className="text-white/80 leading-relaxed mb-6">
+          <p className="text-foreground/80 leading-relaxed mb-6">
             在当代社会，奇门遁甲已从古代战场走进现代商业与日常生活。许多企业家在重大商业决策前会参考奇门排盘，选择最佳时机签订合同、启动项目或开拓新市场。房地产从业者将其与风水学结合，精准选定动土开工、交易过户的吉日良辰。个人则将其应用于求职面试、考试升学、就医问诊等人生重要时刻。随着科技的进步，传统上需要大量运算的排盘过程已可通过数字工具即时完成，让更多人能够接触并受益于这一古老智慧。奇门遁甲并非迷信，而是一套经过千年实践验证的时空决策系统，在现代依然展现着独特的价值。
           </p>
         </section>
@@ -247,7 +247,7 @@ export default function QimenPage() {
           >
             Start Your Qi Men Dun Jia Reading
           </Link>
-          <p className="text-white/50 mt-4 text-sm">
+          <p className="text-foreground/50 mt-4 text-sm">
             Discover the optimal timing and direction for your next important
             decision.
           </p>
@@ -260,11 +260,11 @@ export default function QimenPage() {
           </h2>
           <div className="space-y-6">
             {faqs.map((faq, index) => (
-              <div key={index} className="glass-card p-6 md:p-8">
+              <div key={index} className="card-quiet p-6 md:p-8">
                 <h3 className="text-lg font-semibold text-gold mb-3">
                   {faq.question}
                 </h3>
-                <p className="text-white/80 leading-relaxed">{faq.answer}</p>
+                <p className="text-foreground/80 leading-relaxed">{faq.answer}</p>
               </div>
             ))}
           </div>

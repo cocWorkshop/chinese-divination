@@ -14,8 +14,8 @@ export const REALM_TIERS: RealmTierInfo[] = [
     tier: 1,
     name: { zh: '初探玄门', 'zh-TW': '初探玄門', en: 'Novice Seeker' },
     title: { zh: '一阶 · 初探玄门', 'zh-TW': '一階 · 初探玄門', en: 'Tier I: Novice Seeker' },
-    badge: '📜',
-    color: '#94a3b8',
+    badge: '玄',
+    color: '#d3d9e0',
     minXp: 0,
     maxXp: 100,
     description: {
@@ -33,8 +33,8 @@ export const REALM_TIERS: RealmTierInfo[] = [
     tier: 2,
     name: { zh: '略窥爻象', 'zh-TW': '略窺爻象', en: 'Trigram Apprentice' },
     title: { zh: '二阶 · 略窥爻象', 'zh-TW': '二階 · 略窺爻象', en: 'Tier II: Trigram Apprentice' },
-    badge: '🪙',
-    color: '#38bdf8',
+    badge: '爻',
+    color: '#9fc2cf',
     minXp: 100,
     maxXp: 300,
     description: {
@@ -52,8 +52,8 @@ export const REALM_TIERS: RealmTierInfo[] = [
     tier: 3,
     name: { zh: '洞察阴阳', 'zh-TW': '洞察陰陽', en: 'Yin-Yang Adept' },
     title: { zh: '三阶 · 洞察阴阳', 'zh-TW': '三階 · 洞察陰陽', en: 'Tier III: Yin-Yang Adept' },
-    badge: '☯️',
-    color: '#34d399',
+    badge: '陰',
+    color: '#6fbf9e',
     minXp: 300,
     maxXp: 650,
     description: {
@@ -71,8 +71,8 @@ export const REALM_TIERS: RealmTierInfo[] = [
     tier: 4,
     name: { zh: '研几探賾', 'zh-TW': '研幾探賾', en: 'Arcane Scholar' },
     title: { zh: '四阶 · 研几探賾', 'zh-TW': '四階 · 研幾探賾', en: 'Tier IV: Arcane Scholar' },
-    badge: '🔮',
-    color: '#818cf8',
+    badge: '幾',
+    color: '#6e93cf',
     minXp: 650,
     maxXp: 1200,
     description: {
@@ -90,8 +90,8 @@ export const REALM_TIERS: RealmTierInfo[] = [
     tier: 5,
     name: { zh: '融通三才', 'zh-TW': '融通三才', en: 'Master of Three Realms' },
     title: { zh: '五阶 · 融通三才', 'zh-TW': '五階 · 融通三才', en: 'Tier V: Master of Three Realms' },
-    badge: '🧭',
-    color: '#fbbf24',
+    badge: '才',
+    color: '#e0b45c',
     minXp: 1200,
     maxXp: 2000,
     description: {
@@ -109,8 +109,8 @@ export const REALM_TIERS: RealmTierInfo[] = [
     tier: 6,
     name: { zh: '参悟天机', 'zh-TW': '參悟天機', en: 'Celestial Sage' },
     title: { zh: '六阶 · 参悟天机', 'zh-TW': '六階 · 參悟天機', en: 'Tier VI: Celestial Sage' },
-    badge: '🌌',
-    color: '#c084fc',
+    badge: '機',
+    color: '#d4955c',
     minXp: 2000,
     maxXp: 3200,
     description: {
@@ -128,8 +128,8 @@ export const REALM_TIERS: RealmTierInfo[] = [
     tier: 7,
     name: { zh: '出神入化', 'zh-TW': '出神入化', en: 'Transcendent Seeker' },
     title: { zh: '七阶 · 出神入化', 'zh-TW': '七階 · 出神入化', en: 'Tier VII: Transcendent Seeker' },
-    badge: '⚡',
-    color: '#f472b6',
+    badge: '神',
+    color: '#d4655a',
     minXp: 3200,
     maxXp: 4800,
     description: {
@@ -147,8 +147,8 @@ export const REALM_TIERS: RealmTierInfo[] = [
     tier: 8,
     name: { zh: '乾坤造化', 'zh-TW': '乾坤造化', en: 'Cosmic Architect' },
     title: { zh: '八阶 · 乾坤造化', 'zh-TW': '八階 · 乾坤造化', en: 'Tier VIII: Cosmic Architect' },
-    badge: '👑',
-    color: '#eab308',
+    badge: '乾',
+    color: '#e8c278',
     minXp: 4800,
     maxXp: 7000,
     description: {
@@ -166,8 +166,8 @@ export const REALM_TIERS: RealmTierInfo[] = [
     tier: 9,
     name: { zh: '天人合一', 'zh-TW': '天人合一', en: 'Grandmaster of the Great Ultimate' },
     title: { zh: '九阶 · 天人合一', 'zh-TW': '九階 · 天人合一', en: 'Tier IX: Unity with the Tao' },
-    badge: '🌟',
-    color: '#f59e0b',
+    badge: '道',
+    color: '#f0d48a',
     minXp: 7000,
     maxXp: null,
     description: {
@@ -192,7 +192,7 @@ export function checkAchievements(stats: GrowthStats, currentTier: number): Achi
   return [
     {
       id: 'first_divination',
-      icon: '🔮',
+      icon: '卦',
       name: { zh: '初问天机', 'zh-TW': '初問天機', en: 'First Inquiry' },
       description: {
         zh: '完成首次卦象占卜推演',
@@ -206,7 +206,7 @@ export function checkAchievements(stats: GrowthStats, currentTier: number): Achi
     },
     {
       id: 'master_confidant',
-      icon: '🧙',
+      icon: '師',
       name: { zh: '大匠知音', 'zh-TW': '大匠知音', en: 'Master Confidant' },
       description: {
         zh: '与玄机大师探讨请益累计达 10 轮',
@@ -220,7 +220,7 @@ export function checkAchievements(stats: GrowthStats, currentTier: number): Achi
     },
     {
       id: 'diverse_scholar',
-      icon: '📚',
+      icon: '博',
       name: { zh: '博涉百家', 'zh-TW': '博涉百家', en: 'Diverse Scholar' },
       description: {
         zh: '探索体验至少 3 种不同门派的占卜术数',
@@ -234,7 +234,7 @@ export function checkAchievements(stats: GrowthStats, currentTier: number): Achi
     },
     {
       id: 'deep_contemplation',
-      icon: '💬',
+      icon: '問',
       name: { zh: '穷理尽性', 'zh-TW': '窮理盡性', en: 'Deep Contemplation' },
       description: {
         zh: '在占卜结果下进行深度问答追问达 10 次',
@@ -248,7 +248,7 @@ export function checkAchievements(stats: GrowthStats, currentTier: number): Achi
     },
     {
       id: 'hundred_readings',
-      icon: '⚡',
+      icon: '百',
       name: { zh: '百卜通神', 'zh-TW': '百卜通神', en: 'Century Diviner' },
       description: {
         zh: '累计完成 100 次占卜解卦',
@@ -262,7 +262,7 @@ export function checkAchievements(stats: GrowthStats, currentTier: number): Achi
     },
     {
       id: 'adept_master',
-      icon: '👑',
+      icon: '匠',
       name: { zh: '玄门宗匠', 'zh-TW': '玄門宗匠', en: 'Grand Scholar' },
       description: {
         zh: '术数境界晋阶至五阶【融通三才】或以上',

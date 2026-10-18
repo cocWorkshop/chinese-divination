@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { subscribe } from '@/lib/events'
+import { T } from '@/lib/i18n'
 
 interface FullPageFlameEffectProps {
   /**
@@ -44,7 +45,6 @@ export default function FullPageFlameEffect({
   const prevStreamingRef = useRef(streaming)
   const hasTriggeredRef = useRef(false)
   const reduceMotion = useReducedMotion()
-  const isZh = lang !== 'en'
 
   // Generate randomized embers once
   const embers: Particle[] = useMemo(() => {
@@ -234,21 +234,23 @@ export default function FullPageFlameEffect({
             <div className="flex items-center justify-center gap-2 mb-2">
               <span className="text-gold/60 text-xs">✦</span>
               <span className="stamp-vermillion text-[11px] py-0.5 px-2.5 tracking-widest font-serif shadow-md">
-                {isZh ? '玄機圓滿' : 'CONSECRATED'}
+                {T(lang, '玄機圓滿', 'CONSECRATED')}
               </span>
               <span className="text-gold/60 text-xs">✦</span>
             </div>
 
             {/* Main Consecration Title */}
             <h2 className="text-lg sm:text-2xl font-serif font-medium text-gold-light tracking-wide mb-1.5 drop-shadow-[0_2px_8px_rgba(212,168,83,0.4)]">
-              {isZh ? '✦ 天機推演圓滿 · 萬象昭然 ✦' : '✦ Divination Consecrated ✦'}
+              {T(lang, '✦ 天機推演圓滿 · 萬象昭然 ✦', '✦ Divination Consecrated ✦')}
             </h2>
 
             {/* Subtitle / Blessing */}
-            <p className="text-xs sm:text-sm font-serif text-white/75 font-light tracking-wider">
-              {isZh
-                ? '全盤氣數推演已成，吉凶玄機盡在掌握'
-                : 'Celestial insight fully synthesized · All chapters unlocked'}
+            <p className="text-xs sm:text-sm font-serif text-foreground/75 font-light tracking-wider">
+              {T(
+                lang,
+                '全盤氣數推演已成，吉凶玄機盡在掌握',
+                'Celestial insight fully synthesized · All chapters unlocked',
+              )}
             </p>
           </motion.div>
         </div>

@@ -18,7 +18,7 @@ export default function TermsPage() {
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-[rgba(212,168,83,0.16)]">
           <div className="flex items-center gap-3">
             <BackButton fallbackHref="/" />
-            <nav className="flex items-center gap-1.5 text-xs text-white/50 font-serif" aria-label="Breadcrumb">
+            <nav className="flex items-center gap-1.5 text-xs text-foreground/50 font-serif" aria-label="Breadcrumb">
               <Link href="/" className="hover:text-gold transition-colors">
                 {T(lang, '首頁', 'Home')}
               </Link>
@@ -28,7 +28,7 @@ export default function TermsPage() {
           </div>
           <Link
             href="/privacy"
-            className="text-xs font-serif text-white/60 hover:text-gold transition-colors"
+            className="text-xs font-serif text-foreground/60 hover:text-gold transition-colors"
           >
             {T(lang, '隱私政策 →', 'Privacy Policy →')}
           </Link>

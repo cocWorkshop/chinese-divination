@@ -12,11 +12,9 @@ import Link from 'next/link'
 import BackButton from '@/components/BackButton'
 import { catchAndReport } from '@/lib/errorReporter'
 import { DivinationIcon, LinkIcon, CopyIcon, GiftVesselIcon, SparkleIcon, SunMoonIcon, CheckSealIcon } from '@/components/DivinationIcons'
+import { T } from '@/lib/i18n'
 
-function T(lang: string, zh: React.ReactNode, en: React.ReactNode): React.ReactNode {
-  return lang === 'en' ? en : zh
-}
-const Ts = (lang: string, zh: string, en: string): string => lang === 'en' ? en : zh
+const Ts = T
 
 export default function SharePage() {
   const { code } = useParams<{ code: string }>()
@@ -154,13 +152,13 @@ export default function SharePage() {
             <div className="flex justify-center mb-4">
               <div className="px-6 py-3 rounded-xl bg-gold/10 border border-gold/20">
                 <div className="text-2xl font-bold text-gold">{bonusCredits}</div>
-                <div className="text-white/50 text-xs mt-1 font-serif">
+                <div className="text-foreground/50 text-xs mt-1 font-serif">
                   {T(lang, '機緣點數', 'Karma Points')}
                 </div>
               </div>
             </div>
 
-            <p className="text-white/30 text-xs font-serif">
+            <p className="text-foreground/30 text-xs font-serif">
               {T(lang,
                 '註冊後永久機緣自動到帳',
                 'Permanent Karma auto-granted upon registration'
@@ -187,9 +185,9 @@ export default function SharePage() {
                 { key: 'meihua', zh: '梅花', en: 'Meihua' },
                 { key: 'liuyao', zh: '六爻', en: 'Liu Yao' },
               ].filter(d => visibleTypes.includes(d.key)).map(d => (
-                <div key={d.en} className="py-2.5 px-1 rounded-lg bg-white/5 flex flex-col items-center gap-1">
+                <div key={d.en} className="py-2.5 px-1 rounded-lg bg-foreground/5 flex flex-col items-center gap-1">
                   <DivinationIcon type={d.key} size={20} />
-                  <div className="text-white/70 text-xs font-serif">{T(lang, d.zh, d.en)}</div>
+                  <div className="text-foreground/70 text-xs font-serif">{T(lang, d.zh, d.en)}</div>
                 </div>
               ))}
             </div>
@@ -198,7 +196,7 @@ export default function SharePage() {
 
           {/* CTA buttons */}
           <div className="oriental-sanctuary-card rounded-2xl p-6 text-center border border-gold/20 shadow-lg">
-            <p className="text-white/70 text-sm mb-4 font-serif">
+            <p className="text-foreground/70 text-sm mb-4 font-serif">
               {T(lang,
                 '立即註冊，開啟您的命理之旅',
                 'Sign up now and begin your divination journey'
@@ -221,7 +219,7 @@ export default function SharePage() {
           </div>
 
           {/* Footer branding */}
-          <div className="text-center text-white/20 text-xs font-serif">
+          <div className="text-center text-foreground/20 text-xs font-serif">
             <Link href="/" className="hover:text-gold/50 transition-colors">
               {T(lang, '玄機 · Xuanji — 古法智慧，現代傳承', 'Xuanji — Ancient Wisdom, Modern Heritage')}
             </Link>
@@ -288,7 +286,7 @@ export default function SharePage() {
           <div className="grid grid-cols-4 gap-2 mb-6">
             {shareButtons.map(btn => (
               <button key={btn.name} onClick={btn.action}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 transition-colors">
+                className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-foreground/5 transition-colors">
                 <span className="text-xl">{btn.icon}</span>
                 <span className="text-[var(--text-muted)] text-[10px]">{btn.name}</span>
               </button>

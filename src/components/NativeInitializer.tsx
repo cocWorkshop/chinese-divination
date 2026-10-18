@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { isNativeApp, hideSplash, registerPushNotifications } from '@/lib/native'
+import { closeTopmostOverlay } from '@/lib/overlayStack'
 
 /**
  * Initializes native app features on mount.
@@ -16,6 +17,42 @@ export default function NativeInitializer() {
     if (isNativeApp()) {
       // Small delay to ensure UI is painted
       setTimeout(() => hideSplash(), 300)
+    }
+  }, [])
+
+  // Android hardware back: dismiss the topmost overlay first (expanded
+  // master chat, poster modal, dialogs — anything registered on the overlay
+  // stack), then fall through to web history, then exit the app at the root.
+  // Without this the back gesture inside overlays navigates WebView history
+  // instead of closing them (store-review rejection trigger; AUD-12).
+  useEffect(() => {
+    if (!isNativeApp()) return
+    let cleanup: (() => void) | undefined
+    let disposed = false
+    void (async () => {
+      try {
+        const { App } = await import('@capacitor/app')
+        const listener = await App.addListener('backButton', () => {
+          if (closeTopmostOverlay()) return
+          const state = window.history.state as { idx?: number } | null
+          if (typeof state?.idx === 'number' && state.idx > 0) {
+            window.history.back()
+          } else {
+            void App.exitApp()
+          }
+        })
+        if (disposed) {
+          void listener.remove()
+          return
+        }
+        cleanup = () => void listener.remove()
+      } catch {
+        // Plugin unavailable (e.g. web build) — no-op
+      }
+    })()
+    return () => {
+      disposed = true
+      cleanup?.()
     }
   }, [])
 

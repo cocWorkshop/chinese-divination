@@ -12,6 +12,7 @@ import { z } from 'zod'
 import { defineTool } from './_types'
 import { ok, notFound } from './_errors'
 import type { Lang } from './_types'
+import { T } from '@/lib/i18n'
 
 const InputSchema = z.object({
   readingId: z.string().describe(
@@ -44,17 +45,18 @@ const TYPE_LABELS: Record<string, { zh: string; en: string }> = {
 
 function readingTitleByType(type: string, lang: Lang): string {
   const label = TYPE_LABELS[type] ?? TYPE_LABELS.other
-  return lang === 'en' ? label.en : label.zh
+  return T(lang, label.zh, label.en)
 }
 
 function formatDate(d: Date, lang: Lang): string {
   const y = d.getFullYear()
   const m = d.getMonth() + 1
   const day = d.getDate()
-  if (lang === 'en') {
-    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-  }
-  return `${y}年${m}月${day}日`
+  return T(
+    lang,
+    `${y}年${m}月${day}日`,
+    d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+  )
 }
 
 interface ReadingMeta {
@@ -70,13 +72,13 @@ function buildReadingSubtitle(reading: ReadingMeta, lang: Lang): string {
   parts.push(formatDate(reading.createdAt, lang))
 
   if (reading.targetType === 'family') {
-    parts.push(lang === 'en' ? 'family member' : '家人')
+    parts.push(T(lang, '家人', 'family member'))
   }
 
   // Try to extract a short snippet from the result for context
   if (reading.question) {
     const q = reading.question.trim().slice(0, 28)
-    if (q) parts.push(`${lang === 'en' ? 'Q: ' : '問題：'}${q}${reading.question.length > 28 ? '…' : ''}`)
+    if (q) parts.push(`${T(lang, '問題：', 'Q: ')}${q}${reading.question.length > 28 ? '…' : ''}`)
   }
 
   return parts.join(' · ')

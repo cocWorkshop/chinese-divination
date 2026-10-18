@@ -144,10 +144,12 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
       toast.error(T(lang, '請先登入後向玄機大師深度解盤', 'Please sign in to consult Master Xuanji'))
       return
     }
-    const starNames = majors.map((s: AnyData) => s.name).join('、') || (lang === 'en' ? 'unpaired' : '無正曜')
-    const prompt = lang === 'en'
-      ? `Master Xuanji, please provide deep insight into my Zi Wei Dou Shu 【${palaceName} Palace】 at branch ${branch} (with stars: ${starNames}). How does this placement shape my life journey and path forward?`
-      : `請玄機大師為我詳推紫微命盤中的【${palaceName}】（位於${branch}宮，坐${starNames}）。此宮位對我的人生格局與近期氣運有何深層啟示與指引？`
+    const starNames = majors.map((s: AnyData) => s.name).join('、') || (T(lang, '無正曜', 'unpaired'))
+    const prompt = T(
+      lang,
+      `請玄機大師為我詳推紫微命盤中的【${palaceName}】（位於${branch}宮，坐${starNames}）。此宮位對我的人生格局與近期氣運有何深層啟示與指引？`,
+      `Master Xuanji, please provide deep insight into my Zi Wei Dou Shu 【${palaceName} Palace】 at branch ${branch} (with stars: ${starNames}). How does this placement shape my life journey and path forward?`,
+    )
     masterChat.setShape('expanded')
     masterChat.sendMessage(prompt)
   }
@@ -218,7 +220,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
 
       {/* ═══ FORMATION + BASIC INFO ═══ */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
+        className="card-quiet rounded-xl p-3 sm:p-4 border border-gold/20">
         <div className="flex items-start gap-3">
           {/* Five Elements Class badge */}
           <div className="text-center flex-shrink-0">
@@ -255,7 +257,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
             {chart.siHua && chart.siHua.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {chart.siHua.map((sh: { star: string; type: string; palace: string }, i: number) => (
-                  <span key={i} className="px-1.5 py-0.5 rounded border border-gold/20 bg-white/5 text-[10px]">
+                  <span key={i} className="px-1.5 py-0.5 rounded border border-gold/20 bg-foreground/5 text-[10px]">
                     <span className={mutagenColor[sh.type] || ''}>{sh.star}</span>
                     <span className={`font-bold ${mutagenColor[sh.type] || ''}`}>{T(lang, '化', '')}{sh.type}</span>
                     <span className="text-[var(--text-muted)]">→{sh.palace}</span>
@@ -302,7 +304,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                         return (
                           <div
                             key={`center-${row}-${col}`}
-                            className="col-span-2 row-span-2 rounded-xl p-3 sm:p-4 bg-gradient-to-br from-gold/10 via-[var(--bg-surface)] to-gold/15 dark:from-navy-900/90 dark:via-navy-950/95 dark:to-navy-900/90 border border-gold/30 flex flex-col items-center justify-center text-center shadow-inner relative overflow-hidden"
+                            className="col-span-2 row-span-2 rounded-xl p-3 sm:p-4 bg-gradient-to-br from-gold/10 via-[var(--bg-surface)] to-gold/15 dark:from-surface/90 dark:via-background/95 dark:to-surface/90 border border-gold/30 flex flex-col items-center justify-center text-center shadow-inner relative overflow-hidden"
                           >
                             <div className="absolute inset-0 bg-gold/5 blur-xl pointer-events-none" />
                             <h4 className="text-gold font-serif text-sm sm:text-base font-bold tracking-widest mb-1">
@@ -315,7 +317,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                               <span className="px-2 py-0.5 rounded bg-gold/10 border border-gold/20 text-gold-dark dark:text-gold-light font-medium">
                                 {T(lang, '身主', 'Body')}：{chart.body || '—'}
                               </span>
-                              <span className="px-2 py-0.5 rounded bg-purple-500/10 dark:bg-purple-500/15 border border-purple-500/25 dark:border-purple-500/30 text-purple-700 dark:text-purple-300 font-medium">
+                              <span                           className="px-2 py-0.5 rounded bg-gold/10 border border-gold/25 text-gold-dark dark:text-gold-light font-medium">
                                 {chart.fiveElementsClass || '五行局'}
                               </span>
                             </div>
@@ -372,7 +374,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                           >
                             {palaceName}
                             {isBody && !palaceName.includes('身') ? (
-                              <span className="text-[10px] text-purple-300 ml-0.5">({T(lang, '身', 'B')})</span>
+                              <span className="text-[10px] text-jade ml-0.5">({T(lang, '身', 'B')})</span>
                             ) : null}
                           </span>
                           <span className="text-[10px] font-mono text-[var(--text-muted)]">
@@ -443,7 +445,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    className="p-4 rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 via-[var(--bg-surface)] to-gold/5 dark:via-navy-900 shadow-lg"
+                    className="p-4 rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 via-[var(--bg-surface)] to-gold/5 dark:via-surface shadow-lg"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-2 border-b border-gold/15">
                       <div className="flex items-center gap-2">
@@ -603,7 +605,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
             <SectionDrawer
               key={s.key}
               icon={s.icon}
-              title={lang === 'en' ? s.en : s.label}
+              title={T(lang, s.label, s.en)}
               trailing={streaming && !hasContent ? (
                 <span className="inline-flex gap-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseZW_1.4s_ease_infinite]" />
@@ -667,7 +669,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
               return (
                 <details
                   key={i}
-                  className={`glass-card rounded-xl border transition-colors group ${
+                  className={`card-quiet rounded-xl border transition-colors group ${
                     isCurrentDecade ? 'border-gold/40 ring-1 ring-gold/25' : 'border-gold/20'
                   }`}
                   open
@@ -768,7 +770,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                               <div className="space-y-0.5 text-left w-full sm:w-auto">
                                 <div className="text-xs font-serif font-bold text-gold flex items-center gap-1.5">
                                   <SparkleIcon size={13} className="text-gold" />
-                                  <span>{T(lang, 'AI 深度精批：本大限十年流年逐年詳批', 'AI Deep Fortune: 10-Year Decadal Annual Reading')}</span>
+                                  <span>{T(lang, '玄機深度精批：本大限十年流年逐年詳批', 'Deep Fortune: 10-Year Decadal Annual Reading')}</span>
                                 </div>
                                 <div className="text-[10px] text-[var(--text-muted)]">
                                   {T(lang, '推演此十年中每一年的流年命宮、三代四化疊引、官祿財帛與健康宜忌', 'Channel detailed annual predictions for all 10 years including SiHua overlays & career')}
@@ -815,7 +817,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                                   }`}
                                 >
                                   {hasAiFortune && (
-                                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" title="AI 精批已就绪" />
+                                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" title="精批已就绪" />
                                   )}
                                   <div className="text-[9px] text-[var(--text-muted)]">{ln.year}</div>
                                   <div className="text-xs font-serif font-bold my-0.5 text-gold">
@@ -853,7 +855,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                                     )}
                                     {aiFortune ? (
                                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-medium">
-                                        ✦ {T(lang, 'AI 深度精批', 'AI Channeled')}
+                                        ✦ {T(lang, '玄機深度精批', 'Master Channeled')}
                                       </span>
                                     ) : (
                                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-gold/10 border border-gold/20 text-gold/80">
@@ -950,14 +952,14 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                                     </div>
                                     <div className="pt-1 flex items-center justify-between">
                                       <span className="text-[10px] text-[var(--text-muted)]">
-                                        {T(lang, '點擊按鈕推演此十年完整的 AI 流年詳批', 'Click button to channel complete AI 10-year fortune')}
+                                        {T(lang, '點擊按鈕推演此十年完整的流年詳批', 'Click button to reveal the complete 10-year fortune')}
                                       </span>
                                       <button
                                         onClick={() => handleGenerateAnnualFortune(i, dy)}
                                         disabled={isGeneratingThisDecade}
                                         className="text-[11px] text-gold hover:underline font-medium cursor-pointer"
                                       >
-                                        {T(lang, '生成 AI 深度精批 →', 'Generate AI Fortune →')}
+                                        {T(lang, '生成玄機深度精批 →', 'Generate Deep Fortune →')}
                                       </button>
                                     </div>
                                   </div>
@@ -980,7 +982,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
       {liuNian && liuNian.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}>
           <h3 className="text-gold font-serif text-base mb-2">{T(lang, '流年一覽', 'Annual Fortune')}</h3>
-          <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
+          <div className="card-quiet rounded-xl p-3 border border-gold/20 overflow-hidden">
             <div ref={liuNianScroll.ref} onMouseDown={liuNianScroll.onMouseDown}
               className="overflow-x-auto scrollbar-hide cursor-grab">
               <div className="flex gap-0.5 min-w-max">
@@ -998,7 +1000,7 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                           {ln.year}
                         </div>
                       ) : <div className="h-[12px]" />}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1.5 bg-navy-800 border border-gold/30 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap">
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1.5 bg-surface border border-gold/30 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap">
                         <div className="text-[10px] text-gold font-bold">{ln.year} ({ln.age}{T(lang, '歲', '')})</div>
                         <div className="text-[9px] text-[var(--text-muted)]">
                           {T(lang, '流年命宮', 'Annual')}: {ln.earthlyBranch} |

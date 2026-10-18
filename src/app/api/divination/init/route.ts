@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       const rl = await checkCredits(session.user.id, type)
       if (!rl.allowed) {
         return NextResponse.json(
-          { error: language === 'en' ? `Not enough Karma (need ${rl.cost}, have ${rl.remaining}). Visit the Karma Shop to get more.` : `✨ 機緣不足（需要 ${rl.cost}，剩餘 ${rl.remaining}）。前往機緣商店補充機緣。` },
+          { error: language === 'en' ? `Not enough Karma (need ${rl.cost}, have ${rl.remaining}). Visit the Karma Shop to get more.` : `機緣不足（需要 ${rl.cost}，剩餘 ${rl.remaining}）。前往機緣商店補充機緣。` },
           { status: 429 }
         )
       }
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
       }))
       if (!hold) {
         return NextResponse.json(
-          { error: language === 'en' ? 'Not enough Karma. Visit the Karma Shop to get more.' : '✨ 機緣不足，前往機緣商店補充機緣。' },
+          { error: language === 'en' ? 'Not enough Karma. Visit the Karma Shop to get more.' : '機緣不足，前往機緣商店補充機緣。' },
           { status: 429 }
         )
       }

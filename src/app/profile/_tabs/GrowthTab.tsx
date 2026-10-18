@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
-import { T } from '@/lib/i18n'
+import { T, langKey as toLangKey } from '@/lib/i18n'
 import type { UserGrowthProfile, RealmTierInfo, Achievement } from '@/lib/growth/types'
 import { DivinationIcon, MasterSageIcon, SparkleIcon, SunMoonIcon, CheckSealIcon } from '@/components/DivinationIcons'
 
@@ -36,7 +36,7 @@ export default function GrowthTab() {
     return (
       <div className="py-12 flex flex-col items-center justify-center space-y-4">
         <div className="w-10 h-10 border-2 border-gold/30 border-t-gold rounded-full animate-spin" />
-        <p className="text-white/60 font-serif text-sm">
+        <p className="text-foreground/60 font-serif text-sm">
           {T(lang, '正在推演道行修為...', 'Calculating metaphysical cultivation...')}
         </p>
       </div>
@@ -45,14 +45,14 @@ export default function GrowthTab() {
 
   if (error || !profile) {
     return (
-      <div className="glass-card rounded-2xl p-6 text-center text-white/70">
+      <div className="card-quiet rounded-2xl p-6 text-center text-foreground/70">
         <p>{T(lang, '修為數據載入失敗，請稍後重試。', 'Failed to load cultivation data. Please try again.')}</p>
       </div>
     )
   }
 
   const current = profile.currentRealm
-  const langKey = lang === 'en' ? 'en' : 'zh-TW'
+  const langKey = toLangKey(lang)
   const activeRealmInfo = selectedRealm || current
 
   return (
@@ -62,20 +62,11 @@ export default function GrowthTab() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         className="oriental-sanctuary-card rounded-2xl p-6 sm:p-8 relative overflow-hidden text-center border border-gold/35"
-        style={{
-          background: 'radial-gradient(ellipse at top, rgba(212,168,83,0.12) 0%, rgba(10,17,40,0.85) 70%)',
-        }}
       >
-        {/* Glow ambient background element */}
-        <div
-          className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-40"
-          style={{ backgroundColor: current.color }}
-        />
-
-        {/* Badge Avatar */}
+        {/* Badge Avatar — single seal-character in TC serif */}
         <div className="relative inline-block mb-4">
           <div
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-4xl sm:text-5xl shadow-lg transition-transform duration-500 hover:scale-105"
+            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-4xl sm:text-5xl font-serif font-bold shadow-lg transition-transform duration-500 hover:scale-105"
             style={{
               background: `radial-gradient(circle, rgba(255,255,255,0.08), rgba(0,0,0,0.6))`,
               border: `2px solid ${current.color}`,
@@ -97,7 +88,7 @@ export default function GrowthTab() {
           {current.name[langKey]}
         </h2>
 
-        <p className="text-white/80 text-sm sm:text-base max-w-lg mx-auto mt-2 leading-relaxed font-sans">
+        <p className="text-foreground/80 text-sm sm:text-base max-w-lg mx-auto mt-2 leading-relaxed font-sans">
           {current.description[langKey]}
         </p>
 
@@ -107,7 +98,7 @@ export default function GrowthTab() {
 
         {/* Experience Progress Bar */}
         <div className="mt-6 max-w-md mx-auto">
-          <div className="flex justify-between items-center text-xs text-white/70 mb-1.5">
+          <div className="flex justify-between items-center text-xs text-foreground/70 mb-1.5">
             <span className="font-serif">
               {T(lang, '道行積累', 'Dao Hang (XP)')}: <strong className="text-gold font-bold">{profile.xp}</strong>
             </span>
@@ -118,7 +109,7 @@ export default function GrowthTab() {
             </span>
           </div>
 
-          <div className="w-full bg-navy-950/80 rounded-full h-3 p-0.5 border border-gold/30 overflow-hidden shadow-inner">
+          <div className="w-full bg-foreground/10 rounded-full h-3 p-0.5 border border-gold/30 overflow-hidden shadow-inner">
             <div
               className="h-full rounded-full transition-all duration-1000 ease-out"
               style={{
@@ -129,7 +120,7 @@ export default function GrowthTab() {
             />
           </div>
 
-          <div className="flex justify-between items-center text-[11px] text-white/40 mt-1">
+          <div className="flex justify-between items-center text-[11px] text-foreground/40 mt-1">
             <span>{current.minXp} XP</span>
             <span>{profile.levelProgressPercent}%</span>
             <span>{profile.nextRealm ? `${profile.nextRealm.minXp} XP` : '∞'}</span>
@@ -141,36 +132,36 @@ export default function GrowthTab() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="oriental-sanctuary-card rounded-xl p-4 text-center border border-gold/20 hover:border-gold/40 transition-colors">
           <DivinationIcon type="iching" size={26} className="mx-auto mb-1.5 text-gold" />
-          <div className="text-sm font-serif text-white/90">{T(lang, '占卜解卦', 'Divinations')}</div>
-          <div className="text-xs text-white/50 mt-0.5">{profile.breakdown.divination.count} {T(lang, '次', 'times')}</div>
+          <div className="text-sm font-serif text-foreground/90">{T(lang, '占卜解卦', 'Divinations')}</div>
+          <div className="text-xs text-foreground/50 mt-0.5">{profile.breakdown.divination.count} {T(lang, '次', 'times')}</div>
           <div className="text-gold text-sm font-semibold mt-1">
             +{profile.breakdown.divination.xp} {T(lang, '道行', 'XP')}
           </div>
-          <span className="inline-block mt-1 text-[10px] text-white/40 bg-white/5 px-2 py-0.5 rounded">
+          <span className="inline-block mt-1 text-[10px] text-foreground/40 bg-foreground/5 px-2 py-0.5 rounded">
             50 XP / {T(lang, '次', 'run')}
           </span>
         </div>
 
         <div className="oriental-sanctuary-card rounded-xl p-4 text-center border border-gold/20 hover:border-gold/40 transition-colors">
           <MasterSageIcon size={26} className="mx-auto mb-1.5 text-gold" />
-          <div className="text-sm font-serif text-white/90">{T(lang, '大師請益', 'Master Consults')}</div>
-          <div className="text-xs text-white/50 mt-0.5">{profile.breakdown.master.count} {T(lang, '輪', 'turns')}</div>
+          <div className="text-sm font-serif text-foreground/90">{T(lang, '大師請益', 'Master Consults')}</div>
+          <div className="text-xs text-foreground/50 mt-0.5">{profile.breakdown.master.count} {T(lang, '輪', 'turns')}</div>
           <div className="text-gold text-sm font-semibold mt-1">
             +{profile.breakdown.master.xp} {T(lang, '道行', 'XP')}
           </div>
-          <span className="inline-block mt-1 text-[10px] text-white/40 bg-white/5 px-2 py-0.5 rounded">
+          <span className="inline-block mt-1 text-[10px] text-foreground/40 bg-foreground/5 px-2 py-0.5 rounded">
             20 XP / {T(lang, '輪', 'turn')}
           </span>
         </div>
 
         <div className="oriental-sanctuary-card rounded-xl p-4 text-center border border-gold/20 hover:border-gold/40 transition-colors">
           <SunMoonIcon size={26} className="mx-auto mb-1.5 text-gold" />
-          <div className="text-sm font-serif text-white/90">{T(lang, '卦意深究', 'Deep Q&A')}</div>
-          <div className="text-xs text-white/50 mt-0.5">{profile.breakdown.chat.count} {T(lang, '次', 'rounds')}</div>
+          <div className="text-sm font-serif text-foreground/90">{T(lang, '卦意深究', 'Deep Q&A')}</div>
+          <div className="text-xs text-foreground/50 mt-0.5">{profile.breakdown.chat.count} {T(lang, '次', 'rounds')}</div>
           <div className="text-gold text-sm font-semibold mt-1">
             +{profile.breakdown.chat.xp} {T(lang, '道行', 'XP')}
           </div>
-          <span className="inline-block mt-1 text-[10px] text-white/40 bg-white/5 px-2 py-0.5 rounded">
+          <span className="inline-block mt-1 text-[10px] text-foreground/40 bg-foreground/5 px-2 py-0.5 rounded">
             10 XP / {T(lang, '次', 'round')}
           </span>
         </div>
@@ -188,7 +179,7 @@ export default function GrowthTab() {
           <div className="text-xs font-serif text-gold tracking-wide">
             {T(lang, '玄機大師 · 應修為寄語', 'Master Xuanji · Realm Reflection')}
           </div>
-          <p className="text-sm text-white/85 mt-1 font-serif leading-relaxed italic">
+          <p className="text-sm text-foreground/85 mt-1 font-serif leading-relaxed italic">
             「{profile.masterGreeting[langKey]}」
           </p>
         </div>
@@ -201,7 +192,7 @@ export default function GrowthTab() {
             <DivinationIcon type="iching" size={20} className="text-gold" />
             <h3 className="font-serif text-lg text-gold">{T(lang, '易道九階圖譜', 'Nine Realms of Metaphysics')}</h3>
           </div>
-          <span className="text-xs text-white/40 font-serif">
+          <span className="text-xs text-foreground/40 font-serif">
             {T(lang, '點擊查看各階真義', 'Tap to view realm details')}
           </span>
         </div>
@@ -223,8 +214,8 @@ export default function GrowthTab() {
                     : isCurrent
                     ? 'border-gold/60 bg-gold/10'
                     : isUnlocked
-                    ? 'border-white/20 bg-white/5 hover:border-white/40'
-                    : 'border-white/5 bg-navy-950/40 opacity-40 hover:opacity-70'
+                    ? 'border-line/20 bg-foreground/5 hover:border-line/40'
+                    : 'border-line/5 bg-black/20 dark:bg-background/40 opacity-40 hover:opacity-70'
                 }`}
               >
                 {isCurrent && (
@@ -233,10 +224,10 @@ export default function GrowthTab() {
                   </span>
                 )}
                 <span className="text-xl mb-1">{realm.badge}</span>
-                <span className="text-[11px] font-serif text-white/90 text-center leading-tight">
+                <span className="text-[11px] font-serif text-foreground/90 text-center leading-tight">
                   {realm.name[langKey]}
                 </span>
-                <span className="text-[9px] text-white/40 mt-1">
+                <span className="text-[9px] text-foreground/40 mt-1">
                   {realm.minXp} XP
                 </span>
               </button>
@@ -250,18 +241,18 @@ export default function GrowthTab() {
             key={activeRealmInfo.tier}
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 p-4 rounded-xl bg-navy-900/60 border border-gold/20 text-xs sm:text-sm space-y-1.5"
+            className="mt-4 p-4 rounded-xl bg-surface/60 border border-gold/20 text-xs sm:text-sm space-y-1.5"
           >
             <div className="flex items-center justify-between">
               <span className="font-serif font-bold text-gold flex items-center gap-1.5">
                 <span>{activeRealmInfo.badge}</span>
                 <span>{activeRealmInfo.title[langKey]}</span>
               </span>
-              <span className="text-white/50 text-[11px]">
+              <span className="text-foreground/50 text-[11px]">
                 {T(lang, '解鎖要求', 'Requirement')}: {activeRealmInfo.minXp} XP
               </span>
             </div>
-            <p className="text-white/70 leading-relaxed">
+            <p className="text-foreground/70 leading-relaxed">
               {activeRealmInfo.description[langKey]}
             </p>
             <p className="text-gold/60 italic font-serif text-[11px]">
@@ -278,7 +269,7 @@ export default function GrowthTab() {
             <SparkleIcon size={20} className="text-gold" />
             <h3 className="font-serif text-lg text-gold">{T(lang, '術數修為印記', 'Achievements & Seals')}</h3>
           </div>
-          <span className="text-xs text-white/50 font-serif">
+          <span className="text-xs text-foreground/50 font-serif">
             {profile.achievements.filter(a => a.unlocked).length} / {profile.achievements.length} {T(lang, '已點亮', 'Unlocked')}
           </span>
         </div>
@@ -290,14 +281,14 @@ export default function GrowthTab() {
               className={`p-3.5 rounded-xl border flex items-start gap-3 transition-all ${
                 item.unlocked
                   ? 'border-gold/40 bg-gold/10 shadow-sm'
-                  : 'border-white/10 bg-navy-950/40 opacity-60'
+                  : 'border-line/10 bg-black/20 dark:bg-background/40 opacity-60'
               }`}
             >
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0 ${
                   item.unlocked
                     ? 'bg-gold/20 text-gold border border-gold/40'
-                    : 'bg-white/5 text-white/30 border border-white/10'
+                    : 'bg-foreground/5 text-foreground/30 border border-line/10'
                 }`}
               >
                 {item.icon}
@@ -305,7 +296,7 @@ export default function GrowthTab() {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-serif text-sm font-medium text-white truncate">
+                  <h4 className="font-serif text-sm font-medium text-foreground truncate">
                     {item.name[langKey]}
                   </h4>
                   {item.unlocked ? (
@@ -314,18 +305,18 @@ export default function GrowthTab() {
                       <span>{T(lang, '已得', 'Unlocked')}</span>
                     </span>
                   ) : (
-                    <span className="text-[10px] text-white/40 font-mono">
+                    <span className="text-[10px] text-foreground/40 font-mono">
                       {item.currentVal} / {item.targetVal}
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-white/60 mt-1 leading-snug">
+                <p className="text-xs text-foreground/60 mt-1 leading-snug">
                   {item.description[langKey]}
                 </p>
 
                 {!item.unlocked && (
-                  <div className="w-full bg-navy-950 rounded-full h-1.5 mt-2 overflow-hidden border border-white/10">
+                  <div className="w-full bg-background rounded-full h-1.5 mt-2 overflow-hidden border border-line/10">
                     <div
                       className="bg-gold/50 h-full rounded-full transition-all duration-500"
                       style={{ width: `${item.progress}%` }}

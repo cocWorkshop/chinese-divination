@@ -88,7 +88,7 @@ export default function LiuYaoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-navy-950">
+    <div className="min-h-screen bg-background">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -108,7 +108,7 @@ export default function LiuYaoPage() {
           <p className="text-2xl md:text-3xl font-serif text-gold/80 mb-6">
             六爻占卜
           </p>
-          <p className="text-white/60 text-lg max-w-2xl mx-auto">
+          <p className="text-foreground/60 text-lg max-w-2xl mx-auto">
             The ancient art of building hexagrams through coin casting — one of
             the most precise and practical divination methods in Chinese
             metaphysics.
@@ -116,12 +116,12 @@ export default function LiuYaoPage() {
         </section>
 
         {/* English Content */}
-        <section className="glass-card rounded-2xl p-8 md:p-10 mb-8">
+        <section className="card-quiet rounded-2xl p-8 md:p-10 mb-8">
           <h2 className="text-2xl font-serif text-gold mb-6">
             What is Liu Yao Divination?
           </h2>
 
-          <div className="space-y-5 text-white/80 leading-relaxed">
+          <div className="space-y-5 text-foreground/80 leading-relaxed">
             <p>
               Liu Yao (六爻), literally meaning &ldquo;six lines,&rdquo; is one of the
               most widely practiced forms of Chinese divination. Rooted in the
@@ -185,12 +185,12 @@ export default function LiuYaoPage() {
         </div>
 
         {/* Chinese Content */}
-        <section className="glass-card rounded-2xl p-8 md:p-10 mb-8">
+        <section className="card-quiet rounded-2xl p-8 md:p-10 mb-8">
           <h2 className="text-2xl font-serif text-gold mb-6">
             六爻占卜簡介
           </h2>
 
-          <div className="space-y-5 text-white/80 leading-relaxed">
+          <div className="space-y-5 text-foreground/80 leading-relaxed">
             <p>
               六爻占卜是中國傳統預測學中最為精準實用的方法之一，源自《周易》，經漢代京房等易學大家發展完善，至今已有兩千餘年的歷史。與八字、紫微斗數等推算先天命運的方法不同，六爻擅長針對具體事件進行預測——無論是求職面試的結果、投資決策的吉凶，還是感情走向的判斷，六爻都能給出清晰的方向指引。正因其「一事一占」的特點，六爻在民間廣受歡迎，被譽為「卜筮之王」。
             </p>
@@ -211,11 +211,11 @@ export default function LiuYaoPage() {
 
         {/* CTA Section */}
         <section className="text-center my-16">
-          <div className="glass-card rounded-2xl p-10">
+          <div className="card-quiet rounded-2xl p-10">
             <h2 className="text-2xl font-serif text-gold mb-4">
               Ready to Cast Your Hexagram?
             </h2>
-            <p className="text-white/60 mb-8 max-w-xl mx-auto">
+            <p className="text-foreground/60 mb-8 max-w-xl mx-auto">
               Focus on your question, cast the coins, and let the ancient
               wisdom of Liu Yao reveal the answer. Our AI-powered analysis
               interprets the Six Relatives, moving lines, and Five Elements
@@ -238,18 +238,18 @@ export default function LiuYaoPage() {
 
           <div className="space-y-6">
             {faqItems.map((item, index) => (
-              <div key={index} className="glass-card rounded-2xl p-6 md:p-8">
+              <div key={index} className="card-quiet rounded-2xl p-6 md:p-8">
                 <h3 className="text-lg font-semibold text-gold mb-3">
                   {item.question}
                 </h3>
-                <p className="text-white/80 leading-relaxed">{item.answer}</p>
+                <p className="text-foreground/80 leading-relaxed">{item.answer}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Footer Note */}
-        <div className="text-center text-white/40 text-sm pb-8">
+        <div className="text-center text-foreground/40 text-sm pb-8">
           <p>For reference and entertainment purposes only. Not a substitute for professional advice.</p>
           <p className="mt-1">僅供參考與娛樂用途，不構成任何專業建議。</p>
         </div>

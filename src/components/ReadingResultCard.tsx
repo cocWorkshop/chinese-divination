@@ -11,6 +11,7 @@ import GoldenRippleStyle from '@/components/GoldenRippleStyle'
 import FullPageFlameEffect from '@/components/reading/FullPageFlameEffect'
 import { DivinationIcon, ScrollIcon } from '@/components/DivinationIcons'
 import { T } from '@/lib/i18n'
+import { langKey } from '@/lib/i18n'
 
 const FatePosterModal = dynamic(() => import('@/components/reading/FatePosterModal'), { ssr: false })
 
@@ -70,7 +71,6 @@ export default function ReadingResultCard({
   type, result, readingId, lang, question, subjectName, birthInfo, createdAt,
   targetType, familyMember, shareToken, rating, streaming = false,
 }: ReadingResultCardProps) {
-  const isEn = lang === 'en'
   const canShare = !!readingId && !streaming
   const [showPoster, setShowPoster] = useState(false)
 
@@ -78,7 +78,7 @@ export default function ReadingResultCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`glass-card rounded-2xl p-4 sm:p-8 w-full max-w-full transition-all duration-1000 ${streaming ? 'golden-ripple-active overflow-visible' : 'overflow-x-auto'}`}
+      className={`card-quiet rounded-2xl p-4 sm:p-8 w-full max-w-full transition-all duration-1000 ${streaming ? 'golden-ripple-active overflow-visible' : 'overflow-x-auto'}`}
     >
       {streaming && <GoldenRippleStyle />}
       <FullPageFlameEffect streaming={streaming} lang={lang} />
@@ -89,13 +89,15 @@ export default function ReadingResultCard({
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <span className="px-2.5 py-1 bg-gold/15 border border-gold/25 text-gold text-xs rounded-full inline-flex items-center gap-1.5 font-serif">
             <DivinationIcon type={type} size={14} className="text-gold" />
-            <span>{typeLabels[type]?.[isEn ? 'en' : 'zh-TW'] || type}</span>
+            <span>{typeLabels[type]?.[langKey(lang)] || type}</span>
           </span>
           {targetType === 'family' && familyMember && (
             <span className="px-2.5 py-1 bg-gold/10 border border-gold/20 text-gold-light text-xs rounded-full font-serif">
-              {isEn
-                ? `For ${relationLabels[familyMember.relation]?.en || familyMember.relation}${familyMember.name ? ` (${familyMember.name})` : ''}`
-                : `為${relationLabels[familyMember.relation]?.zh || familyMember.relation}${familyMember.name ? `（${familyMember.name}）` : ''}`}
+              {T(
+                lang,
+                `為${relationLabels[familyMember.relation]?.zh || familyMember.relation}${familyMember.name ? `（${familyMember.name}）` : ''}`,
+                `For ${relationLabels[familyMember.relation]?.en || familyMember.relation}${familyMember.name ? ` (${familyMember.name})` : ''}`
+              )}
             </span>
           )}
         </div>
@@ -109,10 +111,10 @@ export default function ReadingResultCard({
                 color: 'var(--gold)',
                 border: '1px solid rgba(212, 168, 83, 0.3)',
               }}
-              title={isEn ? 'Generate aesthetic fortune poster' : '生成東方典藏命理籤卡'}
+              title={T(lang, '生成東方典藏命理籤卡', 'Generate aesthetic fortune poster')}
             >
               <ScrollIcon size={13} className="text-gold" />
-              <span>{isEn ? 'Fate Poster' : '命理籤卡'}</span>
+              <span>{T(lang, '命理籤卡', 'Fate Poster')}</span>
             </button>
             <ShareResultButton readingId={readingId!} shareToken={shareToken} lang={lang} variant="inline" />
           </div>
@@ -131,11 +133,11 @@ export default function ReadingResultCard({
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-gold" />
             </span>
             <span className="text-gold font-serif text-xs sm:text-sm font-medium tracking-wide truncate">
-              {isEn ? 'Master Xuanji is channeling insights… Sections are revealing gradually' : '玄機大師正在推演卦象命盤，天機逐步顯現…'}
+              {T(lang, '玄機大師正在推演卦象命盤，天機逐步顯現…', 'Master Xuanji is channeling insights… Sections are revealing gradually')}
             </span>
           </div>
           <span className="text-[11px] text-gold/80 font-mono flex-shrink-0 px-2 py-0.5 rounded-full bg-gold/10 border border-gold/20">
-            {isEn ? 'Live Channeling' : '實時演繹中'}
+            {T(lang, '實時演繹中', 'Live Channeling')}
           </span>
         </div>
       )}

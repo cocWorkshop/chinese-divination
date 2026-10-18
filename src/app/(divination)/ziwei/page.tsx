@@ -90,7 +90,7 @@ const webAppJsonLd = {
 
 export default function ZiWeiLandingPage() {
   return (
-    <div className="min-h-screen bg-navy-950">
+    <div className="min-h-screen bg-background">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -103,9 +103,9 @@ export default function ZiWeiLandingPage() {
 
       <div className="max-w-4xl mx-auto px-4 py-16 space-y-12">
         {/* Hero Section */}
-        <section className="glass-card rounded-2xl p-8 text-center">
+        <section className="card-quiet rounded-2xl p-8 text-center">
           <p className="text-gold/60 text-lg tracking-widest mb-2 font-serif">
-            ⭐ Purple Star Astrology
+            ✦ Purple Star Astrology
           </p>
           <h1 className="text-4xl md:text-5xl font-serif text-gold mb-3">
             Zi Wei Dou Shu — Purple Star Astrology
@@ -113,7 +113,7 @@ export default function ZiWeiLandingPage() {
           <p className="text-3xl md:text-4xl font-serif text-gold/80 mb-6">
             紫微斗數
           </p>
-          <p className="text-white/80 text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-foreground/80 text-lg max-w-2xl mx-auto leading-relaxed">
             The &quot;Emperor&apos;s Astrology&quot; — a thousand-year-old star
             chart system that maps your destiny across twelve life palaces.
             Discover your life path, career potential, and relationship patterns
@@ -123,11 +123,11 @@ export default function ZiWeiLandingPage() {
         </section>
 
         {/* English Content */}
-        <section className="glass-card rounded-2xl p-8">
+        <section className="card-quiet rounded-2xl p-8">
           <h2 className="text-2xl font-serif text-gold mb-6">
             What Is Zi Wei Dou Shu?
           </h2>
-          <div className="space-y-4 text-white/80 leading-relaxed">
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
             <p>
               Zi Wei Dou Shu (紫微斗數), often translated as &quot;Purple Star
               Astrology,&quot; is one of the most revered and comprehensive
@@ -218,11 +218,11 @@ export default function ZiWeiLandingPage() {
         </div>
 
         {/* Chinese Content */}
-        <section className="glass-card rounded-2xl p-8">
+        <section className="card-quiet rounded-2xl p-8">
           <h2 className="text-2xl font-serif text-gold mb-6">
             紫微斗數簡介
           </h2>
-          <div className="space-y-4 text-white/80 leading-relaxed">
+          <div className="space-y-4 text-foreground/80 leading-relaxed">
             <p>
               紫微斗數是中國傳統命理學中最為精密的預測體系之一，起源於唐宋時期，距今已有千餘年的歷史。相傳由道家高人陳摶老祖所創，融合了天文觀測、數理推演與道家哲學思想。因其精準度極高，歷代皇室多以此術推算國運與個人命格，故有「帝王之學」的美譽。紫微斗數以出生的年、月、日、時為基礎，依據農曆曆法將超過一百顆星曜排布於十二宮位之中，形成一張獨一無二的命盤，全面揭示命主一生的吉凶禍福。
             </p>
@@ -249,14 +249,14 @@ export default function ZiWeiLandingPage() {
           >
             Start Your Zi Wei Dou Shu Reading →
           </Link>
-          <p className="text-white/50 text-sm mt-4">
+          <p className="text-foreground/50 text-sm mt-4">
             Free AI-powered Purple Star Astrology analysis based on your birth
             chart
           </p>
         </section>
 
         {/* FAQ Section */}
-        <section className="glass-card rounded-2xl p-8">
+        <section className="card-quiet rounded-2xl p-8">
           <h2 className="text-2xl font-serif text-gold mb-8 text-center">
             Frequently Asked Questions
           </h2>
@@ -266,14 +266,14 @@ export default function ZiWeiLandingPage() {
                 <h3 className="text-lg font-semibold text-gold/90 mb-2">
                   {faq.question}
                 </h3>
-                <p className="text-white/70 leading-relaxed">{faq.answer}</p>
+                <p className="text-foreground/70 leading-relaxed">{faq.answer}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Disclaimer */}
-        <p className="text-center text-white/40 text-xs pb-8">
+        <p className="text-center text-foreground/40 text-xs pb-8">
           For reference and entertainment only. Not a substitute for
           professional advice.
         </p>

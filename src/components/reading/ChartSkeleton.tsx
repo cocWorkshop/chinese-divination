@@ -21,7 +21,7 @@ export default function ChartSkeleton({ type = 'bazi', className = '' }: ChartSk
           </div>
           <div className="space-y-1.5">
             <div className="h-4 w-28 bg-gold/20 rounded-md" />
-            <div className="h-3 w-40 bg-white/10 rounded-md" />
+            <div className="h-3 w-40 bg-foreground/10 rounded-md" />
           </div>
         </div>
         <div className="h-6 w-20 bg-gold/15 border border-gold/25 rounded-full" />
@@ -33,29 +33,29 @@ export default function ChartSkeleton({ type = 'bazi', className = '' }: ChartSk
           {Array.from({ length: type === 'qimen' ? 9 : 12 }).map((_, i) => (
             <div
               key={i}
-              className="p-3 rounded-xl border border-gold/15 bg-white/[0.02] flex flex-col justify-between h-20 sm:h-24"
+              className="p-3 rounded-xl border border-gold/15 bg-foreground/[0.02] flex flex-col justify-between h-20 sm:h-24"
             >
               <div className="flex justify-between items-center">
                 <div className="h-3 w-8 bg-gold/25 rounded" />
-                <div className="h-2.5 w-4 bg-white/15 rounded" />
+                <div className="h-2.5 w-4 bg-foreground/15 rounded" />
               </div>
               <div className="space-y-1">
-                <div className="h-3 w-12 bg-white/20 rounded mx-auto" />
+                <div className="h-3 w-12 bg-foreground/20 rounded mx-auto" />
                 <div className="h-2 w-10 bg-gold/20 rounded mx-auto" />
               </div>
-              <div className="h-2 w-full bg-white/10 rounded" />
+              <div className="h-2 w-full bg-foreground/10 rounded" />
             </div>
           ))}
         </div>
       ) : (
-        <div className="glass-card rounded-xl p-4 border border-gold/20 mb-6">
+        <div className="card-quiet rounded-xl p-4 border border-gold/20 mb-6">
           <div className="grid grid-cols-4 gap-2 sm:gap-4 text-center">
             {['時柱', '日柱', '月柱', '年柱'].map((label) => (
               <div key={label} className="p-3 rounded-xl bg-gold/5 border border-gold/15 space-y-2.5">
                 <div className="h-3 w-10 bg-gold/25 rounded mx-auto" />
                 <div className="h-7 w-8 bg-gold/30 rounded-md mx-auto" />
                 <div className="h-7 w-8 bg-gold/30 rounded-md mx-auto" />
-                <div className="h-2.5 w-12 bg-white/15 rounded mx-auto" />
+                <div className="h-2.5 w-12 bg-foreground/15 rounded mx-auto" />
               </div>
             ))}
           </div>
@@ -67,13 +67,13 @@ export default function ChartSkeleton({ type = 'bazi', className = '' }: ChartSk
         {[1, 2, 3].map((idx) => (
           <div
             key={idx}
-            className="p-4 rounded-xl border border-gold/15 bg-white/[0.02] flex items-center justify-between"
+            className="p-4 rounded-xl border border-gold/15 bg-foreground/[0.02] flex items-center justify-between"
           >
             <div className="flex items-center gap-2.5">
               <span className="w-2 h-2 rounded-full bg-gold/40" />
               <div className="h-3.5 w-24 bg-gold/20 rounded" />
             </div>
-            <div className="h-3 w-16 bg-white/10 rounded" />
+            <div className="h-3 w-16 bg-foreground/10 rounded" />
           </div>
         ))}
       </div>

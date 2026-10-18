@@ -51,7 +51,7 @@ export default function WikiPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[rgba(212,168,83,0.16)]">
           <div className="flex items-center gap-3">
             <BackButton fallbackHref="/divination" />
-            <nav className="flex items-center gap-1.5 text-xs text-white/50 font-serif" aria-label="Breadcrumb">
+            <nav className="flex items-center gap-1.5 text-xs text-foreground/50 font-serif" aria-label="Breadcrumb">
               <Link href="/divination" className="hover:text-gold transition-colors">
                 {T(lang, '占卜大廳', 'Divination')}
               </Link>
@@ -63,7 +63,7 @@ export default function WikiPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/divination"
-              className="px-3.5 py-1.5 rounded-full text-xs font-serif flex items-center gap-1.5 transition-all border border-gold/25 hover:border-gold/50 text-white/70 hover:text-gold bg-gold/5 min-h-[36px]"
+              className="px-3.5 py-1.5 rounded-full text-xs font-serif flex items-center gap-1.5 transition-all border border-gold/25 hover:border-gold/50 text-foreground/70 hover:text-gold bg-gold/5 min-h-[36px]"
             >
               <DivinationIcon type="bazi" size={14} color="currentColor" />
               <span>{T(lang, '前往占卜大廳', 'Divination Sanctuary')}</span>
@@ -77,7 +77,7 @@ export default function WikiPage() {
           <h1 className="text-2xl sm:text-3xl font-serif tracking-wide text-gold">
             {T(lang, '玄機易道典籍庫', 'XuanJi Metaphysics Archive')}
           </h1>
-          <p className="text-xs sm:text-sm mt-1.5 font-serif text-white/60">
+          <p className="text-xs sm:text-sm mt-1.5 font-serif text-foreground/60">
             {T(lang, '究天人之際 · 通古今之變 · 探索東方正統命理哲學', 'Explore ancient wisdom and orthodox Chinese divination')}
           </p>
         </div>
@@ -96,19 +96,19 @@ export default function WikiPage() {
               }}
             >
               {c.renderIcon('w-3.5 h-3.5')}
-              <span>{isEn ? c.en : c.label}</span>
+              <span>{T(lang, c.label, c.en)}</span>
             </button>
           ))}
         </div>
 
         {/* Articles grid */}
         {loading ? (
-          <div className="text-center text-white/40 py-16 animate-pulse font-serif text-sm">
-            {isEn ? 'Consulting archive...' : '載入典籍中...'}
+          <div className="text-center text-foreground/40 py-16 animate-pulse font-serif text-sm">
+            {T(lang, '載入典籍中...', 'Consulting archive...')}
           </div>
         ) : articles.length === 0 ? (
-          <div className="text-center text-white/40 py-16 font-serif oriental-sanctuary-card p-8 rounded-2xl">
-            <p className="text-sm">{isEn ? 'No articles yet in this category.' : '此門類暫無收錄典籍。'}</p>
+          <div className="text-center text-foreground/40 py-16 font-serif oriental-sanctuary-card p-8 rounded-2xl">
+            <p className="text-sm">{T(lang, '此門類暫無收錄典籍。', 'No articles yet in this category.')}</p>
             <Link href="/divination" className="inline-flex items-center gap-1 mt-4 text-xs text-gold hover:underline">
               <span>{T(lang, '前往占卜大廳實踐起卦 →', 'Practice divination now →')}</span>
             </Link>
@@ -142,16 +142,16 @@ export default function WikiPage() {
                         <div className="flex-1 min-w-0">
                           <h2 className="text-sm font-serif font-medium text-gold line-clamp-1">{a.title}</h2>
                           {a.summary && (
-                            <p className="text-xs mt-1.5 line-clamp-2 text-white/60 font-serif leading-relaxed">
+                            <p className="text-xs mt-1.5 line-clamp-2 text-foreground/60 font-serif leading-relaxed">
                               {a.summary}
                             </p>
                           )}
                         </div>
                       </div>
                     </div>
-                    <div className="pt-3 mt-3 border-t border-[rgba(212,168,83,0.12)] flex items-center justify-between text-[11px] text-white/40 font-serif">
-                      <span className="stamp-gold text-[10px]">{isEn ? catConfig.en : catConfig.label}</span>
-                      <span>{new Date(a.updatedAt).toLocaleDateString(isEn ? 'en-US' : 'zh-TW')}</span>
+                    <div className="pt-3 mt-3 border-t border-[rgba(212,168,83,0.12)] flex items-center justify-between text-[11px] text-foreground/40 font-serif">
+                      <span className="stamp-gold text-[10px]">{T(lang, catConfig.label, catConfig.en)}</span>
+                      <span>{new Date(a.updatedAt).toLocaleDateString(T(lang, 'zh-TW', 'en-US'))}</span>
                     </div>
                   </Link>
                 </motion.div>
@@ -161,11 +161,11 @@ export default function WikiPage() {
         )}
 
         {/* Explore Hall Footer Banner */}
-        <div className="oriental-sanctuary-card p-6 rounded-2xl border border-gold/25 text-center space-y-3 bg-gradient-to-r from-gold/5 via-navy-900/60 to-gold/5">
+        <div className="oriental-sanctuary-card p-6 rounded-2xl border border-gold/25 text-center space-y-3 bg-gradient-to-r from-gold/5 via-surface/60 to-gold/5">
           <h3 className="font-serif text-base text-gold">
             {T(lang, '融會易學經緯 · 實踐天機推演', 'Integrate Wisdom and Practice')}
           </h3>
-          <p className="text-xs text-white/60 font-serif max-w-md mx-auto">
+          <p className="text-xs text-foreground/60 font-serif max-w-md mx-auto">
             {T(lang, '若心有未決，不若立卦明心。七大正統法門，大師隨侍解惑。', 'Seek answers directly through our 7 classic divination systems.')}
           </p>
           <div className="pt-1">

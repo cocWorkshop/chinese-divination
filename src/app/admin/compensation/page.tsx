@@ -192,9 +192,9 @@ export default function AdminCompensation() {
       sent: { bg: 'bg-blue-400/10', text: 'text-blue-400', label: '已發送' },
       claimed: { bg: 'bg-green-400/10', text: 'text-green-400', label: '已領取' },
       expired: { bg: 'bg-red-400/10', text: 'text-red-400', label: '已過期' },
-      dismissed: { bg: 'bg-white/10', text: 'text-white/40', label: '已忽略' },
+      dismissed: { bg: 'bg-foreground/10', text: 'text-foreground/40', label: '已忽略' },
     }
-    const m = map[s] || { bg: 'bg-white/10', text: 'text-white/50', label: s }
+    const m = map[s] || { bg: 'bg-foreground/10', text: 'text-foreground/50', label: s }
     return <span className={`px-2 py-0.5 rounded-full text-xs ${m.bg} ${m.text}`}>{m.label}</span>
   }
 
@@ -204,11 +204,11 @@ export default function AdminCompensation() {
     <div className="p-8 max-w-6xl">
       <div className="mb-6">
         <h1 className="text-2xl font-serif text-gold">用戶補償</h1>
-        <p className="text-white/40 text-sm mt-1">User Compensation</p>
+        <p className="text-foreground/40 text-sm mt-1">User Compensation</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 p-1 bg-navy-900/50 rounded-xl w-fit border border-gold/10">
+      <div className="flex gap-1 mb-6 p-1 bg-surface/50 rounded-xl w-fit border border-gold/10">
         {[
           { key: 'create' as Tab, label: '🎁 建立補償' },
           { key: 'history' as Tab, label: '📋 補償記錄', count: histTotal },
@@ -217,7 +217,7 @@ export default function AdminCompensation() {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              tab === t.key ? 'bg-gold/20 text-gold shadow-sm' : 'text-white/50 hover:text-white/70'
+              tab === t.key ? 'bg-gold/20 text-gold shadow-sm' : 'text-foreground/50 hover:text-foreground/70'
             }`}
           >
             {t.label}
@@ -240,33 +240,33 @@ export default function AdminCompensation() {
       {tab === 'create' && (
         <>
           {/* Default amounts */}
-          <div className="glass-card rounded-xl p-4 border border-gold/15 mb-5">
-            <div className="text-white/60 text-xs mb-3 uppercase tracking-wider">預設補償機緣</div>
+          <div className="card-quiet rounded-xl p-4 border border-gold/15 mb-5">
+            <div className="text-foreground/60 text-xs mb-3 uppercase tracking-wider">預設補償機緣</div>
             <div className="flex gap-4 items-center">
-              <label className="flex items-center gap-2 text-sm text-white/70">
-                <span>✨ 機緣</span>
+              <label className="flex items-center gap-2 text-sm text-foreground/70">
+                <span>機緣</span>
                 <input type="number" min={0} value={defaultCredits} onChange={e => setDefaultCredits(parseInt(e.target.value) || 0)}
-                  className="w-16 px-2 py-1 rounded-lg bg-navy-900 border border-gold/20 text-white text-center text-sm" />
+                  className="w-16 px-2 py-1 rounded-lg bg-surface border border-gold/20 text-foreground text-center text-sm" />
               </label>
             </div>
           </div>
 
           {/* Affected users from errors */}
-          <div className="glass-card rounded-xl p-4 border border-gold/15 mb-5">
+          <div className="card-quiet rounded-xl p-4 border border-gold/15 mb-5">
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-              <div className="text-white/60 text-xs uppercase tracking-wider">受影響用戶（系統錯誤）</div>
+              <div className="text-foreground/60 text-xs uppercase tracking-wider">受影響用戶（系統錯誤）</div>
               <div className="flex items-center gap-3">
-                <label className="flex items-center gap-1.5 text-xs text-white/50 cursor-pointer select-none">
+                <label className="flex items-center gap-1.5 text-xs text-foreground/50 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={includePseudoErrors}
                     onChange={e => setIncludePseudoErrors(e.target.checked)}
-                    className="rounded border-gold/30 bg-navy-900 text-gold focus:ring-0"
+                    className="rounded border-gold/30 bg-surface text-gold focus:ring-0"
                   />
                   <span>包含額度不足偽報錯</span>
                 </label>
                 <select value={sinceDays} onChange={e => setSinceDays(Number(e.target.value))}
-                  className="px-2 py-1 rounded-lg bg-navy-900 border border-gold/20 text-white/70 text-xs">
+                  className="px-2 py-1 rounded-lg bg-surface border border-gold/20 text-foreground/70 text-xs">
                   <option value={1}>近 1 天</option>
                   <option value={3}>近 3 天</option>
                   <option value={7}>近 7 天</option>
@@ -280,16 +280,16 @@ export default function AdminCompensation() {
             </div>
 
             {affected.length === 0 ? (
-              <div className="text-white/30 text-sm text-center py-4">✅ 暫無受影響用戶</div>
+              <div className="text-foreground/30 text-sm text-center py-4">✅ 暫無受影響用戶</div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {affected.map(au => {
                   const inDraft = drafts.some(d => d.email === au.user.email)
                   return (
-                    <div key={au.user.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-navy-900/50 border border-gold/10">
+                    <div key={au.user.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-surface/50 border border-gold/10">
                       <div className="flex-1 min-w-0">
-                        <div className="text-white/80 text-sm truncate">{au.user.name || au.user.email}</div>
-                        <div className="text-white/40 text-xs">{au.user.email}</div>
+                        <div className="text-foreground/80 text-sm truncate">{au.user.name || au.user.email}</div>
+                        <div className="text-foreground/40 text-xs">{au.user.email}</div>
                         <div className="flex gap-3 mt-1 text-xs">
                           {au.llmErrors.length > 0 && <span className="text-red-400">🔴 LLM 錯誤 ×{au.llmErrors.length}</span>}
                           {au.frontendErrors.length > 0 && <span className="text-orange-400">🟠 前端錯誤 ×{au.frontendErrors.length}</span>}
@@ -307,7 +307,7 @@ export default function AdminCompensation() {
                         </button>
                         <button
                           onClick={() => dismissAffectedUser(au)}
-                          className="px-2.5 py-1.5 rounded-lg text-xs text-white/40 border border-white/10 hover:text-red-400 hover:border-red-400/30 hover:bg-red-500/10 transition-colors"
+                          className="px-2.5 py-1.5 rounded-lg text-xs text-foreground/40 border border-line/10 hover:text-red-400 hover:border-red-400/30 hover:bg-red-500/10 transition-colors"
                           title="將該用戶移出待補償列表（標記為已忽略）"
                         >
                           ✕ 忽略
@@ -321,20 +321,20 @@ export default function AdminCompensation() {
           </div>
 
           {/* Manual add */}
-          <div className="glass-card rounded-xl p-4 border border-gold/15 mb-5">
-            <div className="text-white/60 text-xs mb-3 uppercase tracking-wider">手動添加</div>
+          <div className="card-quiet rounded-xl p-4 border border-gold/15 mb-5">
+            <div className="text-foreground/60 text-xs mb-3 uppercase tracking-wider">手動添加</div>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
-                <label className="text-white/40 text-xs">電郵</label>
+                <label className="text-foreground/40 text-xs">電郵</label>
                 <input type="email" value={manualEmail} onChange={e => setManualEmail(e.target.value)}
                   placeholder="user@example.com"
-                  className="w-full px-3 py-2 rounded-lg bg-navy-900 border border-gold/20 text-white text-sm mt-1" />
+                  className="w-full px-3 py-2 rounded-lg bg-surface border border-gold/20 text-foreground text-sm mt-1" />
               </div>
               <div className="flex-1">
-                <label className="text-white/40 text-xs">原因</label>
+                <label className="text-foreground/40 text-xs">原因</label>
                 <input type="text" value={manualReason} onChange={e => setManualReason(e.target.value)}
                   placeholder="補償原因"
-                  className="w-full px-3 py-2 rounded-lg bg-navy-900 border border-gold/20 text-white text-sm mt-1" />
+                  className="w-full px-3 py-2 rounded-lg bg-surface border border-gold/20 text-foreground text-sm mt-1" />
               </div>
               <button onClick={addManual} disabled={!manualEmail.trim()}
                 className="px-4 py-2 rounded-lg text-sm bg-gold/10 text-gold border border-gold/20 hover:bg-gold/20 transition-colors disabled:opacity-30">
@@ -345,41 +345,41 @@ export default function AdminCompensation() {
 
           {/* Draft list */}
           {drafts.length > 0 && (
-            <div className="glass-card rounded-xl p-4 border border-gold/15 mb-5">
+            <div className="card-quiet rounded-xl p-4 border border-gold/15 mb-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="text-white/60 text-xs uppercase tracking-wider">補償列表 ({drafts.length} 人)</div>
+                <div className="text-foreground/60 text-xs uppercase tracking-wider">補償列表 ({drafts.length} 人)</div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setDrafts(prev => prev.map(d => ({ ...d, selected: true })))}
                     className="text-xs text-gold/60 hover:text-gold">全選</button>
                   <button
                     onClick={() => setDrafts(prev => prev.map(d => ({ ...d, selected: false })))}
-                    className="text-xs text-white/40 hover:text-white/60">取消全選</button>
+                    className="text-xs text-foreground/40 hover:text-foreground/60">取消全選</button>
                 </div>
               </div>
 
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {drafts.map(d => (
                   <div key={d.email} className={`px-3 py-3 rounded-lg border transition-colors ${
-                    d.selected ? 'bg-gold/5 border-gold/20' : 'bg-navy-900/30 border-white/5'
+                    d.selected ? 'bg-gold/5 border-gold/20' : 'bg-surface/30 border-line/5'
                   }`}>
                     <div className="flex items-center gap-3 mb-2">
                       <input type="checkbox" checked={d.selected}
                         onChange={e => updateDraft(d.email, 'selected', e.target.checked)}
                         className="accent-[#d4a853]" />
-                      <span className="text-white/80 text-sm flex-1">{d.email}</span>
-                      <span className="text-white/30 text-xs">{d.sourceType}</span>
+                      <span className="text-foreground/80 text-sm flex-1">{d.email}</span>
+                      <span className="text-foreground/30 text-xs">{d.sourceType}</span>
                       <button onClick={() => removeDraft(d.email)} className="text-red-400/60 hover:text-red-400 text-xs">✕</button>
                     </div>
                     <div className="flex gap-3 items-center ml-6">
                       <input type="text" value={d.reason}
                         onChange={e => updateDraft(d.email, 'reason', e.target.value)}
-                        className="flex-1 px-2 py-1 rounded bg-navy-900/50 border border-white/10 text-white/60 text-xs" />
+                        className="flex-1 px-2 py-1 rounded bg-surface/50 border border-line/10 text-foreground/60 text-xs" />
                       <div className="flex gap-2 items-center text-xs">
-                        <label className="flex items-center gap-1 text-white/50">
+                        <label className="flex items-center gap-1 text-foreground/50">
                           💰<input type="number" min={0} value={d.credits}
                             onChange={e => updateDraft(d.email, 'credits', parseInt(e.target.value) || 0)}
-                            className="w-12 px-1 py-0.5 rounded bg-navy-900 border border-gold/15 text-white text-center" />
+                            className="w-12 px-1 py-0.5 rounded bg-surface border border-gold/15 text-foreground text-center" />
                         </label>
                       </div>
                     </div>
@@ -389,7 +389,7 @@ export default function AdminCompensation() {
 
               {/* Send button */}
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-white/40 text-xs">已選 {selectedCount} 人</span>
+                <span className="text-foreground/40 text-xs">已選 {selectedCount} 人</span>
                 <button
                   onClick={createAndSend}
                   disabled={selectedCount === 0 || creating || sending}
@@ -412,7 +412,7 @@ export default function AdminCompensation() {
               <button key={f}
                 onClick={() => { setHistFilter(f); }}
                 className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
-                  histFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                  histFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-foreground/50 border border-gold/15 hover:text-gold hover:border-gold/30'
                 }`}>
                 {f === '' ? '全部' : f === 'pending' ? '待發送' : f === 'sent' ? '已發送' : f === 'claimed' ? '已領取' : f === 'expired' ? '已過期' : '已忽略'}
               </button>
@@ -422,20 +422,20 @@ export default function AdminCompensation() {
           {histLoading ? (
             <div className="text-gold animate-pulse p-8 text-center">Loading...</div>
           ) : compensations.length === 0 ? (
-            <div className="glass-card rounded-xl p-12 text-center text-white/40">暫無補償記錄</div>
+            <div className="card-quiet rounded-xl p-12 text-center text-foreground/40">暫無補償記錄</div>
           ) : (
             <div className="space-y-2">
               {compensations.map(c => (
-                <div key={c.id} className="glass-card rounded-xl p-4 border border-gold/10">
+                <div key={c.id} className="card-quiet rounded-xl p-4 border border-gold/10">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       {statusBadge(c.status)}
-                      <span className="text-white/70 text-sm">{c.email}</span>
+                      <span className="text-foreground/70 text-sm">{c.email}</span>
                     </div>
-                    <span className="text-white/25 text-xs">{new Date(c.createdAt).toLocaleString('zh-TW')}</span>
+                    <span className="text-foreground/25 text-xs">{new Date(c.createdAt).toLocaleString('zh-TW')}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-white/50">
-                    <span className="text-white/30">{c.reason}</span>
+                  <div className="flex items-center gap-4 text-xs text-foreground/50">
+                    <span className="text-foreground/30">{c.reason}</span>
                     <span className="ml-auto">
                       💰 +{(c.divinationCredits || 0) + (c.chatCredits || 0) + (c.bonusModel1 || 0) + (c.bonusChat || 0)}
                     </span>
@@ -453,10 +453,10 @@ export default function AdminCompensation() {
           {histPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-6">
               <button onClick={() => fetchHistory(histPage - 1)} disabled={histPage <= 1}
-                className="px-3 py-1.5 text-sm rounded-lg border border-gold/20 text-white/60 hover:text-gold disabled:opacity-30">←</button>
-              <span className="px-3 py-1.5 text-sm text-white/40">{histPage} / {histPages}</span>
+                className="px-3 py-1.5 text-sm rounded-lg border border-gold/20 text-foreground/60 hover:text-gold disabled:opacity-30">←</button>
+              <span className="px-3 py-1.5 text-sm text-foreground/40">{histPage} / {histPages}</span>
               <button onClick={() => fetchHistory(histPage + 1)} disabled={histPage >= histPages}
-                className="px-3 py-1.5 text-sm rounded-lg border border-gold/20 text-white/60 hover:text-gold disabled:opacity-30">→</button>
+                className="px-3 py-1.5 text-sm rounded-lg border border-gold/20 text-foreground/60 hover:text-gold disabled:opacity-30">→</button>
             </div>
           )}
         </>

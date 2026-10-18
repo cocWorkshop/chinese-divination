@@ -107,7 +107,7 @@ export default function BaZiPage() {
   }
 
   return (
-    <div className="min-h-screen bg-navy-950">
+    <div className="min-h-screen bg-background">
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -120,8 +120,8 @@ export default function BaZiPage() {
 
       <div className="max-w-4xl mx-auto px-4 py-16">
         {/* Hero Section */}
-        <section className="glass-card rounded-2xl p-8 md:p-12 text-center mb-12">
-          <p className="text-white/50 text-sm uppercase tracking-widest mb-4">
+        <section className="card-quiet rounded-2xl p-8 md:p-12 text-center mb-12">
+          <p className="text-foreground/50 text-sm uppercase tracking-widest mb-4">
             Ancient Wisdom, Modern Insight
           </p>
           <h1 className="text-4xl md:text-5xl font-bold text-gold mb-4">
@@ -130,7 +130,7 @@ export default function BaZiPage() {
           <p className="text-2xl md:text-3xl text-gold/70 font-serif mb-6">
             四柱八字
           </p>
-          <p className="text-white/70 text-lg max-w-2xl mx-auto">
+          <p className="text-foreground/70 text-lg max-w-2xl mx-auto">
             Unlock the blueprint of your life encoded in the moment of your
             birth. BaZi reveals the elemental forces that shape your personality,
             career, relationships, and fortune.
@@ -138,11 +138,11 @@ export default function BaZiPage() {
         </section>
 
         {/* English Content */}
-        <section className="glass-card rounded-2xl p-8 mb-12">
+        <section className="card-quiet rounded-2xl p-8 mb-12">
           <h2 className="text-2xl font-bold text-gold mb-6">
             What Is BaZi (Four Pillars of Destiny)?
           </h2>
-          <div className="space-y-5 text-white/80 leading-relaxed">
+          <div className="space-y-5 text-foreground/80 leading-relaxed">
             <p>
               BaZi, literally meaning &ldquo;Eight Characters,&rdquo; is one of
               the most sophisticated systems of destiny analysis in Chinese
@@ -213,11 +213,11 @@ export default function BaZiPage() {
         </div>
 
         {/* Chinese Content */}
-        <section className="glass-card rounded-2xl p-8 mb-12">
+        <section className="card-quiet rounded-2xl p-8 mb-12">
           <h2 className="text-2xl font-bold text-gold mb-6">
             什么是八字命理？
           </h2>
-          <div className="space-y-5 text-white/80 leading-relaxed">
+          <div className="space-y-5 text-foreground/80 leading-relaxed">
             <p>
               八字，又称四柱命理，是中国传统命理学中最核心的分析体系之一。所谓“四柱”，即年柱、月柱、日柱、时柱，每柱由一个天干和一个地支组成，共八个字，因此得名“八字”。通过出生年月日时所对应的干支组合，八字构建出一个人独一无二的命盘，揭示其先天禀赋、性格特质以及一生的运势走向。八字命理与紫微斗数、奇门遁甲并称为中国命理学三大体系。
             </p>
@@ -228,7 +228,7 @@ export default function BaZiPage() {
               八字命理的独特之处在于“大运”与“流年”的推演。大运以十年为一个周期，每个大运带来不同的五行能量，与命盘中的原局产生交互作用。这意味着八字不仅描绘一个人“是什么样的人”，更揭示“什么时候”会遇到关键的机遇与挑战。事业突破、感情转折、财运起伏、健康变化，都有其对应的时间窗口。借助大运和流年的分析，你可以更有策略地规划人生——何时创业、何时投资、何时养生、何时经营关系。
             </p>
             <p>
-              我们的平台将传统八字命理的深度解析与人工智能的高效运算相结合。AI系统依据海量的经典命理法则，全面分析你的日主强弱、十神配置、藏干透出、刑冲合害以及当前大运流年的影响，生成一份详尽而个性化的命理报告。无论你是初次接触八字，还是希望获得专业级的命盘分析，我们的AI解读都能为你提供清晰、实用、根植于正统命理传承的洞见。
+              玄机将传统八字命理的深度解析与精密的现代推演相结合。玄机大师依据海量的经典命理法则，全面分析你的日主强弱、十神配置、藏干透出、刑冲合害以及当前大运流年的影响，生成一份详尽而个性化的命理报告。无论你是初次接触八字，还是希望获得专业级的命盘分析，玄机的解读都能为你提供清晰、实用、根植于正统命理传承的洞见。
             </p>
           </div>
         </section>
@@ -241,7 +241,7 @@ export default function BaZiPage() {
           >
             Start Your Free BaZi Reading
           </Link>
-          <p className="text-white/50 text-sm mt-3">
+          <p className="text-foreground/50 text-sm mt-3">
             No registration required for your first reading
           </p>
         </section>
@@ -255,19 +255,19 @@ export default function BaZiPage() {
             {faqs.map((faq, index) => (
               <div
                 key={index}
-                className="glass-card rounded-2xl p-6 border border-gold/20"
+                className="card-quiet rounded-2xl p-6 border border-gold/20"
               >
                 <h3 className="text-lg font-semibold text-gold mb-3">
                   {faq.question}
                 </h3>
-                <p className="text-white/70 leading-relaxed">{faq.answer}</p>
+                <p className="text-foreground/70 leading-relaxed">{faq.answer}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* Bottom Navigation */}
-        <nav className="text-center text-white/50 text-sm">
+        <nav className="text-center text-foreground/50 text-sm">
           <Link href="/" className="hover:text-gold transition-colors">
             Home
           </Link>

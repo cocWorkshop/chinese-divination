@@ -10,11 +10,11 @@ describe('Divination Form Guidance & Terminology Standards', () => {
   it('clarifies paipanOnly with unambiguous English and Chinese terminology without jargon', () => {
     // Replaces jargon "Paipan only" that previously confused western users
     expect(PAIPAN_EXPLANATION.buttonLabel.en).not.toBe('Paipan only')
-    expect(PAIPAN_EXPLANATION.buttonLabel.en).toContain('No AI')
-    expect(PAIPAN_EXPLANATION.buttonLabel.zh).toContain('無AI解盤')
+    expect(PAIPAN_EXPLANATION.buttonLabel.en).toContain('No interpretation')
+    expect(PAIPAN_EXPLANATION.buttonLabel.zh).toContain('不含解盤')
 
-    expect(PAIPAN_EXPLANATION.tooltip.zh).toContain('不進行 AI 深度解盤')
-    expect(PAIPAN_EXPLANATION.tooltip.en).toContain('skipping the AI reading report')
+    expect(PAIPAN_EXPLANATION.tooltip.zh).toContain('不進行深度解盤')
+    expect(PAIPAN_EXPLANATION.tooltip.en).toContain('skipping the in-depth reading report')
   })
 
   it('provides precise cultural and astrological explanation for early/late Zi hour', () => {

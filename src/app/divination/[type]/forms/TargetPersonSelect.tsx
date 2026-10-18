@@ -42,10 +42,10 @@ export default function TargetPersonSelect() {
           className={`p-3 rounded-lg border text-center transition-all ${
             targetType === 'self'
               ? 'border-gold bg-gold/10 ring-1 ring-gold/30'
-              : 'border-white/10 hover:border-white/20'
+              : 'border-line/10 hover:border-line/20'
           }`}
         >
-          <span className="text-white/80 text-sm font-medium">
+          <span className="text-foreground/80 text-sm font-medium">
             {T(lang, '為自己預測', 'For Myself')}
           </span>
         </button>
@@ -55,10 +55,10 @@ export default function TargetPersonSelect() {
           className={`p-3 rounded-lg border text-center transition-all ${
             targetType === 'family'
               ? 'border-gold bg-gold/10 ring-1 ring-gold/30'
-              : 'border-white/10 hover:border-white/20'
+              : 'border-line/10 hover:border-line/20'
           }`}
         >
-          <span className="text-white/80 text-sm font-medium">
+          <span className="text-foreground/80 text-sm font-medium">
             {T(lang, '為他人預測', 'For Someone Else')}
           </span>
         </button>
@@ -75,12 +75,15 @@ export default function TargetPersonSelect() {
               required
             >
               <option value="">{T(lang, '請選擇', 'Select')}</option>
-              {familyMembers.map(m => (
-                <option key={m.id} value={m.id}>
-                  {relationPresets.find(r => r.value === m.relation)?.[lang === 'en' ? 'en' : 'zh'] || m.relation}
-                  {m.name ? ` - ${m.name}` : ''}
-                </option>
-              ))}
+              {familyMembers.map(m => {
+                const rel = relationPresets.find(r => r.value === m.relation)
+                return (
+                  <option key={m.id} value={m.id}>
+                    {rel ? T(lang, rel.zh, rel.en) : m.relation}
+                    {m.name ? ` - ${m.name}` : ''}
+                  </option>
+                )
+              })}
               <option value="__new__">{T(lang, '+ 新增家庭成員', '+ Add New Member')}</option>
             </select>
           </div>
@@ -98,7 +101,7 @@ export default function TargetPersonSelect() {
                   <option value="">{T(lang, '請選擇', 'Select')}</option>
                   {relationPresets.map(r => (
                     <option key={r.value} value={r.value}>
-                      {lang === 'en' ? r.en : `${r.zh} (${r.en})`}
+                      {T(lang, `${r.zh} (${r.en})`, r.en)}
                     </option>
                   ))}
                 </select>

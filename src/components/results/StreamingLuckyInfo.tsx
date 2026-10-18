@@ -40,8 +40,8 @@ export default function StreamingLuckyInfo({
   }
 
   if (mode === 'grid') {
-    const timingText = hasTiming ? luckyInfo?.timing : (isEn ? '09:00 - 11:00 (Si Hour)' : '巳時、申時（辰巳吉時）')
-    const directionText = hasDirection ? luckyInfo?.direction : (isEn ? 'Due East / Southeast' : '正東開門、東南方生氣位')
+    const timingText = hasTiming ? luckyInfo?.timing : (T(lang, '巳時、申時（辰巳吉時）', '09:00 - 11:00 (Si Hour)'))
+    const directionText = hasDirection ? luckyInfo?.direction : (T(lang, '正東開門、東南方生氣位', 'Due East / Southeast'))
 
     return (
       <motion.div
@@ -52,11 +52,11 @@ export default function StreamingLuckyInfo({
           streaming && !hasContent ? 'blur-[6px] opacity-60 select-none pointer-events-none' : ''
         }`}
       >
-        <div className="glass-card rounded-xl p-3.5 border border-gold/20 text-center">
+        <div className="card-quiet rounded-xl p-3.5 border border-gold/20 text-center">
           <div className="text-[var(--text-muted)] text-xs mb-1">{T(lang, '吉時', 'Auspicious Time')}</div>
           <div className="text-gold text-sm font-medium">{timingText}</div>
         </div>
-        <div className="glass-card rounded-xl p-3.5 border border-gold/20 text-center">
+        <div className="card-quiet rounded-xl p-3.5 border border-gold/20 text-center">
           <div className="text-[var(--text-muted)] text-xs mb-1">{T(lang, '吉方', 'Auspicious Direction')}</div>
           <div className="text-gold text-sm font-medium">{directionText}</div>
         </div>
@@ -67,17 +67,17 @@ export default function StreamingLuckyInfo({
   // mode === 'inline' (BaZi, ZiWei)
   const colorsText = hasColors
     ? luckyInfo!.colors!.join(', ')
-    : (isEn ? 'Gold, Jade Green, Ivory' : '赤金、翡翠青、月白')
+    : (T(lang, '赤金、翡翠青、月白', 'Gold, Jade Green, Ivory'))
   const directionsText = hasDirections
     ? luckyInfo!.directions!.join(', ')
-    : (isEn ? 'Due East, Southeast, North' : '正東、東南、正北')
+    : (T(lang, '正東、東南、正北', 'Due East, Southeast, North'))
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className={`glass-card rounded-xl p-3 border border-gold/20 transition-all duration-700 ${
+      className={`card-quiet rounded-xl p-3 border border-gold/20 transition-all duration-700 ${
         streaming && !hasContent ? 'blur-[6px] opacity-60 select-none pointer-events-none' : ''
       }`}
     >

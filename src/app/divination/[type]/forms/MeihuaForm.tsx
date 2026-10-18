@@ -43,7 +43,7 @@ export default function MeihuaForm() {
             className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors border min-h-[44px] flex items-center justify-center gap-1.5 ${
               method === 'numbers'
                 ? 'bg-gold/20 border-gold text-gold'
-                : 'bg-navy-900 border-white/10 text-white/60 hover:text-white'
+                : 'bg-surface border-line/10 text-foreground/60 hover:text-foreground'
             }`}
             onClick={() => setField('meihuaMethod', 'numbers')}
           >
@@ -55,7 +55,7 @@ export default function MeihuaForm() {
             className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors border min-h-[44px] flex items-center justify-center gap-1.5 ${
               method === 'time'
                 ? 'bg-gold/20 border-gold text-gold'
-                : 'bg-navy-900 border-white/10 text-white/60 hover:text-white'
+                : 'bg-surface border-line/10 text-foreground/60 hover:text-foreground'
             }`}
             onClick={() => setField('meihuaMethod', 'time')}
           >
@@ -65,9 +65,9 @@ export default function MeihuaForm() {
         </div>
 
         {method === 'numbers' ? (
-          <div className="space-y-3 p-4 bg-navy-900/60 rounded-xl border border-gold/10">
+          <div className="space-y-3 p-4 bg-surface/60 rounded-xl border border-gold/10">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-white/70">
+              <span className="text-xs text-foreground/70">
                 {T(lang, '請輸入 1~99 的兩個數字，或點擊隨機生成：', 'Enter two numbers (1-99), or generate randomly:')}
               </span>
               <button
@@ -81,7 +81,7 @@ export default function MeihuaForm() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="meihua-num1" className="text-xs text-white/60 mb-1 block">
+                <label htmlFor="meihua-num1" className="text-xs text-foreground/60 mb-1 block">
                   {T(lang, '數字一 (上卦)', 'First Number (Upper)')}
                 </label>
                 <input
@@ -97,7 +97,7 @@ export default function MeihuaForm() {
                 />
               </div>
               <div>
-                <label htmlFor="meihua-num2" className="text-xs text-white/60 mb-1 block">
+                <label htmlFor="meihua-num2" className="text-xs text-foreground/60 mb-1 block">
                   {T(lang, '數字二 (下卦)', 'Second Number (Lower)')}
                 </label>
                 <input
@@ -113,7 +113,7 @@ export default function MeihuaForm() {
                 />
               </div>
             </div>
-            <p className="text-white/40 text-xs">
+            <p className="text-foreground/40 text-xs">
               {T(
                 lang,
                 '原理：數一取上卦，數二取下卦，兩數之和取動爻，避免同一時辰卦象重複。',
@@ -131,7 +131,7 @@ export default function MeihuaForm() {
               value={form.readingDateTime}
               onChange={e => setField('readingDateTime', e.target.value)}
             />
-            <p className="text-white/40 text-xs mt-1">
+            <p className="text-foreground/40 text-xs mt-1">
               {T(lang, '默認為當前時間，以年月日時干支數起卦', 'Defaults to current time. Casts by lunar calendar date and shichen.')}
             </p>
           </div>

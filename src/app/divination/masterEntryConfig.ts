@@ -42,13 +42,13 @@ export function getMasterQuickPrompts(lang: string): QuickPrompt[] {
     return [
       {
         id: 'recommend',
-        icon: '🧭',
+        icon: '擇',
         label: 'Help me choose',
         prompt: 'I have a question, but I am not sure which oracle or divination method is best suited for it. Can you help me choose?',
       },
       {
         id: 'fortune',
-        icon: '✨',
+        icon: '運',
         label: 'Comprehensive forecast',
         prompt: 'Master Xuanji, can you provide an overarching outlook on my fortune and upcoming developments?',
       },
@@ -64,13 +64,13 @@ export function getMasterQuickPrompts(lang: string): QuickPrompt[] {
   return [
     {
       id: 'recommend',
-      icon: '🧭',
+      icon: '擇',
       label: '不知如何擇術？',
       prompt: '我心裡有些困惑，不知哪種占卜或命理術數最適合我現在的問題，請大師為我指引。',
     },
     {
       id: 'fortune',
-      icon: '✨',
+      icon: '運',
       label: '近期綜合運勢',
       prompt: '玄機大師，請為我推演並指引近期的綜合運勢與重要注意事項。',
     },

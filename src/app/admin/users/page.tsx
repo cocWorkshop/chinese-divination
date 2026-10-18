@@ -71,21 +71,21 @@ export default function AdminUsers() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-serif text-gold">用户管理</h1>
-          <p className="text-white/40 text-sm mt-1">共 {total} 名用户</p>
+          <p className="text-foreground/40 text-sm mt-1">共 {total} 名用户</p>
         </div>
         <input
           type="text"
           placeholder="搜索邮箱/姓名..."
           value={search}
           onChange={e => { setSearch(e.target.value); setPage(1) }}
-          className="px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white text-sm focus:outline-none focus:border-gold/50 w-60"
+          className="px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground text-sm focus:outline-none focus:border-gold/50 w-60"
         />
       </div>
 
-      <div className="glass-card rounded-xl overflow-x-auto">
+      <div className="card-quiet rounded-xl overflow-x-auto">
         <table className="w-full text-sm min-w-[900px]">
           <thead>
-            <tr className="border-b border-gold/20 text-white/50 text-xs uppercase tracking-wider">
+            <tr className="border-b border-gold/20 text-foreground/50 text-xs uppercase tracking-wider">
               <th className="px-4 py-3 text-left">用户</th>
               <th className="px-4 py-3 text-center">角色</th>
               <th className="px-4 py-3 text-center">使用統計</th>
@@ -96,16 +96,16 @@ export default function AdminUsers() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-white/40">Loading...</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-foreground/40">Loading...</td></tr>
             )}
             {!loading && users.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-white/40">无用户</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-foreground/40">无用户</td></tr>
             )}
             {users.map(u => (
-              <tr key={u.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
+              <tr key={u.id} className="border-b border-line/5 hover:bg-foreground/3 transition-colors">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-white/80 font-medium">{u.name || '—'}</span>
+                    <span className="text-foreground/80 font-medium">{u.name || '—'}</span>
                     {u.isPaid && (
                       <span
                         className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium cursor-help"
@@ -115,8 +115,8 @@ export default function AdminUsers() {
                       </span>
                     )}
                   </div>
-                  <div className="text-white/40 text-xs">{u.email}</div>
-                  <div className="text-white/30 text-xs flex items-center gap-2">
+                  <div className="text-foreground/40 text-xs">{u.email}</div>
+                  <div className="text-foreground/30 text-xs flex items-center gap-2">
                     <span>注册: {new Date(u.createdAt).toLocaleDateString('zh-CN')}</span>
                     {u.paidAt && (
                       <span className="text-amber-400/60 font-mono">
@@ -130,7 +130,7 @@ export default function AdminUsers() {
                     <button
                       onClick={() => update(u.id, { isAdmin: !u.isAdmin })}
                       className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-                        u.isAdmin ? 'bg-gold/20 text-gold hover:bg-gold/30' : 'bg-white/10 text-white/50 hover:bg-white/20'
+                        u.isAdmin ? 'bg-gold/20 text-gold hover:bg-gold/30' : 'bg-foreground/10 text-foreground/50 hover:bg-foreground/20'
                       }`}
                     >
                       {u.isAdmin ? 'Admin' : 'User'}
@@ -140,7 +140,7 @@ export default function AdminUsers() {
                       className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
                         u.isPaid
                           ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30'
-                          : 'bg-white/5 text-white/40 hover:bg-white/10'
+                          : 'bg-foreground/5 text-foreground/40 hover:bg-foreground/10'
                       }`}
                       title={u.isPaid ? '点击取消付费标记' : '点击标记为付费用户'}
                     >
@@ -148,38 +148,38 @@ export default function AdminUsers() {
                     </button>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-center text-white/70">
-                  <span title="占卜次數">🔮{u.usageDivination}</span>
-                  <span className="text-white/30 mx-1">·</span>
+                <td className="px-4 py-3 text-center text-foreground/70">
+                  <span title="占卜次數">{u.usageDivination}</span>
+                  <span className="text-foreground/30 mx-1">·</span>
                   <span title="問答次數">💬{u.usageChat}</span>
-                  <span className="text-white/30 mx-1">·</span>
-                  <span title="大師次數">🧙{u.usageMaster}</span>
+                  <span className="text-foreground/30 mx-1">·</span>
+                  <span title="大師次數">{u.usageMaster}</span>
                 </td>
                 <td className="px-4 py-3 text-center">
                   <Link
                     href={`/admin/users/${u.id}/master`}
-                    className="inline-block px-2 py-0.5 rounded text-xs bg-white/10 text-white/60 hover:bg-gold/20 hover:text-gold transition-colors"
+                    className="inline-block px-2 py-0.5 rounded text-xs bg-foreground/10 text-foreground/60 hover:bg-gold/20 hover:text-gold transition-colors"
                     title="查看大師記憶 / Portrait"
                   >
-                    🧙 詳情
+                    詳情
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-center">
                   {grantingId === u.id ? (
                     <div className="flex items-center gap-1 justify-center">
-                      <span className="text-xs text-white/40">💰</span>
+                      <span className="text-xs text-foreground/40">💰</span>
                       <input type="number" value={grantCredits} onChange={e => setGrantCredits(parseInt(e.target.value) || 0)}
-                        className="w-16 px-1 py-0.5 bg-navy-800 border border-gold/30 rounded text-white text-xs text-center" />
+                        className="w-16 px-1 py-0.5 bg-surface border border-gold/30 rounded text-foreground text-xs text-center" />
                       <button onClick={() => grantCreditsSubmit(u.id)} className="text-jade text-xs hover:text-jade-light">✓</button>
-                      <button onClick={() => setGrantingId(null)} className="text-white/30 text-xs">✕</button>
+                      <button onClick={() => setGrantingId(null)} className="text-foreground/30 text-xs">✕</button>
                     </div>
                   ) : (
                     <button
                       onClick={() => { setGrantingId(u.id); setGrantCredits(u.credits) }}
-                      className="text-white/50 hover:text-gold text-xs transition-colors"
+                      className="text-foreground/50 hover:text-gold text-xs transition-colors"
                     >
-                      <span className="text-white/50">💰</span><span className="text-white/70 ml-0.5">{u.credits}</span>
-                      <span className="text-white/30 ml-1">✎</span>
+                      <span className="text-foreground/50">💰</span><span className="text-foreground/70 ml-0.5">{u.credits}</span>
+                      <span className="text-foreground/30 ml-1">✎</span>
                     </button>
                   )}
                 </td>
@@ -204,7 +204,7 @@ export default function AdminUsers() {
               key={p}
               onClick={() => setPage(p)}
               className={`w-8 h-8 rounded text-sm transition-colors ${
-                p === page ? 'bg-gold text-navy-950 font-bold' : 'text-white/50 hover:text-white'
+                p === page ? 'bg-gold text-navy-950 font-bold' : 'text-foreground/50 hover:text-foreground'
               }`}
             >
               {p}

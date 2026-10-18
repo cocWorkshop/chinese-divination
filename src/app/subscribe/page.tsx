@@ -101,7 +101,7 @@ function SubscribeContent() {
   const packs = Object.entries(CREDIT_PACKS) as [PackId, typeof CREDIT_PACKS[PackId]][]
 
   return (
-    <div className="flex-1 pt-20 sm:pt-24 pb-28 sm:pb-16 px-3 sm:px-4 bg-navy-950">
+    <div className="flex-1 pt-20 sm:pt-24 pb-28 sm:pb-16 px-3 sm:px-4 bg-background">
       <div className="max-w-5xl mx-auto">
         {/* Top Navigation & Breadcrumbs Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-3 border-b border-[rgba(212,168,83,0.16)]">
@@ -109,9 +109,9 @@ function SubscribeContent() {
             <BackButton
               href={returnUrl || undefined}
               fallbackHref="/divination"
-              label={returnUrl ? (lang === 'en' ? 'Back' : '返回原處') : undefined}
+              label={returnUrl ? (T(lang, '返回原處', 'Back')) : undefined}
             />
-            <nav className="flex items-center gap-1.5 text-xs text-white/50 font-serif" aria-label="Breadcrumb">
+            <nav className="flex items-center gap-1.5 text-xs text-foreground/50 font-serif" aria-label="Breadcrumb">
               <Link href="/divination" className="hover:text-gold transition-colors">
                 {T(lang, '占卜大廳', 'Divination')}
               </Link>
@@ -123,7 +123,7 @@ function SubscribeContent() {
           <div className="hidden sm:flex items-center gap-2">
             <Link
               href="/divination"
-              className="px-3.5 py-1.5 rounded-full text-xs font-serif flex items-center gap-1.5 transition-all border border-gold/25 hover:border-gold/50 text-white/70 hover:text-gold bg-gold/5"
+              className="px-3.5 py-1.5 rounded-full text-xs font-serif flex items-center gap-1.5 transition-all border border-gold/25 hover:border-gold/50 text-foreground/70 hover:text-gold bg-gold/5"
             >
               <DivinationIcon type="bazi" size={14} color="currentColor" />
               <span>{T(lang, '前往占卜大廳', 'Divination Sanctuary')}</span>
@@ -139,7 +139,7 @@ function SubscribeContent() {
           <h1 className="text-3xl sm:text-4xl font-serif mb-2 text-gold-light">
             {T(lang, '結緣功德簿', 'Karma Patronage')}
           </h1>
-          <p className="text-xs sm:text-sm text-white/60 max-w-md mx-auto font-light leading-relaxed">
+          <p className="text-xs sm:text-sm text-foreground/60 max-w-md mx-auto font-light leading-relaxed">
             {T(lang, '隨喜結緣，支持玄機推演算力運轉，探索更深層的命脈玄奧。', 'Support continuous metaphysical calculation and unlock deep destiny readings.')}
           </p>
         </div>
@@ -155,31 +155,31 @@ function SubscribeContent() {
             <div className="flex flex-col sm:flex-row items-center gap-4">
               {credits !== null && (
                 <div className="text-center sm:border-r sm:pr-6 flex-shrink-0 border-gold/15">
-                  <p className="text-xs text-white/50 font-serif">{T(lang, '現存機緣', 'Current Karma')}</p>
+                  <p className="text-xs text-foreground/50 font-serif">{T(lang, '現存機緣', 'Current Karma')}</p>
                   <span className="text-3xl font-bold font-serif text-gold">{credits}</span>
-                  <span className="text-xs ml-1 text-white/50">{T(lang, '點', 'pts')}</span>
+                  <span className="text-xs ml-1 text-foreground/50">{T(lang, '點', 'pts')}</span>
                 </div>
               )}
               {costs && (
-                <div className="flex-1 text-xs text-white/70">
+                <div className="flex-1 text-xs text-foreground/70">
                   <table className="w-full text-left font-serif">
                     <tbody>
                       <tr><td colSpan={2} className="pb-1 font-medium text-gold/70">{T(lang, '占卜演局', 'Divination')}</td></tr>
                       <tr>
-                        <td className="py-0.5 text-white/60">{T(lang, '八字 / 紫微 / 奇門', 'BaZi / ZiWei / QiMen')}</td>
+                        <td className="py-0.5 text-foreground/60">{T(lang, '八字 / 紫微 / 奇門', 'BaZi / ZiWei / QiMen')}</td>
                         <td className="text-right font-medium text-gold">{costs.bazi} {T(lang, '點', 'pts')}</td>
                       </tr>
                       <tr>
-                        <td className="py-0.5 text-white/60">{T(lang, '梅花 / 六爻 / 易經 / 風水', 'MeiHua / LiuYao / IChing / FengShui')}</td>
+                        <td className="py-0.5 text-foreground/60">{T(lang, '梅花 / 六爻 / 易經 / 風水', 'MeiHua / LiuYao / IChing / FengShui')}</td>
                         <td className="text-right font-medium text-gold">{costs.meihua} {T(lang, '點', 'pts')}</td>
                       </tr>
                       <tr><td colSpan={2} className="pt-2 pb-1 font-medium text-gold/70">{T(lang, '宗師請益', 'Master Inquiry')}</td></tr>
                       <tr>
-                        <td className="py-0.5 text-white/60">{T(lang, '玄機問答', 'Follow-up Q&A')}</td>
+                        <td className="py-0.5 text-foreground/60">{T(lang, '玄機問答', 'Follow-up Q&A')}</td>
                         <td className="text-right font-medium text-gold">{costs.chat} {T(lang, '點', 'pts')}</td>
                       </tr>
                       <tr>
-                        <td className="py-0.5 text-white/60">{T(lang, '玄機大師品茗', 'Master Consultation')}</td>
+                        <td className="py-0.5 text-foreground/60">{T(lang, '玄機大師品茗', 'Master Consultation')}</td>
                         <td className="text-right font-medium text-gold">{costs.master} {T(lang, '點/輪', 'pt/turn')}</td>
                       </tr>
                     </tbody>
@@ -226,14 +226,14 @@ function SubscribeContent() {
                 <h3 className="text-xl font-serif text-gold-light mb-1">
                   {T(lang, pack.name.zh, pack.name.en)}
                 </h3>
-                <p className="text-xs text-white/50 font-serif">
+                <p className="text-xs text-foreground/50 font-serif">
                   {T(lang, pack.desc.zh, pack.desc.en)}
                 </p>
               </div>
 
               <div className="text-center mb-6">
                 <div className="mb-1">
-                  <span className="text-xs line-through text-white/40">
+                  <span className="text-xs line-through text-foreground/40">
                     ${(pack.originalPrice / 100).toFixed(2)}
                   </span>
                   <span className="ml-2 text-[10px] px-2 py-0.2 rounded-full font-serif border border-rose-500/30 bg-rose-500/10 text-rose-300">
@@ -251,15 +251,15 @@ function SubscribeContent() {
               </div>
 
               <ul className="space-y-3 mb-8 flex-1">
-                <li className="flex items-start gap-2 text-xs text-white/80 font-serif">
+                <li className="flex items-start gap-2 text-xs text-foreground/80 font-serif">
                   <span className="text-gold">✧</span>
                   <span>{pack.credits} {T(lang, '點機緣', ' Karma')}</span>
                 </li>
-                <li className="flex items-start gap-2 text-xs text-white/80 font-serif">
+                <li className="flex items-start gap-2 text-xs text-foreground/80 font-serif">
                   <span className="text-gold">✧</span>
                   <span>{T(lang, '全站術數與宗師對話通用', 'Works for all features')}</span>
                 </li>
-                <li className="flex items-start gap-2 text-xs text-white/40 font-serif">
+                <li className="flex items-start gap-2 text-xs text-foreground/40 font-serif">
                   <span className="text-gold/60">≈</span>
                   <span>{T(lang,
                     `${Math.floor(pack.credits / 5)} 次八字/紫微 或 ${Math.floor(pack.credits / 3)} 次六爻/梅花`,
@@ -285,7 +285,7 @@ function SubscribeContent() {
         </div>
 
         {/* Bottom note */}
-        <p className="text-center mt-8 text-xs text-white/50 font-serif">
+        <p className="text-center mt-8 text-xs text-foreground/50 font-serif">
           {T(lang, '✧ 機緣永久留存，無過期之虞', '✧ Karma never expires')}
         </p>
 
@@ -323,7 +323,7 @@ export default function SubscribePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex-1 flex items-center justify-center py-24 bg-navy-950">
+        <div className="flex-1 flex items-center justify-center py-24 bg-background">
           <MysticalLoader lang={lang} />
         </div>
       }

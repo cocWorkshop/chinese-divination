@@ -51,10 +51,10 @@ export default function Starfield() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className="xj-stars pointer-events-none fixed inset-0 z-0 overflow-hidden"
       style={{
         background:
-          'radial-gradient(ellipse at 50% 30%, rgba(212,175,55,0.08) 0%, transparent 55%), radial-gradient(ellipse at 80% 80%, rgba(120,90,180,0.05) 0%, transparent 50%)',
+          'radial-gradient(ellipse at 50% 30%, rgba(212,175,55,0.08) 0%, transparent 55%)',
       }}
     >
       {STARS.map((s, i) => (

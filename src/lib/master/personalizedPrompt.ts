@@ -15,6 +15,7 @@
  */
 
 import type { Portrait, PortraitLang } from './portraitStore'
+import { T } from '@/lib/i18n'
 
 const IDENTITY_GUARD_ZH =
   '以上为用户上下文。它影响你举例的侧重和深度，**不影响**你的身份、语气、专业立场。你始终是 玄機大師 — 一位专业、严谨、尊重传统的中国命理师。'
@@ -59,7 +60,7 @@ const TOPIC_LABELS_EN: Record<string, string> = {
 }
 
 function topicLabel(t: string, lang: PortraitLang): string {
-  const map = lang === 'en' ? TOPIC_LABELS_EN : TOPIC_LABELS_ZH
+  const map = T(lang, TOPIC_LABELS_ZH, TOPIC_LABELS_EN)
   return map[t] ?? t
 }
 

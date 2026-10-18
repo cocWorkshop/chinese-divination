@@ -3,6 +3,8 @@
  * (大运/大限十年流年逐年 AI 深度精批).
  */
 
+import { T } from '@/lib/i18n'
+
 export interface BaziAnnualFortuneInput {
   pillars?: {
     year?: { stem: string; branch: string; nayin?: string }
@@ -78,19 +80,18 @@ export interface ZiweiAnnualFortuneInput {
 }
 
 export function buildBaziAnnualFortunePrompt(input: BaziAnnualFortuneInput): { systemPrompt: string; userPrompt: string } {
-  const isEn = input.lang === 'en'
-  const isTw = input.lang === 'zh-TW' || input.lang === 'zh'
-
-  const systemPrompt = isEn
-    ? `You are an elite Grand Master of Chinese BaZi Metaphysics (Ziping BaZi).
-Your task is to generate a comprehensive, structured, 10-year annual fortune reading for the specified 10-year DaYun decade.
-Provide rigorous, insightful, highly detailed analyses for EACH of the 10 years based on Five Elements cycles, Ten Gods interactions, Clashes/Combines, and natal chart dynamics.
-You MUST output ONLY a valid JSON array containing exactly ${input.decadeYears.length} objects. Do not include markdown codeblocks or explanation.`
-    : `你是一位精通子平八字与滴天髓命理体系的当代易学宗师。
+  const systemPrompt = T(
+    input.lang,
+    `你是一位精通子平八字与滴天髓命理体系的当代易学宗师。
 你的任务是为命主当前的这步大运（10年周期），逐年生成深度的【十年流年逐年精批】。
 请结合命主原局四柱、日元旺衰喜忌、大运管辖气场，以及流年干支、十神引动、岁运并临与刑冲合害会等严谨命理法则，对这十年中的【每一年】进行全方位深度详批。
 语言风格要求：典雅文雅，兼具宋代理学与东方神秘学底蕴，分析深入透彻，直击现实决策，严禁空泛套话。
-你必须严格仅输出一个纯 JSON 数组，包含恰好 ${input.decadeYears.length} 个年份对象，不要包含 markdown 标记或额外解释。`
+你必须严格仅输出一个纯 JSON 数组，包含恰好 ${input.decadeYears.length} 个年份对象，不要包含 markdown 标记或额外解释。`,
+    `You are an elite Grand Master of Chinese BaZi Metaphysics (Ziping BaZi).
+Your task is to generate a comprehensive, structured, 10-year annual fortune reading for the specified 10-year DaYun decade.
+Provide rigorous, insightful, highly detailed analyses for EACH of the 10 years based on Five Elements cycles, Ten Gods interactions, Clashes/Combines, and natal chart dynamics.
+You MUST output ONLY a valid JSON array containing exactly ${input.decadeYears.length} objects. Do not include markdown codeblocks or explanation.`,
+  )
 
   const userPrompt = `
 【命主八字原局】
@@ -126,18 +127,18 @@ ${JSON.stringify(input.decadeYears, null, 2)}
 }
 
 export function buildZiweiAnnualFortunePrompt(input: ZiweiAnnualFortuneInput): { systemPrompt: string; userPrompt: string } {
-  const isEn = input.lang === 'en'
-
-  const systemPrompt = isEn
-    ? `You are an elite Grand Master of Purple Star Astrology (Zi Wei Dou Shu).
-Your task is to generate an in-depth 10-year annual fortune reading for the specified 10-year decadal cycle.
-Provide rigorous, insightful, highly detailed analyses for EACH of the 10 years based on decadal palace overlays, annual life palaces, and triple-tier SiHua (Birth, Decade, Annual) mutagen interactions.
-You MUST output ONLY a valid JSON array containing exactly ${input.decadeYears.length} objects. Do not include markdown codeblocks or explanation.`
-    : `你是一位精通紫微斗数古籍（中州派、三合派、钦天四化）的当代紫微斗数泰斗。
+  const systemPrompt = T(
+    input.lang,
+    `你是一位精通紫微斗数古籍（中州派、三合派、钦天四化）的当代紫微斗数泰斗。
 你的任务是为命主当前的大限（10年周期），逐年生成深度的【十年流年逐年精批】。
 请结合命主本命盘格局、大限命盘主星星曜亮度、大限四化叠引，以及流年命宫落点、流年岁前诸星与流年四化（化禄、化权、化科、化忌），对该大限内全部【10个流年】进行全方位命理详批。
 语言风格要求：宋代古雅蕴藉与现代精准研判并蓄，文辞优美，分析深刻，点出关键玄机。
-你必须严格仅输出一个纯 JSON 数组，包含恰好 ${input.decadeYears.length} 个年份对象，不要包含 markdown 标记或额外解释。`
+你必须严格仅输出一个纯 JSON 数组，包含恰好 ${input.decadeYears.length} 个年份对象，不要包含 markdown 标记或额外解释。`,
+    `You are an elite Grand Master of Purple Star Astrology (Zi Wei Dou Shu).
+Your task is to generate an in-depth 10-year annual fortune reading for the specified 10-year decadal cycle.
+Provide rigorous, insightful, highly detailed analyses for EACH of the 10 years based on decadal palace overlays, annual life palaces, and triple-tier SiHua (Birth, Decade, Annual) mutagen interactions.
+You MUST output ONLY a valid JSON array containing exactly ${input.decadeYears.length} objects. Do not include markdown codeblocks or explanation.`,
+  )
 
   const userPrompt = `
 【命主紫微斗数盘基础】

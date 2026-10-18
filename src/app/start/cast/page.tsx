@@ -122,7 +122,7 @@ export default function StartCastPage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md space-y-5 glass-card rounded-2xl p-6 sm:p-8"
+        className="w-full max-w-md space-y-5 card-quiet rounded-2xl p-6 sm:p-8"
         style={{ border: '1px solid var(--card-border)' }}
       >
         <motion.header className="text-center mb-2" {...fieldAnim(0)}>

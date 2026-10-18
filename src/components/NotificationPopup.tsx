@@ -47,8 +47,8 @@ export default function NotificationPopup() {
         sessionStorage.setItem(key, Date.now().toString())
 
         const icon = TYPE_ICONS[unread.type] || TYPE_ICONS.info
-        const title = lang === 'en' ? unread.titleEn : unread.title
-        const content = lang === 'en' ? unread.contentEn : unread.content
+        const title = T(lang, unread.title, unread.titleEn)
+        const content = T(lang, unread.content, unread.contentEn)
         const preview = content.length > 80 ? content.slice(0, 80) + '...' : content
 
         toast(

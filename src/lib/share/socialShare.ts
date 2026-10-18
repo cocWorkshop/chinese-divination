@@ -1,3 +1,5 @@
+import { T } from '@/lib/i18n'
+
 /**
  * Social Media Sharing Engine for Xuanji
  * Supports Line, WeChat (Chat & Moments), Instagram (Stories & Feed), and TikTok.
@@ -69,10 +71,10 @@ export function buildLineShareUrl(params: { title: string; motto?: string; url: 
  * Generates cultured, platform-tailored copywriting ready for one-tap copying and posting.
  */
 export function generateSocialCopy(platform: SocialPlatform, params: ShareCopyParams): string {
-  const isZh = params.lang !== 'en'
-  const title = isZh ? `【玄機靈籤 · ${params.typeZh}】` : `【Xuanji Oracle · ${params.typeEn}】`
-  const motto = params.motto ? `✨ ${params.motto}` : ''
-  const subject = params.subjectName ? (isZh ? `命主：${params.subjectName}` : `Subject: ${params.subjectName}`) : ''
+  const lang = params.lang || 'zh-TW'
+  const title = T(lang, `【玄機靈籤 · ${params.typeZh}】`, `【Xuanji Oracle · ${params.typeEn}】`)
+  const motto = params.motto ? `✦ ${params.motto}` : ''
+  const subject = params.subjectName ? T(lang, `命主：${params.subjectName}`, `Subject: ${params.subjectName}`) : ''
   const snippet = params.summary ? `「${params.summary.slice(0, 70)}${params.summary.length > 70 ? '...' : ''}」` : ''
 
   switch (platform) {
@@ -83,18 +85,18 @@ export function generateSocialCopy(platform: SocialPlatform, params: ShareCopyPa
         subject,
         snippet,
         '',
-        isZh ? '👉 點此查看專屬命理推演：' : '👉 View full reading:',
+        T(lang, '👉 點此查看專屬命理推演：', '👉 View full reading:'),
         params.shareUrl,
       ].filter(line => line !== null && line !== undefined).join('\n').trim()
 
     case 'wechat_moments':
       return [
-        isZh ? `【玄機 · 專屬命理籤卡】` : `【Xuanji · Fortune Poster】`,
+        T(lang, `【玄機 · 專屬命理籤卡】`, `【Xuanji · Fortune Poster】`),
         `${params.typeZh}推演：${params.motto}`,
         subject ? `👤 ${subject}` : '',
         snippet,
         '',
-        isZh ? '📜 掃描海報二維碼或點擊連結親解 👇' : '📜 Scan poster QR or tap link below 👇',
+        T(lang, '📜 掃描海報二維碼或點擊連結親解 👇', '📜 Scan poster QR or tap link below 👇'),
         params.shareUrl,
         '',
         '#玄機 #東方命理 #易經八字 #每日靈籤',
@@ -102,10 +104,10 @@ export function generateSocialCopy(platform: SocialPlatform, params: ShareCopyPa
 
     case 'wechat_chat':
       return [
-        isZh ? `【玄機靈籤】${params.typeZh}：${params.motto}` : `【Xuanji】${params.typeEn}: ${params.motto}`,
+        T(lang, `【玄機靈籤】${params.typeZh}：${params.motto}`, `【Xuanji】${params.typeEn}: ${params.motto}`),
         subject ? `(${subject})` : '',
         snippet,
-        isZh ? '這是我在玄機推演的命理解讀，點此親解：' : 'Here is my divination reading from Xuanji:',
+        T(lang, '這是我在玄機推演的命理解讀，點此親解：', 'Here is my divination reading from Xuanji:'),
         params.shareUrl,
       ].filter(Boolean).join('\n')
 
@@ -117,7 +119,7 @@ export function generateSocialCopy(platform: SocialPlatform, params: ShareCopyPa
         '',
         snippet,
         '',
-        isZh ? '🔗 完整推演報告請見個人簡介連結或：' : '🔗 Full chart & reading:',
+        T(lang, '🔗 完整推演報告請見個人簡介連結或：', '🔗 Full chart & reading:'),
         params.shareUrl,
         '.',
         '#玄機 #Xuanji #ChineseDivination #八字 #命理 #易經 #紫微斗數 #東方美學 #FortuneTelling #Horoscope',
@@ -125,10 +127,10 @@ export function generateSocialCopy(platform: SocialPlatform, params: ShareCopyPa
 
     case 'tiktok':
       return [
-        isZh ? `【玄機東方命理】${params.typeZh}推演：${params.motto} 🔮` : `【Xuanji】${params.typeEn}: ${params.motto} 🔮`,
+        T(lang, `【玄機東方命理】${params.typeZh}推演：${params.motto} ✦`, `【Xuanji】${params.typeEn}: ${params.motto} ✦`),
         snippet,
         '',
-        isZh ? '👉 點擊連結測算你的專屬命盤：' : '👉 Decode your fate chart here:',
+        T(lang, '👉 點擊連結測算你的專屬命盤：', '👉 Decode your fate chart here:'),
         params.shareUrl,
         '',
         '#玄機 #命理 #八字算命 #紫微斗數 #國學智慧 #占卜 #命運',

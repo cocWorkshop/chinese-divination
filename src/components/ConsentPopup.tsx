@@ -38,7 +38,7 @@ export default function ConsentPopup() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-      <div className="glass-card rounded-2xl p-6 md:p-8 max-w-lg w-full border" style={{ borderColor: 'var(--card-border)' }}>
+      <div className="card-quiet rounded-2xl p-6 md:p-8 max-w-lg w-full border" style={{ borderColor: 'var(--card-border)' }}>
         <div className="text-center mb-4">
           <div className="text-3xl mb-2">📜</div>
           <h2 className="text-xl font-serif" style={{ color: 'var(--gold)' }}>

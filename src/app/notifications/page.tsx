@@ -30,7 +30,7 @@ const TYPE_CONFIG: Record<string, { icon: (cls: string) => React.ReactNode; colo
 }
 
 function formatDate(date: string, lang: string): string {
-  return new Date(date).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW', {
+  return new Date(date).toLocaleDateString(T(lang, 'zh-TW', 'en-US'), {
     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 }
@@ -83,20 +83,20 @@ export default function NotificationsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex-1 bg-navy-950 pt-24 flex items-center justify-center">
+      <div className="flex-1 bg-background pt-24 flex items-center justify-center">
         <MysticalLoader lang={lang} />
       </div>
     )
   }
 
   return (
-    <div className="flex-1 bg-navy-950 pt-20 sm:pt-24 pb-20 sm:pb-12 px-4">
+    <div className="flex-1 bg-background pt-20 sm:pt-24 pb-20 sm:pb-12 px-4">
       <div className="max-w-2xl mx-auto space-y-5">
         {/* Top Navigation & Breadcrumbs Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[rgba(212,168,83,0.16)]">
           <div className="flex items-center gap-3">
             <BackButton fallbackHref="/dashboard" />
-            <nav className="flex items-center gap-1.5 text-xs text-white/50 font-serif" aria-label="Breadcrumb">
+            <nav className="flex items-center gap-1.5 text-xs text-foreground/50 font-serif" aria-label="Breadcrumb">
               <Link href="/divination" className="hover:text-gold transition-colors">
                 {T(lang, '占卜大廳', 'Divination')}
               </Link>
@@ -112,7 +112,7 @@ export default function NotificationsPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/divination"
-              className="px-3.5 py-1.5 rounded-full text-xs font-serif flex items-center gap-1.5 transition-all border border-gold/25 hover:border-gold/50 text-white/70 hover:text-gold bg-gold/5 min-h-[36px]"
+              className="px-3.5 py-1.5 rounded-full text-xs font-serif flex items-center gap-1.5 transition-all border border-gold/25 hover:border-gold/50 text-foreground/70 hover:text-gold bg-gold/5 min-h-[36px]"
             >
               <DivinationIcon type="bazi" size={14} color="currentColor" />
               <span>{T(lang, '前往占卜', 'Divination')}</span>
@@ -124,7 +124,7 @@ export default function NotificationsPage() {
           <h1 className="text-2xl font-serif text-gold">
             {T(lang, '通知中心', 'Notification Center')}
           </h1>
-          <p className="text-xs text-white/50 font-serif">
+          <p className="text-xs text-foreground/50 font-serif">
             {T(lang, '接收最新天機公告、靈修禮券與系統動態', 'Receive news, promo bonuses, and updates')}
           </p>
         </div>
@@ -178,7 +178,7 @@ export default function NotificationsPage() {
                           className="text-xs px-2 py-0.5 rounded-full"
                           style={{ backgroundColor: config.color, color: 'var(--text-primary)' }}
                         >
-                          {lang === 'en' ? config.labelEn : config.label}
+                          {T(lang, config.label, config.labelEn)}
                         </span>
                         {!n.read && (
                           <span className="w-2 h-2 rounded-full bg-gold flex-shrink-0" />
@@ -188,7 +188,7 @@ export default function NotificationsPage() {
                         className="text-sm font-medium mt-1 font-serif"
                         style={{ color: n.read ? 'var(--text-secondary)' : 'var(--gold-light, #e8c278)' }}
                       >
-                        {lang === 'en' ? n.titleEn : n.title}
+                        {T(lang, n.title, n.titleEn)}
                       </h3>
                       <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted, var(--text-secondary))' }}>
                         {formatDate(n.createdAt, lang)}
@@ -208,7 +208,7 @@ export default function NotificationsPage() {
                       className="px-4 pb-4 pt-1 ml-10 text-sm whitespace-pre-wrap font-serif leading-relaxed border-t border-[rgba(212,168,83,0.1)]"
                       style={{ color: 'var(--text-secondary)' }}
                     >
-                      {lang === 'en' ? n.contentEn : n.content}
+                      {T(lang, n.content, n.contentEn)}
                     </div>
                   )}
                 </div>

@@ -20,6 +20,8 @@ import { useMasterChat } from '../MasterChatContext'
 import { useLang } from '@/components/LanguageContext'
 import { withCtaNonce } from '@/lib/master/ctaNav'
 import { MasterSageIcon, CloseIcon } from '@/components/DivinationIcons'
+import { T } from '@/lib/i18n'
+import { langKey } from '@/lib/i18n'
 
 export type GateIntent = { kind: 'open' } | { kind: 'send'; message: string }
 
@@ -105,9 +107,9 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate, focusOnMo
             - default: expands the master chat. */}
       {pendingReading ? (() => {
         const label = typeLabels[pendingReading.type]
-        const typeName = label ? label[isEn ? 'en' : 'zh-TW'] : pendingReading.type
+        const typeName = label ? label[langKey(lang)] : pendingReading.type
         const noun = readingNoun[pendingReading.type] ?? readingNoun.other
-        const nounText = noun[isEn ? 'en' : 'zh-TW']
+        const nounText = noun[langKey(lang)]
         return (
           // Two separate click targets sharing the bar — primary is
           // "return to form" (most-used path), secondary is the cancel
@@ -119,7 +121,7 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate, focusOnMo
               type="button"
               onClick={() => router.push(withCtaNonce(pendingReading.url))}
               className="flex-1 flex items-center gap-3 text-left transition-opacity hover:opacity-80 min-w-0"
-              title={isEn ? 'Tap to return to the divination form' : '點擊返回占卜表單'}
+              title={T(lang, '點擊返回占卜表單', 'Tap to return to the divination form')}
             >
               <span
                 className="flex-shrink-0 leading-none"
@@ -138,11 +140,11 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate, focusOnMo
               <span className="flex-1 min-w-0 truncate text-sm">
                 <span className="font-serif" style={{ color: 'var(--gold)' }}>
                   {pendingReading.subjectName
-                    ? (isEn ? `Reading ${pendingReading.subjectName}'s ${typeName} ${nounText}...` : `正在研讀${pendingReading.subjectName}的${typeName}${nounText}...`)
-                    : (isEn ? `Reading your ${typeName} ${nounText}...` : `正在研讀您的${typeName}${nounText}...`)}
+                    ? T(lang, `正在研讀${pendingReading.subjectName}的${typeName}${nounText}...`, `Reading ${pendingReading.subjectName}'s ${typeName} ${nounText}...`)
+                    : T(lang, `正在研讀您的${typeName}${nounText}...`, `Reading your ${typeName} ${nounText}...`)}
                 </span>
                 <span className="ml-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {isEn ? '· let me take a look' : '· 讓我先看看'}
+                  {T(lang, '· 讓我先看看', '· let me take a look')}
                 </span>
               </span>
             </button>
@@ -154,15 +156,17 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate, focusOnMo
               type="button"
               onClick={() => {
                 const ok = window.confirm(
-                  isEn
-                    ? `Cancel the pending ${typeName} reading? The Master will move on.`
-                    : `要放棄這次 ${typeName} 占卜嗎？玄機大師會接著聊別的。`,
+                  T(
+                    lang,
+                    `要放棄這次 ${typeName} 占卜嗎？玄機大師會接著聊別的。`,
+                    `Cancel the pending ${typeName} reading? The Master will move on.`
+                  ),
                 )
                 if (ok) cancelPendingReading()
               }}
               className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-xs transition-colors hover:bg-[rgba(255,255,255,0.08)] text-[var(--text-muted)]"
-              title={isEn ? 'Cancel this redirect' : '取消這次跳轉'}
-              aria-label={isEn ? 'Cancel pending reading' : '取消等待中的占卜'}
+              title={T(lang, '取消這次跳轉', 'Cancel this redirect')}
+              aria-label={T(lang, '取消等待中的占卜', 'Cancel pending reading')}
             >
               <CloseIcon size={14} />
             </button>
@@ -175,7 +179,7 @@ export default function CollapsedBar({ needsMemoryGate, onRequestGate, focusOnMo
           onClick={handleExpand}
           className="w-full px-4 sm:px-5 lg:px-5 h-14 flex items-center gap-3 text-left group"
           title={widgetOpener}
-          aria-label={isEn ? 'Open Master Xuanji chat' : '展開玄機大師對話'}
+          aria-label={T(lang, '展開玄機大師對話', 'Open Master Xuanji chat')}
         >
           {/* Avatar — bare emoji at 2x size with a soft gold halo. The previous
               circle wrapper added a competing edge against the bar border;

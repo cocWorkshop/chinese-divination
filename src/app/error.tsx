@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { reportError } from '@/lib/errorReporter'
 import { useLang } from '@/components/LanguageContext'
 import { AlertIcon, RefreshIcon } from '@/components/DivinationIcons'
+import { T } from '@/lib/i18n'
 
 export default function GlobalError({
   error,
@@ -26,17 +27,17 @@ export default function GlobalError({
           <AlertIcon size={28} />
         </div>
         <h2 className="text-2xl font-serif text-gold mb-3">
-          {isEn ? 'Something went wrong' : '出了點問題'}
+          {T(lang, '出了點問題', 'Something went wrong')}
         </h2>
-        <p className="text-white/60 mb-6 text-sm leading-relaxed">
-          {isEn ? 'An error occurred while loading the page. Please try again later.' : '頁面載入時發生錯誤，請稍後重試。'}
+        <p className="text-foreground/60 mb-6 text-sm leading-relaxed">
+          {T(lang, '頁面載入時發生錯誤，請稍後重試。', 'An error occurred while loading the page. Please try again later.')}
         </p>
         <button
           onClick={reset}
           className="inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] bg-gold hover:bg-gold-light text-navy-950 rounded-lg font-serif font-semibold transition-colors shadow-md"
         >
           <RefreshIcon size={16} />
-          <span>{isEn ? 'Reload' : '重新載入'}</span>
+          <span>{T(lang, '重新載入', 'Reload')}</span>
         </button>
       </div>
     </div>

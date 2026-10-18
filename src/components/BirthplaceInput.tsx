@@ -71,7 +71,7 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
     try {
       const timeoutId = setTimeout(() => controller.abort(), 5000)
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=${lang === 'en' ? 'en' : 'zh'}`,
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=${T(lang, 'zh', 'en')}`,
         { headers: { 'User-Agent': 'XuanjiDivination/1.0' }, signal: controller.signal }
       )
       clearTimeout(timeoutId)
@@ -130,7 +130,7 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
   }
 
   const handleSelectPreset = (city: CityPreset) => {
-    const displayName = lang === 'en' ? city.name_en : city.name_zh
+    const displayName = T(lang, city.name_zh, city.name_en)
     handleSelect(displayName, city.lat, city.lon)
   }
 
@@ -218,7 +218,7 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
               setShowDropdown(true)
             }
           }}
-          className={className || "w-full px-4 py-3 bg-navy-800 dark:bg-navy-800 light:bg-white border border-gold/20 dark:border-gold/20 light:border-[#e8dcc8] rounded-lg text-white dark:text-white light:text-[#2d1f0e] focus:outline-none focus:border-gold/60 transition-colors"}
+          className={className || "w-full px-4 py-3 bg-input border border-gold/25 rounded-lg text-foreground focus:outline-none focus:border-gold/60 transition-colors"}
           placeholder={placeholder || T(lang, '輸入城市名稱搜尋...', 'Search city name...')}
         />
         {isLoading && (
@@ -230,7 +230,7 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
 
       {/* Error message */}
       {searchError && (
-        <p role="status" className="mt-1 text-amber-400 dark:text-amber-400 light:text-amber-600 text-xs flex items-center gap-1.5">
+        <p role="status" className="mt-1 text-amber-600 dark:text-amber-400 text-xs flex items-center gap-1.5">
           <AlertIcon size={14} className="flex-shrink-0" />
           <span>{T(lang, '在線搜尋失敗，請從常用城市中選擇或重試', 'Online search failed, please select from popular cities or retry')}</span>
         </p>
@@ -242,12 +242,12 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
           id={listboxId}
           role="listbox"
           aria-label={T(lang, '城市搜尋結果', 'City search results')}
-          className="absolute z-50 w-full mt-1 bg-navy-800 dark:bg-navy-800 light:bg-white border border-gold/20 dark:border-gold/20 light:border-[#e8dcc8] rounded-lg shadow-xl max-h-60 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-surface border border-gold/25 rounded-lg shadow-xl max-h-60 overflow-y-auto"
         >
           {/* Preset cities */}
           {presetResults.length > 0 && (
             <>
-              <li role="presentation" className="px-4 py-1.5 text-xs text-white/40 dark:text-white/40 light:text-[#8b7355] bg-navy-900/50 dark:bg-navy-900/50 light:bg-[#f9f5ec] sticky top-0">
+              <li role="presentation" className="px-4 py-1.5 text-xs text-muted bg-elevated sticky top-0">
                 {T(lang, '常用城市', 'Popular Cities')}
               </li>
               {presetResults.map((c, idx) => (
@@ -258,9 +258,9 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
                   aria-selected={activeIndex === idx}
                   onClick={() => handleSelectPreset(c)}
                   onMouseEnter={() => setActiveIndex(idx)}
-                  className={`px-4 py-2.5 cursor-pointer text-sm text-white/80 dark:text-white/80 light:text-[#2d1f0e] transition-colors border-b border-white/5 dark:border-white/5 light:border-[#e8dcc8]/50 last:border-0 ${activeIndex === idx ? 'bg-gold/10 light:bg-[#f5f0e0]' : ''}`}
+                  className={`px-4 py-2.5 cursor-pointer text-sm text-foreground/80 transition-colors border-b border-line/10 last:border-0 ${activeIndex === idx ? 'bg-gold/10' : ''}`}
                 >
-                  {lang === 'en' ? c.name_en : `${c.name_zh} (${c.name_en})`}
+                  {T(lang, `${c.name_zh} (${c.name_en})`, c.name_en)}
                 </li>
               ))}
             </>
@@ -268,7 +268,7 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
           {/* Nominatim results */}
           {results.length > 0 && (
             <>
-              <li role="presentation" className="px-4 py-1.5 text-xs text-white/40 dark:text-white/40 light:text-[#8b7355] bg-navy-900/50 dark:bg-navy-900/50 light:bg-[#f9f5ec] sticky top-0">
+              <li role="presentation" className="px-4 py-1.5 text-xs text-muted bg-elevated sticky top-0">
                 {T(lang, '搜尋結果', 'Search Results')}
               </li>
               {results.map((r, idx) => {
@@ -281,7 +281,7 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
                     aria-selected={activeIndex === flatIdx}
                     onClick={() => handleSelectNominatim(r)}
                     onMouseEnter={() => setActiveIndex(flatIdx)}
-                    className={`px-4 py-2.5 cursor-pointer text-sm text-white/80 dark:text-white/80 light:text-[#2d1f0e] transition-colors border-b border-white/5 dark:border-white/5 light:border-[#e8dcc8]/50 last:border-0 ${activeIndex === flatIdx ? 'bg-gold/10 light:bg-[#f5f0e0]' : ''}`}
+                    className={`px-4 py-2.5 cursor-pointer text-sm text-foreground/80 transition-colors border-b border-line/10 last:border-0 ${activeIndex === flatIdx ? 'bg-gold/10' : ''}`}
                   >
                     {r.display_name}
                   </li>
@@ -295,19 +295,19 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
       {/* "City not found" fallback panel — popular cities + use-as-is escape hatch */}
       {showDropdown && noResults && value.trim().length >= 2 && (
         <div
-          className="absolute z-50 w-full mt-1 bg-navy-800 dark:bg-navy-800 light:bg-white border border-gold/20 dark:border-gold/20 light:border-[#e8dcc8] rounded-lg shadow-xl max-h-60 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-surface border border-gold/25 rounded-lg shadow-xl max-h-60 overflow-y-auto"
         >
-          <p role="status" className="px-4 py-2 text-xs text-amber-400 dark:text-amber-400 light:text-amber-600">
+          <p role="status" className="px-4 py-2 text-xs text-amber-600 dark:text-amber-400">
             {T(lang, `找不到「${value.trim()}」— 可改試拼音/英文名，或：`, `No match for "${value.trim()}" — try another spelling, or:`)}
           </p>
           <button
             type="button"
             onClick={handleUseAsIs}
-            className="w-full text-left px-4 py-2.5 text-sm text-white/80 dark:text-white/80 light:text-[#2d1f0e] hover:bg-gold/10 light:hover:bg-[#f5f0e0] transition-colors border-b border-white/5 dark:border-white/5 light:border-[#e8dcc8]/50"
+            className="w-full text-left px-4 py-2.5 text-sm text-foreground/80 hover:bg-gold/10 transition-colors border-b border-line/10"
           >
             {T(lang, `直接使用「${value.trim()}」（無座標，僅供參考）`, `Use "${value.trim()}" as typed (no coordinates — reduced precision)`)}
           </button>
-          <p className="px-4 py-1.5 text-xs text-white/40 dark:text-white/40 light:text-[#8b7355] bg-navy-900/50 dark:bg-navy-900/50 light:bg-[#f9f5ec]">
+          <p className="px-4 py-1.5 text-xs text-muted bg-elevated">
             {T(lang, '或從常用城市選擇：', 'Or pick a popular city:')}
           </p>
           {POPULAR_CITIES.slice(0, 5).map((c) => (
@@ -315,9 +315,9 @@ export default function BirthplaceInput({ value, onChange, onLatLngChange, class
               key={`fallback-${c.name_en}`}
               type="button"
               onClick={() => handleSelectPreset(c)}
-              className="w-full text-left px-4 py-2.5 text-sm text-white/80 dark:text-white/80 light:text-[#2d1f0e] hover:bg-gold/10 light:hover:bg-[#f5f0e0] transition-colors border-b border-white/5 dark:border-white/5 light:border-[#e8dcc8]/50 last:border-0"
+              className="w-full text-left px-4 py-2.5 text-sm text-foreground/80 hover:bg-gold/10 transition-colors border-b border-line/10 last:border-0"
             >
-              {lang === 'en' ? c.name_en : `${c.name_zh} (${c.name_en})`}
+              {T(lang, `${c.name_zh} (${c.name_en})`, c.name_en)}
             </button>
           ))}
         </div>

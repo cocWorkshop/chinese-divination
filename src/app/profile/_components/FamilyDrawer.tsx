@@ -140,7 +140,7 @@ export default function FamilyDrawer({ open, member, onClose, onSave }: Props) {
                 <select value={form.relation} onChange={e => update({ relation: e.target.value })} className={inputCls} style={inputStyle}>
                   <option value="">{T(lang, '請選擇', 'Select')}</option>
                   {relationPresets.map(r => (
-                    <option key={r.value} value={r.value}>{lang === 'en' ? r.en : r.zh}</option>
+                    <option key={r.value} value={r.value}>{T(lang, r.zh, r.en)}</option>
                   ))}
                 </select>
               </div>
@@ -200,7 +200,7 @@ export default function FamilyDrawer({ open, member, onClose, onSave }: Props) {
                     ) : (
                       <select value={form.birthTime || ''} onChange={e => update({ birthTime: e.target.value || null })} className={inputCls + ' text-xs'} style={inputStyle}>
                         <option value="">{T(lang, '請選擇', 'Select')}</option>
-                        {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
+                        {shichen.map(s => <option key={s.value} value={s.value}>{T(lang, s.zh, s.en)}</option>)}
                       </select>
                     )}
                   </div>
@@ -246,7 +246,7 @@ export default function FamilyDrawer({ open, member, onClose, onSave }: Props) {
                 className="w-full py-3 rounded-xl font-medium text-sm transition-all disabled:opacity-40"
                 style={{ background: 'var(--gold)', color: '#0a0f1e' }}
               >
-                {saving ? '...' : isEdit ? T(lang, '💾 儲存', '💾 Save') : T(lang, '➕ 新增', '➕ Add')}
+                {saving ? '...' : isEdit ? T(lang, '儲存', 'Save') : T(lang, '新增', 'Add')}
               </button>
             </div>
           </motion.div>

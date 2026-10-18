@@ -9,6 +9,7 @@
  */
 
 import type { SkillDef } from './_types'
+import { T } from '@/lib/i18n'
 import { baziHepanSkill } from './baziHepan'
 import { guaMingHuCanSkill } from './guaMingHuCan'
 import { xingMingHeCanSkill } from './xingMingHeCan'
@@ -36,12 +37,11 @@ export function getSkill(id: string): SkillDef | undefined {
  * Language-aware: picks zh or en name/description per user language.
  */
 export function buildSkillsCatalog(lang: 'zh-TW' | 'en' = 'zh-TW'): string {
-  const isZh = lang !== 'en'
   const lines: string[] = ['## Available skills (composite workflows)', '']
   for (const s of skills) {
-    const name = isZh ? s.name_zh : s.name_en
-    const desc = isZh ? s.description_zh : s.description_en
-    const prereq = isZh ? s.prerequisites.summary_zh : s.prerequisites.summary_en
+    const name = T(lang, s.name_zh, s.name_en)
+    const desc = T(lang, s.description_zh, s.description_en)
+    const prereq = T(lang, s.prerequisites.summary_zh, s.prerequisites.summary_en)
     lines.push(`### ${s.id} — ${name}`)
     lines.push(desc)
     lines.push('')

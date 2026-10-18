@@ -10,6 +10,7 @@
 import { z } from 'zod'
 import { defineTool } from './_types'
 import { ok } from './_errors'
+import { T } from '@/lib/i18n'
 
 const DivinationType = z.enum([
   'bazi', 'ziwei', 'iching', 'qimen', 'meihua', 'fengshui', 'liuyao',
@@ -137,14 +138,15 @@ export const prefillDivinationFormTool = defineTool<z.infer<typeof InputSchema>,
     const url = buildUrl(input)
     const label = TYPE_LABELS[input.type] ?? { zh: input.type, en: input.type }
     const lang = ctx.lang
-    const isEn = lang === 'en'
-    const typeName = isEn ? label.en : label.zh
+    const typeName = T(lang, label.zh, label.en)
 
-    const ctaLabel = isEn ? `Start ${typeName} Reading →` : `開始${typeName} →`
-    const ctaTitle = isEn ? `${typeName} Reading` : `${typeName}`
-    const ctaDescription = isEn
-      ? `Click to open the divination form — fields are pre-filled where I had the info.`
-      : `點擊打開占卜表單 — 已知的資訊已自動填入。`
+    const ctaLabel = T(lang, `開始${typeName} →`, `Start ${typeName} Reading →`)
+    const ctaTitle = T(lang, `${typeName}`, `${typeName} Reading`)
+    const ctaDescription = T(
+      lang,
+      `點擊打開占卜表單 — 已知的資訊已自動填入。`,
+      `Click to open the divination form — fields are pre-filled where I had the info.`,
+    )
 
     // Build structured context for richer card display
     const RELATION_LABELS: Record<string, { zh: string; en: string }> = {
@@ -167,7 +169,7 @@ export const prefillDivinationFormTool = defineTool<z.infer<typeof InputSchema>,
     let subjectGender: string | undefined
 
     if (input.target.kind === 'self') {
-      targetStr = isEn ? 'For yourself' : '為自己預測'
+      targetStr = T(lang, '為自己預測', 'For yourself')
     } else if (input.target.kind === 'family') {
       // Look up existing family member details from DB
       try {
@@ -177,32 +179,36 @@ export const prefillDivinationFormTool = defineTool<z.infer<typeof InputSchema>,
         })
         if (member) {
           const rel = RELATION_LABELS[member.relation]
-          const relName = member.relationDetail || (rel ? (isEn ? rel.en : rel.zh) : '')
+          const relName = member.relationDetail || (rel ? T(lang, rel.zh, rel.en) : '')
           subjectName = member.name || undefined
-          targetStr = isEn
-            ? `For ${relName}${subjectName ? ` ${subjectName}` : ''}`
-            : `為${relName}${subjectName ? ` ${subjectName}` : ''}預測`
+          targetStr = T(
+            lang,
+            `為${relName}${subjectName ? ` ${subjectName}` : ''}預測`,
+            `For ${relName}${subjectName ? ` ${subjectName}` : ''}`,
+          )
           if (member.birthDate) subjectBirthDate = member.birthDate
-          if (member.gender) subjectGender = member.gender === 'male' ? (isEn ? 'Male' : '男') : (isEn ? 'Female' : '女')
+          if (member.gender) subjectGender = member.gender === 'male' ? (T(lang, '男', 'Male')) : (T(lang, '女', 'Female'))
         } else {
-          targetStr = isEn ? 'For family member' : '為家人預測'
+          targetStr = T(lang, '為家人預測', 'For family member')
         }
       } catch {
-        targetStr = isEn ? 'For family member' : '為家人預測'
+        targetStr = T(lang, '為家人預測', 'For family member')
       }
     } else {
       const rel = RELATION_LABELS[input.target.relation]
-      const relName = input.target.relationDetail || (rel ? (isEn ? rel.en : rel.zh) : '')
+      const relName = input.target.relationDetail || (rel ? T(lang, rel.zh, rel.en) : '')
       subjectName = input.target.name || undefined
-      targetStr = isEn
-        ? `For ${relName}${subjectName ? ` ${subjectName}` : ''}`
-        : `為${relName}${subjectName ? ` ${subjectName}` : ''}預測`
+      targetStr = T(
+        lang,
+        `為${relName}${subjectName ? ` ${subjectName}` : ''}預測`,
+        `For ${relName}${subjectName ? ` ${subjectName}` : ''}`,
+      )
     }
 
     const pf = input.prefill
     const timeStr = pf?.exactTime || (pf?.birthTime ? SHICHEN_LABELS[pf.birthTime] || pf.birthTime : undefined)
     const genderStr = pf?.gender
-      ? (pf.gender === 'male' ? (isEn ? 'Male' : '男') : (isEn ? 'Female' : '女'))
+      ? (pf.gender === 'male' ? (T(lang, '男', 'Male')) : (T(lang, '女', 'Female')))
       : subjectGender || undefined
 
     return ok({

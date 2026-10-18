@@ -25,6 +25,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useMasterChat } from './MasterChatContext'
 import { useLang } from '@/components/LanguageContext'
+import { registerOverlay } from '@/lib/overlayStack'
 import CollapsedBar, { type GateIntent } from './widget/CollapsedBar'
 import MasterFab from './widget/MasterFab'
 import ExpandedView from './widget/ExpandedView'
@@ -62,6 +63,13 @@ export default function MasterChatWidget() {
   useEffect(() => {
     prevShapeRef.current = shape
   }, [shape])
+
+  // Android hardware-back / browser back: dismiss the expanded overlay
+  // before anything else consumes the gesture (AUD-12 / UX-13).
+  useEffect(() => {
+    if (shape !== 'expanded') return
+    return registerOverlay('master-expanded', () => setShape('collapsed'))
+  }, [shape, setShape])
 
   // Hide the widget entirely on auth pages — the collapsed bar's input field
   // creates false affordance on pages whose single job is "log in".

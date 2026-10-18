@@ -6,6 +6,8 @@
  * so importers don't pull a 'use client' module into server code paths.
  */
 
+import { T } from '@/lib/i18n'
+
 /**
  * Minimal CTA payload shape — the fields the dispatcher needs to make a
  * resume decision. Kept local to avoid pulling the client-only
@@ -129,7 +131,7 @@ export function isClosed(
       m.content.trim().length > 0,
   )
   if (!lastAssistant) return false
-  const assistantPattern = lang === 'en' ? CLOSING_PATTERNS_EN : CLOSING_PATTERNS_ZH
+  const assistantPattern = T(lang, CLOSING_PATTERNS_ZH, CLOSING_PATTERNS_EN)
   if (!assistantPattern.test(lastAssistant.content)) return false
 
   const lastUser = [...messages].reverse().find(
@@ -140,7 +142,5 @@ export function isClosed(
     // confirm the close yet — treat as not closed (user might still ask).
     return false
   }
-  return lang === 'en'
-    ? isUserClosingEn(lastUser.content)
-    : isUserClosingZh(lastUser.content)
+  return T(lang, isUserClosingZh(lastUser.content), isUserClosingEn(lastUser.content))
 }

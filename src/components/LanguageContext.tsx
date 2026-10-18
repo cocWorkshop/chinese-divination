@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { T } from '@/lib/i18n'
 
 type Lang = 'zh-TW' | 'en'
 
@@ -38,7 +39,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   // server renders a static default (zh-TW); the user's actual choice only
   // exists client-side (localStorage), so an effect is the honest sync point.
   useEffect(() => {
-    document.documentElement.lang = lang === 'en' ? 'en' : 'zh-TW'
+    document.documentElement.lang = T(lang, 'zh-TW', 'en')
   }, [lang])
 
   const setLang = (l: Lang) => {

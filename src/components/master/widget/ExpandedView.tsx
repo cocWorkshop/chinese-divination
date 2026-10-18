@@ -21,6 +21,8 @@ import { withCtaNonce } from '@/lib/master/ctaNav'
 import MessageBubble from './MessageBubble'
 import type { GateIntent } from './CollapsedBar'
 import { MasterSageIcon, SunMoonIcon, CloseIcon } from '@/components/DivinationIcons'
+import { T } from '@/lib/i18n'
+import { langKey } from '@/lib/i18n'
 
 interface Props {
   needsMemoryGate: boolean
@@ -62,7 +64,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
   const greeting = useMemo(
     () =>
       renderGreeting({
-        lang: isEn ? 'en' : 'zh-TW',
+        lang: langKey(lang),
         hasReadings: greetingHints.hasReadings,
         lastReading: greetingHints.lastReading,
         readingTypeCounts: greetingHints.readingTypeCounts,
@@ -73,7 +75,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
         presetOpener: widgetOpener,
       }),
     [
-      isEn,
+      lang,
       greetingHints.hasReadings,
       greetingHints.lastReading,
       greetingHints.readingTypeCounts,
@@ -194,7 +196,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
           style={{ border: '1px solid var(--card-border)' }}
           role="dialog"
           aria-modal="true"
-          aria-label={isEn ? 'Master Xuanji chat' : '玄機大師對話'}
+          aria-label={T(lang, '玄機大師對話', 'Master Xuanji chat')}
         >
           <div className="absolute inset-0" style={{ backgroundColor: 'var(--bg-primary)', opacity: 0.98 }} />
 
@@ -213,8 +215,8 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
               </span>
               <span className="font-serif text-lg tracking-wide" style={{ color: 'var(--gold)' }}>
                 {showMemoryPanel
-                  ? (isEn ? 'Memory Settings' : '記憶設定')
-                  : (isEn ? 'Master Xuanji' : '玄機大師')}
+                  ? (T(lang, '記憶設定', 'Memory Settings'))
+                  : (T(lang, '玄機大師', 'Master Xuanji'))}
               </span>
               {loading && !showMemoryPanel && <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse" />}
               <button
@@ -225,10 +227,10 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                     : 'text-[var(--text-muted)] hover:bg-[rgba(212,175,55,0.08)]'
                 }`}
                 style={{ border: '1px solid var(--card-border)' }}
-                title={showMemoryPanel ? (isEn ? 'Return to chat' : '返回對話') : (isEn ? 'Memory settings' : '記憶設定')}
-                aria-label={showMemoryPanel ? (isEn ? 'Return to chat' : '返回對話') : (isEn ? 'Memory settings' : '記憶設定')}
+                title={showMemoryPanel ? (T(lang, '返回對話', 'Return to chat')) : (T(lang, '記憶設定', 'Memory settings'))}
+                aria-label={showMemoryPanel ? (T(lang, '返回對話', 'Return to chat')) : (T(lang, '記憶設定', 'Memory settings'))}
               >
-                <span>{showMemoryPanel ? (isEn ? '← Chat' : '← 返回對話') : (isEn ? 'Memory' : '記憶')}</span>
+                <span>{showMemoryPanel ? (T(lang, '← 返回對話', '← Chat')) : (T(lang, '記憶', 'Memory'))}</span>
                 {!showMemoryPanel && (
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
@@ -243,17 +245,17 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                 onClick={() => { void startNewSession() }}
                 className="flex items-center gap-1.5 px-3 h-8 rounded-full text-xs transition-colors hover:bg-[rgba(212,175,55,0.08)]"
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--card-border)' }}
-                title={isEn ? 'Start a new chat' : '開始新對話'}
-                aria-label={isEn ? 'Start a new chat' : '開始新對話'}
+                title={T(lang, '開始新對話', 'Start a new chat')}
+                aria-label={T(lang, '開始新對話', 'Start a new chat')}
               >
                 <SunMoonIcon size={14} isDark={false} color="var(--gold)" />
-                <span>{isEn ? 'New chat' : '新對話'}</span>
+                <span>{T(lang, '新對話', 'New chat')}</span>
               </button>
               <button
                 onClick={() => setShape('collapsed')}
                 className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                 style={{ color: 'var(--text-muted)' }}
-                aria-label={isEn ? 'Close chat' : '收合對話'}
+                aria-label={T(lang, '收合對話', 'Close chat')}
               >
                 <CloseIcon size={16} />
               </button>
@@ -268,12 +270,14 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                     <MasterSageIcon size={32} color="var(--gold)" />
                   </div>
                   <h3 className="text-xl font-serif text-[var(--gold)]">
-                    {isEn ? 'Master Memory Governance' : '大師記憶管治'}
+                    {T(lang, '大師記憶管治', 'Master Memory Governance')}
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                    {isEn
-                      ? 'Master Xuanji notes your reading context and preferences to provide deeper astrological counsel.'
-                      : '玄機大師會銘記您的命造八字、問測偏好與歷次對談，為您提供更精準契合的命理推演。'}
+                    {T(
+                      lang,
+                      '玄機大師會銘記您的命造八字、問測偏好與歷次對談，為您提供更精準契合的命理推演。',
+                      'Master Xuanji notes your reading context and preferences to provide deeper astrological counsel.'
+                    )}
                   </p>
                 </div>
 
@@ -281,13 +285,13 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <div className="text-xs font-serif text-[var(--text-muted)]">
-                        {isEn ? 'Current Status' : '當前記憶狀態'}
+                        {T(lang, '當前記憶狀態', 'Current Status')}
                       </div>
                       <div className="text-sm font-medium mt-1">
                         {portraitEnabled ? (
-                          <span className="stamp-gold text-xs">{isEn ? 'Active' : '已啟用 · 運作中'}</span>
+                          <span className="stamp-gold text-xs">{T(lang, '已啟用 · 運作中', 'Active')}</span>
                         ) : (
-                          <span className="stamp-vermillion text-xs">{isEn ? 'Paused' : '已暫停 · 封存中'}</span>
+                          <span className="stamp-vermillion text-xs">{T(lang, '已暫停 · 封存中', 'Paused')}</span>
                         )}
                       </div>
                     </div>
@@ -301,15 +305,17 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                       }}
                     >
                       {portraitEnabled
-                        ? (isEn ? 'Pause Memory' : '暫停記憶')
-                        : (isEn ? 'Enable Memory' : '開啟記憶')}
+                        ? (T(lang, '暫停記憶', 'Pause Memory'))
+                        : (T(lang, '開啟記憶', 'Enable Memory'))}
                     </button>
                   </div>
 
                   <div className="verse-callout text-[11px] text-[var(--text-muted)]">
-                    {isEn
-                      ? 'Memory is strictly used to deepen your personal divination guidance and remains strictly confidential.'
-                      : '記憶僅用於延續問測心流，嚴守道家隱私戒律，絕不外洩。'}
+                    {T(
+                      lang,
+                      '記憶僅用於延續問測心流，嚴守道家隱私戒律，絕不外洩。',
+                      'Memory is strictly used to deepen your personal divination guidance and remains strictly confidential.'
+                    )}
                   </div>
                 </div>
 
@@ -320,7 +326,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                     style={{ background: 'var(--gold)', color: '#080c17' }}
                   >
                     <span>✦</span>
-                    <span>{isEn ? 'Save & Return to Chat' : '完成並返回對話'}</span>
+                    <span>{T(lang, '完成並返回對話', 'Save & Return to Chat')}</span>
                   </button>
 
                   <button
@@ -332,7 +338,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                     }}
                     className="w-full py-2.5 rounded-xl text-xs font-serif transition-all min-h-[40px] flex items-center justify-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--gold)] border border-[rgba(212,168,83,0.2)] hover:border-[rgba(212,168,83,0.4)] hover:bg-[rgba(212,168,83,0.04)]"
                   >
-                    <span>{isEn ? 'Open Full Memory Settings Page ↗' : '前往完整記憶設定頁面 ↗'}</span>
+                    <span>{T(lang, '前往完整記憶設定頁面 ↗', 'Open Full Memory Settings Page ↗')}</span>
                   </button>
                 </div>
               </div>
@@ -431,9 +437,11 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                         background: 'var(--accent-bg)',
                       }}
                     >
-                      {isEn
-                        ? `Your last message wasn't sent — too many interruptions. Let the current reply finish, or try again in ~${cooldownLeft}s.`
-                        : `剛才的訊息未送出 — 打斷過於頻繁。請等當前回應結束，或約 ${cooldownLeft} 秒後再試。`}
+                      {T(
+                        lang,
+                        `剛才的訊息未送出 — 打斷過於頻繁。請等當前回應結束，或約 ${cooldownLeft} 秒後再試。`,
+                        `Your last message wasn't sent — too many interruptions. Let the current reply finish, or try again in ~${cooldownLeft}s.`
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -452,7 +460,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                         e.currentTarget.blur()
                       }
                     }}
-                    placeholder={isEn ? 'Ask the Master...' : '請問大師...'}
+                    placeholder={T(lang, '請問大師...', 'Ask the Master...')}
                     rows={1}
                     className="flex-1 resize-none rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-1 transition-all"
                     style={{
@@ -475,7 +483,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                     className="rounded-xl px-4 py-2.5 text-sm font-medium transition-all disabled:opacity-20 hover:shadow-[0_0_15px_rgba(212,175,55,0.3)]"
                     style={{ backgroundColor: 'var(--gold)', color: '#000' }}
                   >
-                    {isEn ? 'Send' : '發送'}
+                    {T(lang, '發送', 'Send')}
                   </button>
                 </div>
               </div>

@@ -15,7 +15,7 @@ export const CREDIT_PACKS: Record<PackId, CreditPack> = {
   pack10: {
     name: { zh: '10 機緣', en: '10 Karma' },
     desc: { zh: '初試天機 · 入門占演', en: 'Starter pack for initial inquiries' },
-    icon: '🌙',
+    icon: '旬',
     price: 99, // $0.99
     originalPrice: 99, // $0.99 (no deceptive 10x strikethrough, ISS-26)
     credits: 10,
@@ -23,7 +23,7 @@ export const CREDIT_PACKS: Record<PackId, CreditPack> = {
   pack100: {
     name: { zh: '100 機緣', en: '100 Karma' },
     desc: { zh: '靈犀深會 · 常備推演', en: 'Most popular for regular seekers' },
-    icon: '⭐',
+    icon: '佰',
     price: 891, // $8.91 (10% off the $9.90 unit base)
     originalPrice: 990, // $9.90 (true base anchor: 10 × $0.99)
     credits: 100,
@@ -33,7 +33,7 @@ export const CREDIT_PACKS: Record<PackId, CreditPack> = {
   pack200: {
     name: { zh: '220 機緣', en: '220 Karma' },
     desc: { zh: '乾坤圓通 · 加贈20點', en: 'Best value: 200 + 20 Bonus Karma' },
-    icon: '🌟',
+    icon: '乾',
     price: 1680, // $16.80
     originalPrice: 2178, // $21.78
     credits: 220, // 200 + 20 bonus gradient (ISS-26)

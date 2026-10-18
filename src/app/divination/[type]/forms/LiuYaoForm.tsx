@@ -24,13 +24,13 @@ export default function LiuYaoForm() {
       </FormSection>
 
       {/* Principle of Coin Casting Guidance */}
-      <div className="p-3.5 rounded-xl bg-gold/5 border border-gold/20 text-xs text-white/75 leading-relaxed flex items-start gap-2.5">
+      <div className="p-3.5 rounded-xl bg-gold/5 border border-gold/20 text-xs text-foreground/75 leading-relaxed flex items-start gap-2.5">
         <DivinationIcon type="liuyao" className="w-4 h-4 text-gold flex-shrink-0 mt-0.5" />
         <div>
           <span className="font-serif font-medium text-gold text-xs block mb-1">
             {T(lang, LIUYAO_CAST_PRINCIPLE.title.zh, LIUYAO_CAST_PRINCIPLE.title.en)}
           </span>
-          <p className="text-[11px] text-white/70 leading-relaxed">
+          <p className="text-[11px] text-foreground/70 leading-relaxed">
             {T(lang, LIUYAO_CAST_PRINCIPLE.content.zh, LIUYAO_CAST_PRINCIPLE.content.en)}
           </p>
         </div>
@@ -58,7 +58,7 @@ export default function LiuYaoForm() {
         showReset={(linesLen, currentLine) => linesLen > 0 && currentLine < 6}
         resetLabel={T(lang, '重擲', 'Reset')}
         onReset={() => setField('liuyaoLines', '')}
-        resetClassName="px-3 py-2 text-white/40 hover:text-white/70 text-xs transition-colors"
+        resetClassName="px-3 py-2 text-foreground/40 hover:text-foreground/70 text-xs transition-colors"
       />
     </>
   )

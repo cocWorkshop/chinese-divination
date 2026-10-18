@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
         const rl = await checkCredits(userId, type)
         if (!rl.allowed) {
           return NextResponse.json(
-            { error: language === 'en' ? `Not enough Karma (need ${rl.cost}, have ${rl.remaining}). Visit the Karma Shop to get more.` : `✨ 機緣不足（需要 ${rl.cost}，剩餘 ${rl.remaining}）。前往機緣商店補充機緣。` },
+            { error: language === 'en' ? `Not enough Karma (need ${rl.cost}, have ${rl.remaining}). Visit the Karma Shop to get more.` : `機緣不足（需要 ${rl.cost}，剩餘 ${rl.remaining}）。前往機緣商店補充機緣。` },
             { status: 429 }
           )
         }
@@ -387,7 +387,7 @@ export async function POST(req: NextRequest) {
       }
       if (err?.status === 429) {
         return NextResponse.json(
-          { error: language !== 'en' ? '🔮 天機繁忙，請稍後再試。' : '🔮 The oracle is busy. Please try again shortly.' },
+          { error: language !== 'en' ? '天機繁忙，請稍後再試。' : 'The oracle is busy. Please try again shortly.' },
           { status: 429 }
         )
       }

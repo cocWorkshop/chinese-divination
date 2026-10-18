@@ -42,7 +42,7 @@ export default function AdminNotifications() {
   useEffect(() => { load() }, [])
 
   const getStatus = (n: Notification) => {
-    if (!n.active) return { label: 'Draft', color: 'text-white/40' }
+    if (!n.active) return { label: 'Draft', color: 'text-foreground/40' }
     if (n.expiresAt && new Date(n.expiresAt) < new Date()) return { label: 'Expired', color: 'text-red-400' }
     return { label: 'Active', color: 'text-green-400' }
   }
@@ -92,8 +92,8 @@ export default function AdminNotifications() {
     } catch { toast.error('Failed') }
   }
 
-  const inputClass = "w-full rounded-lg px-3 py-2 bg-navy-950 border border-gold/30 text-white text-sm focus:border-gold focus:outline-none"
-  const selectClass = "rounded-lg px-3 py-2 bg-navy-950 border border-gold/30 text-white text-sm focus:border-gold focus:outline-none"
+  const inputClass = "w-full rounded-lg px-3 py-2 bg-background border border-gold/30 text-foreground text-sm focus:border-gold focus:outline-none"
+  const selectClass = "rounded-lg px-3 py-2 bg-background border border-gold/30 text-foreground text-sm focus:border-gold focus:outline-none"
 
   return (
     <div className="p-6 max-w-5xl">
@@ -108,49 +108,49 @@ export default function AdminNotifications() {
       </div>
 
       {showForm && (
-        <div className="mb-6 p-4 rounded-xl bg-navy-800 border border-gold/20">
+        <div className="mb-6 p-4 rounded-xl bg-surface border border-gold/20">
           <h2 className="text-gold text-sm font-medium mb-4">
             {editingId ? '編輯通知 Edit' : '新增通知 Create'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="text-white/60 text-xs mb-1 block">標題 (中文)</label>
+              <label className="text-foreground/60 text-xs mb-1 block">標題 (中文)</label>
               <input className={inputClass} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="通知標題" />
             </div>
             <div>
-              <label className="text-white/60 text-xs mb-1 block">Title (EN)</label>
+              <label className="text-foreground/60 text-xs mb-1 block">Title (EN)</label>
               <input className={inputClass} value={form.titleEn} onChange={e => setForm({ ...form, titleEn: e.target.value })} placeholder="Notification title" />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="text-white/60 text-xs mb-1 block">內容 (中文)</label>
+              <label className="text-foreground/60 text-xs mb-1 block">內容 (中文)</label>
               <textarea className={inputClass} rows={3} value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="通知內容" />
             </div>
             <div>
-              <label className="text-white/60 text-xs mb-1 block">Content (EN)</label>
+              <label className="text-foreground/60 text-xs mb-1 block">Content (EN)</label>
               <textarea className={inputClass} rows={3} value={form.contentEn} onChange={e => setForm({ ...form, contentEn: e.target.value })} placeholder="Notification content" />
             </div>
           </div>
           <div className="flex flex-wrap gap-3 mb-4">
             <div>
-              <label className="text-white/60 text-xs mb-1 block">類型 Type</label>
+              <label className="text-foreground/60 text-xs mb-1 block">類型 Type</label>
               <select className={selectClass} value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
                 {TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-white/60 text-xs mb-1 block">對象 Target</label>
+              <label className="text-foreground/60 text-xs mb-1 block">對象 Target</label>
               <select className={selectClass} value={form.target} onChange={e => setForm({ ...form, target: e.target.value })}>
                 {TARGETS.map(t => <option key={t} value={t}>{TARGET_LABELS[t]}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-white/60 text-xs mb-1 block">到期時間 Expires</label>
+              <label className="text-foreground/60 text-xs mb-1 block">到期時間 Expires</label>
               <input type="datetime-local" className={selectClass} value={form.expiresAt} onChange={e => setForm({ ...form, expiresAt: e.target.value })} />
             </div>
             <div className="flex items-end">
-              <label className="flex items-center gap-2 text-white/60 text-sm cursor-pointer">
+              <label className="flex items-center gap-2 text-foreground/60 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.active} onChange={e => setForm({ ...form, active: e.target.checked })} className="accent-gold" />
                 啟用 Active
               </label>
@@ -166,14 +166,14 @@ export default function AdminNotifications() {
       )}
 
       {loading ? (
-        <div className="text-white/40 text-center py-8">Loading...</div>
+        <div className="text-foreground/40 text-center py-8">Loading...</div>
       ) : notifications.length === 0 ? (
-        <div className="text-white/40 text-center py-8">No notifications yet</div>
+        <div className="text-foreground/40 text-center py-8">No notifications yet</div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-white/40 border-b border-gold/10">
+              <tr className="text-foreground/40 border-b border-gold/10">
                 <th className="text-left py-2 px-3">Status</th>
                 <th className="text-left py-2 px-3">Type</th>
                 <th className="text-left py-2 px-3">Title</th>
@@ -187,13 +187,13 @@ export default function AdminNotifications() {
               {notifications.map(n => {
                 const status = getStatus(n)
                 return (
-                  <tr key={n.id} className="border-b border-gold/10 hover:bg-white/5">
+                  <tr key={n.id} className="border-b border-gold/10 hover:bg-foreground/5">
                     <td className={`py-2 px-3 ${status.color}`}>{status.label}</td>
-                    <td className="py-2 px-3 text-white/80">{TYPE_LABELS[n.type] || n.type}</td>
-                    <td className="py-2 px-3 text-white">{n.title}</td>
-                    <td className="py-2 px-3 text-white/60">{TARGET_LABELS[n.target] || n.target}</td>
-                    <td className="py-2 px-3 text-right text-white/60">{n._count.reads}</td>
-                    <td className="py-2 px-3 text-white/40 whitespace-nowrap">
+                    <td className="py-2 px-3 text-foreground/80">{TYPE_LABELS[n.type] || n.type}</td>
+                    <td className="py-2 px-3 text-foreground">{n.title}</td>
+                    <td className="py-2 px-3 text-foreground/60">{TARGET_LABELS[n.target] || n.target}</td>
+                    <td className="py-2 px-3 text-right text-foreground/60">{n._count.reads}</td>
+                    <td className="py-2 px-3 text-foreground/40 whitespace-nowrap">
                       {new Date(n.createdAt).toLocaleDateString()}
                     </td>
                     <td className="py-2 px-3 text-right">

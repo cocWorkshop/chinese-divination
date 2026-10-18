@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import { TEN } from '@/lib/i18n'
 import {
   getFeedbackPromptContent,
   buildFeedbackPayload,
@@ -68,7 +69,7 @@ export default function MasterFeedbackPrompt({
         <button
           onClick={() => setDismissed(true)}
           className="absolute top-2 right-2.5 text-text-muted hover:text-text-primary text-[11px] p-0.5"
-          aria-label={isEn ? 'Dismiss' : '關閉'}
+          aria-label={TEN(isEn, '關閉', 'Dismiss')}
         >
           ✕
         </button>

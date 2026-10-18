@@ -34,11 +34,11 @@ const elBar: Record<string, string> = {
 
 const sectionsList = [
   { key: 'overview', label: '總覽', en: 'Overview', icon: '☰' },
-  { key: 'career', label: '事業', en: 'Career', icon: '💼' },
-  { key: 'marriage', label: '婚姻', en: 'Marriage', icon: '💕' },
-  { key: 'wealth', label: '財運', en: 'Wealth', icon: '💰' },
-  { key: 'health', label: '健康', en: 'Health', icon: '🌿' },
-  { key: 'daYunDetail', label: '大運精批', en: 'Life Phases', icon: '🔮' },
+  { key: 'career', label: '事業', en: 'Career', icon: '祿' },
+  { key: 'marriage', label: '婚姻', en: 'Marriage', icon: '緣' },
+  { key: 'wealth', label: '財運', en: 'Wealth', icon: '財' },
+  { key: 'health', label: '健康', en: 'Health', icon: '安' },
+  { key: 'daYunDetail', label: '大運精批', en: 'Life Phases', icon: '運' },
 ]
 
 function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
@@ -56,7 +56,7 @@ function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown>
     daYun: b.daYun,
     xiaoYun: b.xiaoYun,
     qiYun: b.qiYun,
-    sections: { overview: '（只排盤模式，無AI解盤）', career: '', marriage: '', wealth: '', health: '', periods: '' },
+    sections: { overview: '（只排盤模式，不含解盤）', career: '', marriage: '', wealth: '', health: '', periods: '' },
     paipanOnly: true,
   }
 }
@@ -98,7 +98,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
       <AnimatePresence initial={false}>
       {showChart && (
         <motion.div
-          initial={lang === 'en' ? { height: 0, opacity: 0 } : false}
+          initial={T(lang, false, { height: 0, opacity: 0 })}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.3 }}
@@ -107,7 +107,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
 
       {/* ═══ COMPACT FOUR PILLARS TABLE ═══ */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="glass-card rounded-xl p-2 sm:p-4 border border-gold/20">
+        className="card-quiet rounded-xl p-2 sm:p-4 border border-gold/20">
 
         {/* True Solar Time — tiny indicator */}
         {tst && (
@@ -139,7 +139,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           </thead>
           <tbody>
             {/* Row: 主星 (Ten God of stem) */}
-            <tr className="border-t border-white/5">
+            <tr className="border-t border-line/5">
               <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '主星', 'God')}</td>
               {pillars.map(({ label, data: p }) => {
                 const god = label === '日柱' ? T(lang, '日主', 'Self') : p?.tenGods?.[0]?.god || ''
@@ -153,7 +153,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                 const stemEl = charElement(p?.stem || '')
                 return (
                   <td key={label} className="py-1.5">
-                    <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[stemEl] || 'text-white'}`}>
+                    <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[stemEl] || 'text-foreground'}`}>
                       {p?.stem || '?'}
                     </span>
                   </td>
@@ -167,7 +167,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                 const branchEl = charElement(p?.branch || '')
                 return (
                   <td key={label} className="py-1.5">
-                    <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[branchEl] || 'text-white'}`}>
+                    <span className={`text-lg sm:text-xl font-serif font-bold ${elClr[branchEl] || 'text-foreground'}`}>
                       {p?.branch || '?'}
                     </span>
                   </td>
@@ -175,7 +175,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
               })}
             </tr>
             {/* Row: 藏干 */}
-            <tr className="border-t border-white/5">
+            <tr className="border-t border-line/5">
               <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '藏干', 'Hidden')}</td>
               {pillars.map(({ label, data: p }) => (
                 <td key={label} className="text-[var(--text-muted)] text-[10px] py-1 leading-tight">
@@ -187,7 +187,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
               ))}
             </tr>
             {/* Row: 副星 (hidden stem gods) */}
-            <tr className="border-t border-white/5">
+            <tr className="border-t border-line/5">
               <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '副星', 'Sub')}</td>
               {pillars.map(({ label, data: p }) => (
                 <td key={label} className="text-[var(--text-muted)] text-[10px] py-1 leading-tight">
@@ -198,21 +198,21 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
               ))}
             </tr>
             {/* Row: 十二长生 */}
-            <tr className="border-t border-white/5">
+            <tr className="border-t border-line/5">
               <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '長生', 'Stage')}</td>
               {pillars.map(({ label, data: p }) => (
                 <td key={label} className="text-[var(--text-muted)] text-[10px] py-1">{p?.changSheng || ''}</td>
               ))}
             </tr>
             {/* Row: 纳音 */}
-            <tr className="border-t border-white/5">
+            <tr className="border-t border-line/5">
               <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '納音', 'Nayin')}</td>
               {pillars.map(({ label, data: p }) => (
                 <td key={label} className="text-[var(--text-muted)] text-[10px] py-1">{p?.nayin || ''}</td>
               ))}
             </tr>
             {/* Row: 空亡 */}
-            <tr className="border-t border-white/5">
+            <tr className="border-t border-line/5">
               <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '空亡', 'Void')}</td>
               {pillars.map(({ label, data: p }) => (
                 <td key={label} className="text-[var(--text-muted)] text-[10px] py-1">{(p?.kongWang || []).join('')}</td>
@@ -224,7 +224,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
 
       {/* ═══ COMPACT: Day Master + Five Elements + Lucky/Avoid ═══ */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-        className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
+        className="card-quiet rounded-xl p-3 sm:p-4 border border-gold/20">
         <div className="flex items-start gap-3 sm:gap-4">
           {/* Day Master badge */}
           <div className="text-center flex-shrink-0">
@@ -244,7 +244,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
             {feEntries.map(([el, count]) => (
               <div key={el} className="flex items-center gap-1.5">
                 <span className={`w-4 text-[10px] ${elClr[el]}`}>{el}</span>
-                <div className="flex-1 bg-navy-900 rounded-full h-1.5">
+                <div className="flex-1 bg-surface rounded-full h-1.5">
                   <div className={`h-1.5 rounded-full ${elBar[el]}`} style={{ width: `${(count / feMax) * 100}%` }} />
                 </div>
                 <span className="text-[var(--text-muted)] text-[10px] w-4 text-right">{count}</span>
@@ -292,14 +292,18 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           >
             {/* Shen Sha per pillar */}
             {(allPillarShenSha || (d.shenSha && d.shenSha.length > 0)) && (
-              <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
+              <div className="card-quiet rounded-xl p-3 border border-gold/20 overflow-hidden">
                 <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '神煞', 'Shen Sha')}</h3>
                 {allPillarShenSha ? (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {(['year','month','day','hour'] as const).map(key => {
                       const p = d.pillars[key]
                       const ss = p?.shenSha || []
-                      const label = lang === 'en' ? (key === 'year' ? 'Year' : key === 'month' ? 'Month' : key === 'day' ? 'Day' : 'Hour') : (key === 'year' ? '年' : key === 'month' ? '月' : key === 'day' ? '日' : '時')
+                      const label = T(
+                        lang,
+                        key === 'year' ? '年' : key === 'month' ? '月' : key === 'day' ? '日' : '時',
+                        key === 'year' ? 'Year' : key === 'month' ? 'Month' : key === 'day' ? 'Day' : 'Hour',
+                      )
                       return (
                         <div key={key}>
                           <div className="text-[var(--text-muted)] text-[10px] mb-1">{label}</div>
@@ -307,7 +311,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                             {ss.length > 0 ? ss.map((s, i) => (
                               <span key={i} className="group relative px-1.5 py-0.5 rounded border border-gold/20 bg-gold/5 text-gold text-[10px] cursor-default">
                                 {s.name}
-                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-navy-800 border border-gold/30 rounded text-white/70 text-[9px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-surface border border-gold/30 rounded text-foreground/70 text-[9px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                                   {s.description}
                                 </span>
                               </span>
@@ -329,7 +333,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
 
             {/* Da Yun */}
             {d.daYun && d.daYun.length > 0 && (
-              <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
+              <div className="card-quiet rounded-xl p-3 border border-gold/20 overflow-hidden">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-gold font-serif text-xs">{T(lang, '大運', 'Da Yun')}</h3>
                   {d.qiYun && (
@@ -343,7 +347,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
                     {d.daYun.map((dy, i) => {
                       const el = STEM_ELEMENT_MAP[dy.stem] || ''
                       return (
-                        <div key={i} className="rounded-lg border border-gold/20 bg-white/5 dark:bg-white/5 px-2 py-1.5 text-center min-w-[60px]">
+                        <div key={i} className="rounded-lg border border-gold/20 bg-foreground/5 dark:bg-foreground/5 px-2 py-1.5 text-center min-w-[60px]">
                           <div className="text-[var(--text-muted)] text-[10px]">{dy.startAge}-{dy.endAge}</div>
                           <div className="text-sm font-serif font-bold">
                             <span className={elClr[charElement(dy.stem)] || 'text-[var(--text-primary)]'}>{dy.stem}</span>
@@ -360,11 +364,11 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
 
             {/* Xiao Yun */}
             {d.xiaoYun && d.xiaoYun.length > 0 && (
-              <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
+              <div className="card-quiet rounded-xl p-3 border border-gold/20 overflow-hidden">
                 <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '小運（起運前）', 'Xiao Yun')}</h3>
                 <div className="flex flex-wrap gap-1">
                   {d.xiaoYun.map((xy, i) => (
-                    <div key={i} className="px-2 py-1.5 rounded border border-gold/20 bg-white/5 dark:bg-white/5 text-center">
+                    <div key={i} className="px-2 py-1.5 rounded border border-gold/20 bg-foreground/5 dark:bg-foreground/5 text-center">
                       <div className="text-[var(--text-muted)] text-[10px]">{xy.age}{T(lang, '歲', '')}</div>
                       <div className="text-sm font-serif">
                         <span className={elClr[charElement(xy.stem)] || 'text-[var(--text-primary)]'}>{xy.stem}</span>
@@ -390,7 +394,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           {sectionsList.map(s => (
             <button key={s.key} onClick={() => setActiveSection(s.key)}
               className={`px-3 py-1.5 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-[var(--text-secondary)] hover:text-gold border border-gold/20'}`}>
-              {s.icon} {lang === 'en' ? s.en : s.label}
+              {s.icon} {T(lang, s.label, s.en)}
             </button>
           ))}
         </div>
@@ -401,7 +405,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
           >
-            <div className="glass-card rounded-xl p-4 sm:p-5 border border-gold/20 text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown">
+            <div className="card-quiet rounded-xl p-4 sm:p-5 border border-gold/20 text-[var(--text-secondary)] text-sm leading-relaxed ziwei-markdown">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
               </ReactMarkdown>
@@ -416,7 +420,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
           <h3 className="text-gold font-serif text-sm mb-2">{T(lang, '核心建議', 'Key Advice')}</h3>
           <div className="grid gap-2">
             {d.keyAdvice.map((advice, i) => (
-              <div key={i} className="glass-card rounded-xl p-3 border border-gold/20 flex gap-2">
+              <div key={i} className="card-quiet rounded-xl p-3 border border-gold/20 flex gap-2">
                 <span className="w-5 h-5 rounded-full bg-gold/20 text-gold text-[10px] flex items-center justify-center flex-shrink-0 font-serif">{i + 1}</span>
                 <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{advice}</p>
               </div>
@@ -431,7 +435,7 @@ export default function BaziResult({ data, isShared, rawResult, readingId, chatM
       {/* Lucky Info */}
       {d.luckyInfo && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
-          className="glass-card rounded-xl p-3 border border-gold/20">
+          className="card-quiet rounded-xl p-3 border border-gold/20">
           <div className="flex flex-wrap gap-4 text-xs">
             {d.luckyInfo.numbers?.length > 0 && (
               <div><span className="text-[var(--text-muted)]">{T(lang, '幸運數:', 'Lucky Numbers:')}</span> <span className="text-gold">{d.luckyInfo.numbers.join(', ')}</span></div>

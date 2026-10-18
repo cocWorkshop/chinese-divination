@@ -68,7 +68,7 @@ function VerifySentContent() {
           您的帳號已建立，最後一步：請查收信箱。
         </p>
         {email && (
-          <p className="font-mono text-xs mt-3 mb-1 px-3 py-1.5 rounded inline-block bg-navy-900/60 border border-gold/20 text-gold-light/90">
+          <p className="font-mono text-xs mt-3 mb-1 px-3 py-1.5 rounded inline-block bg-surface/60 border border-gold/20 text-gold-light/90">
             {email}
           </p>
         )}

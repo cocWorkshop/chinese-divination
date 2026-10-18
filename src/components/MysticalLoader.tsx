@@ -4,6 +4,7 @@ import YinYangIcon from '@/components/YinYangIcon'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getRandomPlaylist, TipPlaylist } from './divinationTips'
+import { T, TEN } from '@/lib/i18n'
 
 const divinationQuotes = {
   'zh-TW': [
@@ -40,27 +41,33 @@ function getCelestialRiteStage(elapsed: number, isEn: boolean, isHexagram: boole
   if (elapsed < 12) {
     return {
       stage: 1,
-      title: isEn ? 'Ordering Heaven & Earth' : '乾坤定序',
-      desc: isEn
-        ? (isHexagram ? 'Casting hexagram and establishing host lines...' : 'Aligning the Four Pillars and cyclical stems...')
-        : (isHexagram ? '六爻定序，布列體用世應...' : '乾坤定序，排定四柱干支...'),
+      title: TEN(isEn, '乾坤定序', 'Ordering Heaven & Earth'),
+      desc: TEN(
+        isEn,
+        isHexagram ? '六爻定序，布列體用世應...' : '乾坤定序，排定四柱干支...',
+        isHexagram ? 'Casting hexagram and establishing host lines...' : 'Aligning the Four Pillars and cyclical stems...'
+      ),
     }
   }
   if (elapsed < 45) {
     return {
       stage: 2,
-      title: isEn ? 'Stars & Spirits Converge' : '星曜入宮',
-      desc: isEn
-        ? (isHexagram ? 'Discerning changing lines and mutual resonance...' : 'Celestial stars enter palaces, gathering cosmic Qi...')
-        : (isHexagram ? '參詳變爻，感應動靜之機...' : '星曜入宮，吉凶神煞引聚...'),
+      title: TEN(isEn, '星曜入宮', 'Stars & Spirits Converge'),
+      desc: TEN(
+        isEn,
+        isHexagram ? '參詳變爻，感應動靜之機...' : '星曜入宮，吉凶神煞引聚...',
+        isHexagram ? 'Discerning changing lines and mutual resonance...' : 'Celestial stars enter palaces, gathering cosmic Qi...'
+      ),
     }
   }
   return {
     stage: 3,
-    title: isEn ? 'Mystic Revelation' : '天機凝聚',
-    desc: isEn
-      ? (isHexagram ? 'Heavenly mechanisms align, oracle taking shape...' : 'Heavenly mechanisms align, fate report unfolding...')
-      : (isHexagram ? '天機凝聚，詳批卦辭將現...' : '天機凝聚，詳批命書將現...'),
+    title: TEN(isEn, '天機凝聚', 'Mystic Revelation'),
+    desc: TEN(
+      isEn,
+      isHexagram ? '天機凝聚，詳批卦辭將現...' : '天機凝聚，詳批命書將現...',
+      isHexagram ? 'Heavenly mechanisms align, oracle taking shape...' : 'Heavenly mechanisms align, fate report unfolding...'
+    ),
   }
 }
 
@@ -89,7 +96,7 @@ export default function MysticalLoader({
   message,
 }: MysticalLoaderProps) {
   const [quoteIndex, setQuoteIndex] = useState(0)
-  const quotes = lang === 'en' ? divinationQuotes.en : divinationQuotes['zh-TW']
+  const quotes = T(lang, divinationQuotes['zh-TW'], divinationQuotes.en)
   const [elapsed, setElapsed] = useState(0)
 
   // Educational tips playlist (selected once on mount)
@@ -144,7 +151,7 @@ export default function MysticalLoader({
             />
           ))}
         </motion.div>
-        <span className="text-white/40 text-xs">{lang === 'en' ? 'Deciphering the hidden path...' : '破解玄機中...'}</span>
+        <span className="text-foreground/40 text-xs">{T(lang, '破解玄機中...', 'Deciphering the hidden path...')}</span>
       </div>
     )
   }
@@ -160,7 +167,7 @@ export default function MysticalLoader({
           <YinYangIcon size={iconSize} className="drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]" />
         </motion.div>
         <p className="text-gold/70 text-sm font-serif">
-          {message || (lang === 'en' ? 'Loading...' : '載入中...')}
+          {message || (T(lang, '載入中...', 'Loading...'))}
         </p>
       </div>
     )
@@ -277,9 +284,9 @@ export default function MysticalLoader({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.6 }}
-              className="text-white/50 text-xs text-center leading-relaxed font-serif"
+              className="text-foreground/50 text-xs text-center leading-relaxed font-serif"
             >
-              💡 {lang === 'en' ? playlist![tipIndex].en : playlist![tipIndex].zh}
+              {T(lang, playlist![tipIndex].zh, playlist![tipIndex].en)}
             </motion.p>
           </AnimatePresence>
         </motion.div>
@@ -291,9 +298,9 @@ export default function MysticalLoader({
         const isHex = HEXAGRAM_TYPES.has(divinationType || '')
         const current = getCelestialRiteStage(elapsed, isEn, isHex)
         const stagesList = [
-          { num: 1, title: isEn ? 'Order' : '乾坤定序' },
-          { num: 2, title: isEn ? 'Converge' : '星曜入宮' },
-          { num: 3, title: isEn ? 'Reveal' : '天機凝聚' },
+          { num: 1, title: T(lang, '乾坤定序', 'Order') },
+          { num: 2, title: T(lang, '星曜入宮', 'Converge') },
+          { num: 3, title: T(lang, '天機凝聚', 'Reveal') },
         ]
         return (
           <motion.div
@@ -322,14 +329,14 @@ export default function MysticalLoader({
                           ? 'border border-gold bg-gold/25 text-gold-light shadow-[0_0_12px_rgba(212,168,83,0.4)] scale-110'
                           : isPassed
                           ? 'border border-gold/40 bg-gold/10 text-gold/80'
-                          : 'border border-gold/15 bg-navy-900/60 text-white/30'
+                          : 'border border-gold/15 bg-surface/60 text-foreground/30'
                       }`}
                     >
                       {isActive ? '✧' : isPassed ? '✓' : st.num}
                     </div>
                     <span
                       className={`text-[11px] font-serif transition-colors duration-300 ${
-                        isActive ? 'text-gold font-medium' : isPassed ? 'text-gold/70' : 'text-white/35'
+                        isActive ? 'text-gold font-medium' : isPassed ? 'text-gold/70' : 'text-foreground/35'
                       }`}
                     >
                       {st.title}
@@ -366,9 +373,11 @@ export default function MysticalLoader({
           className="text-xs text-center mt-3 max-w-xs mx-auto leading-relaxed font-serif"
           style={{ color: 'var(--text-muted)' }}
         >
-          {lang === 'en'
-            ? 'The celestial path runs deep. Master Xuanji is contemplating the chart layers — please remain peacefully present.'
-            : '天機深邃，宗師正逐層參詳命脈氣候 — 靜候片刻，機緣即顯。'}
+          {T(
+            lang,
+            '天機深邃，宗師正逐層參詳命脈氣候 — 靜候片刻，機緣即顯。',
+            'The celestial path runs deep. Master Xuanji is contemplating the chart layers — please remain peacefully present.'
+          )}
         </motion.p>
       )}
 
@@ -383,7 +392,7 @@ export default function MysticalLoader({
           className="mt-2 px-4 py-2 rounded-lg text-xs transition-colors hover:bg-gold/10"
           style={{ color: 'var(--gold)', border: '1px solid var(--border-gold)' }}
         >
-          {lang === 'en' ? 'Cancel and return to the form (your inputs are kept)' : '取消並返回表單（已填資料會保留）'}
+          {T(lang, '取消並返回表單（已填資料會保留）', 'Cancel and return to the form (your inputs are kept)')}
         </motion.button>
       )}
     </motion.div>

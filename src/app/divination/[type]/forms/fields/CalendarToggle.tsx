@@ -14,14 +14,14 @@ export default function CalendarToggle({ layoutId }: { layoutId: string }) {
   return (
     <div>
       <span className={labelCls}>{T(lang, '曆法', 'Calendar')}</span>
-      <div className="flex rounded-full border border-gold/30 overflow-hidden bg-navy-800 w-fit">
+      <div className="flex rounded-full border border-gold/30 overflow-hidden bg-surface w-fit">
         {([['solar', '公曆', 'Solar'], ['lunar', '農曆', 'Lunar']] as const).map(([val, zh, en]) => (
           <motion.button
             key={val}
             type="button"
             onClick={() => setField('lunarToggle', val)}
             className={`px-5 py-2 text-sm font-medium transition-colors relative ${
-              form.lunarToggle === val ? 'text-navy-900' : 'text-white/60 hover:text-white/80'
+              form.lunarToggle === val ? 'text-navy-900' : 'text-foreground/60 hover:text-foreground/80'
             }`}
           >
             {form.lunarToggle === val && (

@@ -70,9 +70,9 @@ const STEM_DETAILS: Record<
     natureEn: 'Towering forest oak: upright, benevolent, ambitious and pioneering.',
     tags: ['剛直不阿', '開拓先驅', '深具遠見', '仁厚守禮'],
     traits: [
-      { title: '大器端莊', desc: '做事極有擔當，遇風雨亦立身正直，天然具有凝聚他人的領導風範。', icon: '🌲' },
-      { title: '求索精進', desc: '自尊心強，不甘平庸，始終渴望在專業領域扎深根基、向上突破。', icon: '🌱' },
-      { title: '仁者胸懷', desc: '重情義、守承諾，常在朋友或團隊面臨艱險時挺身而出。', icon: '🤝' },
+      { title: '大器端莊', desc: '做事極有擔當，遇風雨亦立身正直，天然具有凝聚他人的領導風範。', icon: '喬' },
+      { title: '求索精進', desc: '自尊心強，不甘平庸，始終渴望在專業領域扎深根基、向上突破。', icon: '進' },
+      { title: '仁者胸懷', desc: '重情義、守承諾，常在朋友或團隊面臨艱險時挺身而出。', icon: '仁' },
     ],
   },
   乙: {
@@ -83,9 +83,9 @@ const STEM_DETAILS: Record<
     natureEn: 'Living vine and flower: flexible, graceful, highly adaptable and intuitive.',
     tags: ['柔韌通變', '知進知退', '洞察人心', '內蘊風骨'],
     traits: [
-      { title: '借勢生長', desc: '善於感知周遭環境的微妙變化，能在逆境中靈活盤旋，以柔克剛。', icon: '🌿' },
-      { title: '心細情長', desc: '同理心極強，善於傾聽與安撫人心，人際關係圓融和諧。', icon: '🌸' },
-      { title: '堅韌不拔', desc: '看似溫和隨順，內心深處卻有不可動搖的底線與驚人的耐力。', icon: '🎋' },
+      { title: '借勢生長', desc: '善於感知周遭環境的微妙變化，能在逆境中靈活盤旋，以柔克剛。', icon: '藤' },
+      { title: '心細情長', desc: '同理心極強，善於傾聽與安撫人心，人際關係圓融和諧。', icon: '柔' },
+      { title: '堅韌不拔', desc: '看似溫和隨順，內心深處卻有不可動搖的底線與驚人的耐力。', icon: '韌' },
     ],
   },
   丙: {
@@ -96,9 +96,9 @@ const STEM_DETAILS: Record<
     natureEn: 'Blazing radiant sun: passionate, magnanimous, generous and inspiring.',
     tags: ['熱忱坦蕩', '胸襟宏闊', '行動果決', '激勵人心'],
     traits: [
-      { title: '光明磊落', desc: '行事光明正大，不喜曲意逢迎，喜怒哀樂溢於言表，真誠待人。', icon: '☀️' },
-      { title: '活力四射', desc: '自帶感染力與充沛能量，往往是團隊中的士氣來源與焦點所在。', icon: '🔥' },
-      { title: '豪爽仗義', desc: '見不得他人受困，樂於助人，心胸開闊不計前嫌。', icon: '✨' },
+      { title: '光明磊落', desc: '行事光明正大，不喜曲意逢迎，喜怒哀樂溢於言表，真誠待人。', icon: '陽' },
+      { title: '活力四射', desc: '自帶感染力與充沛能量，往往是團隊中的士氣來源與焦點所在。', icon: '炎' },
+      { title: '豪爽仗義', desc: '見不得他人受困，樂於助人，心胸開闊不計前嫌。', icon: '義' },
     ],
   },
   丁: {
@@ -109,9 +109,9 @@ const STEM_DETAILS: Record<
     natureEn: 'Luminous candle & star: gentle, perceptive, enlightened and intellectually deep.',
     tags: ['見微知著', '溫文爾雅', '深思敏銳', '慧黠神明'],
     traits: [
-      { title: '幽微洞察', desc: '直覺敏銳，能輕易看破事物的表面浮華，捕捉背後的真實玄機。', icon: '🕯️' },
-      { title: '文秀含蓄', desc: '待人溫和克制，舉手投足帶著知性氣質，內心世界豐富深邃。', icon: '🏮' },
-      { title: '暗室明燈', desc: '關鍵時刻總能為迷惘之人點亮方向，是值得深交的智慧知己。', icon: '⭐' },
+      { title: '幽微洞察', desc: '直覺敏銳，能輕易看破事物的表面浮華，捕捉背後的真實玄機。', icon: '燭' },
+      { title: '文秀含蓄', desc: '待人溫和克制，舉手投足帶著知性氣質，內心世界豐富深邃。', icon: '秀' },
+      { title: '暗室明燈', desc: '關鍵時刻總能為迷惘之人點亮方向，是值得深交的智慧知己。', icon: '燈' },
     ],
   },
   戊: {
@@ -122,9 +122,9 @@ const STEM_DETAILS: Record<
     natureEn: 'Mountain bedrock: grounded, trustworthy, patient and immensely steady.',
     tags: ['沉著穩重', '信守金諾', '氣度包容', '臨危不亂'],
     traits: [
-      { title: '厚德載物', desc: '情緒穩定，耐力過人，面對外界動盪時宛若磐石，給人極大安全感。', icon: '⛰️' },
-      { title: '重信講義', desc: '一言既出駟馬難追，是朋友和合作夥伴最堅實的後盾。', icon: '🛡️' },
-      { title: '沉潛大器', desc: '不喜張揚，善於默默積蓄實力，厚積而薄發。', icon: '🌍' },
+      { title: '厚德載物', desc: '情緒穩定，耐力過人，面對外界動盪時宛若磐石，給人極大安全感。', icon: '山' },
+      { title: '重信講義', desc: '一言既出駟馬難追，是朋友和合作夥伴最堅實的後盾。', icon: '信' },
+      { title: '沉潛大器', desc: '不喜張揚，善於默默積蓄實力，厚積而薄發。', icon: '厚' },
     ],
   },
   己: {
@@ -135,9 +135,9 @@ const STEM_DETAILS: Record<
     natureEn: 'Nutrient-rich loam: nurturing, perceptive, patient and generous.',
     tags: ['涵養萬物', '循循善誘', '謹慎精細', '善於包容'],
     traits: [
-      { title: '潤物無聲', desc: '善於照顧他人感受，默默付出而很少計較回報，富有慈悲之心。', icon: '🌾' },
-      { title: '多謀善斷', desc: '思慮周延，擅長整合資源與化解紛爭，極具調和能力。', icon: '🪴' },
-      { title: '內秀堅實', desc: '看似平凡隨和，卻蕴藏著源源不絕的包容與孕育力量。', icon: '🏡' },
+      { title: '潤物無聲', desc: '善於照顧他人感受，默默付出而很少計較回報，富有慈悲之心。', icon: '禾' },
+      { title: '多謀善斷', desc: '思慮周延，擅長整合資源與化解紛爭，極具調和能力。', icon: '育' },
+      { title: '內秀堅實', desc: '看似平凡隨和，卻蕴藏著源源不絕的包容與孕育力量。', icon: '田' },
     ],
   },
   庚: {
@@ -148,9 +148,9 @@ const STEM_DETAILS: Record<
     natureEn: 'Tempered sword steel: brave, decisive, righteous and cutting-edge.',
     tags: ['剛毅果決', '直截了當', '仗義執言', '敢破敢立'],
     traits: [
-      { title: '行事果決', desc: '討厭拖泥帶水，遇到問題敢作敢當，出手快準狠，極具魄力。', icon: '⚔️' },
-      { title: '是非分明', desc: '正義感極強，眼里揉不得沙子，對朋友肝膽相照。', icon: '🗡️' },
-      { title: '百鍊成鋼', desc: '在磨礪與挑戰中反而越挫越勇，愈經打磨愈顯鋒芒。', icon: '💎' },
+      { title: '行事果決', desc: '討厭拖泥帶水，遇到問題敢作敢當，出手快準狠，極具魄力。', icon: '刃' },
+      { title: '是非分明', desc: '正義感極強，眼里揉不得沙子，對朋友肝膽相照。', icon: '剛' },
+      { title: '百鍊成鋼', desc: '在磨礪與挑戰中反而越挫越勇，愈經打磨愈顯鋒芒。', icon: '鋼' },
     ],
   },
   辛: {
@@ -161,9 +161,9 @@ const STEM_DETAILS: Record<
     natureEn: 'Polished diamond & gem: refined, elegant, perfectionist and sharp.',
     tags: ['優雅從容', '完美主義', '靈心慧性', '風骨自持'],
     traits: [
-      { title: '精益求精', desc: '對生活品質與精神境界有極高追求，細節之處尤顯非凡品味。', icon: '💍' },
-      { title: '玲瓏心竅', desc: '心思細緻通透，極善於體察人情冷暖與審美意境。', icon: '✨' },
-      { title: '傲骨凌霜', desc: '氣質清冷高潔，外柔內剛，有著極為堅定自重的內核。', icon: '🪞' },
+      { title: '精益求精', desc: '對生活品質與精神境界有極高追求，細節之處尤顯非凡品味。', icon: '琢' },
+      { title: '玲瓏心竅', desc: '心思細緻通透，極善於體察人情冷暖與審美意境。', icon: '玲' },
+      { title: '傲骨凌霜', desc: '氣質清冷高潔，外柔內剛，有著極為堅定自重的內核。', icon: '霜' },
     ],
   },
   壬: {
@@ -174,9 +174,9 @@ const STEM_DETAILS: Record<
     natureEn: 'Surging mighty river: visionary, highly intelligent, fluid and boundless.',
     tags: ['聰慧豁達', '智者無疆', '應機立斷', '胸襟汪洋'],
     traits: [
-      { title: '大智若水', desc: '思維開闊敏捷，善於宏觀佈局，凡事順勢而為而不拘泥常規。', icon: '🌊' },
-      { title: '四海同心', desc: '交遊廣闊，適應力極強，任何陌生環境都能迅速如魚得水。', icon: '⛵' },
-      { title: '氣吞山河', desc: '格局高遠，不困於一時得失，志在千里。', icon: '🌌' },
+      { title: '大智若水', desc: '思維開闊敏捷，善於宏觀佈局，凡事順勢而為而不拘泥常規。', icon: '江' },
+      { title: '四海同心', desc: '交遊廣闊，適應力極強，任何陌生環境都能迅速如魚得水。', icon: '航' },
+      { title: '氣吞山河', desc: '格局高遠，不困於一時得失，志在千里。', icon: '海' },
     ],
   },
   癸: {
@@ -187,9 +187,9 @@ const STEM_DETAILS: Record<
     natureEn: 'Pristine morning dew: spiritual, empathic, quietly profound and inspiring.',
     tags: ['靈性直覺', '上善若水', '隨方就圓', '潤物無聲'],
     traits: [
-      { title: '通靈感應', desc: '天生對玄學、心理、藝術有超乎常人的敏銳直覺，善識天機。', icon: '💧' },
-      { title: '至柔至容', desc: '隨物賦形，柔善包容，看似無爭，實則無堅不摧。', icon: '🌧️' },
-      { title: '深沉智慧', desc: '喜好安靜思考，心境澄明，言談之間常發人深省。', icon: '🔮' },
+      { title: '通靈感應', desc: '天生對玄學、心理、藝術有超乎常人的敏銳直覺，善識天機。', icon: '露' },
+      { title: '至柔至容', desc: '隨物賦形，柔善包容，看似無爭，實則無堅不摧。', icon: '滋' },
+      { title: '深沉智慧', desc: '喜好安靜思考，心境澄明，言談之間常發人深省。', icon: '淵' },
     ],
   },
 }
@@ -210,16 +210,16 @@ export function generateOnboardingSpark(input: OnboardingInput): OnboardingSpark
       },
       personalityTags: ['造化天機', '虛靈不昧', '待時而動', '順應天時'],
       traits: [
-        { title: '靜待機緣', desc: '補全出生日期與時辰後，系統將精準排出四柱八字與紫微宮位。', icon: '🌌' },
-        { title: '洞察先機', desc: '無論何時起步，東方命理智囊皆為您提供指引明燈。', icon: '🕯️' },
-        { title: '博採眾長', desc: '您仍可自由體驗六爻占卦、梅花易數、風水佈局等經典術數。', icon: '🧭' },
+        { title: '靜待機緣', desc: '補全出生日期與時辰後，系統將精準排出四柱八字與紫微宮位。', icon: '機' },
+        { title: '洞察先機', desc: '無論何時起步，東方命理智囊皆為您提供指引明燈。', icon: '明' },
+        { title: '博採眾長', desc: '您仍可自由體驗六爻占卦、梅花易數、風水佈局等經典術數。', icon: '羅' },
       ],
       fiveElements: { metal: 20, wood: 20, water: 20, fire: 20, earth: 20 },
       suggestedInquiries: [
         {
           id: 'career_start',
           category: 'career',
-          icon: '💼',
+          icon: '祿',
           titleZh: '近期事業轉機',
           titleEn: 'Career Outlook',
           questionZh: '我近期事業發展有無新突破與轉機？適宜進攻還是守成？',
@@ -229,7 +229,7 @@ export function generateOnboardingSpark(input: OnboardingInput): OnboardingSpark
         {
           id: 'wealth_start',
           category: 'wealth',
-          icon: '💰',
+          icon: '財',
           titleZh: '正財偏財機遇',
           titleEn: 'Wealth Timing',
           questionZh: '今年財祿走向如何？幾月份投資置業最具優勢？',
@@ -239,7 +239,7 @@ export function generateOnboardingSpark(input: OnboardingInput): OnboardingSpark
         {
           id: 'love_start',
           category: 'relationship',
-          icon: '💞',
+          icon: '緣',
           titleZh: '正緣婚戀桃花',
           titleEn: 'Love & Destiny',
           questionZh: '我命中的正緣桃花何時浮現？感情路上如何少走彎路？',
@@ -249,7 +249,7 @@ export function generateOnboardingSpark(input: OnboardingInput): OnboardingSpark
         {
           id: 'breakthrough_start',
           category: 'decision',
-          icon: '🔮',
+          icon: '卦',
           titleZh: '破局決策謀略',
           titleEn: 'Strategic Breakthrough',
           questionZh: '面對當前關鍵抉擇與困局，古法易道有何破局指引？',
@@ -302,7 +302,7 @@ export function generateOnboardingSpark(input: OnboardingInput): OnboardingSpark
         {
           id: `career_${dayStem}`,
           category: 'career',
-          icon: '💼',
+          icon: '祿',
           titleZh: '近期事業轉機',
           titleEn: 'Career Breakthrough',
           questionZh: `日主${dayStem}木/火/土/金/水，近期事業發展有無突破契機？適合主動出擊還是穩健守成？`.replace(
@@ -315,7 +315,7 @@ export function generateOnboardingSpark(input: OnboardingInput): OnboardingSpark
         {
           id: `wealth_${dayStem}`,
           category: 'wealth',
-          icon: '💰',
+          icon: '財',
           titleZh: '正財偏財走勢',
           titleEn: 'Wealth & Assets',
           questionZh: '我今年財富機緣如何？何時財氣最旺、適合置業或投資？',
@@ -325,7 +325,7 @@ export function generateOnboardingSpark(input: OnboardingInput): OnboardingSpark
         {
           id: `love_${dayStem}`,
           category: 'relationship',
-          icon: '💞',
+          icon: '緣',
           titleZh: '命定正緣桃花',
           titleEn: 'Destined Love',
           questionZh: '命中正緣特徵如何？近期感情運勢走向如何？',
@@ -335,7 +335,7 @@ export function generateOnboardingSpark(input: OnboardingInput): OnboardingSpark
         {
           id: `decision_${dayStem}`,
           category: 'decision',
-          icon: '🔮',
+          icon: '卦',
           titleZh: '當下困局破局',
           titleEn: 'Strategic Oracle',
           questionZh: '當前心中有一件重大疑惑，此事未來吉凶走向如何？有何解法？',
@@ -388,13 +388,13 @@ export const MODULE_ROADMAP_CATEGORIES: ModuleRoadmapCategory[] = [
     subtitleEn: 'Unlock your lifelong blueprint, decade cycles, and inherent potential',
     badgeZh: '知命立命',
     badgeEn: 'Self Knowledge',
-    icon: '🏛️',
+    icon: '命',
     modules: [
       {
         type: 'bazi',
         nameZh: '八字命理',
         nameEn: 'BaZi (Four Pillars)',
-        symbol: '🏛️',
+        symbol: '柱',
         tagZh: '四柱干支 · 大運流年',
         tagEn: 'Four Pillars & Decade Cycles',
         descZh: '以年月日時四柱天干地支為坐標，推算一生命運富貴貧賤、格局喜忌與事業婚運。',
@@ -407,7 +407,7 @@ export const MODULE_ROADMAP_CATEGORIES: ModuleRoadmapCategory[] = [
         type: 'ziwei',
         nameZh: '紫微斗數',
         nameEn: 'Zi Wei Dou Shu',
-        symbol: '⭐',
+        symbol: '紫',
         tagZh: '十二宮位 · 群星照耀',
         tagEn: '12 Palaces & Star Constellations',
         descZh: '以北極紫微為中樞，排列命宮、財帛、官祿、夫妻等十二宮群星，象數周詳。',
@@ -426,13 +426,13 @@ export const MODULE_ROADMAP_CATEGORIES: ModuleRoadmapCategory[] = [
     subtitleEn: 'Inquire on specific events, strategic timing, and critical decisions',
     badgeZh: '趨吉避凶',
     badgeEn: 'Actionable Advice',
-    icon: '🪙',
+    icon: '卜',
     modules: [
       {
         type: 'liuyao',
         nameZh: '六爻神課',
         nameEn: 'Liu Yao Oracle',
-        symbol: '🪙',
+        symbol: '爻',
         tagZh: '三幣搖卦 · 世應用神',
         tagEn: 'Coin Casting & Six Relatives',
         descZh: '以三枚銅錢連擲六次起卦，配以天干地支、六親世應，精準斷定單一特定事件成敗。',
@@ -445,7 +445,7 @@ export const MODULE_ROADMAP_CATEGORIES: ModuleRoadmapCategory[] = [
         type: 'meihua',
         nameZh: '梅花易數',
         nameEn: 'Plum Blossom Numerology',
-        symbol: '🌸',
+        symbol: '梅',
         tagZh: '萬物皆數 · 體用相參',
         tagEn: 'Numbers, Time & Universal Mind',
         descZh: '心念所動即可起卦，以數字或時間取卦，分析體用五行生克，斷事神速靈驗。',
@@ -458,7 +458,7 @@ export const MODULE_ROADMAP_CATEGORIES: ModuleRoadmapCategory[] = [
         type: 'qimen',
         nameZh: '奇門遁甲',
         nameEn: 'Qi Men Dun Jia',
-        symbol: '🧭',
+        symbol: '門',
         tagZh: '帝王之術 · 局勢謀略',
         tagEn: 'Imperial Strategy & Space-Time',
         descZh: '古代最高維度的行軍決策術，融合九星、八門、八神與三奇六儀，掌握天時地利。',
@@ -477,13 +477,13 @@ export const MODULE_ROADMAP_CATEGORIES: ModuleRoadmapCategory[] = [
     subtitleEn: 'Optimize your dwelling and spatial energy flow for prosperity and wellness',
     badgeZh: '人宅相宜',
     badgeEn: 'Spatial Harmony',
-    icon: '🏯',
+    icon: '堪',
     modules: [
       {
         type: 'fengshui',
         nameZh: '風水堪輿',
         nameEn: 'Feng Shui Harmony',
-        symbol: '🏯',
+        symbol: '輿',
         tagZh: '八宅九星 · 氣場調理',
         tagEn: 'Eight Mansions & Spatial Energy',
         descZh: '結合房屋坐向、建成年份與居住者生辰，剖析居所明堂、大門、臥室氣場，化煞催吉。',

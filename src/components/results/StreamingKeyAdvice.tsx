@@ -37,7 +37,6 @@ export default function StreamingKeyAdvice({
   variant = 'glass',
 }: StreamingKeyAdviceProps) {
   const { lang } = useLang()
-  const isEn = lang === 'en'
   const hasContent = Array.isArray(items) && items.length > 0
 
   if (!hasContent && !streaming) {
@@ -46,12 +45,12 @@ export default function StreamingKeyAdvice({
 
   const effectiveTitle = title || T(lang, '核心建議', 'Key Advice')
   const effectiveIcon = icon || <SparkleIcon size={16} className="text-gold" />
-  const adviceList = hasContent ? items : (isEn ? SKELETON_ADVICE.en : SKELETON_ADVICE.zh)
+  const adviceList = hasContent ? items : T(lang, SKELETON_ADVICE.zh, SKELETON_ADVICE.en)
 
   const cardBaseClass =
     variant === 'oriental'
       ? 'oriental-sanctuary-card rounded-xl p-3 shadow-sm border border-gold/20 flex gap-2.5 items-start'
-      : 'glass-card rounded-xl p-3 border border-gold/20 flex gap-2.5 items-start'
+      : 'card-quiet rounded-xl p-3 border border-gold/20 flex gap-2.5 items-start'
 
   return (
     <motion.div

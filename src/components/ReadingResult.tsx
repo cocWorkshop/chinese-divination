@@ -9,7 +9,7 @@ interface ReadingResultProps {
 
 export default function ReadingResult({ content }: ReadingResultProps) {
   return (
-    <div className="prose dark:prose-invert max-w-none reading-result">
+    <div className="classic-prose max-w-none reading-result">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

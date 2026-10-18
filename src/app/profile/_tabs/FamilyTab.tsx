@@ -131,12 +131,12 @@ export default function FamilyTab({ members, onMembersChange }: Props) {
         <div className="space-y-2">
           {paged.map(m => {
             const label = relationLabels[m.relation]
-            const relText = m.relationDetail || (label ? (lang === 'en' ? label.en : label.zh) : m.relation)
+            const relText = m.relationDetail || (label ? T(lang, label.zh, label.en) : m.relation)
             const genderEmoji = m.gender === 'female' ? '👩' : m.gender === 'male' ? '👨' : '👤'
             const birthSummary = [m.birthDate, m.birthTime, m.birthPlace].filter(Boolean).join(' · ')
 
             return (
-              <div key={m.id} className="glass-card rounded-xl p-4 flex items-center gap-3" style={{ border: '1px solid var(--card-border)' }}>
+              <div key={m.id} className="card-quiet rounded-xl p-4 flex items-center gap-3" style={{ border: '1px solid var(--card-border)' }}>
                 <span className="text-2xl flex-shrink-0">{genderEmoji}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -146,7 +146,7 @@ export default function FamilyTab({ members, onMembersChange }: Props) {
                   {birthSummary && <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{birthSummary}</p>}
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={() => handleEdit(m)} className="p-2 rounded-lg transition-colors hover:bg-white/10" style={{ color: 'var(--text-muted)' }} title={T(lang, '編輯', 'Edit')}>
+                  <button onClick={() => handleEdit(m)} className="p-2 rounded-lg transition-colors hover:bg-foreground/10" style={{ color: 'var(--text-muted)' }} title={T(lang, '編輯', 'Edit')}>
                     ✏️
                   </button>
                   {confirmDeleteId === m.id ? (

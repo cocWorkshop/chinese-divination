@@ -5,16 +5,16 @@
 
 export const PAIPAN_EXPLANATION = {
   buttonLabel: {
-    zh: '只排盤（無AI解盤）',
-    en: 'Chart Only (No AI interpretation)',
+    zh: '只排盤（不含解盤）',
+    en: 'Chart Only (No interpretation)',
   },
   fullReadingLabel: {
     zh: '完整解盤',
     en: 'Full Reading',
   },
   tooltip: {
-    zh: '【只排盤說明】此模式僅計算並展示命盤干支/星曜數據，不扣除機緣，亦不進行 AI 深度解盤與吉凶分析。適合已有命理基礎的專業研究者。',
-    en: '[Chart Only Note] Calculates and displays raw astrological chart data and pillars only, skipping the AI reading report. Suitable for experienced astrologers.',
+    zh: '【只排盤說明】此模式僅計算並展示命盤干支/星曜數據，不扣除機緣，亦不進行深度解盤與吉凶分析。適合已有命理基礎的專業研究者。',
+    en: '[Chart Only Note] Calculates and displays raw astrological chart data and pillars only, skipping the in-depth reading report. Suitable for experienced astrologers.',
   },
 }
 

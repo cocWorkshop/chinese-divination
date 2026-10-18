@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import YinYangIcon from '@/components/YinYangIcon'
 import { useLang } from '@/components/LanguageContext'
 import { GiftVesselIcon, SparkleIcon, CheckSealIcon, LockSealIcon, AlertIcon, CloseIcon, SunMoonIcon } from '@/components/DivinationIcons'
+import { T } from '@/lib/i18n'
 
 type GiftStatus = 'loading' | 'ready' | 'already_claimed' | 'expired' | 'exhausted' | 'invalid' | 'claiming' | 'success' | 'error' | 'need_login'
 
@@ -55,11 +56,11 @@ export default function GiftClaimPage() {
       } else if (data.error === 'unauthorized') {
         setStatus('need_login')
       } else {
-        setErrorMsg(data.message || (isEn ? 'Claim failed' : '領取失敗'))
+        setErrorMsg(data.message || (T(lang, '領取失敗', 'Claim failed')))
         setStatus('error')
       }
     } catch {
-      setErrorMsg(isEn ? 'Network error, please try again' : '網絡錯誤，請重試')
+      setErrorMsg(T(lang, '網絡錯誤，請重試', 'Network error, please try again'))
       setStatus('error')
     }
   }
@@ -71,12 +72,12 @@ export default function GiftClaimPage() {
       case 'success':
         return <CheckSealIcon size={44} className="text-emerald-400" />
       case 'already_claimed':
-        return <CheckSealIcon size={44} className="text-cyan-400" />
+        return <CheckSealIcon size={44} className="text-jade" />
       case 'need_login':
         return <LockSealIcon size={44} className="text-gold" />
       case 'expired':
       case 'exhausted':
-        return <SunMoonIcon size={44} className="text-white/40" />
+        return <SunMoonIcon size={44} className="text-foreground/40" />
       case 'invalid':
         return <CloseIcon size={44} className="text-red-400" />
       case 'error':
@@ -89,11 +90,11 @@ export default function GiftClaimPage() {
   const getStatusText = () => {
     if (isEn) {
       switch (status) {
-        case 'loading': return { title: 'Loading...', desc: '', color: 'text-white/60' }
+        case 'loading': return { title: 'Loading...', desc: '', color: 'text-foreground/60' }
         case 'ready': return { title: `Claim ${credits} Karma`, desc: note || 'Tap the button to claim your Karma', color: 'text-gold' }
-        case 'claiming': return { title: 'Claiming...', desc: 'Please wait', color: 'text-white/60' }
+        case 'claiming': return { title: 'Claiming...', desc: 'Please wait', color: 'text-foreground/60' }
         case 'success': return { title: `Claimed ${credits} Karma!`, desc: 'Karma added to your account', color: 'text-emerald-400' }
-        case 'already_claimed': return { title: 'Already claimed', desc: 'You have already claimed this gift', color: 'text-cyan-400' }
+        case 'already_claimed': return { title: 'Already claimed', desc: 'You have already claimed this gift', color: 'text-jade' }
         case 'expired': return { title: 'Expired', desc: 'This link has expired', color: 'text-red-400' }
         case 'exhausted': return { title: 'All claimed', desc: 'This gift has been fully claimed', color: 'text-amber-400' }
         case 'invalid': return { title: 'Invalid link', desc: 'This link does not exist or has expired', color: 'text-red-400' }
@@ -102,11 +103,11 @@ export default function GiftClaimPage() {
       }
     } else {
       switch (status) {
-        case 'loading': return { title: '加載中...', desc: '', color: 'text-white/60' }
+        case 'loading': return { title: '加載中...', desc: '', color: 'text-foreground/60' }
         case 'ready': return { title: `領取 ${credits} 機緣`, desc: note || '點擊下方按鈕領取您的機緣點數', color: 'text-gold' }
-        case 'claiming': return { title: '領取中...', desc: '請稍候', color: 'text-white/60' }
+        case 'claiming': return { title: '領取中...', desc: '請稍候', color: 'text-foreground/60' }
         case 'success': return { title: `成功領取 ${credits} 機緣！`, desc: '機緣已添加到您的帳戶', color: 'text-emerald-400' }
-        case 'already_claimed': return { title: '已領取', desc: '您已領取過此禮品', color: 'text-cyan-400' }
+        case 'already_claimed': return { title: '已領取', desc: '您已領取過此禮品', color: 'text-jade' }
         case 'expired': return { title: '已過期', desc: '此連結已過期', color: 'text-red-400' }
         case 'exhausted': return { title: '已領完', desc: '此禮品已被領完', color: 'text-amber-400' }
         case 'invalid': return { title: '無效連結', desc: '此連結不存在或已失效', color: 'text-red-400' }
@@ -126,11 +127,11 @@ export default function GiftClaimPage() {
         </div>
 
         <h1 className={`text-xl font-serif ${info.color}`}>{info.title}</h1>
-        {info.desc && <p className="text-sm text-white/60 leading-relaxed font-serif">{info.desc}</p>}
+        {info.desc && <p className="text-sm text-foreground/60 leading-relaxed font-serif">{info.desc}</p>}
 
         {maxClaims > 0 && (status === 'ready' || status === 'already_claimed' || status === 'exhausted') && (
           <p className="text-xs text-gold/70 font-mono">
-            {isEn ? `Claimed ${claimCount} / ${maxClaims}` : `已領取 ${claimCount} / ${maxClaims}`}
+            {T(lang, `已領取 ${claimCount} / ${maxClaims}`, `Claimed ${claimCount} / ${maxClaims}`)}
           </p>
         )}
 
@@ -140,7 +141,7 @@ export default function GiftClaimPage() {
             className="w-full min-h-[48px] py-3 rounded-xl font-serif font-semibold text-sm transition-all bg-gold hover:bg-gold-light text-navy-950 shadow-md inline-flex items-center justify-center gap-2"
           >
             <GiftVesselIcon size={18} />
-            <span>{isEn ? 'Claim now' : '立即領取'}</span>
+            <span>{T(lang, '立即領取', 'Claim now')}</span>
           </button>
         )}
 
@@ -150,7 +151,7 @@ export default function GiftClaimPage() {
             className="w-full min-h-[48px] py-3 rounded-xl font-serif font-semibold text-sm transition-all bg-gold hover:bg-gold-light text-navy-950 shadow-md inline-flex items-center justify-center gap-2"
           >
             <LockSealIcon size={18} />
-            <span>{isEn ? 'Log in' : '前往登入'}</span>
+            <span>{T(lang, '前往登入', 'Log in')}</span>
           </button>
         )}
 
@@ -161,14 +162,14 @@ export default function GiftClaimPage() {
               className="w-full sm:w-auto flex-1 min-h-[44px] py-2.5 px-4 rounded-xl font-serif font-semibold text-sm transition-all bg-gold hover:bg-gold-light text-navy-950 shadow-md inline-flex items-center justify-center gap-2"
             >
               <SparkleIcon size={16} />
-              <span>{isEn ? 'Start Divination' : '開始占卜'}</span>
+              <span>{T(lang, '開始占卜', 'Start Divination')}</span>
               <span>→</span>
             </button>
             <button
               onClick={() => router.push('/')}
-              className="w-full sm:w-auto flex-1 min-h-[44px] py-2.5 px-4 rounded-xl font-serif font-medium text-sm transition-all bg-white/5 hover:bg-white/10 text-white/70 border border-white/10 inline-flex items-center justify-center gap-2"
+              className="w-full sm:w-auto flex-1 min-h-[44px] py-2.5 px-4 rounded-xl font-serif font-medium text-sm transition-all bg-foreground/5 hover:bg-foreground/10 text-foreground/70 border border-line/10 inline-flex items-center justify-center gap-2"
             >
-              <span>{isEn ? 'Back to home' : '返回首頁'}</span>
+              <span>{T(lang, '返回首頁', 'Back to home')}</span>
             </button>
           </div>
         )}
@@ -179,14 +180,14 @@ export default function GiftClaimPage() {
               onClick={() => router.push('/divination')}
               className="w-full sm:w-auto flex-1 min-h-[44px] py-2.5 px-4 rounded-xl font-serif font-semibold text-sm transition-all bg-gold hover:bg-gold-light text-navy-950 shadow-md inline-flex items-center justify-center gap-2"
             >
-              <span>{isEn ? 'Explore Divinations' : '前往占卜大廳'}</span>
+              <span>{T(lang, '前往占卜大廳', 'Explore Divinations')}</span>
               <span>→</span>
             </button>
             <button
               onClick={() => router.push('/')}
-              className="w-full sm:w-auto flex-1 min-h-[44px] py-2.5 px-4 rounded-xl font-serif font-medium text-sm transition-all bg-white/5 hover:bg-white/10 text-white/70 border border-white/10 inline-flex items-center justify-center gap-2"
+              className="w-full sm:w-auto flex-1 min-h-[44px] py-2.5 px-4 rounded-xl font-serif font-medium text-sm transition-all bg-foreground/5 hover:bg-foreground/10 text-foreground/70 border border-line/10 inline-flex items-center justify-center gap-2"
             >
-              <span>{isEn ? 'Back to home' : '返回首頁'}</span>
+              <span>{T(lang, '返回首頁', 'Back to home')}</span>
             </button>
           </div>
         )}

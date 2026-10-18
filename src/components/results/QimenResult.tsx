@@ -46,7 +46,7 @@ const divinityColor: Record<string, string> = {
 function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
   if (!data.paipanOnly || !(data.qimenChart || data.qimen)) return data
   const qData = (data.qimenChart || data.qimen) as Record<string, unknown>
-  return { qimenChart: qData, paipanOnly: true, sections: { situation: '（只排盤模式，無AI解盤）' } }
+  return { qimenChart: qData, paipanOnly: true, sections: { situation: '（只排盤模式，不含解盤）' } }
 }
 
 export default function QimenResult({ data, isShared, rawResult, readingId, chatMessages, subjectName, birthInfo, createdAt, streaming }: DivinationResultProps) {
@@ -62,9 +62,11 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
       return
     }
     masterChat.setShape('expanded')
-    const prompt = lang === 'en'
-      ? `Master Xuanji, please delve into the Qi Men Dun Jia Palace 【${palace.name}】 (Direction: ${palace.direction}). Deity: 【${palace.divinity || 'None'}】, Door: 【${palace.door || 'None'}】, Star: 【${palace.star || 'None'}】, Heaven Stem: 【${palace.heavenStem || 'None'}】, Earth Stem: 【${palace.earthStem || 'None'}】. In relation to my query, what are the omen indications, cosmic timing, and actionable counsel?`
-      : `請大師為我推究奇門遁甲盤中的【${palace.name}】（方位：${palace.direction}）。此宮神為【${palace.divinity || '無'}】，門為【${palace.door || '無'}】，星為【${palace.star || '無'}】，天盤干【${palace.heavenStem || '無'}】，地盤干【${palace.earthStem || '無'}】。請結合我所問之事，解析此宮蘊含的吉凶象意、天時地利與具體決策建議。`
+    const prompt = T(
+      lang,
+      `請大師為我推究奇門遁甲盤中的【${palace.name}】（方位：${palace.direction}）。此宮神為【${palace.divinity || '無'}】，門為【${palace.door || '無'}】，星為【${palace.star || '無'}】，天盤干【${palace.heavenStem || '無'}】，地盤干【${palace.earthStem || '無'}】。請結合我所問之事，解析此宮蘊含的吉凶象意、天時地利與具體決策建議。`,
+      `Master Xuanji, please delve into the Qi Men Dun Jia Palace 【${palace.name}】 (Direction: ${palace.direction}). Deity: 【${palace.divinity || 'None'}】, Door: 【${palace.door || 'None'}】, Star: 【${palace.star || 'None'}】, Heaven Stem: 【${palace.heavenStem || 'None'}】, Earth Stem: 【${palace.earthStem || 'None'}】. In relation to my query, what are the omen indications, cosmic timing, and actionable counsel?`,
+    )
     masterChat.sendMessage(prompt)
   }
 
@@ -82,15 +84,15 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
         <div className="space-y-4">
           {/* Chart Info Bar */}
           {hasProgrammaticData && (
-            <div className="glass-card rounded-xl p-3 sm:p-4 border border-cyan-400/30 bg-cyan-400/5">
+            <div className="card-mystic-l1 rounded-xl p-3 sm:p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-cyan-400 text-xs sm:text-sm">{T(lang, '奇門遁甲盤', 'Qi Men Dun Jia Chart')}</span>
+                <span className="text-gold text-xs sm:text-sm">{T(lang, '奇門遁甲盤', 'Qi Men Dun Jia Chart')}</span>
                 <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
                 <div><span className="text-[var(--text-muted)]">{T(lang, '干支：', 'Stems: ')}</span><span className="text-[var(--text-secondary)]">{chart.year} {chart.month} {chart.day} {chart.hour}</span></div>
                 <div><span className="text-[var(--text-muted)]">{T(lang, '節氣：', 'Solar Term: ')}</span><span className="text-[var(--text-secondary)]">{chart.solarTerm}</span></div>
-                <div><span className="text-[var(--text-muted)]">{T(lang, '局數：', 'Formation: ')}</span><span className="text-cyan-300 font-semibold">{chart.roundLabel}</span></div>
+                <div><span className="text-[var(--text-muted)]">{T(lang, '局數：', 'Formation: ')}</span><span className="text-gold-light font-semibold">{chart.roundLabel}</span></div>
                 <div><span className="text-[var(--text-muted)]">{T(lang, '值符/值使：', 'Duty: ')}</span><span className="text-yellow-300">{chart.zhiFu}</span><span className="text-[var(--text-muted)]"> / </span><span className="text-blue-300">{chart.zhiShi}</span></div>
               </div>
             </div>
@@ -98,7 +100,7 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
 
           {/* Key positions — 值符/值使落宫, 旬空, 驿马 (the analysis anchors) */}
           {hasProgrammaticData && (chart.zhiFuPalace || (chart.voidBranches && chart.voidBranches.length > 0)) && (
-            <div className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
+            <div className="card-quiet rounded-xl p-3 sm:p-4 border border-gold/20">
               <h3 className="text-gold font-serif text-sm mb-2 flex items-center gap-1.5">
                 <KeyPredictionIcon size={16} className="text-gold" />
                 <span>{T(lang, '關鍵落宮', 'Key Positions')}</span>
@@ -114,7 +116,7 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
 
           {/* Patterns */}
           {chart?.patterns && chart.patterns.length > 0 && (
-            <div className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
+            <div className="card-quiet rounded-xl p-3 sm:p-4 border border-gold/20">
               <h3 className="text-gold font-serif text-sm mb-2 flex items-center gap-1.5">
                 <SparkleIcon size={16} className="text-gold" />
                 <span>{T(lang, '奇門格局', 'Patterns')}</span>
@@ -132,7 +134,7 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
 
           {/* 9-Palace Grid */}
           {hasProgrammaticData && chart.grid ? (
-            <div className="glass-card rounded-xl p-3 sm:p-5 border border-gold/20">
+            <div className="card-quiet rounded-xl p-3 sm:p-5 border border-gold/20">
               <h3 className="text-gold font-serif text-sm mb-3">{T(lang, '九宮盤', 'Nine Palace Chart')}</h3>
               <div className="grid grid-cols-3 gap-[2px] sm:gap-1 bg-gold/10 rounded-lg overflow-hidden">
                 {chart.grid.map((row, ri) =>
@@ -150,7 +152,7 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
                         {palace.door && <div className={`text-[11px] sm:text-sm font-serif font-semibold ${doorColor[palace.door] || 'text-gold'}`}>{palace.door}</div>}
                         {palace.star && <div className="text-[10px] sm:text-xs text-[var(--text-secondary)]">{palace.star}</div>}
                         <div className="flex items-center gap-1 mt-0.5">
-                          {palace.heavenStem && <span className="text-[9px] sm:text-[10px] text-cyan-400/70">{T(lang, '天', 'H')}{palace.heavenStem}</span>}
+                          {palace.heavenStem && <span className="text-[9px] sm:text-[10px] text-gold/70">{T(lang, '天', 'H')}{palace.heavenStem}</span>}
                           {palace.earthStem && <span className="text-[9px] sm:text-[10px] text-orange-400/60">{T(lang, '地', 'E')}{palace.earthStem}</span>}
                         </div>
                       </div>
@@ -160,7 +162,7 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
               </div>
             </div>
           ) : (
-            <div className="glass-card rounded-xl p-5 border border-gold/20">
+            <div className="card-quiet rounded-xl p-5 border border-gold/20">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-gold font-serif">{T(lang, '奇門格局', 'Qi Men Formation')}</h3>
                 <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
@@ -186,9 +188,9 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
           <AnimatePresence>
             {selectedPalace && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                className="glass-card rounded-xl p-4 border border-cyan-400/30 bg-cyan-400/5 overflow-hidden">
+                className="card-mystic-l1 rounded-xl p-4 overflow-hidden">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-cyan-300 font-serif">{selectedPalace.name} · {selectedPalace.direction}</h3>
+                  <h3 className="text-gold-light font-serif">{selectedPalace.name} · {selectedPalace.direction}</h3>
                   <button onClick={() => setSelectedPalace(null)} className="text-[var(--text-muted)] text-xs hover:text-[var(--text-secondary)]">{T(lang, '收起', 'Close')}</button>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
@@ -204,12 +206,12 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
                   ))}
                   <div className="rounded-lg border border-gold/20 bg-gold/5 p-2 text-center">
                     <div className="text-[var(--text-muted)] text-[10px] mb-1">{T(lang, '天干', 'Stems')}</div>
-                    <div className="font-serif"><span className="text-cyan-400">{T(lang, '天', 'H')}{selectedPalace.heavenStem}</span>{' '}<span className="text-orange-400">{T(lang, '地', 'E')}{selectedPalace.earthStem}</span></div>
+                    <div className="font-serif"><span className="text-gold">{T(lang, '天', 'H')}{selectedPalace.heavenStem}</span>{' '}<span className="text-orange-400">{T(lang, '地', 'E')}{selectedPalace.earthStem}</span></div>
                   </div>
                 </div>
 
                 {/* Master Consultation Trigger */}
-                <div className="pt-3 mt-3 border-t border-cyan-400/20 flex items-center justify-between flex-wrap gap-2">
+                <div className="pt-3 mt-3 border-t border-gold/20 flex items-center justify-between flex-wrap gap-2">
                   <p className="text-[11px] text-[var(--text-muted)] font-serif">
                     {T(lang, '欲知此宮落位對所問之事的生剋感應與轉機？', "Seek Master XuanJi's insight on this palace?")}
                   </p>
@@ -228,7 +230,7 @@ export default function QimenResult({ data, isShared, rawResult, readingId, chat
 
           {/* Formation Elements summary */}
           {hasProgrammaticData && (
-            <div className="glass-card rounded-xl p-4 border border-gold/20">
+            <div className="card-quiet rounded-xl p-4 border border-gold/20">
               <h3 className="text-gold font-serif text-sm mb-3">{T(lang, '格局要素', 'Formation Elements')}</h3>
               <div className="flex flex-wrap justify-center gap-2">
                 {[

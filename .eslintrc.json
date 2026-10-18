@@ -1,7 +1,36 @@
 {
-  "extends": "next/core-web-vitals",
-  "plugins": ["@typescript-eslint"],
-  "rules": {
-    "react-hooks/exhaustive-deps": "warn"
-  }
+    "extends":  [
+                    "next/core-web-vitals"
+                ],
+    "plugins":  [
+                    "@typescript-eslint"
+                ],
+    "rules":  {
+                  "react-hooks/exhaustive-deps":  "warn",
+                  "no-restricted-syntax":  [
+                                               "error",
+                                               {
+                                                   "selector":  "ConditionalExpression \u003e BinaryExpression[operator=\u0027===\u0027][left.name=\u0027lang\u0027]",
+                                                   "message":  "i18n circuit breaker (UX-12): use T(lang, zh, en) from @/lib/i18n 鈥?never inline lang ternaries."
+                                               },
+                                               {
+                                                   "selector":  "ConditionalExpression \u003e Identifier[name=\u0027isEn\u0027]",
+                                                   "message":  "i18n circuit breaker (UX-12): use T(lang, zh, en) from @/lib/i18n 鈥?never inline isEn ternaries."
+                                               },
+                                               {
+                                                   "selector":  "ConditionalExpression \u003e Identifier[name=\u0027isZh\u0027]",
+                                                   "message":  "i18n circuit breaker (UX-12): use T(lang, zh, en) from @/lib/i18n 鈥?never inline isZh ternaries."
+                                               }
+                                           ]
+              },
+    "overrides":  [
+                      {
+                          "files":  [
+                                        "src/lib/i18n/index.ts"
+                                    ],
+                          "rules":  {
+                                        "no-restricted-syntax":  "off"
+                                    }
+                      }
+                  ]
 }

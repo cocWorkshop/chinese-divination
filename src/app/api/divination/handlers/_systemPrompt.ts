@@ -7,15 +7,16 @@
 
 import { loadDivinationPrompt } from '@/lib/llm'
 import type { DivinationContext } from './_types'
+import { T } from '@/lib/i18n'
 
 export function buildSystemPrompt(
   ctx: DivinationContext,
   schema: Record<string, unknown>
 ): string {
   const refContent = loadDivinationPrompt(ctx.type)
-  const isEn = ctx.language === 'en'
-  const langText = isEn ? 'English' : '繁體中文（Traditional Chinese）'
-  const textLang = isEn ? 'English' : '繁體中文'
+  const lang = ctx.language
+  const langText = T(lang, '繁體中文（Traditional Chinese）', 'English')
+  const textLang = T(lang, '繁體中文', 'English')
   const todayStr = ctx.clientDate.toLocaleDateString('zh-CN', {
     timeZone: 'Asia/Shanghai',
     year: 'numeric',
@@ -35,7 +36,7 @@ Follow this exact JSON schema for ${ctx.type}:
 ${JSON.stringify(schema, null, 2)}
 
 The user's language preference is ${langText}. Write all text values (sections, advice, analysis paragraphs) in ${textLang}.
-For luckyInfo: colors must be in ${textLang} (e.g. ${isEn ? 'Red, Green, Gold' : '紅色, 綠色, 金色'}), directions in ${textLang} (e.g. ${isEn ? 'South, East' : '南方, 東方'}).
+For luckyInfo: colors must be in ${textLang} (e.g. ${T(lang, '紅色, 綠色, 金色', 'Red, Green, Gold')}), directions in ${textLang} (e.g. ${T(lang, '南方, 東方', 'South, East')}).
 Keep core Chinese terminology (天干地支, star names, palace names, trigram names) in Chinese regardless of language setting.
 In the prose text values, never echo raw input-data field names, JSON keys, or boolean literals (true/false) — express everything in natural ${textLang} divination terms.
 Be thorough and insightful in the text sections. Minimum 100 words per section.

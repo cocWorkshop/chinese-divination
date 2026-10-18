@@ -78,7 +78,7 @@ export default function AdminPaymentsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-serif text-gold">結緣訂單管理</h1>
-          <p className="text-white/40 text-sm mt-1">全平台用戶真實支付與充值記錄</p>
+          <p className="text-foreground/40 text-sm mt-1">全平台用戶真實支付與充值記錄</p>
         </div>
         <input
           type="text"
@@ -88,37 +88,37 @@ export default function AdminPaymentsPage() {
             setSearch(e.target.value)
             setPage(1)
           }}
-          className="px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white text-sm focus:outline-none focus:border-gold/50 w-72"
+          className="px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground text-sm focus:outline-none focus:border-gold/50 w-72"
         />
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="glass-card rounded-xl p-5 border border-gold/15 bg-navy-900/60">
-          <div className="text-xs uppercase tracking-wider text-white/50 mb-1">累計結緣收益</div>
+        <div className="card-quiet rounded-xl p-5 border border-gold/15 bg-surface/60">
+          <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">累計結緣收益</div>
           <div className="text-2xl font-mono font-bold text-amber-400">
             {formatAmount(stats.totalRevenue, 'usd')}
           </div>
         </div>
-        <div className="glass-card rounded-xl p-5 border border-gold/15 bg-navy-900/60">
-          <div className="text-xs uppercase tracking-wider text-white/50 mb-1">支付訂單總數</div>
-          <div className="text-2xl font-mono font-bold text-white">
-            {stats.totalOrders} <span className="text-sm font-normal text-white/40">筆</span>
+        <div className="card-quiet rounded-xl p-5 border border-gold/15 bg-surface/60">
+          <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">支付訂單總數</div>
+          <div className="text-2xl font-mono font-bold text-foreground">
+            {stats.totalOrders} <span className="text-sm font-normal text-foreground/40">筆</span>
           </div>
         </div>
-        <div className="glass-card rounded-xl p-5 border border-gold/15 bg-navy-900/60">
-          <div className="text-xs uppercase tracking-wider text-white/50 mb-1">尊享付費用戶</div>
+        <div className="card-quiet rounded-xl p-5 border border-gold/15 bg-surface/60">
+          <div className="text-xs uppercase tracking-wider text-foreground/50 mb-1">尊享付費用戶</div>
           <div className="text-2xl font-mono font-bold text-gold">
-            {stats.totalPaidUsers} <span className="text-sm font-normal text-white/40">人</span>
+            {stats.totalPaidUsers} <span className="text-sm font-normal text-foreground/40">人</span>
           </div>
         </div>
       </div>
 
       {/* Orders Table */}
-      <div className="glass-card rounded-xl overflow-x-auto border border-gold/20">
+      <div className="card-quiet rounded-xl overflow-x-auto border border-gold/20">
         <table className="w-full text-sm min-w-[900px]">
           <thead>
-            <tr className="border-b border-gold/20 text-white/50 text-xs uppercase tracking-wider bg-navy-900/80">
+            <tr className="border-b border-gold/20 text-foreground/50 text-xs uppercase tracking-wider bg-surface/80">
               <th className="px-4 py-3 text-left">結緣用戶</th>
               <th className="px-4 py-3 text-left">訂單編號 / 会话</th>
               <th className="px-4 py-3 text-center">購買套餐</th>
@@ -131,14 +131,14 @@ export default function AdminPaymentsPage() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-white/40">
+                <td colSpan={7} className="px-4 py-12 text-center text-foreground/40">
                   加載中...
                 </td>
               </tr>
             )}
             {!loading && payments.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-white/40">
+                <td colSpan={7} className="px-4 py-12 text-center text-foreground/40">
                   暫無結緣訂單記錄
                 </td>
               </tr>
@@ -147,25 +147,25 @@ export default function AdminPaymentsPage() {
               payments.map((p) => (
                 <tr
                   key={p.id}
-                  className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                  className="border-b border-line/5 hover:bg-foreground/5 transition-colors"
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-white/80 font-medium">{p.user?.name || '—'}</span>
+                      <span className="text-foreground/80 font-medium">{p.user?.name || '—'}</span>
                       {p.user?.isPaid && (
                         <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
                           尊享
                         </span>
                       )}
                     </div>
-                    <div className="text-white/40 text-xs">{p.user?.email}</div>
+                    <div className="text-foreground/40 text-xs">{p.user?.email}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-mono text-xs text-white/60 truncate max-w-[200px]" title={p.stripeSessionId || p.id}>
+                    <div className="font-mono text-xs text-foreground/60 truncate max-w-[200px]" title={p.stripeSessionId || p.id}>
                       {p.stripeSessionId ? p.stripeSessionId.replace('cs_test_', '').replace('cs_live_', '') : p.id}
                     </div>
                     {p.stripePaymentIntentId && (
-                      <div className="text-[11px] text-white/30 font-mono truncate max-w-[200px]" title={p.stripePaymentIntentId}>
+                      <div className="text-[11px] text-foreground/30 font-mono truncate max-w-[200px]" title={p.stripePaymentIntentId}>
                         pi: {p.stripePaymentIntentId}
                       </div>
                     )}
@@ -192,7 +192,7 @@ export default function AdminPaymentsPage() {
                       {p.status === 'completed' ? '已完成' : p.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right text-xs text-white/40 font-mono">
+                  <td className="px-4 py-3 text-right text-xs text-foreground/40 font-mono">
                     {new Date(p.createdAt).toLocaleString('zh-CN', {
                       year: 'numeric',
                       month: '2-digit',
@@ -208,7 +208,7 @@ export default function AdminPaymentsPage() {
 
         {/* Pagination */}
         {pages > 1 && (
-          <div className="p-4 border-t border-gold/15 flex items-center justify-between text-xs text-white/50">
+          <div className="p-4 border-t border-gold/15 flex items-center justify-between text-xs text-foreground/50">
             <div>
               共 {total} 筆記錄 · 第 {page} / {pages} 頁
             </div>
@@ -216,14 +216,14 @@ export default function AdminPaymentsPage() {
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1 bg-navy-800 border border-gold/20 rounded hover:bg-gold/10 disabled:opacity-30 disabled:pointer-events-none text-white"
+                className="px-3 py-1 bg-surface border border-gold/20 rounded hover:bg-gold/10 disabled:opacity-30 disabled:pointer-events-none text-foreground"
               >
                 上一頁
               </button>
               <button
                 disabled={page >= pages}
                 onClick={() => setPage((p) => Math.min(pages, p + 1))}
-                className="px-3 py-1 bg-navy-800 border border-gold/20 rounded hover:bg-gold/10 disabled:opacity-30 disabled:pointer-events-none text-white"
+                className="px-3 py-1 bg-surface border border-gold/20 rounded hover:bg-gold/10 disabled:opacity-30 disabled:pointer-events-none text-foreground"
               >
                 下一頁
               </button>

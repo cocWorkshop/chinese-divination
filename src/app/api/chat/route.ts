@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     const chatLimit = await checkCredits(session.user.id, 'chat')
     if (!chatLimit.allowed) {
       return NextResponse.json({
-        error: `✨ 機緣不足（需要 ${chatLimit.cost}，剩餘 ${chatLimit.remaining}）。前往機緣商店補充，即可繼續提問。\n✨ Not enough Karma (need ${chatLimit.cost}, have ${chatLimit.remaining}). Visit the Karma Shop to continue.`,
+        error: `機緣不足（需要 ${chatLimit.cost}，剩餘 ${chatLimit.remaining}）。前往機緣商店補充，即可繼續提問。\nNot enough Karma (need ${chatLimit.cost}, have ${chatLimit.remaining}). Visit the Karma Shop to continue.`,
         remaining: 0,
       }, { status: 429 })
     }

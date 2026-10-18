@@ -10,6 +10,8 @@ import MysticalLoader from '@/components/MysticalLoader'
 import LoadingOracle from '@/components/LoadingOracle'
 import ReadingResultView from '@/components/ReadingResultView'
 import { DivinationIcon, AlertIcon, RefreshIcon } from '@/components/DivinationIcons'
+import { T } from '@/lib/i18n'
+import { langKey } from '@/lib/i18n'
 
 const relationLabels: Record<string, { zh: string; en: string }> = {
   spouse: { zh: '配偶', en: 'Spouse' },
@@ -225,7 +227,7 @@ export default function ReadingDetailPage() {
           <div className="w-12 h-12 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-3 text-gold">
             <DivinationIcon type="other" className="w-6 h-6" />
           </div>
-          <p className="font-serif">{lang === 'en' ? 'Reading not found' : '找不到此記錄'}</p>
+          <p className="font-serif">{T(lang, '找不到此記錄', 'Reading not found')}</p>
         </div>
       ) : (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full min-w-0">
@@ -233,13 +235,15 @@ export default function ReadingDetailPage() {
           <div className="mb-5 flex flex-wrap items-center gap-2">
             <span className="px-2.5 py-1 bg-gold/15 text-gold text-xs rounded-full border border-gold/30 inline-flex items-center gap-1.5 font-serif">
               <DivinationIcon type={reading.type} className="w-3.5 h-3.5" />
-              <span>{typeLabels[reading.type]?.[lang === 'en' ? 'en' : 'zh-TW'] || reading.type}</span>
+              <span>{typeLabels[reading.type]?.[langKey(lang)] || reading.type}</span>
             </span>
             {reading.targetType === 'family' && reading.familyMember && (
-              <span className="px-2.5 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full border border-purple-500/30">
-                {lang === 'en'
-                  ? `For ${relationLabels[reading.familyMember.relation]?.en || reading.familyMember.relation}${reading.familyMember.name ? ` (${reading.familyMember.name})` : ''}`
-                  : `為${relationLabels[reading.familyMember.relation]?.zh || reading.familyMember.relation}${reading.familyMember.name ? `（${reading.familyMember.name}）` : ''}`}
+              <span className="px-2.5 py-1 bg-jade/15 text-jade text-xs rounded-full border border-jade/30">
+                {T(
+                  lang,
+                  `為${relationLabels[reading.familyMember.relation]?.zh || reading.familyMember.relation}${reading.familyMember.name ? `（${reading.familyMember.name}）` : ''}`,
+                  `For ${relationLabels[reading.familyMember.relation]?.en || reading.familyMember.relation}${reading.familyMember.name ? ` (${reading.familyMember.name})` : ''}`
+                )}
               </span>
             )}
           </div>
@@ -254,7 +258,7 @@ export default function ReadingDetailPage() {
               <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-3 text-red-500 dark:text-red-400">
                 <AlertIcon size={24} />
               </div>
-              <p className="font-serif text-base">{lang === 'en' ? 'This reading failed to generate.' : '解讀生成失敗'}</p>
+              <p className="font-serif text-base">{T(lang, '解讀生成失敗', 'This reading failed to generate.')}</p>
               {(() => {
                 const { cause, advice } = describeFailure(reading.result, lang)
                 return (
@@ -264,7 +268,7 @@ export default function ReadingDetailPage() {
                 )
               })()}
               <p className="text-xs text-[var(--text-muted)] mt-1">
-                {lang === 'en' ? 'Your Karma was not deducted.' : '機緣未被扣除。'}
+                {T(lang, '機緣未被扣除。', 'Your Karma was not deducted.')}
               </p>
               <button
                 onClick={retryReading}
@@ -272,7 +276,7 @@ export default function ReadingDetailPage() {
                 style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}
               >
                 <RefreshIcon size={16} />
-                <span>{lang === 'en' ? 'Retry' : '重新占卜'}</span>
+                <span>{T(lang, '重新占卜', 'Retry')}</span>
               </button>
             </div>
           )}

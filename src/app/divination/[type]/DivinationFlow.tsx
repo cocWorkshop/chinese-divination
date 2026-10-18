@@ -50,12 +50,12 @@ export default function DivinationFlow() {
       {!showGenerating && (
         <div className="flex items-center justify-between gap-3 mb-6">
           <BackButton fallbackHref="/divination" label={T(lang, '返回大廳', 'Divinations')} variant="pill" />
-          <div className="flex items-center gap-1.5 text-xs text-white/50 font-serif">
+          <div className="flex items-center gap-1.5 text-xs text-foreground/50 font-serif">
             <Link href="/divination" className="hover:text-gold transition-colors">
               {T(lang, '占卜大廳', 'Divinations')}
             </Link>
-            <span className="text-white/20">/</span>
-            <span className="text-gold/80">{lang === 'en' ? info.enName : info.twName}</span>
+            <span className="text-foreground/20">/</span>
+            <span className="text-gold/80">{T(lang, info.twName, info.enName)}</span>
           </div>
         </div>
       )}
@@ -69,7 +69,7 @@ export default function DivinationFlow() {
           className="text-center mb-8 sm:mb-10"
         >
           <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-navy-900/80 border border-gold/30 flex items-center justify-center shadow-lg shadow-gold/5 relative group">
+            <div className="w-16 h-16 rounded-2xl bg-surface/80 border border-gold/30 flex items-center justify-center shadow-lg shadow-gold/5 relative group">
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-gold/10 to-transparent pointer-events-none" />
               {type === 'iching' ? (
                 <YinYangIcon size={38} className="text-gold" />
@@ -78,7 +78,7 @@ export default function DivinationFlow() {
               )}
             </div>
           </div>
-          <h1 className="text-3xl font-serif text-gold tracking-wide">{lang === 'en' ? info.enName : info.twName}</h1>
+          <h1 className="text-3xl font-serif text-gold tracking-wide">{T(lang, info.twName, info.enName)}</h1>
         </motion.div>
       )}
 

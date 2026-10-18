@@ -82,7 +82,7 @@ describe('socialShare engine', () => {
 
     it('formats TikTok copy with viral phrasing and divination tags', () => {
       const copy = generateSocialCopy('tiktok', mockParams)
-      expect(copy).toContain('【玄機東方命理】四柱命局推演：逢凶化吉 · 貴人照臨 🔮')
+      expect(copy).toContain('【玄機東方命理】四柱命局推演：逢凶化吉 · 貴人照臨 ✦')
       expect(copy).toContain('👉 點擊連結測算你的專屬命盤：')
       expect(copy).toContain('#八字算命')
       expect(copy).toContain('#國學智慧')
@@ -91,7 +91,7 @@ describe('socialShare engine', () => {
     it('formats Line copy cleanly with clear CTA', () => {
       const copy = generateSocialCopy('line', mockParams)
       expect(copy).toContain('【玄機靈籤 · 四柱命局】')
-      expect(copy).toContain('✨ 逢凶化吉 · 貴人照臨')
+      expect(copy).toContain('✦ 逢凶化吉 · 貴人照臨')
       expect(copy).toContain('👉 點此查看專屬命理推演：')
     })
 

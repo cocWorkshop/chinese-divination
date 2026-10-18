@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (status === 'loading' || isAdmin === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-navy-950">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse"><YinYangIcon size={24} /></div>
       </div>
     )
@@ -37,19 +37,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/feedback', label: '用戶反饋', enLabel: 'Feedback', icon: '💬' },
     { href: '/admin/compensation', label: '用戶補償', enLabel: 'Compensation', icon: '🎁' },
     { href: '/admin/gift-links', label: '禮品連結', enLabel: 'Gift Links', icon: '🔗' },
-    { href: '/admin/wiki', label: 'Wiki 知識庫', enLabel: 'Wiki', icon: '📚' },
+    { href: '/admin/wiki', label: 'Wiki 知識庫', enLabel: 'Wiki', icon: '藏' },
     { href: '/admin/notifications', label: '通知管理', enLabel: 'Notifications', icon: '🔔' },
     { href: '/admin/welcome', label: '歡迎語管理', enLabel: 'Welcome', icon: '👋' },
     { href: '/admin/settings', label: '系統設置', enLabel: 'Settings', icon: '⚙️' },
   ]
 
   return (
-    <div className="min-h-screen bg-navy-950 flex">
+    <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <aside className="w-56 bg-navy-900 border-r border-gold/20 flex flex-col">
+      <aside className="w-56 bg-surface border-r border-gold/20 flex flex-col">
         <div className="p-6 border-b border-gold/20">
           <div className="text-gold font-serif text-xl">玄機</div>
-          <div className="text-white/40 text-xs mt-1">Admin Console</div>
+          <div className="text-foreground/40 text-xs mt-1">Admin Console</div>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map(item => (
@@ -59,7 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                 pathname === item.href
                   ? 'bg-gold/20 text-gold border border-gold/30'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
+                  : 'text-foreground/60 hover:text-foreground hover:bg-foreground/5'
               }`}
             >
               <span>{item.icon}</span>
@@ -68,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ))}
         </nav>
         <div className="p-4 border-t border-gold/20">
-          <div className="text-white/40 text-xs">{session?.user?.email}</div>
+          <div className="text-foreground/40 text-xs">{session?.user?.email}</div>
           <Link href="/" className="text-gold/60 text-xs hover:text-gold mt-1 block">← Back to app</Link>
         </div>
       </aside>

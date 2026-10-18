@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { reportError } from '@/lib/errorReporter'
 import { useLang } from '@/components/LanguageContext'
+import { T } from '@/lib/i18n'
 
 export default function ProfileError({
   error,
@@ -20,19 +21,19 @@ export default function ProfileError({
 
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="glass-card rounded-2xl p-10 max-w-md w-full text-center">
+      <div className="card-quiet rounded-2xl p-10 max-w-md w-full text-center">
         <div className="text-5xl mb-4">👤</div>
         <h2 className="text-2xl font-serif text-gold mb-3">
-          {isEn ? 'Could not load your profile' : '無法載入個人資料'}
+          {T(lang, '無法載入個人資料', 'Could not load your profile')}
         </h2>
-        <p className="text-white/60 mb-6 text-sm">
-          {isEn ? 'Please try again later.' : '請稍後重試。'}
+        <p className="text-foreground/60 mb-6 text-sm">
+          {T(lang, '請稍後重試。', 'Please try again later.')}
         </p>
         <button
           onClick={reset}
           className="px-6 py-2 bg-gold text-navy-950 rounded-lg font-medium hover:bg-gold-light transition-colors"
         >
-          {isEn ? 'Reload' : '重新載入'}
+          {T(lang, '重新載入', 'Reload')}
         </button>
       </div>
     </div>

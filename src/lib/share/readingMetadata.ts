@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getPosterConfig } from '@/components/reading/fatePosterConfig'
+import { T } from '@/lib/i18n'
 
 /**
  * Server-side metadata generator for public reading cards (/r/[token]).
@@ -28,7 +29,7 @@ export async function generateReadingMetadata(token: string): Promise<Metadata> 
     }
 
     const config = getPosterConfig(reading.type)
-    const isZh = reading.language !== 'en'
+    const lang = reading.language || 'zh-TW'
 
     // Clean markdown characters for crisp openGraph description
     const plainText = reading.result
@@ -36,15 +37,19 @@ export async function generateReadingMetadata(token: string): Promise<Metadata> 
       : ''
     const summary = plainText.slice(0, 110)
 
-    const title = isZh
-      ? `【玄機靈籤】${config.zh}推演 · ${config.motto}`
-      : `【Xuanji Oracle】${config.en} · ${config.motto}`
+    const title = T(
+      lang,
+      `【玄機靈籤】${config.zh}推演 · ${config.motto}`,
+      `【Xuanji Oracle】${config.en} · ${config.motto}`
+    )
 
     const description = summary
-      ? `${summary}... ${isZh ? '古法智慧推演，洞析天時地利。' : 'Ancient Chinese Divination Metaphysics.'}`
-      : isZh
-      ? '古法智慧推演，洞析天時地利，指引前程明路。'
-      : 'Ancient Chinese Divination Metaphysics.'
+      ? `${summary}... ${T(lang, '古法智慧推演，洞析天時地利。', 'Ancient Chinese Divination Metaphysics.')}`
+      : T(
+          lang,
+          '古法智慧推演，洞析天時地利，指引前程明路。',
+          'Ancient Chinese Divination Metaphysics.'
+        )
 
     const canonicalUrl = `https://chinese-divination.com/r/${token}`
 
@@ -56,7 +61,7 @@ export async function generateReadingMetadata(token: string): Promise<Metadata> 
         description,
         url: canonicalUrl,
         siteName: '玄機 · Xuanji',
-        locale: isZh ? 'zh_TW' : 'en_US',
+        locale: T(lang, 'zh_TW', 'en_US'),
         type: 'article',
         images: [
           {

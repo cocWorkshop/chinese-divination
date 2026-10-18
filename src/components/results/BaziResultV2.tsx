@@ -103,9 +103,11 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
     }
     masterChat.setShape('expanded')
     const dm = d.dayMaster?.stem || ''
-    const prompt = lang === 'en'
-      ? `Master Xuanji, please analyze Step ${decadeIdx + 1} of my BaZi Major Life Cycles (Da Yun): 【${activeDaYun.stem}${activeDaYun.branch}】 (Ages ${activeDaYun.startAge}-${activeDaYun.endAge}, years ${activeDaYun.startYear}-${activeDaYun.endYear}). My Day Master is 【${dm}】, and this cycle's NaYin is 【${activeDaYun.nayin || ''}】. Please guide me on elemental interactions, favorable/unfavorable timing, career & wealth outlook, and turning points.`
-      : `請大師為我推究八字大運中的第【${decadeIdx + 1}】步大運【${activeDaYun.stem}${activeDaYun.branch}】（${activeDaYun.startAge}-${activeDaYun.endAge}歲，公曆${activeDaYun.startYear}-${activeDaYun.endYear}年）。我日主為【${dm}】，此步大運納音【${activeDaYun.nayin || ''}】。請為我解析此十年氣候生剋、行運喜忌，以及在事業、財運與人生轉折處的關鍵指引。`
+    const prompt = T(
+      lang,
+      `請大師為我推究八字大運中的第【${decadeIdx + 1}】步大運【${activeDaYun.stem}${activeDaYun.branch}】（${activeDaYun.startAge}-${activeDaYun.endAge}歲，公曆${activeDaYun.startYear}-${activeDaYun.endYear}年）。我日主為【${dm}】，此步大運納音【${activeDaYun.nayin || ''}】。請為我解析此十年氣候生剋、行運喜忌，以及在事業、財運與人生轉折處的關鍵指引。`,
+      `Master Xuanji, please analyze Step ${decadeIdx + 1} of my BaZi Major Life Cycles (Da Yun): 【${activeDaYun.stem}${activeDaYun.branch}】 (Ages ${activeDaYun.startAge}-${activeDaYun.endAge}, years ${activeDaYun.startYear}-${activeDaYun.endYear}). My Day Master is 【${dm}】, and this cycle's NaYin is 【${activeDaYun.nayin || ''}】. Please guide me on elemental interactions, favorable/unfavorable timing, career & wealth outlook, and turning points.`,
+    )
     masterChat.sendMessage(prompt)
   }
 
@@ -117,9 +119,11 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
     }
     masterChat.setShape('expanded')
     const dm = d.dayMaster?.stem || ''
-    const prompt = lang === 'en'
-      ? `Master Xuanji, please provide a detailed reading for the Annual Year 【${ln.year} (${ln.stem}${ln.branch})】 (Nominal Age ${ln.age}, Ten God: 【${ln.tenGod}】, NaYin: 【${ln.nayin}】). The current Da Yun is 【${activeDaYun.stem}${activeDaYun.branch}】 and my Day Master is 【${dm}】. What are the key portents, critical months, and guidance for seizing auspicious opportunities and averting adversity?`
-      : `請大師為我深度推演八字流年【${ln.year}年（${ln.stem}${ln.branch}）】（虛歲${ln.age}歲，十神【${ln.tenGod}】，納音【${ln.nayin}】）。當前大運為【${activeDaYun.stem}${activeDaYun.branch}】，我日主為【${dm}】。請為我解析此年歲運交鋒的具體吉凶象意、月份應期與趨吉避凶之策。`
+    const prompt = T(
+      lang,
+      `請大師為我深度推演八字流年【${ln.year}年（${ln.stem}${ln.branch}）】（虛歲${ln.age}歲，十神【${ln.tenGod}】，納音【${ln.nayin}】）。當前大運為【${activeDaYun.stem}${activeDaYun.branch}】，我日主為【${dm}】。請為我解析此年歲運交鋒的具體吉凶象意、月份應期與趨吉避凶之策。`,
+      `Master Xuanji, please provide a detailed reading for the Annual Year 【${ln.year} (${ln.stem}${ln.branch})】 (Nominal Age ${ln.age}, Ten God: 【${ln.tenGod}】, NaYin: 【${ln.nayin}】). The current Da Yun is 【${activeDaYun.stem}${activeDaYun.branch}】 and my Day Master is 【${dm}】. What are the key portents, critical months, and guidance for seizing auspicious opportunities and averting adversity?`,
+    )
     masterChat.sendMessage(prompt)
   }
 
@@ -262,7 +266,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
           badge floats left and the rest stacks alongside it. The previous
           3-column flex squashed badly on phones. */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20">
+        className="card-quiet rounded-xl p-3 sm:p-4 border border-gold/20">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4">
           {/* Day Master badge — full row on mobile, fixed col on sm+ */}
           <div className="flex sm:flex-col items-center sm:items-center justify-between sm:justify-start gap-3 sm:gap-1 sm:flex-shrink-0 sm:w-16">
@@ -350,7 +354,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
       {/* ═══ BRANCH RELATIONSHIPS (if any) ═══ */}
       {br && (br.clashes.length > 0 || br.combines.length > 0 || br.harms.length > 0 || br.punishments.length > 0 || (br.triCombines?.length ?? 0) > 0 || (br.threeWayMeets?.length ?? 0) > 0) && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}
-          className="glass-card rounded-xl p-3 border border-gold/20">
+          className="card-quiet rounded-xl p-3 border border-gold/20">
           <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '地支關係', 'Branch Relationships')}</h3>
           <div className="flex flex-wrap gap-1.5">
             {br.clashes.map((c, i) => (
@@ -404,7 +408,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
       >
         <div className="space-y-3">
           {/* Four Pillars Table */}
-          <motion.div className="glass-card rounded-xl p-2 sm:p-4 border border-gold/20">
+          <motion.div className="card-quiet rounded-xl p-2 sm:p-4 border border-gold/20">
             {tst && (
               <div className="flex items-center gap-1.5 mb-2 px-1">
                 <span className="text-gold/70 text-[10px]">真太陽時：</span>
@@ -466,7 +470,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                     </td>
                   ))}
                 </tr>
-                <tr className="border-t border-white/5">
+                <tr className="border-t border-line/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '副星', 'Sub')}</td>
                   {tableColumns.map(({ label, data: p }, ci) => (
                     <td key={label} className={`text-[var(--text-muted)] text-[10px] py-1 leading-tight${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>
@@ -474,26 +478,26 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                     </td>
                   ))}
                 </tr>
-                <tr className="border-t border-white/5">
+                <tr className="border-t border-line/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '長生', 'Stage')}</td>
                   {tableColumns.map(({ label, data: p }, ci) => (
                     <td key={label} className={`text-[var(--text-muted)] text-[10px] py-1${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>{p?.changSheng || ''}</td>
                   ))}
                 </tr>
-                <tr className="border-t border-white/5">
+                <tr className="border-t border-line/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '納音', 'Nayin')}</td>
                   {tableColumns.map(({ label, data: p }, ci) => (
                     <td key={label} className={`text-[var(--text-muted)] text-[10px] py-1${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>{p?.nayin || ''}</td>
                   ))}
                 </tr>
-                <tr className="border-t border-white/5">
+                <tr className="border-t border-line/5">
                   <td className="text-[var(--text-muted)] text-[10px] py-1">{T(lang, '空亡', 'Void')}</td>
                   {tableColumns.map(({ label, data: p }, ci) => (
                     <td key={label} className={`text-[var(--text-muted)] text-[10px] py-1${ci === palaceCount - 1 ? ' border-r border-gold/25' : ''}`}>{(p?.kongWang || []).join('')}</td>
                   ))}
                 </tr>
                 {allPillarShenSha && (
-                  <tr className="border-t border-white/5">
+                  <tr className="border-t border-line/5">
                     <td className="text-[var(--text-muted)] text-[10px] py-1 align-top">{T(lang, '神煞', 'Spirits')}</td>
                     {tableColumns.map(({ label, data: p }, ci) => {
                       const ss = p?.shenSha || []
@@ -503,7 +507,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                             {ss.length > 0 ? ss.map((s: ShenShaEntry, i: number) => (
                               <span key={i} className="group relative px-1 py-0.5 rounded border border-gold/20 bg-gold/5 text-gold text-[9px] cursor-default leading-none whitespace-nowrap">
                                 {s.name}
-                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-navy-800 border border-gold/30 rounded text-white/70 text-[9px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-surface border border-gold/30 rounded text-foreground/70 text-[9px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                                   {s.description}
                                 </span>
                               </span>
@@ -528,16 +532,18 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                 const decadeYears = (d.liuNian || []).filter((ln: LiuNianEntry) => activeDaYun && ln.year >= activeDaYun.startYear && ln.year <= activeDaYun.endYear)
 
                 return (
-                  <div className="glass-card rounded-xl p-3 sm:p-4 border border-gold/20 space-y-3">
+                  <div className="card-quiet rounded-xl p-3 sm:p-4 border border-gold/20 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h3 className="text-gold font-serif text-xs flex items-center gap-2">
                         <KeyPredictionIcon size={14} className="text-gold" />
                         <span>{T(lang, '大運排盤（點擊任一步大運展開十年流年）', 'Da Yun (Click decade to expand 10-yr annual fortunes)')}</span>
                         {d.qiYun && (
                           <span className="text-[var(--text-muted)] text-[10px] font-normal">
-                            {d.qiYun.direction} · {lang === 'en'
-                              ? `starts 虛歲 ${d.daYun?.[0]?.startAge} (≈${d.qiYun.startAgeLabel})`
-                              : `虛歲${d.daYun?.[0]?.startAge}起運（實歲${d.qiYun.startAgeLabel}）`}
+                            {d.qiYun.direction} · {T(
+                              lang,
+                              `虛歲${d.daYun?.[0]?.startAge}起運（實歲${d.qiYun.startAgeLabel}）`,
+                              `starts 虛歲 ${d.daYun?.[0]?.startAge} (≈${d.qiYun.startAgeLabel})`,
+                            )}
                           </span>
                         )}
                       </h3>
@@ -566,7 +572,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                                 ? 'border-gold ring-2 ring-gold/60 bg-gold/20 shadow-md scale-105'
                                 : isCurrent
                                 ? 'border-gold/60 ring-1 ring-gold/40 bg-gold/10 hover:bg-gold/15'
-                                : 'border-gold/20 bg-white/5 hover:border-gold/40 hover:bg-white/10'
+                                : 'border-gold/20 bg-foreground/5 hover:border-gold/40 hover:bg-foreground/10'
                             }`}
                           >
                             <div className="text-[var(--text-muted)] text-[10px]">{dy.startAge}-{dy.endAge}{T(lang, '歲', '')}</div>
@@ -662,7 +668,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                               </div>
                             )}
                             {activeDaYunAnalysis?.keyYears && activeDaYunAnalysis.keyYears.length > 0 && (
-                              <div className="pt-2 border-t border-white/5 space-y-1">
+                              <div className="pt-2 border-t border-line/5 space-y-1">
                                 <div className="text-[10px] text-gold/80 font-medium">{T(lang, '關鍵注意年份：', 'Key Attention Years:')}</div>
                                 {activeDaYunAnalysis.keyYears.map((ky, j) => (
                                   <div key={j} className="text-[10px] text-[var(--text-muted)] flex gap-1.5 items-start">
@@ -711,7 +717,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                                     <div className="space-y-0.5 text-left w-full sm:w-auto">
                                       <div className="text-xs font-serif font-bold text-gold flex items-center gap-1.5">
                                         <SparkleIcon size={13} className="text-gold" />
-                                        <span>{T(lang, 'AI 深度精批：本步大運十年逐年詳批', 'AI Deep Fortune: 10-Year Detailed Annual Reading')}</span>
+                                        <span>{T(lang, '玄機深度精批：本步大運十年逐年詳批', 'Deep Fortune: 10-Year Detailed Annual Reading')}</span>
                                       </div>
                                       <div className="text-[10px] text-[var(--text-muted)]">
                                         {T(lang, '點擊按鈕為此步大運的每一年推演事業、財運、姻緣、健康與歲運生克', 'Generate detailed fortune for each year including career, wealth, love & health')}
@@ -758,7 +764,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                                         }`}
                                       >
                                         {hasAiFortune && (
-                                          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" title="AI 精批已就绪" />
+                                          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" title="精批已就绪" />
                                         )}
                                         <div className="text-[9px] text-[var(--text-muted)]">{ln.year}</div>
                                         <div className="text-xs font-serif font-bold my-0.5">
@@ -795,7 +801,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                                           <span className="text-[10px] text-[var(--text-muted)]">{ln.nayin}</span>
                                           {aiFortune ? (
                                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-medium">
-                                              ✦ {T(lang, 'AI 深度精批', 'AI Channeled')}
+                                              ✦ {T(lang, '玄機深度精批', 'Master Channeled')}
                                             </span>
                                           ) : (
                                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-gold/10 border border-gold/20 text-gold/80">
@@ -900,14 +906,14 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                                           </div>
                                           <div className="pt-2 border-t border-gold/15 flex items-center justify-between">
                                             <span className="text-[10px] text-[var(--text-muted)]">
-                                              {T(lang, '以上為基礎排盤推演，點擊下方按鈕解鎖十年 AI 深度精批', 'Basic fortune shown. Click below to channel full AI 10-year reading')}
+                                              {T(lang, '以上為基礎排盤推演，點擊下方按鈕解鎖十年玄機深度精批', 'Basic fortune shown. Click below to channel the full 10-year reading')}
                                             </span>
                                             <button
                                               onClick={() => handleGenerateAnnualFortune(selectedDaYunIndex, activeDaYun)}
                                               disabled={generatingDecade === selectedDaYunIndex}
                                               className="text-[11px] text-gold hover:underline font-medium cursor-pointer"
                                             >
-                                              {T(lang, '生成 AI 深度精批 →', 'Generate AI Fortune →')}
+                                              {T(lang, '生成玄機深度精批 →', 'Generate Deep Fortune →')}
                                             </button>
                                           </div>
                                         </div>
@@ -962,7 +968,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
                 )
               })()}
               {d.xiaoYun && d.xiaoYun.length > 0 && (
-                <div className="glass-card rounded-xl p-3 border border-gold/20">
+                <div className="card-quiet rounded-xl p-3 border border-gold/20">
                   <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '小運（起運前）', 'Xiao Yun')}</h3>
                   <div className="flex flex-wrap gap-1">
                     {d.xiaoYun.map((xy, i) => (
@@ -1041,7 +1047,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
             <SectionDrawer
               key={s.key}
               icon={s.icon}
-              title={lang === 'en' ? s.en : s.label}
+              title={T(lang, s.label, s.en)}
               trailing={streaming && !hasContent ? (
                 <span className="inline-flex gap-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-gold/60 animate-[dotPulseV2_1.4s_ease_infinite]" />
@@ -1089,7 +1095,7 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
       {d.liuNian && d.liuNian.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}>
           <h3 className="text-gold font-serif text-base mb-2">{T(lang, '流年一覽', 'Annual Fortune')}</h3>
-          <div className="glass-card rounded-xl p-3 border border-gold/20 overflow-hidden">
+          <div className="card-quiet rounded-xl p-3 border border-gold/20 overflow-hidden">
             <div ref={liuNianScroll.ref} onMouseDown={liuNianScroll.onMouseDown}
               className="overflow-x-auto scrollbar-hide cursor-grab">
               <div className="flex gap-0.5 min-w-max">

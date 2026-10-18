@@ -82,7 +82,7 @@ function HexagramDisplay({ hexagram, changingLine, label, lang }: { hexagram: Me
 function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown> {
   if (!data.paipanOnly || !data.meihua) return data
   const meihuaData = data.meihua as Record<string, unknown>
-  return { meihuaChart: meihuaData, subType: 'meihua', paipanOnly: true, sections: { situation: '（只排盤模式，無AI解盤）' } }
+  return { meihuaChart: meihuaData, subType: 'meihua', paipanOnly: true, sections: { situation: '（只排盤模式，不含解盤）' } }
 }
 
 export default function OtherResult({ data, isShared, rawResult, readingId, readingType, chatMessages, subjectName, birthInfo, createdAt, streaming }: DivinationResultProps) {
@@ -102,7 +102,7 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
         <SectionDrawer icon={<MeiHuaIcon size={20} />} title={T(lang, '梅花卦象', 'Mei Hua Chart')} align="center" size="lg">
           <div className="space-y-4">
             {/* Chart info */}
-            <div className="glass-card rounded-xl p-3 sm:p-4 border border-amber-400/30 bg-amber-400/5">
+            <div className="card-quiet rounded-xl p-3 sm:p-4 border border-amber-400/30 bg-amber-400/5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-amber-400 text-xs sm:text-sm">{T(lang, '梅花易數 · 時間起卦', 'Meihua · Time-based')}</span>
                 <span className={`px-3 py-1 rounded-full border text-sm font-semibold ${ocClass}`}>{oc}</span>
@@ -130,7 +130,7 @@ export default function OtherResult({ data, isShared, rawResult, readingId, read
 
             {/* Ti-Yong relationship */}
             {mc.tiGua && mc.yongGua && (
-              <div className="glass-card rounded-xl p-4 border border-gold/20">
+              <div className="card-quiet rounded-xl p-4 border border-gold/20">
                 <h3 className="text-gold font-serif text-sm mb-3">{T(lang, '體用關係', 'Ti-Yong')}</h3>
                 <div className="flex items-center justify-center gap-4 mb-3">
                   <div className="text-center">

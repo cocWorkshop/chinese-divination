@@ -22,10 +22,10 @@ const brightnessColor: Record<string, string> = {
   '旺': 'text-green-300',
   '得': 'text-blue-300',
   '利': 'text-cyan-300',
-  '平': 'text-white/60',
-  '不': 'text-white/40',
-  '不得地': 'text-white/30',
-  '闲': 'text-white/40',
+  '平': 'text-foreground/60',
+  '不': 'text-foreground/40',
+  '不得地': 'text-foreground/30',
+  '闲': 'text-foreground/40',
   '陷': 'text-red-300',
 }
 
@@ -134,7 +134,7 @@ function adaptPaipanData(data: Record<string, unknown>): Record<string, unknown>
   return {
     ziweiChart: z,
     palaces: palacesRecord,
-    sections: { overview: '（只排盤模式，無AI解盤）', career: '', marriage: '', wealth: '' },
+    sections: { overview: '（只排盤模式，不含解盤）', career: '', marriage: '', wealth: '' },
     paipanOnly: true,
   }
 }
@@ -176,7 +176,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       <button onClick={() => setShowChart(!showChart)}
         className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm"
         style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)', color: 'var(--gold)' }}>
-        <span className="font-serif flex items-center gap-2">⭐ {T(lang, '紫微命盤', 'Zi Wei Chart')}</span>
+        <span className="font-serif flex items-center gap-2">{T(lang, '紫微命盤', 'Zi Wei Chart')}</span>
         <motion.span animate={{ rotate: showChart ? 180 : 0 }} transition={{ duration: 0.2 }}>▼</motion.span>
       </button>
 
@@ -193,39 +193,39 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       {/* Chart Info Bar */}
       {hasProgrammaticData && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="glass-card rounded-xl p-3 sm:p-4 border border-purple-400/30 bg-purple-400/5">
+          className="card-mystic-l1 rounded-xl p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-purple-400 text-xs sm:text-sm">{T(lang, '命盤資訊', 'Chart Info')}</span>
+            <span className="text-gold text-xs sm:text-sm">{T(lang, '命盤資訊', 'Chart Info')}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
             <div>
-              <span className="text-white/40">{T(lang, '農曆：', 'Lunar: ')}</span>
-              <span className="text-white/80">{chart.lunarDate}</span>
+              <span className="text-foreground/40">{T(lang, '農曆：', 'Lunar: ')}</span>
+              <span className="text-foreground/80">{chart.lunarDate}</span>
             </div>
             {chart.chineseDate && (
             <div>
-              <span className="text-white/40">{T(lang, '干支：', 'Stems: ')}</span>
-              <span className="text-white/80">{chart.chineseDate}</span>
+              <span className="text-foreground/40">{T(lang, '干支：', 'Stems: ')}</span>
+              <span className="text-foreground/80">{chart.chineseDate}</span>
             </div>
             )}
             <div>
-              <span className="text-white/40">{T(lang, '時辰：', 'Hour: ')}</span>
-              <span className="text-white/80">{chart.time} ({chart.timeRange})</span>
+              <span className="text-foreground/40">{T(lang, '時辰：', 'Hour: ')}</span>
+              <span className="text-foreground/80">{chart.time} ({chart.timeRange})</span>
             </div>
             <div>
-              <span className="text-white/40">{T(lang, '生肖：', 'Zodiac: ')}</span>
-              <span className="text-white/80">{zodiacLabel(chart.zodiac || '', lang)}</span>
+              <span className="text-foreground/40">{T(lang, '生肖：', 'Zodiac: ')}</span>
+              <span className="text-foreground/80">{zodiacLabel(chart.zodiac || '', lang)}</span>
             </div>
             <div>
-              <span className="text-white/40">{T(lang, '五行局：', 'Five Elements: ')}</span>
-              <span className="text-purple-300 font-semibold">{chart.fiveElementsClass}</span>
+              <span className="text-foreground/40">{T(lang, '五行局：', 'Five Elements: ')}</span>
+              <span className="text-gold-light font-semibold">{chart.fiveElementsClass}</span>
             </div>
             <div>
-              <span className="text-white/40">{T(lang, '命主：', 'Soul Lord: ')}</span>
+              <span className="text-foreground/40">{T(lang, '命主：', 'Soul Lord: ')}</span>
               <span className="text-gold">{chart.soul}</span>
             </div>
             <div>
-              <span className="text-white/40">{T(lang, '身主：', 'Body Lord: ')}</span>
+              <span className="text-foreground/40">{T(lang, '身主：', 'Body Lord: ')}</span>
               <span className="text-gold">{chart.body}</span>
             </div>
           </div>
@@ -235,7 +235,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       {/* 四化 (Four Transformations) */}
       {chart?.siHua && chart.siHua.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-          className="glass-card rounded-xl p-4 border border-gold/20">
+          className="card-quiet rounded-xl p-4 border border-gold/20">
           <h3 className="text-gold font-serif text-sm mb-3">{T(lang, '四化飛星', 'Four Transformations')}</h3>
           <div className="flex flex-wrap gap-2">
             {chart.siHua.map((sh) => (
@@ -243,7 +243,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                 <span className={`font-serif text-sm ${mutagenColor[sh.type] || 'text-gold'}`}>
                   {sh.star}化{sh.type}
                 </span>
-                <span className="text-white/40 text-xs ml-1">({palaceLabel(sh.palace, lang)})</span>
+                <span className="text-foreground/40 text-xs ml-1">({palaceLabel(sh.palace, lang)})</span>
               </div>
             ))}
           </div>
@@ -252,7 +252,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
 
       {/* Main Stars - shown when no programmatic data or as compact view */}
       {!hasProgrammaticData && (d.mainStars || []).length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card rounded-xl p-5 border border-gold/20">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="card-quiet rounded-xl p-5 border border-gold/20">
           <h3 className="text-gold font-serif mb-3">{T(lang, '主星配置', 'Main Stars')}</h3>
           <div className="flex flex-wrap gap-2">
             {(d.mainStars || []).map((star) => (
@@ -261,7 +261,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                   {star.name}
                   {star.mutagen && <span className={`ml-1 ${mutagenColor[star.mutagen] || ''}`}>({star.mutagen})</span>}
                 </div>
-                <div className="text-white/50 text-xs">{palaceLabel(star.palace, lang)}</div>
+                <div className="text-foreground/50 text-xs">{palaceLabel(star.palace, lang)}</div>
               </div>
             ))}
           </div>
@@ -270,7 +270,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
 
       {/* Traditional 12-Palace Grid (4x4 with center area) */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
-        className="glass-card rounded-xl p-3 sm:p-5 border border-gold/20">
+        className="card-quiet rounded-xl p-3 sm:p-5 border border-gold/20">
         <h3 className="text-gold font-serif mb-3">{T(lang, '命盤', 'Natal Chart')}</h3>
         <div className="grid grid-cols-4 gap-[2px] sm:gap-1 bg-gold/10 rounded-lg overflow-hidden">
           {[0, 1, 2, 3].map(row => (
@@ -282,12 +282,12 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                 // Center area — show chart info in the combined center
                 if (row === 1 && col === 1) {
                   return (
-                    <div key={`${row}-${col}`} className="col-span-2 row-span-2 bg-navy-950/90 p-2 sm:p-3 flex flex-col items-center justify-center text-center">
+                    <div key={`${row}-${col}`} className="col-span-2 row-span-2 bg-background/90 p-2 sm:p-3 flex flex-col items-center justify-center text-center">
                       <div className="text-gold font-serif text-sm sm:text-base mb-1">{T(lang, '紫微斗數', 'Zi Wei Dou Shu')}</div>
                       {hasProgrammaticData && (
                         <>
-                          <div className="text-white/50 text-[10px] sm:text-xs">{chart.fiveElementsClass}</div>
-                          <div className="text-white/40 text-[10px] sm:text-xs mt-1">{T(lang, '命主', 'Soul')} {chart.soul} · {T(lang, '身主', 'Body')} {chart.body}</div>
+                          <div className="text-foreground/50 text-[10px] sm:text-xs">{chart.fiveElementsClass}</div>
+                          <div className="text-foreground/40 text-[10px] sm:text-xs mt-1">{T(lang, '命主', 'Soul')} {chart.soul} · {T(lang, '身主', 'Body')} {chart.body}</div>
                         </>
                       )}
                     </div>
@@ -296,7 +296,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                 return null // other center cells consumed by col-span/row-span
               }
 
-              if (!gridPos) return <div key={`${row}-${col}`} className="bg-navy-950/90 p-2" />
+              if (!gridPos) return <div key={`${row}-${col}`} className="bg-background/90 p-2" />
 
               const palaceInfo = branchToPalace[gridPos.branch]
               // Fallback: find palace by position in original palace order if no branch mapping
@@ -319,18 +319,18 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                       setSelectedPalace(selectedPalace === palaceName ? null : palaceName)
                     }
                   }}
-                  className={`bg-navy-950/90 p-1 sm:p-2 cursor-pointer transition-all hover:bg-gold/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-gold/60 min-h-[70px] sm:min-h-[90px] ${
+                  className={`bg-background/90 p-1 sm:p-2 cursor-pointer transition-all hover:bg-gold/5 focus:outline-none focus-visible:ring-1 focus-visible:ring-gold/60 min-h-[70px] sm:min-h-[90px] ${
                     selectedPalace === palaceName ? 'ring-1 ring-gold/50' : ''
                   } ${isSoul ? 'border-l-2 border-l-gold/40' : ''}`}
                 >
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className={`text-[10px] sm:text-xs ${isSoul ? 'text-gold font-semibold' : 'text-white/50'}`}>
+                    <span className={`text-[10px] sm:text-xs ${isSoul ? 'text-gold font-semibold' : 'text-foreground/50'}`}>
                       {palaceName ? palaceLabel(palaceName, lang) : gridPos.branch}
                     </span>
-                    <span className="text-white/20 text-[9px]">{pData?.heavenlyStem}{gridPos.branch}</span>
+                    <span className="text-foreground/20 text-[9px]">{pData?.heavenlyStem}{gridPos.branch}</span>
                   </div>
                   {pData?.isBodyPalace && (
-                    <span className="text-purple-400 text-[9px]">{T(lang, '身', 'Body')}</span>
+                    <span className="text-gold text-[9px]">{T(lang, '身', 'Body')}</span>
                   )}
                   <div className="flex flex-wrap gap-x-1 gap-y-0">
                     {(pData?.majorStars || []).map((star) => (
@@ -345,7 +345,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                   <div className="flex flex-wrap gap-x-1 gap-y-0 mt-0.5">
                     {(pData?.minorStars || []).slice(0, 4).map((star) => (
                       <span key={`minor-${star.name}`} className={`text-[9px] sm:text-[10px] ${
-                        star.mutagen ? mutagenColor[star.mutagen] || 'text-white/50' : 'text-white/40'
+                        star.mutagen ? mutagenColor[star.mutagen] || 'text-foreground/50' : 'text-foreground/40'
                       }`}>
                         {star.name}
                         {star.mutagen && <sup className="text-[7px]">{star.mutagen}</sup>}
@@ -356,7 +356,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                   {(pData?.majorStars || []).some(s => s.brightness) && (
                     <div className="flex gap-1 mt-0.5">
                       {(pData?.majorStars || []).filter(s => s.brightness).map((star) => (
-                        <span key={`bright-${star.name}`} className={`text-[8px] sm:text-[9px] ${brightnessColor[star.brightness || ''] || 'text-white/30'}`}>
+                        <span key={`bright-${star.name}`} className={`text-[8px] sm:text-[9px] ${brightnessColor[star.brightness || ''] || 'text-foreground/30'}`}>
                           {star.brightness}
                         </span>
                       ))}
@@ -364,12 +364,12 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                   )}
                   {/* Decadal range */}
                   {pData?.decadal?.range && pData.decadal.range.length === 2 && (
-                    <div className="text-white/20 text-[8px] mt-0.5">
+                    <div className="text-foreground/20 text-[8px] mt-0.5">
                       {pData.decadal.range[0]}-{pData.decadal.range[1]}
                     </div>
                   )}
                   {!hasStars && !pData?.majorStars?.length && (
-                    <span className="text-white/10 text-xs">—</span>
+                    <span className="text-foreground/10 text-xs">—</span>
                   )}
                 </div>
               )
@@ -385,11 +385,11 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="glass-card rounded-xl p-4 border border-purple-400/30 bg-purple-400/5 overflow-hidden"
+            className="card-mystic-l1 rounded-xl p-4 overflow-hidden"
           >
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-purple-300 font-serif">{palaceLabel(selectedPalace, lang)}</h3>
-              <button onClick={() => setSelectedPalace(null)} className="text-white/40 text-xs hover:text-white/60">{T(lang, '收起', 'Close')}</button>
+              <h3 className="text-gold-light font-serif">{palaceLabel(selectedPalace, lang)}</h3>
+              <button onClick={() => setSelectedPalace(null)} className="text-foreground/40 text-xs hover:text-foreground/60">{T(lang, '收起', 'Close')}</button>
             </div>
             {/* Stars detail */}
             <div className="flex flex-wrap gap-2 mb-3">
@@ -399,7 +399,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                     {star.name}
                   </span>
                   {star.brightness && (
-                    <span className={`ml-1 text-xs ${brightnessColor[star.brightness] || 'text-white/40'}`}>
+                    <span className={`ml-1 text-xs ${brightnessColor[star.brightness] || 'text-foreground/40'}`}>
                       ({star.brightness})
                     </span>
                   )}
@@ -407,8 +407,8 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
                 </div>
               ))}
               {(selectedPalaceData.minorStars || []).map((star) => (
-                <div key={`detail-minor-${star.name}`} className="px-2 py-1 rounded border border-white/10 bg-white/5">
-                  <span className={`text-xs ${star.mutagen ? mutagenColor[star.mutagen] : 'text-white/60'}`}>
+                <div key={`detail-minor-${star.name}`} className="px-2 py-1 rounded border border-line/10 bg-foreground/5">
+                  <span className={`text-xs ${star.mutagen ? mutagenColor[star.mutagen] : 'text-foreground/60'}`}>
                     {star.name}
                     {star.mutagen && <span className="ml-0.5">化{star.mutagen}</span>}
                   </span>
@@ -417,7 +417,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
             </div>
             {/* Analysis text */}
             {selectedPalaceData.analysis && (
-              <div className="text-white/70 text-sm leading-relaxed ziwei-markdown">
+              <div className="text-foreground/70 text-sm leading-relaxed ziwei-markdown">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{selectedPalaceData.analysis}</ReactMarkdown>
               </div>
             )}
@@ -429,20 +429,20 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       {d.luckyInfo && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="grid grid-cols-3 gap-2 sm:gap-3">
           {d.luckyInfo.numbers?.length > 0 && (
-            <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-              <div className="text-white/40 text-xs mb-1">{T(lang, '吉数', 'Lucky Numbers')}</div>
+            <div className="card-quiet rounded-xl p-4 border border-gold/20 text-center">
+              <div className="text-foreground/40 text-xs mb-1">{T(lang, '吉数', 'Lucky Numbers')}</div>
               <div className="text-gold font-serif">{d.luckyInfo.numbers.join(' · ')}</div>
             </div>
           )}
           {d.luckyInfo.colors?.length > 0 && (
-            <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-              <div className="text-white/40 text-xs mb-1">{T(lang, '吉色', 'Lucky Colors')}</div>
+            <div className="card-quiet rounded-xl p-4 border border-gold/20 text-center">
+              <div className="text-foreground/40 text-xs mb-1">{T(lang, '吉色', 'Lucky Colors')}</div>
               <div className="text-gold font-serif text-sm">{d.luckyInfo.colors.join(' ')}</div>
             </div>
           )}
           {d.luckyInfo.directions?.length > 0 && (
-            <div className="glass-card rounded-xl p-4 border border-gold/20 text-center">
-              <div className="text-white/40 text-xs mb-1">{T(lang, '吉方', 'Lucky Directions')}</div>
+            <div className="card-quiet rounded-xl p-4 border border-gold/20 text-center">
+              <div className="text-foreground/40 text-xs mb-1">{T(lang, '吉方', 'Lucky Directions')}</div>
               <div className="text-gold font-serif text-sm">{d.luckyInfo.directions.join(' ')}</div>
             </div>
           )}
@@ -477,9 +477,9 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
             <button
               key={s.key}
               onClick={() => setActiveSection(s.key)}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/60 hover:text-gold border border-gold/20'}`}
+              className={`px-4 py-2 rounded-lg text-sm transition-all ${activeSection === s.key ? 'bg-gold text-navy-950 font-semibold' : 'text-foreground/60 hover:text-gold border border-gold/20'}`}
             >
-              {lang === 'en' ? s.en : s.label}
+              {T(lang, s.label, s.en)}
             </button>
           ))}
         </div>
@@ -490,7 +490,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
           >
-            <div className="glass-card rounded-xl p-5 border border-gold/20 text-white/80 text-sm leading-relaxed ziwei-markdown">
+            <div className="card-quiet rounded-xl p-5 border border-gold/20 text-foreground/80 text-sm leading-relaxed ziwei-markdown">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {d.sections?.[activeSection as keyof typeof d.sections] || T(lang, '暫無內容', 'No content')}
               </ReactMarkdown>
@@ -505,9 +505,9 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
           <h3 className="text-gold font-serif mb-3">{T(lang, '核心建議', 'Key Advice')}</h3>
           <div className="grid gap-3">
             {d.keyAdvice.map((advice, idx) => (
-              <div key={`advice-${idx}`} className="glass-card rounded-xl p-4 border border-gold/20 flex gap-3">
+              <div key={`advice-${idx}`} className="card-quiet rounded-xl p-4 border border-gold/20 flex gap-3">
                 <span className="w-7 h-7 rounded-full bg-gold/20 text-gold text-sm flex items-center justify-center flex-shrink-0">{idx + 1}</span>
-                <p className="text-white/80 text-sm leading-relaxed">{advice}</p>
+                <p className="text-foreground/80 text-sm leading-relaxed">{advice}</p>
               </div>
             ))}
           </div>
@@ -518,7 +518,7 @@ export default function ZiweiResult({ data, isShared, rawResult, readingId, chat
       {d.keyPredictions && d.keyPredictions.length > 0 && (
         <div className="rounded-xl p-4 mb-4" style={{ backgroundColor: 'var(--accent-bg)', border: '1px solid var(--card-border)' }}>
           <h3 className="font-serif text-sm mb-3" style={{ color: 'var(--gold)' }}>
-            🔮 {T(lang, '關鍵預測', 'Key Predictions')}
+            {T(lang, '關鍵預測', 'Key Predictions')}
           </h3>
           <div className="space-y-3">
             {d.keyPredictions.map((p, i) => (

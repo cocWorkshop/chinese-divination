@@ -75,7 +75,7 @@ export default function ClaimPage() {
     if (value <= 0) return null
     return (
       <div className="flex items-center justify-between px-5 py-3 rounded-xl bg-gold/10 border border-gold/20">
-        <span className="text-white/70 text-sm flex items-center gap-1.5 font-serif">
+        <span className="text-foreground/70 text-sm flex items-center gap-1.5 font-serif">
           <SparkleIcon size={16} className="text-gold" />
           <span>{label}</span>
         </span>
@@ -85,13 +85,13 @@ export default function ClaimPage() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4" style={{ background: 'linear-gradient(180deg, #0a0f1e 0%, #111827 100%)' }}>
+    <div className="flex-1 flex items-center justify-center p-4 min-h-screen bg-background">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="mb-3"><YinYangIcon size={48} /></div>
           <h1 className="text-gold font-serif text-2xl">玄機</h1>
-          <p className="text-white/40 text-xs mt-1 font-serif">Ancient Wisdom, Modern Heritage</p>
+          <p className="text-foreground/40 text-xs mt-1 font-serif">Ancient Wisdom, Modern Heritage</p>
         </div>
 
         <div className="oriental-sanctuary-card rounded-2xl border border-gold/30 overflow-hidden shadow-2xl">
@@ -110,8 +110,8 @@ export default function ClaimPage() {
                 <div className="w-14 h-14 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-3">
                   <GiftVesselIcon size={28} className="text-gold animate-bounce" />
                 </div>
-                <h2 className="text-white/90 text-lg font-serif mb-1">補償機緣</h2>
-                <p className="text-white/50 text-sm font-serif">以下機緣已為您準備：</p>
+                <h2 className="text-foreground/90 text-lg font-serif mb-1">補償機緣</h2>
+                <p className="text-foreground/50 text-sm font-serif">以下機緣已為您準備：</p>
               </div>
 
               <div className="space-y-2.5 mb-6">
@@ -119,7 +119,7 @@ export default function ClaimPage() {
               </div>
 
               {data.reason && (
-                <p className="text-white/40 text-xs text-center mb-6 italic font-serif">
+                <p className="text-foreground/40 text-xs text-center mb-6 italic font-serif">
                   原因：{data.reason}
                 </p>
               )}
@@ -132,7 +132,7 @@ export default function ClaimPage() {
                 <span>立即領取</span>
               </button>
 
-              <p className="text-white/30 text-[11px] text-center mt-4">
+              <p className="text-foreground/30 text-[11px] text-center mt-4">
                 機緣將立即發放至您的帳戶（{data.email}）
               </p>
             </div>
@@ -152,7 +152,7 @@ export default function ClaimPage() {
                 <CheckSealIcon size={32} />
               </div>
               <h2 className="text-emerald-400 text-lg font-serif mb-2">領取成功！</h2>
-              <p className="text-white/50 text-sm mb-4 font-serif">補償機緣已發放至您的帳戶</p>
+              <p className="text-foreground/50 text-sm mb-4 font-serif">補償機緣已發放至您的帳戶</p>
               {claimed && (
                 <div className="space-y-2 mb-6">
                   <CreditItem label="機緣" value={claimed.credits} />
@@ -167,7 +167,7 @@ export default function ClaimPage() {
                 </Link>
                 <Link
                   href="/"
-                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-serif text-white/60 hover:text-white border border-white/10 hover:bg-white/5 transition-colors"
+                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-serif text-foreground/60 hover:text-foreground border border-line/10 hover:bg-foreground/5 transition-colors"
                 >
                   返回首頁
                 </Link>
@@ -178,11 +178,11 @@ export default function ClaimPage() {
           {/* Expired */}
           {status === 'expired' && (
             <div className="p-8 text-center">
-              <div className="w-14 h-14 rounded-full bg-white/5 border border-white/20 flex items-center justify-center mx-auto mb-3 text-white/50">
+              <div className="w-14 h-14 rounded-full bg-foreground/5 border border-line/20 flex items-center justify-center mx-auto mb-3 text-foreground/50">
                 <SunMoonIcon size={28} />
               </div>
-              <h2 className="text-white/70 text-lg font-serif mb-2">補償已過期</h2>
-              <p className="text-white/40 text-sm font-serif mb-6">此補償連結已超過有效期限，請聯繫管理員。</p>
+              <h2 className="text-foreground/70 text-lg font-serif mb-2">補償已過期</h2>
+              <p className="text-foreground/40 text-sm font-serif mb-6">此補償連結已超過有效期限，請聯繫管理員。</p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
                   href="/divination"
@@ -192,7 +192,7 @@ export default function ClaimPage() {
                 </Link>
                 <Link
                   href="/"
-                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-serif text-white/60 hover:text-white border border-white/10 hover:bg-white/5 transition-colors"
+                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-serif text-foreground/60 hover:text-foreground border border-line/10 hover:bg-foreground/5 transition-colors"
                 >
                   返回首頁
                 </Link>
@@ -206,8 +206,8 @@ export default function ClaimPage() {
               <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-3 text-red-400">
                 <CloseIcon size={28} />
               </div>
-              <h2 className="text-white/70 text-lg font-serif mb-2">連結無效</h2>
-              <p className="text-white/40 text-sm font-serif mb-6">此補償連結無效或尚未啟用。</p>
+              <h2 className="text-foreground/70 text-lg font-serif mb-2">連結無效</h2>
+              <p className="text-foreground/40 text-sm font-serif mb-6">此補償連結無效或尚未啟用。</p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
                   href="/divination"
@@ -217,7 +217,7 @@ export default function ClaimPage() {
                 </Link>
                 <Link
                   href="/"
-                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-serif text-white/60 hover:text-white border border-white/10 hover:bg-white/5 transition-colors"
+                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-serif text-foreground/60 hover:text-foreground border border-line/10 hover:bg-foreground/5 transition-colors"
                 >
                   返回首頁
                 </Link>
@@ -231,8 +231,8 @@ export default function ClaimPage() {
               <div className="w-14 h-14 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-3 text-gold">
                 <SunMoonIcon size={28} />
               </div>
-              <h2 className="text-white/70 text-lg font-serif mb-2">尚未註冊</h2>
-              <p className="text-white/40 text-sm mb-6 font-serif">找不到此電郵對應的帳戶，請先註冊後再領取。</p>
+              <h2 className="text-foreground/70 text-lg font-serif mb-2">尚未註冊</h2>
+              <p className="text-foreground/40 text-sm mb-6 font-serif">找不到此電郵對應的帳戶，請先註冊後再領取。</p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
                   href="/register"
@@ -242,7 +242,7 @@ export default function ClaimPage() {
                 </Link>
                 <Link
                   href="/"
-                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-serif text-white/60 hover:text-white border border-white/10 hover:bg-white/5 transition-colors"
+                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-serif text-foreground/60 hover:text-foreground border border-line/10 hover:bg-foreground/5 transition-colors"
                 >
                   返回首頁
                 </Link>
@@ -256,8 +256,8 @@ export default function ClaimPage() {
               <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-3 text-red-400">
                 <AlertIcon size={28} />
               </div>
-              <h2 className="text-white/70 text-lg font-serif mb-2">發生錯誤</h2>
-              <p className="text-white/40 text-sm font-serif mb-6">請稍後再試或聯繫管理員。</p>
+              <h2 className="text-foreground/70 text-lg font-serif mb-2">發生錯誤</h2>
+              <p className="text-foreground/40 text-sm font-serif mb-6">請稍後再試或聯繫管理員。</p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
                   href="/divination"
@@ -267,7 +267,7 @@ export default function ClaimPage() {
                 </Link>
                 <Link
                   href="/"
-                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-serif text-white/60 hover:text-white border border-white/10 hover:bg-white/5 transition-colors"
+                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center px-5 py-2.5 min-h-[44px] rounded-xl text-sm font-serif text-foreground/60 hover:text-foreground border border-line/10 hover:bg-foreground/5 transition-colors"
                 >
                   返回首頁
                 </Link>

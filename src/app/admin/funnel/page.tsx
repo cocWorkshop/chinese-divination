@@ -143,7 +143,7 @@ export default function AdminFunnelPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="glass-card rounded-xl p-4"
+            className="card-quiet rounded-xl p-4"
             style={{ border: '1px solid var(--card-border)' }}
           >
             <div className="flex items-start justify-between">
@@ -162,7 +162,7 @@ export default function AdminFunnelPage() {
 
       {/* Bulk cleanup row */}
       <div
-        className="glass-card rounded-xl p-4 mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center"
+        className="card-quiet rounded-xl p-4 mb-6 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center"
         style={{ border: '1px solid var(--card-border)' }}
       >
         <div className="flex-1">
@@ -196,13 +196,13 @@ export default function AdminFunnelPage() {
 
       {users.length === 0 ? (
         <div
-          className="glass-card rounded-xl p-8 text-center text-sm"
+          className="card-quiet rounded-xl p-8 text-center text-sm"
           style={{ border: '1px solid var(--card-border)', color: 'var(--text-muted)' }}
         >
           目前沒有 tentative 用戶。
         </div>
       ) : (
-        <div className="glass-card rounded-xl overflow-hidden" style={{ border: '1px solid var(--card-border)' }}>
+        <div className="card-quiet rounded-xl overflow-hidden" style={{ border: '1px solid var(--card-border)' }}>
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: 'var(--card-bg)', color: 'var(--text-muted)' }}>

@@ -8,11 +8,11 @@ import { reportError } from '@/lib/errorReporter'
 import { T } from '@/lib/i18n'
 
 const ratingLabels: Record<number, { zh: string; en: string; emoji: string }> = {
-  1: { zh: '不太準確', en: 'Inaccurate', emoji: '😕' },
-  2: { zh: '有些偏差', en: 'Somewhat off', emoji: '🤔' },
-  3: { zh: '基本準確', en: 'Mostly accurate', emoji: '😐' },
-  4: { zh: '比較準確', en: 'Quite accurate', emoji: '😊' },
-  5: { zh: '非常精準', en: 'Very accurate', emoji: '🎯' },
+  1: { zh: '不太準確', en: 'Inaccurate', emoji: '疏' },
+  2: { zh: '有些偏差', en: 'Somewhat off', emoji: '偏' },
+  3: { zh: '基本準確', en: 'Mostly accurate', emoji: '平' },
+  4: { zh: '比較準確', en: 'Quite accurate', emoji: '準' },
+  5: { zh: '非常精準', en: 'Very accurate', emoji: '神' },
 }
 
 const feedbackPrompts: Record<number, { zh: string; en: string }> = {
@@ -102,7 +102,7 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.5 }}
-      className="glass-card rounded-xl p-4 sm:p-5 border"
+      className="card-quiet rounded-xl p-4 sm:p-5 border"
       style={{ borderColor: 'var(--card-border)' }}
     >
       {/* Header */}
@@ -131,7 +131,7 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
               onMouseLeave={() => setHoveredStar(null)}
               disabled={saving}
               className="p-1 transition-transform hover:scale-110 active:scale-95 disabled:opacity-50"
-              aria-label={`${star} ${lang === 'en' ? 'stars' : '星'}`}
+              aria-label={`${star} ${T(lang, '星', 'stars')}`}
             >
               <svg
                 className="w-7 h-7 sm:w-8 sm:h-8 transition-colors duration-150"
@@ -159,7 +159,7 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
             >
               <span className="text-base">{activeLabel.emoji}</span>
               <span className="text-xs font-medium" style={{ color: 'var(--gold)' }}>
-                {lang === 'en' ? activeLabel.en : activeLabel.zh}
+                {T(lang, activeLabel.zh, activeLabel.en)}
               </span>
             </motion.div>
           )}
@@ -178,7 +178,7 @@ export default function ReadingFeedback({ readingId, initialRating }: Props) {
           >
             <div className="pt-3 border-t" style={{ borderColor: 'var(--card-border)' }}>
               <label className="block text-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {lang === 'en' ? feedbackPrompts[rating].en : feedbackPrompts[rating].zh}
+                {T(lang, feedbackPrompts[rating].zh, feedbackPrompts[rating].en)}
                 <span className="ml-1" style={{ color: 'var(--text-muted)' }}>
                   ({T(lang, '選填', 'optional')})
                 </span>

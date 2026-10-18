@@ -1,6 +1,6 @@
 import Script from 'next/script'
 import type { Metadata } from 'next'
-import { Inter, Noto_Serif_SC } from 'next/font/google'
+import { Inter, Noto_Serif_TC } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
 import { LanguageProvider } from '@/components/LanguageContext'
@@ -21,7 +21,7 @@ import SentryClientInit from '@/components/SentryClientInit'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-const notoSerifSC = Noto_Serif_SC({
+const notoSerifTC = Noto_Serif_TC({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-noto-serif',
@@ -157,7 +157,7 @@ export default function RootLayout({
           </>
         )}
       </head>
-      <body className={`${inter.variable} ${notoSerifSC.variable} min-h-screen flex flex-col`}>
+      <body className={`${inter.variable} ${notoSerifTC.variable} min-h-screen flex flex-col`}>
         <SessionProvider>
           <LanguageProvider>
             <ThemeProvider>
@@ -184,9 +184,9 @@ export default function RootLayout({
               position="top-center"
               toastOptions={{
                 style: {
-                  background: '#111d35',
-                  color: '#e8c278',
-                  border: '1px solid rgba(212, 168, 83, 0.3)',
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-gold)',
                 },
               }}
             />

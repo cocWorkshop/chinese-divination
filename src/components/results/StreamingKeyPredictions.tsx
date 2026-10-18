@@ -52,14 +52,13 @@ export default function StreamingKeyPredictions({
   delay = 0.1,
 }: StreamingKeyPredictionsProps) {
   const { lang } = useLang()
-  const isEn = lang === 'en'
   const hasContent = Array.isArray(predictions) && predictions.length > 0
 
   if (!hasContent && !streaming) {
     return null
   }
 
-  const items = hasContent ? predictions : (isEn ? SKELETON_PREDICTIONS.en : SKELETON_PREDICTIONS.zh)
+  const items = hasContent ? predictions : T(lang, SKELETON_PREDICTIONS.zh, SKELETON_PREDICTIONS.en)
 
   return (
     <motion.div
@@ -97,7 +96,7 @@ export default function StreamingKeyPredictions({
           return (
             <div
               key={i}
-              className={`glass-card rounded-xl p-3 border transition-colors ${
+              className={`card-quiet rounded-xl p-3 border transition-colors ${
                 isCurrent ? 'border-gold/50 ring-1 ring-gold/20' : 'border-gold/20'
               }`}
             >

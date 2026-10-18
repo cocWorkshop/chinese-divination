@@ -96,11 +96,11 @@ export default function WikiEditor() {
         <h1 className="text-2xl font-serif text-gold">{isNew ? '新建文章' : '編輯文章'}</h1>
         <div className="flex gap-2">
           <button onClick={() => setPreview(!preview)}
-            className="px-4 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white/60 hover:text-white">
+            className="px-4 py-2 rounded-lg text-xs bg-foreground/5 border border-line/10 text-foreground/60 hover:text-foreground">
             {preview ? '✏️ 編輯' : '👁 預覽'}
           </button>
           <button onClick={() => router.push('/admin/wiki')}
-            className="px-4 py-2 rounded-lg text-xs bg-white/5 border border-white/10 text-white/60 hover:text-white">
+            className="px-4 py-2 rounded-lg text-xs bg-foreground/5 border border-line/10 text-foreground/60 hover:text-foreground">
             ← 返回列表
           </button>
         </div>
@@ -113,7 +113,7 @@ export default function WikiEditor() {
         <div className="lg:col-span-2 space-y-4">
           <input type="text" value={form.title} placeholder="文章標題"
             onChange={e => updateField('title', e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-lg bg-white/5 border border-white/10 text-white placeholder-white/20 font-serif" />
+            className="w-full px-4 py-3 rounded-xl text-lg bg-foreground/5 border border-line/10 text-foreground placeholder-foreground/20 font-serif" />
 
           {preview ? (
             <div className="rounded-xl p-6 min-h-[500px] prose prose-invert prose-sm max-w-none"
@@ -123,7 +123,7 @@ export default function WikiEditor() {
           ) : (
             <textarea value={form.content} placeholder="Markdown 內容..."
               onChange={e => updateField('content', e.target.value)}
-              className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-white/10 text-white placeholder-white/20 font-mono min-h-[500px] resize-y" />
+              className="w-full px-4 py-3 rounded-xl text-sm bg-foreground/5 border border-line/10 text-foreground placeholder-foreground/20 font-mono min-h-[500px] resize-y" />
           )}
         </div>
 
@@ -131,53 +131,53 @@ export default function WikiEditor() {
         <div className="space-y-4">
           <div className="rounded-xl p-4 space-y-4" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
             <div>
-              <label className="text-xs text-white/40 block mb-1">Slug (URL路徑)</label>
+              <label className="text-xs text-foreground/40 block mb-1">Slug (URL路徑)</label>
               <input type="text" value={form.slug}
                 onChange={e => { setAutoSlug(false); updateField('slug', e.target.value) }}
-                className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white font-mono" />
-              <p className="text-xs text-white/20 mt-1">/wiki/{form.slug || '...'}</p>
+                className="w-full px-3 py-2 rounded-lg text-sm bg-foreground/5 border border-line/10 text-foreground font-mono" />
+              <p className="text-xs text-foreground/20 mt-1">/wiki/{form.slug || '...'}</p>
             </div>
 
             <div>
-              <label className="text-xs text-white/40 block mb-1">摘要</label>
+              <label className="text-xs text-foreground/40 block mb-1">摘要</label>
               <textarea value={form.summary} placeholder="簡短描述..."
                 onChange={e => updateField('summary', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white placeholder-white/20 h-20 resize-none" />
+                className="w-full px-3 py-2 rounded-lg text-sm bg-foreground/5 border border-line/10 text-foreground placeholder-foreground/20 h-20 resize-none" />
             </div>
 
             <div>
-              <label className="text-xs text-white/40 block mb-1">分類</label>
+              <label className="text-xs text-foreground/40 block mb-1">分類</label>
               <select value={form.category} onChange={e => updateField('category', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white">
+                className="w-full px-3 py-2 rounded-lg text-sm bg-foreground/5 border border-line/10 text-foreground">
                 {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
 
             <div>
-              <label className="text-xs text-white/40 block mb-1">封面圖片 URL</label>
+              <label className="text-xs text-foreground/40 block mb-1">封面圖片 URL</label>
               <input type="text" value={form.coverImage} placeholder="https://..."
                 onChange={e => updateField('coverImage', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white placeholder-white/20" />
+                className="w-full px-3 py-2 rounded-lg text-sm bg-foreground/5 border border-line/10 text-foreground placeholder-foreground/20" />
             </div>
 
             <div>
-              <label className="text-xs text-white/40 block mb-1">排序 (越小越前)</label>
+              <label className="text-xs text-foreground/40 block mb-1">排序 (越小越前)</label>
               <input type="number" value={form.sortOrder}
                 onChange={e => updateField('sortOrder', parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white" />
+                className="w-full px-3 py-2 rounded-lg text-sm bg-foreground/5 border border-line/10 text-foreground" />
             </div>
 
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form.published}
                 onChange={e => updateField('published', e.target.checked)}
                 className="rounded" />
-              <span className="text-sm text-white/60">立即發布</span>
+              <span className="text-sm text-foreground/60">立即發布</span>
             </label>
 
             <button onClick={save} disabled={saving}
               className="w-full py-3 rounded-xl font-medium text-sm transition-all"
               style={{ backgroundColor: 'var(--gold)', color: '#000' }}>
-              {saving ? '保存中...' : isNew ? '✨ 創建文章' : '💾 保存修改'}
+              {saving ? '保存中...' : isNew ? '創建文章' : '保存修改'}
             </button>
           </div>
         </div>

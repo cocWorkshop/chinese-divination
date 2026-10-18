@@ -7,6 +7,7 @@ import { useMasterChat } from '../MasterChatContext'
 import type { GateIntent } from './CollapsedBar'
 
 import { MasterSageIcon } from '@/components/DivinationIcons'
+import { T } from '@/lib/i18n'
 
 interface Props {
   needsMemoryGate: boolean
@@ -86,7 +87,7 @@ export default function MasterFab({ needsMemoryGate, onRequestGate, focusOnMount
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.94 }}
         title={widgetOpener}
-        aria-label={isEn ? 'Open Master Xuanji chat' : '展開玄機大師對話'}
+        aria-label={T(lang, '展開玄機大師對話', 'Open Master Xuanji chat')}
         className="w-14 h-14 rounded-full flex items-center justify-center text-2xl relative shadow-lg"
         style={{
           background: 'linear-gradient(135deg, var(--gold) 0%, #b88628 100%)',

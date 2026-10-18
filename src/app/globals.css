@@ -62,7 +62,7 @@ body {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
   }
-  .glass-card {
+  .card-quiet {
     background: #ffffff !important;
     border: 1px solid #cccccc !important;
     box-shadow: none !important;
@@ -74,7 +74,7 @@ body {
 }
 
 :root {
-  --font-noto-serif: 'Noto Serif SC', serif;
+  --font-noto-serif: 'Noto Serif TC', serif;
   --font-inter: 'Inter', sans-serif;
 
   /* Light theme (default root, but we default to dark via class) */
@@ -97,6 +97,25 @@ body {
   --nav-bg: rgba(250, 248, 240, 0.85);
   --input-bg: #ffffff;
   --accent-bg: rgba(184, 134, 11, 0.06);
+
+  /* Surface additions (ui-restyle-2026-10 P1) */
+  --bg-elevated: #f5f0e3;
+  --bg-secondary: #f5f0e3;
+  --bg-input: #ffffff;
+  --scrim: rgba(45, 31, 14, 0.45);
+
+  /* RGB channels — consumed by tailwind.config.js via <alpha-value> so
+     /opacity modifiers work in BOTH modes. 宣紙 uses AA-darkened golds. */
+  --fg-rgb: 45 31 14;
+  --line-rgb: 45 31 14;
+  --gold-rgb: 139 101 8;
+  --gold-light-rgb: 139 101 8;
+  --gold-dark-rgb: 112 80 0;
+  --jade-rgb: 30 107 85;
+  --vermillion-rgb: 176 45 34;
+  --bg-primary-rgb: 250 248 240;
+  --bg-surface-rgb: 255 255 255;
+  --bg-elevated-rgb: 245 240 227;
 }
 
 .dark {
@@ -117,6 +136,22 @@ body {
   --nav-bg: rgba(13, 21, 38, 0.8);
   --input-bg: #111d35;
   --accent-bg: rgba(17, 29, 53, 0.5);
+
+  --bg-elevated: #162444;
+  --bg-secondary: #162444;
+  --bg-input: #111d35;
+  --scrim: rgba(4, 8, 16, 0.85);
+
+  --fg-rgb: 255 255 255;
+  --line-rgb: 255 255 255;
+  --gold-rgb: 212 168 83;
+  --gold-light-rgb: 232 194 120;
+  --gold-dark-rgb: 184 137 58;
+  --jade-rgb: 45 138 110;
+  --vermillion-rgb: 192 57 43;
+  --bg-primary-rgb: 10 15 30;
+  --bg-surface-rgb: 17 29 53;
+  --bg-elevated-rgb: 22 36 68;
 }
 
 html, body {
@@ -131,72 +166,15 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Light mode overrides for hardcoded dark-theme Tailwind classes */
-:root:not(.dark) {
-  /* Override white text to dark in light mode */
-  --tw-text-opacity: 1;
-}
-
-:root:not(.dark) .text-white { color: var(--text-primary) !important; }
-:root:not(.dark) .text-white\/95 { color: rgba(45, 31, 14, 0.95) !important; }
-:root:not(.dark) .text-white\/90 { color: rgba(45, 31, 14, 0.90) !important; }
-:root:not(.dark) .text-white\/85 { color: rgba(45, 31, 14, 0.85) !important; }
-:root:not(.dark) .text-white\/80 { color: rgba(45, 31, 14, 0.80) !important; }
-:root:not(.dark) .text-white\/75 { color: rgba(45, 31, 14, 0.75) !important; }
-:root:not(.dark) .text-white\/70 { color: rgba(45, 31, 14, 0.72) !important; }
-:root:not(.dark) .text-white\/65 { color: rgba(45, 31, 14, 0.68) !important; }
-:root:not(.dark) .text-white\/60 { color: rgba(45, 31, 14, 0.65) !important; }
-:root:not(.dark) .text-white\/55 { color: rgba(45, 31, 14, 0.60) !important; }
-:root:not(.dark) .text-white\/50 { color: rgba(45, 31, 14, 0.58) !important; }
-:root:not(.dark) .text-white\/45 { color: rgba(45, 31, 14, 0.55) !important; }
-:root:not(.dark) .text-white\/40 { color: rgba(45, 31, 14, 0.52) !important; }
-:root:not(.dark) .text-white\/35 { color: rgba(45, 31, 14, 0.48) !important; }
-:root:not(.dark) .text-white\/30 { color: rgba(45, 31, 14, 0.45) !important; }
-:root:not(.dark) .text-white\/25 { color: rgba(45, 31, 14, 0.40) !important; }
-:root:not(.dark) .text-white\/20 { color: rgba(45, 31, 14, 0.35) !important; }
-:root:not(.dark) .text-white\/10 { color: rgba(45, 31, 14, 0.25) !important; }
-
-/* Gold typography overrides for light mode: minimum 4.5:1 WCAG AA contrast against #faf8f0 & #ffffff */
-:root:not(.dark) .text-gold { color: #8b6508 !important; }
-:root:not(.dark) .text-gold-light { color: #8b6508 !important; }
-:root:not(.dark) .text-gold-light\/90 { color: #8b6508 !important; }
-:root:not(.dark) .text-gold-light\/80 { color: #8b6508 !important; }
-:root:not(.dark) .text-gold-light\/70 { color: #8b6508 !important; }
-:root:not(.dark) .text-gold-dark { color: #705000 !important; }
-:root:not(.dark) .text-gold\/95 { color: #8b6508 !important; }
-:root:not(.dark) .text-gold\/90 { color: #8b6508 !important; }
-:root:not(.dark) .text-gold\/85 { color: #8b6508 !important; }
-:root:not(.dark) .text-gold\/80 { color: #8b6508 !important; }
-:root:not(.dark) .text-gold\/70 { color: #8b6508 !important; }
-:root:not(.dark) .text-gold\/60 { color: #8b6508 !important; }
-:root:not(.dark) .text-gold\/50 { color: rgba(139, 101, 8, 0.80) !important; }
-:root:not(.dark) .text-gold\/40 { color: rgba(139, 101, 8, 0.70) !important; }
-:root:not(.dark) .text-gold\/30 { color: rgba(139, 101, 8, 0.55) !important; }
-
-/* Background overrides */
-:root:not(.dark) .bg-navy-950 { background-color: var(--bg-primary) !important; }
-:root:not(.dark) .bg-navy-950\/95 { background-color: rgba(250, 248, 240, 0.95) !important; }
-:root:not(.dark) .bg-navy-900 { background-color: var(--bg-surface) !important; }
-:root:not(.dark) .bg-navy-900\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
-:root:not(.dark) .bg-navy-900\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
-:root:not(.dark) .bg-navy-800 { background-color: #f5f0e3 !important; }
-:root:not(.dark) .bg-navy-800\/50 { background-color: rgba(245, 240, 227, 0.5) !important; }
-:root:not(.dark) .bg-navy-700 { background-color: #ede5d0 !important; }
-:root:not(.dark) .bg-gold\/5 { background-color: rgba(184, 134, 11, 0.05) !important; }
-:root:not(.dark) .bg-gold\/10 { background-color: rgba(184, 134, 11, 0.08) !important; }
-:root:not(.dark) .bg-gold\/15 { background-color: rgba(184, 134, 11, 0.12) !important; }
-:root:not(.dark) .bg-gold\/20 { background-color: rgba(184, 134, 11, 0.16) !important; }
-:root:not(.dark) .bg-gold\/25 { background-color: rgba(184, 134, 11, 0.20) !important; }
-:root:not(.dark) .bg-gold { background-color: var(--gold) !important; }
-:root:not(.dark) .bg-gold-light { background-color: var(--gold) !important; }
-:root:not(.dark) .bg-white\/\[0\.03\] { background-color: rgba(45, 31, 14, 0.03) !important; }
-:root:not(.dark) .bg-white\/\[0\.04\] { background-color: rgba(45, 31, 14, 0.04) !important; }
-:root:not(.dark) .bg-white\/\[0\.05\] { background-color: rgba(45, 31, 14, 0.05) !important; }
-:root:not(.dark) .bg-white\/5 { background-color: rgba(45, 31, 14, 0.04) !important; }
-:root:not(.dark) .bg-white\/10 { background-color: rgba(45, 31, 14, 0.06) !important; }
-:root:not(.dark) .bg-white\/15 { background-color: rgba(45, 31, 14, 0.08) !important; }
-:root:not(.dark) .bg-white\/20 { background-color: rgba(45, 31, 14, 0.10) !important; }
-:root:not(.dark) .bg-purple-500\/20 { background-color: rgba(139, 92, 246, 0.12) !important; }
+/* ─── Semantic calibration for light mode (宣紙) ───
+   ONLY per-mode contrast calibration for STATUS / ELEMENT semantic colors
+   (五行 · 星曜 · 吉凶 coding), the dark-on-gold chip text, input element
+   defaults, and veil tints lives here.
+   The structural dark-first cascade (text-white/N · bg-navy* · bg-white/N ·
+   border-white/N · hover-* · gold family) was retired with the P4 token
+   migration — those classes now resolve per-theme via RGB-channel vars in
+   tailwind.config.js. Do not re-add structural overrides here.
+   See docs/planning/ui-restyle-2026-10.md. */
 :root:not(.dark) .bg-blue-400\/5 { background-color: rgba(59, 130, 246, 0.05) !important; }
 :root:not(.dark) .text-orange-400 { color: #ea580c !important; }
 :root:not(.dark) .text-amber-400\/70 { color: rgba(180, 83, 9, 0.7) !important; }
@@ -230,20 +208,6 @@ body {
 :root:not(.dark) .border-yellow-500\/30 { border-color: rgba(234, 179, 8, 0.3) !important; }
 :root:not(.dark) .border-gray-300\/30 { border-color: rgba(156, 163, 175, 0.3) !important; }
 
-/* Border overrides */
-:root:not(.dark) .border-gold\/10 { border-color: rgba(184, 134, 11, 0.15) !important; }
-:root:not(.dark) .border-gold\/15 { border-color: rgba(184, 134, 11, 0.20) !important; }
-:root:not(.dark) .border-gold\/20 { border-color: rgba(184, 134, 11, 0.25) !important; }
-:root:not(.dark) .border-gold\/25 { border-color: rgba(184, 134, 11, 0.30) !important; }
-:root:not(.dark) .border-gold\/30 { border-color: rgba(184, 134, 11, 0.35) !important; }
-:root:not(.dark) .border-gold\/40 { border-color: rgba(184, 134, 11, 0.45) !important; }
-:root:not(.dark) .border-gold { border-color: rgba(184, 134, 11, 0.6) !important; }
-:root:not(.dark) .border-white\/10 { border-color: rgba(45, 31, 14, 0.12) !important; }
-:root:not(.dark) .border-white\/15 { border-color: rgba(45, 31, 14, 0.15) !important; }
-:root:not(.dark) .border-white\/20 { border-color: rgba(45, 31, 14, 0.20) !important; }
-:root:not(.dark) .border-white\/25 { border-color: rgba(45, 31, 14, 0.25) !important; }
-:root:not(.dark) .border-white\/30 { border-color: rgba(45, 31, 14, 0.30) !important; }
-
 /* Input overrides */
 :root:not(.dark) input,
 :root:not(.dark) select,
@@ -259,18 +223,6 @@ body {
   color: rgba(45, 31, 14, 0.45) !important;
 }
 
-/* Hover overrides */
-:root:not(.dark) .hover\:text-gold:hover { color: #8b6508 !important; }
-:root:not(.dark) .hover\:text-gold-light:hover { color: #705000 !important; }
-:root:not(.dark) .hover\:text-white:hover { color: #2d1f0e !important; }
-:root:not(.dark) .hover\:text-white\/70:hover { color: rgba(45, 31, 14, 0.8) !important; }
-:root:not(.dark) .hover\:text-white\/80:hover { color: rgba(45, 31, 14, 0.9) !important; }
-:root:not(.dark) .group:hover .group-hover\:text-gold { color: #8b6508 !important; }
-:root:not(.dark) .group:hover .group-hover\:text-gold-light { color: #705000 !important; }
-:root:not(.dark) .group:hover .group-hover\:text-white { color: #2d1f0e !important; }
-:root:not(.dark) .hover\:bg-white\/5:hover { background-color: rgba(45, 31, 14, 0.04) !important; }
-:root:not(.dark) .hover\:bg-navy-700:hover { background-color: #ede5d0 !important; }
-
 /* Element colors in light mode — darker for readability */
 :root:not(.dark) .text-green-400 { color: #15803d !important; }
 :root:not(.dark) .text-red-400 { color: #dc2626 !important; }
@@ -283,8 +235,7 @@ body {
 :root:not(.dark) .bg-yellow-500 { background-color: #eab308 !important; }
 :root:not(.dark) .bg-gray-300 { background-color: #9ca3af !important; }
 
-/* Qimen/Ziwei grid background */
-:root:not(.dark) .bg-navy-950\/90 { background-color: rgba(250, 248, 240, 0.95) !important; }
+/* Dark-on-gold chip text stays ink on 宣紙 */
 :root:not(.dark) .text-navy-950 { color: var(--text-primary) !important; }
 
 /* Qimen/Ziwei element & palette text colors — darkened for light mode */
@@ -340,20 +291,13 @@ body {
 /* Radial background override */
 :root:not(.dark) .bg-radial-navy { background: var(--bg-primary) !important; }
 
-/* Gradient text fix for light */
-:root:not(.dark) .from-gold { --tw-gradient-from: var(--gold) !important; }
-
-/* Toast override */
-:root:not(.dark) [data-hot-toast] > div {
-  background: #ffffff !important;
-  color: #2d1f0e !important;
-  border-color: rgba(184, 134, 11, 0.3) !important;
-}
-
 @layer utilities {
-  .glass-card {
-    background: var(--card-bg);
-    backdrop-filter: blur(12px);
+  /* card-quiet — the sanctioned neutral surface (rows, grids, list items,
+     admin panels). De-glassed successor of glass-card (ui-restyle P4:
+     blur removed, same dual-mode vars). Featured/hero surfaces use
+     card-mystic-l1 / oriental-sanctuary-card instead. */
+  .card-quiet {
+    background: var(--bg-card);
     border: 1px solid var(--card-border);
     box-shadow: var(--card-shadow);
     transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
@@ -381,6 +325,27 @@ body {
   display: none;
 }
 
+/* Star backdrops are 玄夜-only — 宣紙 morning reading needs no stars. */
+:root:not(.dark) .xj-stars {
+  display: none !important;
+}
+
+/* Thin theme-aware scrollbar (poster modal lists etc.) */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 2px;
+}
+
 /* Ziwei markdown rendering */
 .ziwei-markdown h1, .ziwei-markdown h2, .ziwei-markdown h3, .ziwei-markdown h4 {
   color: var(--gold, #d4a853);
@@ -390,7 +355,7 @@ body {
 }
 .ziwei-markdown h3 { font-size: 1em; }
 .ziwei-markdown h4 { font-size: 0.95em; }
-.ziwei-markdown strong { color: rgba(255,255,255,0.95); }
+.ziwei-markdown strong { color: var(--text-primary); }
 .ziwei-markdown ul, .ziwei-markdown ol { padding-left: 1.2em; margin: 0.4em 0; }
 .ziwei-markdown li { margin: 0.15em 0; }
 .ziwei-markdown p { margin: 0.4em 0; }
@@ -398,12 +363,44 @@ body {
   border-left: 2px solid var(--gold, #d4a853);
   padding-left: 0.8em;
   margin: 0.5em 0;
-  color: rgba(255,255,255,0.6);
+  color: var(--text-secondary);
 }
 .ziwei-markdown table { width: 100%; border-collapse: collapse; margin: 0.5em 0; font-size: 0.85em; display: block; overflow-x: auto; }
-.ziwei-markdown th, .ziwei-markdown td { border: 1px solid rgba(255,255,255,0.15); padding: 0.3em 0.5em; }
-.ziwei-markdown th { background: rgba(255,255,255,0.05); color: var(--gold, #d4a853); }
-.ziwei-markdown hr { border-color: rgba(255,255,255,0.1); margin: 0.8em 0; }
+.ziwei-markdown th, .ziwei-markdown td { border: 1px solid var(--border-color); padding: 0.3em 0.5em; }
+.ziwei-markdown th { background: var(--accent-bg); color: var(--gold, #d4a853); }
+.ziwei-markdown hr { border-color: var(--border-color); margin: 0.8em 0; }
+
+/* Classic prose — shared markdown typography (wiki articles, 玄機 chat
+   answers, reading results). Fully var-based: correct in dark (玄夜) and
+   light (宣紙) without cascade patches. Replaces dead `prose` classes —
+   @tailwindcss/typography is intentionally NOT installed.
+   Layered as components so Tailwind utilities (incl. arbitrary [&>]
+   overrides) still win where they overlap. */
+@layer components {
+  .classic-prose h1, .classic-prose h2, .classic-prose h3, .classic-prose h4 {
+    color: var(--gold);
+    font-weight: 600;
+    margin-top: 1em;
+    margin-bottom: 0.4em;
+  }
+  .classic-prose h3 { font-size: 1em; }
+  .classic-prose h4 { font-size: 0.95em; }
+  .classic-prose strong { color: var(--text-primary); }
+  .classic-prose ul, .classic-prose ol { padding-left: 1.2em; margin: 0.4em 0; }
+  .classic-prose li { margin: 0.15em 0; }
+  .classic-prose p { margin: 0.4em 0; }
+  .classic-prose blockquote {
+    border-left: 2px solid var(--gold);
+    padding-left: 0.8em;
+    margin: 0.5em 0;
+    color: var(--text-secondary);
+  }
+  .classic-prose table { width: 100%; border-collapse: collapse; margin: 0.5em 0; font-size: 0.85em; display: block; overflow-x: auto; }
+  .classic-prose th, .classic-prose td { border: 1px solid var(--border-color); padding: 0.3em 0.5em; }
+  .classic-prose th { background: var(--accent-bg); color: var(--gold); }
+  .classic-prose hr { border-color: var(--border-color); margin: 0.8em 0; }
+  .classic-prose a { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+}
 
 /* ─── Modern Oriental Mystical Design Utilities ─── */
 @keyframes celestialRotate {
@@ -562,29 +559,7 @@ body {
   border-color: rgba(184, 134, 11, 0.22);
 }
 
-/* Ziwei and general markdown light mode rules */
-:root:not(.dark) .ziwei-markdown strong {
-  color: var(--text-primary);
-}
-:root:not(.dark) .ziwei-markdown blockquote {
-  border-left: 2px solid var(--gold);
-  color: var(--text-secondary);
-}
-:root:not(.dark) .ziwei-markdown th,
-:root:not(.dark) .ziwei-markdown td {
-  border-color: var(--border-color);
-}
-:root:not(.dark) .ziwei-markdown th {
-  background: rgba(184, 134, 11, 0.06);
-  color: var(--gold);
-}
-:root:not(.dark) .ziwei-markdown hr {
-  border-color: var(--border-color);
-}
-
-/* Light mode utility overrides for backgrounds */
-:root:not(.dark) .bg-navy-900\/60 { background-color: rgba(255, 255, 255, 0.7) !important; }
+/* Veil tint calibration — bg-black veils read as tea-gold on 宣紙 */
 :root:not(.dark) .bg-black\/20 { background-color: rgba(184, 134, 11, 0.05) !important; }
 :root:not(.dark) .bg-black\/30 { background-color: rgba(184, 134, 11, 0.08) !important; }
-:root:not(.dark) .border-white\/5 { border-color: rgba(184, 134, 11, 0.12) !important; }
 

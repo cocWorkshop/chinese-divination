@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
 import { useMasterChat } from '@/components/master/MasterChatContext'
+import { T } from '@/lib/i18n'
+import { langKey } from '@/lib/i18n'
 
 const relationLabels: Record<string, { zh: string; en: string }> = {
   spouse: { zh: '配偶', en: 'Spouse' },
@@ -80,16 +82,13 @@ function formatSubjectInfo(
   lang: 'zh-TW' | 'en',
 ): string | null {
   if (!inputData) return null
-  const isEn = lang === 'en'
   const parts: string[] = []
 
   const birthDate = inputData.birthDate as string | undefined
   if (birthDate) {
     parts.push(
       inputData.lunarToggle === 'lunar'
-        ? isEn
-          ? `${birthDate} (Lunar)`
-          : `${birthDate}（農曆）`
+        ? T(lang, `${birthDate}（農曆）`, `${birthDate} (Lunar)`)
         : birthDate,
     )
   }
@@ -105,8 +104,8 @@ function formatSubjectInfo(
   if (inputData.birthPlace) parts.push(String(inputData.birthPlace))
 
   const g = inputData.gender as string | undefined
-  if (g === 'male') parts.push(isEn ? 'M' : '男')
-  else if (g === 'female') parts.push(isEn ? 'F' : '女')
+  if (g === 'male') parts.push(T(lang, '男', 'M'))
+  else if (g === 'female') parts.push(T(lang, '女', 'F'))
 
   return parts.length > 0 ? parts.join(' · ') : null
 }
@@ -182,12 +181,12 @@ export default function DashboardPage() {
             // this page and would otherwise only notice the badge change.
             if (data.reading?.status === 'completed') {
               toast.success(
-                lang === 'en' ? 'Your reading is ready — tap it to view.' : '您的解讀已完成 — 點擊卡片查看。',
+                T(lang, '您的解讀已完成 — 點擊卡片查看。', 'Your reading is ready — tap it to view.'),
                 { duration: 5000 },
               )
             } else if (data.reading?.status === 'failed') {
               toast.error(
-                lang === 'en' ? 'A reading failed to generate. Karma was refunded.' : '有一筆解讀生成失敗，機緣已退還。',
+                T(lang, '有一筆解讀生成失敗，機緣已退還。', 'A reading failed to generate. Karma was refunded.'),
                 { duration: 5000 },
               )
             }
@@ -214,7 +213,7 @@ export default function DashboardPage() {
       // the deleted chart type until the next expand-triggered refetch.
       publish('xuanji:readingsChanged')
     } catch {
-      toast.error(lang === 'en' ? 'Delete failed, please try again' : '刪除失敗，請稍後再試')
+      toast.error(T(lang, '刪除失敗，請稍後再試', 'Delete failed, please try again'))
     } finally {
       setDeletingIds(prev => {
         const next = new Set(prev)
@@ -244,27 +243,29 @@ export default function DashboardPage() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-3xl font-serif text-gold">
-            {lang === 'zh-TW' ? '占卜歷史' : 'Reading History'}
+            {T(lang, '占卜歷史', 'Reading History')}
           </h1>
           <a
             href="/divination"
             className="px-4 py-2 rounded-lg text-xs font-medium transition-all hover:shadow-[0_0_12px_rgba(212,175,55,0.3)]"
             style={{ background: 'var(--gold)', color: '#000' }}
           >
-            {lang === 'zh-TW' ? '+ 新占卜' : '+ New Reading'}
+            {T(lang, '+ 新占卜', '+ New Reading')}
           </a>
         </div>
-        <p className="text-white/50 text-sm mb-4">
-          {lang === 'zh-TW'
-            ? `共 ${readings.length} 條記錄${activeTypeFilter ? ` · 篩選：${typeLabels[activeTypeFilter]?.['zh-TW'] ?? activeTypeFilter}` : ''}`
-            : `${readings.length} readings${activeTypeFilter ? ` · Filter: ${typeLabels[activeTypeFilter]?.en ?? activeTypeFilter}` : ''}`}
+        <p className="text-foreground/50 text-sm mb-4">
+          {T(
+            lang,
+            `共 ${readings.length} 條記錄${activeTypeFilter ? ` · 篩選：${typeLabels[activeTypeFilter]?.['zh-TW'] ?? activeTypeFilter}` : ''}`,
+            `${readings.length} readings${activeTypeFilter ? ` · Filter: ${typeLabels[activeTypeFilter]?.en ?? activeTypeFilter}` : ''}`
+          )}
         </p>
 
         {/* Cultivation Realm Progress Ribbon */}
         {growth && (
           <Link
             href="/profile?tab=growth"
-            className="mb-4 p-3.5 sm:p-4 rounded-xl glass-card flex items-center justify-between border border-gold/25 hover:border-gold/50 transition-all group"
+            className="mb-4 p-3.5 sm:p-4 rounded-xl card-quiet flex items-center justify-between border border-gold/25 hover:border-gold/50 transition-all group"
             style={{ background: 'linear-gradient(90deg, rgba(212,168,83,0.1), rgba(10,17,40,0.6))' }}
           >
             <div className="flex items-center gap-3">
@@ -274,23 +275,25 @@ export default function DashboardPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-serif text-gold text-sm sm:text-base font-semibold">
-                    {growth.currentRealm.title[lang === 'en' ? 'en' : 'zh-TW']}
+                    {growth.currentRealm.title[langKey(lang)]}
                   </span>
-                  <span className="text-[10px] text-white/60 bg-white/10 px-1.5 py-0.5 rounded font-mono">
+                  <span className="text-[10px] text-foreground/60 bg-foreground/10 px-1.5 py-0.5 rounded font-mono">
                     {growth.xp} XP
                   </span>
                 </div>
-                <p className="text-xs text-white/70 mt-0.5 font-sans">
+                <p className="text-xs text-foreground/70 mt-0.5 font-sans">
                   {growth.nextRealm
-                    ? (lang === 'zh-TW'
-                        ? `距下一階【${growth.nextRealm.name['zh-TW']}】還需 ${growth.xpToNextLevel} 道行 (${growth.levelProgressPercent}%)`
-                        : `${growth.xpToNextLevel} XP to ${growth.nextRealm.name.en} (${growth.levelProgressPercent}%)`)
-                    : (lang === 'zh-TW' ? '已臻至高境界 · 天人合一' : 'Pinnacle Reached: Unity with the Tao')}
+                    ? T(
+                        lang,
+                        `距下一階【${growth.nextRealm.name['zh-TW']}】還需 ${growth.xpToNextLevel} 道行 (${growth.levelProgressPercent}%)`,
+                        `${growth.xpToNextLevel} XP to ${growth.nextRealm.name.en} (${growth.levelProgressPercent}%)`
+                      )
+                    : (T(lang, '已臻至高境界 · 天人合一', 'Pinnacle Reached: Unity with the Tao'))}
                 </p>
               </div>
             </div>
             <span className="text-xs text-gold/80 group-hover:text-gold flex items-center gap-1 font-serif flex-shrink-0">
-              <span className="hidden sm:inline">{lang === 'zh-TW' ? '修為圖譜' : 'Mastery'}</span>
+              <span className="hidden sm:inline">{T(lang, '修為圖譜', 'Mastery')}</span>
               <span>→</span>
             </span>
           </Link>
@@ -306,7 +309,7 @@ export default function DashboardPage() {
               border: `1px solid ${!activeTypeFilter ? 'var(--gold)' : 'var(--card-border)'}`,
             }}
           >
-            {lang === 'zh-TW' ? '全部' : 'All'}
+            {T(lang, '全部', 'All')}
           </button>
           {Object.entries(typeLabels)
             .filter(([key]) => key !== 'other' && readings.some(r => r.type === key))
@@ -325,7 +328,7 @@ export default function DashboardPage() {
                   }}
                 >
                   <DivinationIcon type={key} size={14} className={active ? 'text-navy-950' : 'text-gold'} />
-                  <span>{lang === 'zh-TW' ? label['zh-TW'] : label.en}</span>
+                  <span>{T(lang, label['zh-TW'], label.en)}</span>
                   <span style={{ opacity: 0.6 }}>({count})</span>
                 </button>
               )
@@ -334,11 +337,11 @@ export default function DashboardPage() {
       </motion.div>
 
       {readings.length === 0 ? (
-        <div className="glass-card rounded-2xl p-12 text-center text-white/50">
+        <div className="card-quiet rounded-2xl p-12 text-center text-foreground/50">
           <div className="mb-4"><YinYangIcon size={48} /></div>
-          <p>{lang === 'zh-TW' ? '還沒有占卜記錄' : 'No readings yet'}</p>
-          <p className="text-sm mt-2 text-white/40">
-            {lang === 'zh-TW' ? '從一次八字或易經占卜開始，探索您的命盤。' : 'Start with a BaZi or I Ching reading to explore your chart.'}
+          <p>{T(lang, '還沒有占卜記錄', 'No readings yet')}</p>
+          <p className="text-sm mt-2 text-foreground/40">
+            {T(lang, '從一次八字或易經占卜開始，探索您的命盤。', 'Start with a BaZi or I Ching reading to explore your chart.')}
           </p>
           <button
             type="button"
@@ -346,7 +349,7 @@ export default function DashboardPage() {
             className="mt-5 px-6 py-2.5 rounded-lg font-medium text-sm transition-all hover:opacity-90"
             style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}
           >
-            {lang === 'zh-TW' ? '開始占卜 →' : 'Start a reading →'}
+            {T(lang, '開始占卜 →', 'Start a reading →')}
           </button>
         </div>
       ) : (
@@ -369,42 +372,43 @@ export default function DashboardPage() {
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-20 pointer-events-none">
                   <span className="flex items-center gap-2 text-xs text-red-300">
                     <span className="inline-block w-3.5 h-3.5 border-2 border-red-300 border-t-transparent rounded-full animate-spin" />
-                    {lang === 'en' ? 'Deleting…' : '刪除中…'}
+                    {T(lang, '刪除中…', 'Deleting…')}
                   </span>
                 </div>
               )}
               <button
                 type="button"
-                className={`w-full text-left p-5 cursor-pointer hover:bg-white/[0.03] transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''} ${isDeleting ? 'pointer-events-none' : ''}`}
+                className={`w-full text-left p-5 cursor-pointer hover:bg-foreground/[0.03] transition-colors ${r.status === 'pending' ? 'animate-pulse' : ''} ${isDeleting ? 'pointer-events-none' : ''}`}
                 onClick={() => router.push(`/reading/${r.id}`)}
               >
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="px-2.5 py-0.5 bg-gold/15 border border-gold/25 text-gold text-xs rounded-full mr-2 inline-flex items-center gap-1.5 font-serif">
                       <DivinationIcon type={r.type} size={13} className="text-gold" />
-                      <span>{typeLabels[r.type]?.[lang === 'en' ? 'en' : 'zh-TW'] || r.type}</span>
+                      <span>{typeLabels[r.type]?.[langKey(lang)] || r.type}</span>
                     </span>
                     {r.status === 'pending' && (
                       <span className="px-2.5 py-0.5 bg-gold/15 border border-gold/30 text-gold text-xs rounded-full mr-2 inline-flex items-center gap-1.5 font-serif">
                         <span className="text-gold/80 text-xs">✧</span>
-                        <span>{lang === 'en' ? 'Processing...' : '解讀中...'}</span>
+                        <span>{T(lang, '解讀中...', 'Processing...')}</span>
                       </span>
                     )}
                     {r.status === 'failed' && (
                       <span className="px-2.5 py-0.5 bg-red-500/15 border border-red-500/30 text-red-300 text-xs rounded-full mr-2 inline-flex items-center gap-1 font-serif">
                         <AlertIcon size={11} className="text-red-400" />
-                        <span>{lang === 'en' ? 'Failed' : '解讀失敗'}</span>
+                        <span>{T(lang, '解讀失敗', 'Failed')}</span>
                       </span>
                     )}
                     {r.targetType === 'family' && r.familyMember && (
-                      <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs rounded-full mr-2">
-                        {lang === 'en'
-                          ? `For ${relationLabels[r.familyMember.relation]?.en || r.familyMember.relation}${r.familyMember.name ? ` (${r.familyMember.name})` : ''}`
-                          : `為${relationLabels[r.familyMember.relation]?.zh || r.familyMember.relation}${r.familyMember.name ? `（${r.familyMember.name}）` : ''}`
-                        }
+                      <span className="px-2 py-0.5 bg-jade/15 text-jade text-xs rounded-full mr-2">
+                        {T(
+                          lang,
+                          `為${relationLabels[r.familyMember.relation]?.zh || r.familyMember.relation}${r.familyMember.name ? `（${r.familyMember.name}）` : ''}`,
+                          `For ${relationLabels[r.familyMember.relation]?.en || r.familyMember.relation}${r.familyMember.name ? ` (${r.familyMember.name})` : ''}`
+                        )}
                       </span>
                     )}
-                    {r.question && <span className="text-white/60 text-sm">{r.question}</span>}
+                    {r.question && <span className="text-foreground/60 text-sm">{r.question}</span>}
                   </div>
                   <div className="flex items-center gap-3">
                     {r.rating && (
@@ -412,8 +416,8 @@ export default function DashboardPage() {
                         {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}
                       </span>
                     )}
-                    <span className="text-white/40 text-xs">
-                      {new Date(r.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')}
+                    <span className="text-foreground/40 text-xs">
+                      {new Date(r.createdAt).toLocaleDateString(T(lang, 'zh-TW', 'en-US'))}
                     </span>
                     {confirmDeleteId === r.id ? (
                       <span className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
@@ -421,20 +425,20 @@ export default function DashboardPage() {
                           onClick={() => { deleteReading(r.id); setConfirmDeleteId(null) }}
                           className="text-red-400 hover:text-red-300 text-xs font-medium transition-colors px-1.5 py-0.5"
                         >
-                          {lang === 'en' ? 'Delete' : '刪除'}
+                          {T(lang, '刪除', 'Delete')}
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(null)}
-                          className="text-white/40 hover:text-white/60 text-xs transition-colors px-1.5 py-0.5"
+                          className="text-foreground/40 hover:text-foreground/60 text-xs transition-colors px-1.5 py-0.5"
                         >
-                          {lang === 'en' ? 'Cancel' : '取消'}
+                          {T(lang, '取消', 'Cancel')}
                         </button>
                       </span>
                     ) : (
                       <button
                         onClick={e => { e.stopPropagation(); setConfirmDeleteId(r.id) }}
                         disabled={isDeleting}
-                        className="text-white/30 hover:text-red-400 transition-colors text-xs disabled:opacity-40 disabled:cursor-wait"
+                        className="text-foreground/30 hover:text-red-400 transition-colors text-xs disabled:opacity-40 disabled:cursor-wait"
                       >
                         ✕
                       </button>
@@ -444,15 +448,15 @@ export default function DashboardPage() {
                 {(() => {
                   if (r.status === 'pending') {
                     return (
-                      <p className="text-white/50 text-sm mt-2">
-                        {lang === 'en' ? 'Your reading is being generated...' : '正在為您解讀命盤...'}
+                      <p className="text-foreground/50 text-sm mt-2">
+                        {T(lang, '正在為您解讀命盤...', 'Your reading is being generated...')}
                       </p>
                     )
                   }
                   if (r.status === 'failed') {
                     return (
-                      <p className="text-white/50 text-sm mt-2">
-                        {lang === 'en' ? 'This reading failed to generate. You may retry.' : '解讀生成失敗，可重新嘗試。'}
+                      <p className="text-foreground/50 text-sm mt-2">
+                        {T(lang, '解讀生成失敗，可重新嘗試。', 'This reading failed to generate. You may retry.')}
                       </p>
                     )
                   }
@@ -460,19 +464,19 @@ export default function DashboardPage() {
                   // and any other type whose form collected birth fields). For
                   // event-only readings without birth data, fall back to the
                   // 120-char preview so the card isn't visually empty.
-                  const subject = formatSubjectInfo(r.inputData, lang === 'en' ? 'en' : 'zh-TW')
+                  const subject = formatSubjectInfo(r.inputData, langKey(lang))
                   if (subject) {
                     return (
-                      <p className="text-white/50 text-sm mt-2">{subject}</p>
+                      <p className="text-foreground/50 text-sm mt-2">{subject}</p>
                     )
                   }
                   return (
-                    <p className="text-white/50 text-sm mt-2 line-clamp-2">
+                    <p className="text-foreground/50 text-sm mt-2 line-clamp-2">
                       {(() => {
                         try {
                           const parsed = JSON.parse(r.result)
                           if (parsed.paipanOnly) {
-                            return lang === 'en' ? 'Chart calculation only (no AI reading)' : '只排盤（無AI解盤）'
+                            return T(lang, '只排盤（無AI解盤）', 'Chart calculation only (no AI reading)')
                           }
                           const summary = parsed.sections?.overview
                             || parsed.sections?.overall       // fengshui uses 'overall' not 'overview'
@@ -482,7 +486,7 @@ export default function DashboardPage() {
                             || ''
                           return summary
                             ? summary.slice(0, 120) + '...'
-                            : (lang === 'en' ? 'Click to view full reading' : '點擊查看完整解讀')
+                            : (T(lang, '點擊查看完整解讀', 'Click to view full reading'))
                         } catch {
                           return r.result.slice(0, 120) + '...'
                         }
@@ -505,9 +509,11 @@ export default function DashboardPage() {
                   border: '1px solid var(--border-gold, rgba(212,175,55,0.3))',
                 }}
               >
-                {lang === 'zh-TW'
-                  ? `載入更多（還有 ${filteredReadings.length - visibleCount} 條）`
-                  : `Load more (${filteredReadings.length - visibleCount} remaining)`}
+                {T(
+                  lang,
+                  `載入更多（還有 ${filteredReadings.length - visibleCount} 條）`,
+                  `Load more (${filteredReadings.length - visibleCount} remaining)`
+                )}
               </button>
             </div>
           )}

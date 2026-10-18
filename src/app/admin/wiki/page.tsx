@@ -54,7 +54,7 @@ export default function WikiAdmin() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-serif text-gold">Wiki 知識庫</h1>
-          <p className="text-white/40 text-sm mt-1">管理占卜知識文章</p>
+          <p className="text-foreground/40 text-sm mt-1">管理占卜知識文章</p>
         </div>
         <Link href="/admin/wiki/new"
           className="px-4 py-2 rounded-lg text-sm font-medium"
@@ -91,18 +91,18 @@ export default function WikiAdmin() {
                   backgroundColor: a.published ? 'rgba(34,197,94,0.2)' : 'rgba(156,163,175,0.2)',
                   color: a.published ? '#22c55e' : '#9ca3af',
                 }}>{a.published ? '已發布' : '草稿'}</span>
-                <span className="text-xs text-white/30">{CATEGORIES.find(c => c.value === a.category)?.label}</span>
+                <span className="text-xs text-foreground/30">{CATEGORIES.find(c => c.value === a.category)?.label}</span>
               </div>
-              {a.summary && <p className="text-xs text-white/40 mt-1 line-clamp-1">{a.summary}</p>}
-              <p className="text-xs text-white/20 mt-1">/wiki/{a.slug} · 排序: {a.sortOrder} · {new Date(a.updatedAt).toLocaleDateString('zh-TW')}</p>
+              {a.summary && <p className="text-xs text-foreground/40 mt-1 line-clamp-1">{a.summary}</p>}
+              <p className="text-xs text-foreground/20 mt-1">/wiki/{a.slug} · 排序: {a.sortOrder} · {new Date(a.updatedAt).toLocaleDateString('zh-TW')}</p>
             </div>
             <div className="flex gap-2">
               <Link href={`/admin/wiki/${a.id}`}
-                className="px-3 py-1 rounded-lg text-xs bg-white/5 border border-white/10 text-white/60 hover:text-white">
+                className="px-3 py-1 rounded-lg text-xs bg-foreground/5 border border-line/10 text-foreground/60 hover:text-foreground">
                 ✏️ 編輯
               </Link>
               <button onClick={() => toggle(a.id, !a.published)}
-                className="px-3 py-1 rounded-lg text-xs bg-white/5 border border-white/10 text-white/60 hover:text-white">
+                className="px-3 py-1 rounded-lg text-xs bg-foreground/5 border border-line/10 text-foreground/60 hover:text-foreground">
                 {a.published ? '⏸ 下架' : '▶ 發布'}
               </button>
               <button onClick={() => remove(a.id)}
@@ -112,7 +112,7 @@ export default function WikiAdmin() {
             </div>
           </motion.div>
         ))}
-        {articles.length === 0 && <p className="text-white/40 text-sm text-center py-8">暫無文章</p>}
+        {articles.length === 0 && <p className="text-foreground/40 text-sm text-center py-8">暫無文章</p>}
       </div>
     </div>
   )

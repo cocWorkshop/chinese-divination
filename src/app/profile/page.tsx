@@ -344,8 +344,8 @@ export default function ProfilePage() {
     }
   }
 
-  const inputCls = "w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
-  const labelCls = "block text-white/70 text-sm mb-1"
+  const inputCls = "w-full px-4 py-3 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none focus:border-gold/60 transition-colors"
+  const labelCls = "block text-foreground/70 text-sm mb-1"
 
   if (status === 'loading') return (
     <div className="flex-1 flex items-center justify-center">
@@ -358,11 +358,11 @@ export default function ProfilePage() {
       {/* Top Navigation & Breadcrumbs */}
       <div className="flex items-center justify-between gap-3 mb-6">
         <BackButton fallbackHref="/divination" label={T(lang, '返回', 'Back')} variant="pill" />
-        <div className="flex items-center gap-2 text-xs text-white/50 font-serif">
+        <div className="flex items-center gap-2 text-xs text-foreground/50 font-serif">
           <Link href="/divination" className="hover:text-gold transition-colors">
             {T(lang, '占卜大廳', 'Divinations')}
           </Link>
-          <span className="text-white/20">/</span>
+          <span className="text-foreground/20">/</span>
           <span className="text-gold/80">{T(lang, '個人檔案', 'Profile')}</span>
         </div>
       </div>
@@ -393,11 +393,11 @@ export default function ProfilePage() {
           )}
         </div>
         {session?.user?.email && (
-          <p className="text-white/40 text-xs font-serif mt-1">
+          <p className="text-foreground/40 text-xs font-serif mt-1">
             {session.user.email}
             {isPaidUser && paidAtDate && (
               <span className="text-amber-400/60 ml-2 font-mono">
-                · {T(lang, '自', 'Since')} {new Date(paidAtDate).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')}
+                · {T(lang, '自', 'Since')} {new Date(paidAtDate).toLocaleDateString(T(lang, 'zh-TW', 'en-US'))}
               </span>
             )}
           </p>
@@ -405,7 +405,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex rounded-xl overflow-hidden mb-6 border border-gold/20 p-1 bg-navy-900/60 backdrop-blur-md">
+      <div className="flex rounded-xl overflow-hidden mb-6 border border-gold/20 p-1 bg-surface/60 backdrop-blur-md">
         {TABS.map(tab => (
           <button
             key={tab.key}
@@ -413,7 +413,7 @@ export default function ProfilePage() {
             className={`flex-1 py-2.5 px-2 text-xs sm:text-sm font-serif font-medium transition-all rounded-lg text-center flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 ${
               activeTab === tab.key
                 ? 'bg-gold text-navy-950 shadow-md shadow-gold/10'
-                : 'text-white/60 hover:text-gold hover:bg-white/[0.03]'
+                : 'text-foreground/60 hover:text-gold hover:bg-foreground/[0.03]'
             }`}
           >
             <TabIcon tabKey={tab.key} />
@@ -466,7 +466,7 @@ export default function ProfilePage() {
                       { value: 'lunar', label: T(lang, '農曆', 'Lunar') },
                     ].map(opt => (
                       <button key={opt.value} type="button"
-                        className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                        className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-surface text-foreground/60 hover:text-foreground/80'}`}
                         onClick={() => setForm(f => ({ ...f, calendarType: opt.value as 'solar' | 'lunar' }))}
                       >{opt.label}</button>
                     ))}
@@ -475,7 +475,7 @@ export default function ProfilePage() {
                 <div>
                   <label className={labelCls}>{T(lang, '出生日期', 'Birth Date')}</label>
                   <input type="date" className={inputCls} value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} />
-                  <p className="text-white/30 text-xs mt-1">
+                  <p className="text-foreground/30 text-xs mt-1">
                     {form.calendarType === 'lunar'
                       ? T(lang, '請填寫農曆日期', 'Enter lunar date')
                       : T(lang, '請填寫公曆日期', 'Enter solar date')}
@@ -493,7 +493,7 @@ export default function ProfilePage() {
                       { value: 'precise', label: T(lang, '精確', 'Exact') },
                     ].map(opt => (
                       <button key={opt.value} type="button"
-                        className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                        className={`flex-1 py-2.5 text-sm font-medium transition-colors ${form.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-surface text-foreground/60 hover:text-foreground/80'}`}
                         onClick={() => setForm(f => ({ ...f, timeMode: opt.value as 'fuzzy' | 'precise' }))}
                       >{opt.label}</button>
                     ))}
@@ -506,7 +506,7 @@ export default function ProfilePage() {
                   ) : (
                     <select className={inputCls} value={form.birthTime} onChange={e => setForm(f => ({ ...f, birthTime: e.target.value }))}>
                       <option value="">{T(lang, '請選擇', 'Select')}</option>
-                      {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
+                      {shichen.map(s => <option key={s.value} value={s.value}>{T(lang, s.zh, s.en)}</option>)}
                     </select>
                   )}
                 </div>
@@ -541,7 +541,7 @@ export default function ProfilePage() {
             disabled={saving}
             className="w-full py-3.5 bg-gold text-navy-950 rounded-xl font-semibold text-lg hover:bg-gold-light transition-colors disabled:opacity-50"
           >
-            {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '💾 儲存', '💾 Save')}
+            {saving ? T(lang, '儲存中...', 'Saving...') : T(lang, '儲存', 'Save')}
           </button>
         </form>
       )}
@@ -562,7 +562,7 @@ export default function ProfilePage() {
       {/* Old family tab removed — now handled by FamilyTab component */}
       {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
       {false && (
-        <div className="glass-card rounded-2xl">
+        <div className="card-quiet rounded-2xl">
           <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
             <div className="flex items-center gap-3">
               <span className="text-lg">👨‍👩‍👧‍👦</span>
@@ -589,7 +589,7 @@ export default function ProfilePage() {
             )}
 
             {filteredMembers.length === 0 && !addingMember && (
-              <p className="text-white/40 text-sm text-center py-4">
+              <p className="text-foreground/40 text-sm text-center py-4">
                 {familySearch
                   ? T(lang, '沒有找到匹配的成員', 'No matching members found')
                   : T(lang, '尚未新增家庭成員', 'No family members added yet')}
@@ -597,14 +597,14 @@ export default function ProfilePage() {
             )}
 
             {pagedMembers.map(member => (
-              <div key={member.id} className="rounded-xl p-4 border border-gold/10 bg-navy-900/50">
+              <div key={member.id} className="rounded-xl p-4 border border-gold/10 bg-surface/50">
                 {editingMember === member.id ? (
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
                         <select className={inputCls} value={editForm.relation || ''} onChange={e => setEditForm(f => ({ ...f, relation: e.target.value }))}>
-                          {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
+                          {relationPresets.map(r => <option key={r.value} value={r.value}>{T(lang, `${r.zh} (${r.en})`, r.en)}</option>)}
                         </select>
                       </div>
                       <div>
@@ -637,7 +637,7 @@ export default function ProfilePage() {
                             { value: 'lunar', label: T(lang, '農曆', 'Lunar') },
                           ].map(opt => (
                             <button key={opt.value} type="button"
-                              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${editForm.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${editForm.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-surface text-foreground/60 hover:text-foreground/80'}`}
                               onClick={() => setEditForm(f => ({ ...f, calendarType: opt.value }))}
                             >{opt.label}</button>
                           ))}
@@ -657,7 +657,7 @@ export default function ProfilePage() {
                             { value: 'precise', label: T(lang, '精確', 'Exact') },
                           ].map(opt => (
                             <button key={opt.value} type="button"
-                              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${editForm.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${editForm.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-surface text-foreground/60 hover:text-foreground/80'}`}
                               onClick={() => setEditForm(f => ({ ...f, timeMode: opt.value }))}
                             >{opt.label}</button>
                           ))}
@@ -670,7 +670,7 @@ export default function ProfilePage() {
                         ) : (
                           <select className={inputCls} value={editForm.birthTime || ''} onChange={e => setEditForm(f => ({ ...f, birthTime: e.target.value }))}>
                             <option value="">{T(lang, '請選擇', 'Select')}</option>
-                            {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
+                            {shichen.map(s => <option key={s.value} value={s.value}>{T(lang, s.zh, s.en)}</option>)}
                           </select>
                         )}
                       </div>
@@ -700,7 +700,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex gap-2 pt-1">
                       <button type="button" onClick={() => updateFamilyMember(member.id)} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '儲存', 'Save')}</button>
-                      <button type="button" onClick={() => setEditingMember(null)} className="px-4 py-2 border border-white/20 text-white/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
+                      <button type="button" onClick={() => setEditingMember(null)} className="px-4 py-2 border border-line/20 text-foreground/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
                     </div>
                   </div>
                 ) : (
@@ -714,19 +714,22 @@ export default function ProfilePage() {
                         <p className="font-medium text-sm text-gold">
                           {member.relation === 'other' && member.relationDetail
                             ? member.relationDetail
-                            : relationPresets.find(r => r.value === member.relation)?.[lang === 'en' ? 'en' : 'zh'] || member.relation}
+                            : (() => {
+                                const rel = relationPresets.find(r => r.value === member.relation)
+                                return rel ? T(lang, rel.zh, rel.en) : member.relation
+                              })()}
                           {member.name ? ` — ${member.name}` : ''}
                         </p>
-                        <p className="text-white/40 text-xs mt-0.5">
+                        <p className="text-foreground/40 text-xs mt-0.5">
                           {[member.birthDate, member.birthTime, member.birthPlace].filter(Boolean).join(' · ') || T(lang, '未填寫生辰', 'No birth info')}
                         </p>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <button type="button" onClick={() => { setEditingMember(member.id); setEditForm({ relation: member.relation, relationDetail: member.relationDetail || '', name: member.name || '', birthDate: member.birthDate || '', birthTime: member.birthTime || '', birthPlace: member.birthPlace || '', gender: member.gender || '', calendarType: member.calendarType || 'solar', timeMode: member.timeMode || 'fuzzy', exactTime: member.exactTime || '', birthLat: member.birthLat ?? null, birthLng: member.birthLng ?? null, birthEnvironment: member.birthEnvironment || '' }) }}
-                        className="text-white/30 hover:text-gold text-sm transition-colors">✏️</button>
+                        className="text-foreground/30 hover:text-gold text-sm transition-colors">✏️</button>
                       <button type="button" onClick={() => deleteFamilyMember(member.id)}
-                        className="text-white/30 hover:text-red-400 text-sm transition-colors">✕</button>
+                        className="text-foreground/30 hover:text-red-400 text-sm transition-colors">✕</button>
                     </div>
                   </div>
                 )}
@@ -740,16 +743,16 @@ export default function ProfilePage() {
                   type="button"
                   disabled={familyPage === 0}
                   onClick={() => setFamilyPage(p => p - 1)}
-                  className="px-3 py-1.5 rounded-lg text-sm transition-colors border border-gold/20 text-white/60 hover:text-white disabled:opacity-30"
+                  className="px-3 py-1.5 rounded-lg text-sm transition-colors border border-gold/20 text-foreground/60 hover:text-foreground disabled:opacity-30"
                 >
                   ← {T(lang, '上一頁', 'Prev')}
                 </button>
-                <span className="text-white/40 text-sm">{familyPage + 1} / {totalPages}</span>
+                <span className="text-foreground/40 text-sm">{familyPage + 1} / {totalPages}</span>
                 <button
                   type="button"
                   disabled={familyPage >= totalPages - 1}
                   onClick={() => setFamilyPage(p => p + 1)}
-                  className="px-3 py-1.5 rounded-lg text-sm transition-colors border border-gold/20 text-white/60 hover:text-white disabled:opacity-30"
+                  className="px-3 py-1.5 rounded-lg text-sm transition-colors border border-gold/20 text-foreground/60 hover:text-foreground disabled:opacity-30"
                 >
                   {T(lang, '下一頁', 'Next')} →
                 </button>
@@ -757,13 +760,13 @@ export default function ProfilePage() {
             )}
 
             {addingMember && (
-              <div className="rounded-xl p-4 space-y-3 border border-gold/20 bg-navy-900/50">
+              <div className="rounded-xl p-4 space-y-3 border border-gold/20 bg-surface/50">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>{T(lang, '關係', 'Relationship')}</label>
                     <select className={inputCls} value={newMember.relation || ''} onChange={e => setNewMember(f => ({ ...f, relation: e.target.value }))}>
                       <option value="">{T(lang, '請選擇', 'Select')}</option>
-                      {relationPresets.map(r => <option key={r.value} value={r.value}>{lang === 'en' ? r.en : `${r.zh} (${r.en})`}</option>)}
+                      {relationPresets.map(r => <option key={r.value} value={r.value}>{T(lang, `${r.zh} (${r.en})`, r.en)}</option>)}
                     </select>
                   </div>
                   <div>
@@ -796,7 +799,7 @@ export default function ProfilePage() {
                         { value: 'lunar', label: T(lang, '農曆', 'Lunar') },
                       ].map(opt => (
                         <button key={opt.value} type="button"
-                          className={`flex-1 py-2.5 text-sm font-medium transition-colors ${newMember.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                          className={`flex-1 py-2.5 text-sm font-medium transition-colors ${newMember.calendarType === opt.value ? 'bg-gold text-navy-950' : 'bg-surface text-foreground/60 hover:text-foreground/80'}`}
                           onClick={() => setNewMember(f => ({ ...f, calendarType: opt.value }))}
                         >{opt.label}</button>
                       ))}
@@ -816,7 +819,7 @@ export default function ProfilePage() {
                         { value: 'precise', label: T(lang, '精確', 'Exact') },
                       ].map(opt => (
                         <button key={opt.value} type="button"
-                          className={`flex-1 py-2.5 text-sm font-medium transition-colors ${newMember.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-navy-800 text-white/60 hover:text-white/80'}`}
+                          className={`flex-1 py-2.5 text-sm font-medium transition-colors ${newMember.timeMode === opt.value ? 'bg-gold text-navy-950' : 'bg-surface text-foreground/60 hover:text-foreground/80'}`}
                           onClick={() => setNewMember(f => ({ ...f, timeMode: opt.value }))}
                         >{opt.label}</button>
                       ))}
@@ -829,7 +832,7 @@ export default function ProfilePage() {
                     ) : (
                       <select className={inputCls} value={newMember.birthTime || ''} onChange={e => setNewMember(f => ({ ...f, birthTime: e.target.value }))}>
                         <option value="">{T(lang, '請選擇', 'Select')}</option>
-                        {shichen.map(s => <option key={s.value} value={s.value}>{lang === 'en' ? s.en : s.zh}</option>)}
+                        {shichen.map(s => <option key={s.value} value={s.value}>{T(lang, s.zh, s.en)}</option>)}
                       </select>
                     )}
                   </div>
@@ -859,7 +862,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex gap-2 pt-1">
                   <button type="button" onClick={addFamilyMember} className="px-4 py-2 bg-gold text-navy-950 rounded-lg text-sm font-semibold">{T(lang, '新增', 'Add')}</button>
-                  <button type="button" onClick={() => setAddingMember(false)} className="px-4 py-2 border border-white/20 text-white/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
+                  <button type="button" onClick={() => setAddingMember(false)} className="px-4 py-2 border border-line/20 text-foreground/60 rounded-lg text-sm">{T(lang, '取消', 'Cancel')}</button>
                 </div>
               </div>
             )}
@@ -872,17 +875,17 @@ export default function ProfilePage() {
         <div className="space-y-6">
           {/* Current balance */}
           {credits && (
-            <div className="glass-card rounded-2xl p-6">
+            <div className="card-quiet rounded-2xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <div className="text-sm text-white/60">{T(lang, '當前機緣', 'Current Karma')}</div>
+                  <div className="text-sm text-foreground/60">{T(lang, '當前機緣', 'Current Karma')}</div>
                   {isPaidUser && (
                     <div className="text-xs text-amber-300 font-serif mt-1 flex items-center gap-1.5">
                       <span>👑</span>
                       <span>{T(lang, '尊享結緣緣主', 'VIP Patron')}</span>
                       {paidAtDate && (
-                        <span className="text-white/40 font-mono text-[11px]">
-                          ({new Date(paidAtDate).toLocaleDateString(lang === 'en' ? 'en-US' : 'zh-TW')})
+                        <span className="text-foreground/40 font-mono text-[11px]">
+                          ({new Date(paidAtDate).toLocaleDateString(T(lang, 'zh-TW', 'en-US'))})
                         </span>
                       )}
                     </div>
@@ -890,7 +893,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-2xl text-gold font-mono font-bold">
-                    {credits.credits === 999 ? '∞' : credits.credits} ✨
+                    {credits.credits === 999 ? '∞' : credits.credits}
                   </span>
                   <Link
                     href="/subscribe"
@@ -918,7 +921,7 @@ export default function ProfilePage() {
             </div>
             <div className="p-4 sm:p-6">
               {userPayments.length === 0 ? (
-                <div className="text-center py-6 text-white/40 text-sm">
+                <div className="text-center py-6 text-foreground/40 text-sm">
                   <p>{T(lang, '尚無結緣訂單記錄', 'No payment orders yet')}</p>
                   <Link
                     href="/subscribe"
@@ -930,15 +933,15 @@ export default function ProfilePage() {
               ) : (
                 <div className="space-y-2">
                   {userPayments.map(order => (
-                    <div key={order.id} className="rounded-lg px-4 py-3 border border-gold/10 bg-navy-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div key={order.id} className="rounded-lg px-4 py-3 border border-gold/10 bg-surface/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono font-medium text-amber-300">
                             ${(order.amount / 100).toFixed(2)} {order.currency.toUpperCase()}
                           </span>
-                          <span className="text-white/30 text-xs">·</span>
+                          <span className="text-foreground/30 text-xs">·</span>
                           <span className="text-xs text-green-400 font-mono">+{order.credits} Karma</span>
-                          <span className="text-white/30 text-xs">·</span>
+                          <span className="text-foreground/30 text-xs">·</span>
                           <span className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${
                             order.status === 'completed'
                               ? 'bg-green-500/15 text-green-400 border border-green-500/30'
@@ -947,10 +950,10 @@ export default function ProfilePage() {
                             {order.status === 'completed' ? T(lang, '已結緣', 'Completed') : order.status}
                           </span>
                         </div>
-                        <div className="text-white/30 text-[11px] font-mono mt-1">
+                        <div className="text-foreground/30 text-[11px] font-mono mt-1">
                           {order.stripeSessionId ? `No: ${order.stripeSessionId.replace('cs_test_', '').replace('cs_live_', '').slice(0, 16)}...` : `ID: ${order.id}`}
                           <span className="mx-1.5">·</span>
-                          {new Date(order.createdAt).toLocaleString(lang === 'en' ? 'en-US' : 'zh-TW', {
+                          {new Date(order.createdAt).toLocaleString(T(lang, 'zh-TW', 'en-US'), {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric',
@@ -979,7 +982,7 @@ export default function ProfilePage() {
             </div>
             <div className="p-4 sm:p-6">
               {creditLogs.length === 0 ? (
-                <p className="text-white/40 text-sm text-center py-4">{T(lang, '暫無記錄', 'No records yet')}</p>
+                <p className="text-foreground/40 text-sm text-center py-4">{T(lang, '暫無記錄', 'No records yet')}</p>
               ) : (
                 <>
                   <div className="space-y-2">
@@ -993,7 +996,7 @@ export default function ProfilePage() {
                         purchase: { zh: '購買', en: 'Purchased', color: 'text-green-400' },
                         gift_redeem: { zh: '兌換禮品碼', en: 'Gift Code', color: 'text-green-400' },
                       }
-                      const info = actionLabels[log.action] || { zh: log.action, en: log.action, color: 'text-white/60' }
+                      const info = actionLabels[log.action] || { zh: log.action, en: log.action, color: 'text-foreground/60' }
                       const sourceLabels: Record<string, { zh: string; en: string }> = {
                         'chat': { zh: '玄機問答', en: 'Chat' },
                         'master': { zh: '大師對話', en: 'Master' },
@@ -1025,23 +1028,23 @@ export default function ProfilePage() {
                         sourceText = T(lang, '客服補償', 'Compensation')
                       }
                       return (
-                        <div key={log.id} className="rounded-lg px-4 py-3 border border-gold/5 bg-navy-900/50 flex items-center gap-3">
+                        <div key={log.id} className="rounded-lg px-4 py-3 border border-gold/5 bg-surface/50 flex items-center gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className={`text-xs font-medium ${info.color}`}>{T(lang, info.zh, info.en)}</span>
-                              <span className="text-white/30 text-xs">·</span>
-                              <span className="text-white/50 text-xs truncate">{sourceText}</span>
+                              <span className="text-foreground/30 text-xs">·</span>
+                              <span className="text-foreground/50 text-xs truncate">{sourceText}</span>
                             </div>
-                            <div className="text-white/25 text-xs mt-0.5">
-                              {new Date(log.createdAt).toLocaleString(lang === 'en' ? 'en-US' : 'zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                              {log.note && <span className="ml-2 text-white/20">({log.note})</span>}
+                            <div className="text-foreground/25 text-xs mt-0.5">
+                              {new Date(log.createdAt).toLocaleString(T(lang, 'zh-TW', 'en-US'), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              {log.note && <span className="ml-2 text-foreground/20">({log.note})</span>}
                             </div>
                           </div>
                           <div className="text-right shrink-0">
                             <span className={`text-sm font-mono font-bold ${log.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
                               {log.amount > 0 ? '+' : ''}{log.amount}
                             </span>
-                            <div className="text-white/20 text-xs">{T(lang, '餘', 'bal')} {log.balance}</div>
+                            <div className="text-foreground/20 text-xs">{T(lang, '餘', 'bal')} {log.balance}</div>
                           </div>
                         </div>
                       )
@@ -1058,10 +1061,10 @@ export default function ProfilePage() {
                             setCreditLogs(data.logs || []); setCreditLogPages(data.pages || 1)
                           }).finally(() => setCreditLogLoading(false))
                         }}
-                        className="px-3 py-1 rounded-lg text-xs bg-white/5 border border-white/10 text-white/60 hover:text-white disabled:opacity-30">
+                        className="px-3 py-1 rounded-lg text-xs bg-foreground/5 border border-line/10 text-foreground/60 hover:text-foreground disabled:opacity-30">
                         ←
                       </button>
-                      <span className="text-white/40 text-xs py-1">{creditLogPage} / {creditLogPages}</span>
+                      <span className="text-foreground/40 text-xs py-1">{creditLogPage} / {creditLogPages}</span>
                       <button disabled={creditLogPage >= creditLogPages || creditLogLoading}
                         onClick={() => {
                           const p = creditLogPage + 1
@@ -1071,7 +1074,7 @@ export default function ProfilePage() {
                             setCreditLogs(data.logs || []); setCreditLogPages(data.pages || 1)
                           }).finally(() => setCreditLogLoading(false))
                         }}
-                        className="px-3 py-1 rounded-lg text-xs bg-white/5 border border-white/10 text-white/60 hover:text-white disabled:opacity-30">
+                        className="px-3 py-1 rounded-lg text-xs bg-foreground/5 border border-line/10 text-foreground/60 hover:text-foreground disabled:opacity-30">
                         →
                       </button>
                     </div>
@@ -1082,7 +1085,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Feedback Card */}
-          <div className="glass-card rounded-2xl">
+          <div className="card-quiet rounded-2xl">
             <div className="px-6 py-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(212,168,83,0.15)' }}>
               <span className="text-lg">💬</span>
               <h2 className="text-lg font-serif text-gold">{T(lang, '意見回饋', 'Feedback')}</h2>
@@ -1096,7 +1099,7 @@ export default function ProfilePage() {
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm mb-2 text-white/50">{T(lang, '整體評分', 'Overall Rating')}</label>
+                    <label className="block text-sm mb-2 text-foreground/50">{T(lang, '整體評分', 'Overall Rating')}</label>
                     <div className="flex gap-1">
                       {[1,2,3,4,5].map(n => (
                         <button key={n} type="button" onClick={() => setFbRating(n)}
@@ -1107,7 +1110,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm mb-1 text-white/50">{T(lang, '建議或意見', 'Comments')}</label>
+                    <label className="block text-sm mb-1 text-foreground/50">{T(lang, '建議或意見', 'Comments')}</label>
                     <textarea value={fbText} onChange={e => setFbText(e.target.value)}
                       rows={3} maxLength={2000}
                       placeholder={T(lang, '分享您的使用體驗...', 'Share your experience...')}
@@ -1136,15 +1139,15 @@ export default function ProfilePage() {
               )}
               {fbHistory.length > 0 && (
                 <div className="mt-5 pt-4" style={{ borderTop: '1px solid rgba(212,168,83,0.1)' }}>
-                  <h3 className="text-xs uppercase tracking-wider text-white/40 mb-3">{T(lang, '過往回饋', 'Past Feedback')}</h3>
+                  <h3 className="text-xs uppercase tracking-wider text-foreground/40 mb-3">{T(lang, '過往回饋', 'Past Feedback')}</h3>
                   <div className="space-y-2">
                     {fbHistory.map(fb => (
-                      <div key={fb.id} className="rounded-lg px-4 py-3 border border-gold/5 bg-navy-900/50">
+                      <div key={fb.id} className="rounded-lg px-4 py-3 border border-gold/5 bg-surface/50">
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-gold text-xs">{fb.rating ? '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating) : ''}</span>
-                          <span className="text-white/30 text-xs">{formatDate(fb.createdAt, lang)}</span>
+                          <span className="text-foreground/30 text-xs">{formatDate(fb.createdAt, lang)}</span>
                         </div>
-                        <p className="text-white/60 text-sm">{fb.feedback}</p>
+                        <p className="text-foreground/60 text-sm">{fb.feedback}</p>
                       </div>
                     ))}
                   </div>
@@ -1165,7 +1168,7 @@ export default function ProfilePage() {
               <h2 className="text-lg font-serif text-gold">{T(lang, '修改密碼', 'Change Password')}</h2>
             </div>
             <div className="p-4 sm:p-6">
-              <p className="text-white/40 text-xs uppercase tracking-wider mb-3">{T(lang, '留空不更改', 'Leave blank to keep current password')}</p>
+              <p className="text-foreground/40 text-xs uppercase tracking-wider mb-3">{T(lang, '留空不更改', 'Leave blank to keep current password')}</p>
               <form onSubmit={handleSave} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -1195,7 +1198,7 @@ export default function ProfilePage() {
               <h2 className="text-lg font-serif text-gold">{T(lang, '大師記憶', 'Master Memory')}</h2>
             </div>
             <div className="p-4 sm:p-6">
-              <p className="text-sm text-white/50 mb-4 leading-relaxed">
+              <p className="text-sm text-foreground/50 mb-4 leading-relaxed">
                 {T(lang,
                   '玄機大師在對話中記下的主題與偏好。您可前往記憶設定頁面查看、編輯或暫停，也可在此永久刪除。刪除後不影響您的占卜歷史與個人檔案。',
                   "Topics and preferences Master Xuanji has noted from your conversations. You can view, edit, or pause them on the memory settings page, or permanently delete them here. Deletion does not affect your reading history or profile."
@@ -1204,7 +1207,7 @@ export default function ProfilePage() {
               <div className="flex flex-wrap gap-3">
                 <a
                   href="/profile/portrait"
-                  className="px-4 py-2.5 min-h-[44px] inline-flex items-center rounded-lg text-sm font-medium transition-colors hover:bg-white/5 border border-gold/20 text-white/80 font-serif"
+                  className="px-4 py-2.5 min-h-[44px] inline-flex items-center rounded-lg text-sm font-medium transition-colors hover:bg-foreground/5 border border-gold/20 text-foreground/80 font-serif"
                 >
                   {T(lang, '記憶設定', 'Memory Settings')}
                 </a>
@@ -1229,13 +1232,13 @@ export default function ProfilePage() {
                     <button
                       onClick={handleDeleteMemory}
                       disabled={deleteMemoryLoading}
-                      className="px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors bg-red-600 hover:bg-red-700"
+                      className="px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium text-foreground disabled:opacity-40 transition-colors bg-red-600 hover:bg-red-700"
                     >
                       {deleteMemoryLoading ? '...' : T(lang, '確認刪除', 'Confirm delete')}
                     </button>
                     <button
                       onClick={() => setShowDeleteMemoryConfirm(false)}
-                      className="px-3 py-2 min-h-[40px] rounded-lg text-sm text-white/60 hover:text-white transition-colors"
+                      className="px-3 py-2 min-h-[40px] rounded-lg text-sm text-foreground/60 hover:text-foreground transition-colors"
                     >
                       {T(lang, '取消', 'Cancel')}
                     </button>
@@ -1252,7 +1255,7 @@ export default function ProfilePage() {
               <h2 className="text-lg font-serif text-gold">{T(lang, '數據管理', 'Data Management')}</h2>
             </div>
             <div className="p-4 sm:p-6">
-              <p className="text-sm text-white/50 mb-4 leading-relaxed">
+              <p className="text-sm text-foreground/50 mb-4 leading-relaxed">
                 {T(lang,
                   '根據 GDPR 和 PIPEDA，您有權導出或刪除您的所有個人數據。',
                   'Under GDPR and PIPEDA, you have the right to export or delete all your personal data.'
@@ -1264,7 +1267,7 @@ export default function ProfilePage() {
                     window.open('/api/profile/export', '_blank')
                     toast.success(T(lang, '數據導出已開始', 'Data export started'))
                   }}
-                  className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-colors hover:bg-white/5 border border-gold/20 text-white/80 font-serif"
+                  className="px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-colors hover:bg-foreground/5 border border-gold/20 text-foreground/80 font-serif"
                 >
                   {T(lang, '導出數據', 'Export Data')}
                 </button>
@@ -1304,19 +1307,19 @@ export default function ProfilePage() {
                         value={deletePassword}
                         onChange={e => setDeletePassword(e.target.value)}
                         placeholder={T(lang, '請輸入密碼', 'Enter password')}
-                        className="flex-1 px-3 py-2 min-h-[40px] rounded-lg text-sm text-white bg-navy-900/60 border border-gold/20 focus:outline-none focus:border-gold/40"
+                        className="flex-1 px-3 py-2 min-h-[40px] rounded-lg text-sm text-foreground bg-surface/60 border border-gold/20 focus:outline-none focus:border-gold/40"
                       />
                     )}
                     <button
                       onClick={handleDeleteAccount}
                       disabled={(hasPassword && !deletePassword) || deleteLoading}
-                      className="px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-colors bg-red-600 hover:bg-red-700 font-serif"
+                      className="px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium text-foreground disabled:opacity-40 transition-colors bg-red-600 hover:bg-red-700 font-serif"
                     >
                       {deleteLoading ? '...' : (hasPassword ? T(lang, '確認', 'Confirm') : T(lang, '發送確認郵件', 'Send Email'))}
                     </button>
                     <button
                       onClick={() => { setShowDeleteConfirm(false); setDeletePassword('') }}
-                      className="px-3 py-2 min-h-[40px] rounded-lg text-sm text-white/60 hover:text-white transition-colors font-serif"
+                      className="px-3 py-2 min-h-[40px] rounded-lg text-sm text-foreground/60 hover:text-foreground transition-colors font-serif"
                     >
                       {T(lang, '取消', 'Cancel')}
                     </button>

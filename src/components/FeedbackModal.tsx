@@ -58,9 +58,9 @@ export default function FeedbackModal({ open, onClose }: Props) {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 overflow-y-auto"
       onClick={onClose}
     >
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="fixed inset-0 bg-scrim backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto glass-card rounded-2xl p-6 space-y-4"
+        className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto card-quiet rounded-2xl p-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -69,7 +69,7 @@ export default function FeedbackModal({ open, onClose }: Props) {
           </h3>
           <button
             onClick={onClose}
-            className="text-white/40 hover:text-white/60 transition-colors text-lg"
+            className="text-foreground/40 hover:text-foreground/60 transition-colors text-lg"
           >
             ✕
           </button>
@@ -104,7 +104,7 @@ export default function FeedbackModal({ open, onClose }: Props) {
             rows={3}
             maxLength={2000}
             placeholder={T(lang, '分享您的使用體驗...', 'Share your experience...')}
-            className="w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors resize-none"
+            className="w-full px-4 py-3 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none focus:border-gold/60 transition-colors resize-none"
           />
         </div>
 

@@ -127,9 +127,11 @@ export default function LiuYaoResult({ data, rawResult, isShared, readingId, cha
     const orig = d.originalHexagram?.fullName || ''
     const chg = d.changedHexagram?.fullName ? `，變卦為【${d.changedHexagram.fullName}】` : ''
     const timingStr = d.timing ? `，應期在【${d.timing}】` : ''
-    const prompt = lang === 'en'
-      ? `Master Xuanji, please delve into my Liu Yao divination result: Original Hexagram 【${orig}】${d.changedHexagram?.fullName ? ` changing to 【${d.changedHexagram.fullName}】` : ''}${d.timing ? ` (Timing: ${d.timing})` : ''}. In relation to my query, what are the subtle shifts between the Shi and Ying lines, changing lines, and tactical actions I should take?`
-      : `請玄機大師為我推求六爻卦象：本卦為【${orig}】${chg}${timingStr}。請結合我所問之事，深入解析世應生剋、動爻化象及動靜變化的深層吉凶與趨吉避凶之策。`
+    const prompt = T(
+      lang,
+      `請玄機大師為我推求六爻卦象：本卦為【${orig}】${chg}${timingStr}。請結合我所問之事，深入解析世應生剋、動爻化象及動靜變化的深層吉凶與趨吉避凶之策。`,
+      `Master Xuanji, please delve into my Liu Yao divination result: Original Hexagram 【${orig}】${d.changedHexagram?.fullName ? ` changing to 【${d.changedHexagram.fullName}】` : ''}${d.timing ? ` (Timing: ${d.timing})` : ''}. In relation to my query, what are the subtle shifts between the Shi and Ying lines, changing lines, and tactical actions I should take?`,
+    )
     masterChat.sendMessage(prompt)
   }
 

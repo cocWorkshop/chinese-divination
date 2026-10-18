@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { T } from '@/lib/i18n'
 
 export const DEFAULT_MASTER_DAILY_TURN_LIMIT = 30
 
@@ -63,9 +64,11 @@ export async function checkMasterDailyLimit(
   })
 
   if (count >= maxLimit) {
-    const message = lang === 'en'
-      ? 'You have explored the workings of fate deeply today. In the art of divination, wisdom lies in knowing when to pause. Rest your mind tonight, and Master Xuanji welcomes you tomorrow.'
-      : '道友今日探討天機已深，神思宜斂。大化周流，過猶不及。今日且安歇凝神，明日若有疑，老夫再與道友論道。'
+    const message = T(
+      lang,
+      '道友今日探討天機已深，神思宜斂。大化周流，過猶不及。今日且安歇凝神，明日若有疑，老夫再與道友論道。',
+      'You have explored the workings of fate deeply today. In the art of divination, wisdom lies in knowing when to pause. Rest your mind tonight, and Master Xuanji welcomes you tomorrow.',
+    )
 
     return {
       allowed: false,

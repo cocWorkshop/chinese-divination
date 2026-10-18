@@ -37,7 +37,7 @@ const valueLabels: Record<number, { zh: string; en: string; type: string }> = {
  */
 export default function CoinCastPanel({
   field, title, intro, completeBox, showReset, resetLabel, onReset,
-  resetClassName = 'px-3 py-3 text-white/40 hover:text-white/70 text-xs min-h-[44px] flex items-center justify-center',
+  resetClassName = 'px-3 py-3 text-foreground/40 hover:text-foreground/70 text-xs min-h-[44px] flex items-center justify-center',
 }: CoinCastPanelProps) {
   const { form, setField, lang } = useDivination()
   const [isTossing, setIsTossing] = useState(false)
@@ -63,7 +63,7 @@ export default function CoinCastPanel({
       <div className="text-gold-light/90 text-sm font-serif font-medium tracking-wide flex items-center gap-2 border-b border-gold/10 pb-2.5">
         {title}
       </div>
-      <p className="text-white/50 text-xs leading-relaxed">
+      <p className="text-foreground/50 text-xs leading-relaxed">
         {intro}
       </p>
       <div className="space-y-3">
@@ -74,17 +74,17 @@ export default function CoinCastPanel({
               const label = valueLabels[line.value]
               const isChanging = line.value === 6 || line.value === 9
               return (
-                <div key={i} className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isChanging ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-navy-800/50'}`}>
-                  <span className="text-white/50 text-xs w-10 font-serif">{T(lang, yaoNames[i], yaoNamesEn[i])}</span>
+                <div key={i} className={`flex items-center gap-3 px-3 py-2 rounded-lg ${isChanging ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-surface/50'}`}>
+                  <span className="text-foreground/50 text-xs w-10 font-serif">{T(lang, yaoNames[i], yaoNamesEn[i])}</span>
                   <div className="flex gap-1.5">
                     {line.coins.map((c, ci) => (
-                      <span key={ci} className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-serif font-bold shadow-sm ${c === 2 ? 'bg-navy-700 text-white/70 border border-white/20' : 'bg-gradient-to-br from-gold to-amber-600 text-navy-950 font-bold'}`}>
+                      <span key={ci} className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-serif font-bold shadow-sm ${c === 2 ? 'bg-elevated text-foreground/70 border border-line/20' : 'bg-gradient-to-br from-gold to-amber-600 text-navy-950 font-bold'}`}>
                         {c === 2 ? T(lang, '字', 'H') : T(lang, '背', 'T')}
                       </span>
                     ))}
                   </div>
                   <span className="text-gold text-xs font-mono font-semibold">{line.value}</span>
-                  <span className={`text-xs ${isChanging ? 'text-amber-400 font-medium' : 'text-white/50'}`}>
+                  <span className={`text-xs ${isChanging ? 'text-amber-400 font-medium' : 'text-foreground/50'}`}>
                     {T(lang, label.zh, label.en)}
                   </span>
                   <div className="ml-auto flex items-center gap-0.5">

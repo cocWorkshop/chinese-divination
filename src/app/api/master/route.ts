@@ -30,6 +30,8 @@ import { FUNNEL_COOKIE_NAME, verifyFunnelToken } from '@/lib/funnelSession'
 import { createRequestLogger, logger } from '@/lib/logger'
 import { sseResponse } from '@/lib/sse'
 import * as Sentry from '@sentry/nextjs'
+import { T } from '@/lib/i18n'
+import { langKey } from '@/lib/i18n'
 
 /**
  * Resolve the inactivity threshold (hours) after which an active master chat
@@ -159,7 +161,7 @@ export async function POST(req: NextRequest) {
     if (!creditCheck.allowed) {
       return new Response(
         JSON.stringify({
-          error: `✨ 機緣不足（需要 ${creditCheck.cost}，剩餘 ${creditCheck.remaining}）。前往機緣商店補充，即可繼續提問。`,
+          error: `機緣不足（需要 ${creditCheck.cost}，剩餘 ${creditCheck.remaining}）。前往機緣商店補充，即可繼續提問。`,
           remaining: creditCheck.remaining,
         }),
         { status: 429, headers: { 'Content-Type': 'application/json' } },
@@ -251,9 +253,11 @@ export async function POST(req: NextRequest) {
         where: { userId, sessionId: sessionId!, role: 'user' },
       })
       if (currentTurnCount >= maxTurns) {
-        const msg = lang === 'en'
-          ? 'The Master needs to rest and gather his thoughts. Let\'s continue our conversation next time — start a "New Chat" whenever you\'re ready. Everything I\'ve learned about you is safely kept.'
-          : '老夫今日耗神頗多，需閉目養息片刻。\n\n下次再會時，點「新對話」即可續接 —— 你說過的，我都記著。'
+        const msg = T(
+          lang,
+          '老夫今日耗神頗多，需閉目養息片刻。\n\n下次再會時，點「新對話」即可續接 —— 你說過的，我都記著。',
+          'The Master needs to rest and gather his thoughts. Let\'s continue our conversation next time — start a "New Chat" whenever you\'re ready. Everything I\'ve learned about you is safely kept.'
+        )
         return new Response(
           JSON.stringify({ error: msg }),
           { status: 429, headers: { 'Content-Type': 'application/json' } },
@@ -303,7 +307,7 @@ export async function POST(req: NextRequest) {
             }
           : null,
         lang,
-        growth ? { tier: growth.tier, title: growth.currentRealm.title[lang === 'en' ? 'en' : 'zh-TW'] } : null,
+        growth ? { tier: growth.tier, title: growth.currentRealm.title[langKey(lang)] } : null,
       )
     }
 
@@ -783,10 +787,11 @@ async function buildCheckinAppendix(
     })
     if (last) {
       const ageStr = formatHumanGap(Date.now() - last.createdAt.getTime())
-      const typeName =
-        lang === 'en'
-          ? READING_TYPE_EN[last.type] ?? last.type
-          : READING_TYPE_ZH[last.type] ?? last.type
+      const typeName = T(
+        lang,
+        READING_TYPE_ZH[last.type] ?? last.type,
+        READING_TYPE_EN[last.type] ?? last.type
+      )
       const target = last.targetType === 'family' ? '（家人）' : ''
       lastReadingLine = `${typeName}${target}・${ageStr}前`
     }

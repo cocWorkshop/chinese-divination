@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useLang } from './LanguageContext'
+import { T } from '@/lib/i18n'
 
 interface BackButtonProps {
   /**
@@ -64,7 +65,7 @@ export default function BackButton({
     }
   }
 
-  const text = label ?? (lang === 'en' ? 'Back' : '返回')
+  const text = label ?? (T(lang, '返回', 'Back'))
 
   let baseStyle = 'inline-flex items-center gap-1.5 text-xs font-serif transition-all min-h-[36px] select-none cursor-pointer'
   if (variant === 'pill') {

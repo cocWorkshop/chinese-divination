@@ -17,9 +17,25 @@
 
 export type Lang = 'zh-TW' | 'en'
 
-/** Inline bilingual text helper. `lang` is the LanguageContext value. */
-export const T = (lang: string, zhTW: string, en: string): string =>
-  lang === 'en' ? en : zhTW
+/** Inline bilingual text/value helper. `lang` is the LanguageContext value. */
+export function T(lang: string, zhTW: string, en: string): string
+export function T<Z, E = Z>(lang: string, zhTW: Z, en: E): Z | E
+export function T<Z, E>(lang: string, zhTW: Z, en: E): Z | E {
+  return lang === 'en' ? en : zhTW
+}
+
+/** Locale-KEY selector — for indexing `LocalizedText`/`{ zh, en }` objects,
+ *  NOT for copy. Returns the literal union so object indexes stay typed. */
+export function langKey(lang: string): Lang {
+  return lang === 'en' ? 'en' : 'zh-TW'
+}
+
+/** T for lang-less components that only receive an `isEn` boolean prop. */
+export function TEN(isEn: boolean, zhTW: string, en: string): string
+export function TEN<Z, E = Z>(isEn: boolean, zhTW: Z, en: E): Z | E
+export function TEN<Z, E>(isEn: boolean, zhTW: Z, en: E): Z | E {
+  return isEn ? en : zhTW
+}
 
 /** Map the LanguageContext lang to a BCP-47 locale for Intl APIs. */
 export const toLocale = (lang: string): string => (lang === 'en' ? 'en-US' : 'zh-TW')

@@ -19,6 +19,7 @@ import { formatTime } from './formatTime'
 
 import MasterFeedbackPrompt from './MasterFeedbackPrompt'
 import { DivinationIcon } from '@/components/DivinationIcons'
+import { TEN } from '@/lib/i18n'
 
 interface Props {
   msg: MasterMsg
@@ -87,13 +88,13 @@ export default function MessageBubble({
     const cx = msg.ctaPayload.ctaContext
     // Build info lines from structured context with classical tags
     const infoLines: string[] = []
-    if (cx?.target) infoLines.push(`${isEn ? 'Target: ' : '問測對象：'}${cx.target}`)
+    if (cx?.target) infoLines.push(`${TEN(isEn, '問測對象：', 'Target: ')}${cx.target}`)
     if (cx?.birthDate || cx?.birthTime || cx?.gender) {
       const parts = [cx.birthDate, cx.birthTime, cx.gender].filter(Boolean)
-      infoLines.push(`${isEn ? 'Birth: ' : '生辰資訊：'}${parts.join(' · ')}`)
+      infoLines.push(`${TEN(isEn, '生辰資訊：', 'Birth: ')}${parts.join(' · ')}`)
     }
-    if (cx?.birthPlace) infoLines.push(`${isEn ? 'Place: ' : '出生地點：'}${cx.birthPlace}`)
-    if (cx?.question) infoLines.push(`${isEn ? 'Question: ' : '所問之事：'}${cx.question.length > 40 ? cx.question.slice(0, 40) + '…' : cx.question}`)
+    if (cx?.birthPlace) infoLines.push(`${TEN(isEn, '出生地點：', 'Place: ')}${cx.birthPlace}`)
+    if (cx?.question) infoLines.push(`${TEN(isEn, '所問之事：', 'Question: ')}${cx.question.length > 40 ? cx.question.slice(0, 40) + '…' : cx.question}`)
 
     return (
       <motion.div
@@ -171,7 +172,7 @@ export default function MessageBubble({
                 </div>
               )}
               <div className="text-[10px] mt-1.5" style={{ color: 'var(--gold)', opacity: 0.7 }}>
-                {isEn ? 'Click to open →' : '點擊查看 →'}
+                {TEN(isEn, '點擊查看 →', 'Click to open →')}
               </div>
             </div>
           </div>
@@ -214,7 +215,7 @@ export default function MessageBubble({
             <span
               className="inline-flex gap-1"
               role="status"
-              aria-label={isEn ? 'Master is typing' : '大師正在輸入'}
+              aria-label={TEN(isEn, '大師正在輸入', 'Master is typing')}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_infinite]" />
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-[dotPulse_1.4s_ease_0.2s_infinite]" />

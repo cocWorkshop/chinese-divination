@@ -1,3 +1,5 @@
+import { T } from '@/lib/i18n'
+
 /**
  * Greeting templates for the Xuanji Master chat widget.
  *
@@ -84,7 +86,7 @@ const TYPE_LABELS: Record<string, { zh: string; en: string }> = {
 function typeLabel(type: string, lang: GreetingLang): string {
   const label = TYPE_LABELS[type]
   if (!label) return type
-  return lang === 'en' ? label.en : label.zh
+  return T(lang, label.zh, label.en)
 }
 
 /**
@@ -145,72 +147,79 @@ function buildState2Suggestions(
   yearGanZhi: string | null,
   lang: GreetingLang,
 ): string[] {
-  const isEn = lang === 'en'
   const hasBazi = (destinyCounts.bazi ?? 0) > 0
   const hasZiwei = (destinyCounts.ziwei ?? 0) > 0
   const hasBoth = hasBazi && hasZiwei
   const hasDestiny = hasBazi || hasZiwei
   const yearLabel = yearGanZhi
-    ? (isEn ? `this year (${yearGanZhi})` : `今年（${yearGanZhi}）`)
-    : (isEn ? 'this year' : '今年')
+    ? T(lang, `今年（${yearGanZhi}）`, `this year (${yearGanZhi})`)
+    : T(lang, '今年', 'this year')
 
   if (hasBoth) {
-    return isEn
-      ? [
-          'Cross-reference my BaZi and Zi Wei',
-          `How does ${yearLabel} look for me?`,
-          'Cast a chart for someone in my family',
-        ]
-      : [
-          '請以八字、紫微互參，看我的格局',
-          `${yearLabel}的運勢如何？`,
-          '想為家人也起一張盤',
-        ]
+    return T(
+      lang,
+      [
+        '請以八字、紫微互參，看我的格局',
+        `${yearLabel}的運勢如何？`,
+        '想為家人也起一張盤',
+      ],
+      [
+        'Cross-reference my BaZi and Zi Wei',
+        `How does ${yearLabel} look for me?`,
+        'Cast a chart for someone in my family',
+      ],
+    )
   }
 
   if (hasDestiny) {
-    const ownChart = hasBazi ? (isEn ? 'BaZi' : '八字') : (isEn ? 'Zi Wei' : '紫微')
-    const otherChart = hasBazi ? (isEn ? 'Zi Wei' : '紫微') : (isEn ? 'BaZi' : '八字')
-    return isEn
-      ? [
-          `Walk me through my ${ownChart} chart`,
-          `How does ${yearLabel} look for me?`,
-          `Cast my ${otherChart} chart too`,
-        ]
-      : [
-          `帶我細看我的${ownChart}命盤`,
-          `${yearLabel}的運勢如何？`,
-          `我也想看${otherChart}`,
-        ]
+    const ownChart = hasBazi ? T(lang, '八字', 'BaZi') : T(lang, '紫微', 'Zi Wei')
+    const otherChart = hasBazi ? T(lang, '紫微', 'Zi Wei') : T(lang, '八字', 'BaZi')
+    return T(
+      lang,
+      [
+        `帶我細看我的${ownChart}命盤`,
+        `${yearLabel}的運勢如何？`,
+        `我也想看${otherChart}`,
+      ],
+      [
+        `Walk me through my ${ownChart} chart`,
+        `How does ${yearLabel} look for me?`,
+        `Cast my ${otherChart} chart too`,
+      ],
+    )
   }
 
   if (oracleCount > 0) {
-    return isEn
-      ? [
-          'Re-read my last hexagram',
-          'I have a new question — cast another',
-          'Cast my BaZi to see the bigger picture',
-        ]
-      : [
-          '請再為我看上次起的卦',
-          '我有新問題，想再起一卦',
-          '想看大局，請為我起八字',
-        ]
+    return T(
+      lang,
+      [
+        '請再為我看上次起的卦',
+        '我有新問題，想再起一卦',
+        '想看大局，請為我起八字',
+      ],
+      [
+        'Re-read my last hexagram',
+        'I have a new question — cast another',
+        'Cast my BaZi to see the bigger picture',
+      ],
+    )
   }
 
   // hasReadings was true but no self-charted readings (e.g. only family
   // readings on file). Stay generic but still anchor the year if available.
-  return isEn
-    ? [
-        'Show me my last reading',
-        `How does ${yearLabel} look for me?`,
-        'What else can you do for me?',
-      ]
-    : [
-        '取出上次的占卜給我看',
-        `${yearLabel}的運勢如何？`,
-        '玄機大師還能為我做什麼？',
-      ]
+  return T(
+    lang,
+    [
+      '取出上次的占卜給我看',
+      `${yearLabel}的運勢如何？`,
+      '玄機大師還能為我做什麼？',
+    ],
+    [
+      'Show me my last reading',
+      `How does ${yearLabel} look for me?`,
+      'What else can you do for me?',
+    ],
+  )
 }
 
 // ─── State 2 — returning user, with readings on file ───────────────────────
@@ -303,7 +312,6 @@ function renderState2(input: GreetingInput): GreetingOutput {
   }
   const destinySummary = buildTypeSummary(destinyCounts, lang)
 
-  const isEn = lang === 'en'
   // Honor caller's pre-picked opener so the same line shown in the
   // collapsed bar carries through to the expanded greeting.
   const opener = presetOpener ?? pickOpener(lang)
@@ -311,19 +319,23 @@ function renderState2(input: GreetingInput): GreetingOutput {
 
   const statusLines: string[] = []
   if (destinySummary) {
-    statusLines.push(isEn ? `· Charts — ${destinySummary}` : `· 命盤 — ${destinySummary}`)
+    statusLines.push(T(lang, `· 命盤 — ${destinySummary}`, `· Charts — ${destinySummary}`))
   }
   if (temporalContext) {
     const { dayGanZhi, jieQi, yearGanZhi } = temporalContext
     statusLines.push(
-      isEn
-        ? `· Today — ${dayGanZhi}日 · ${jieQi}`
-        : `· 今日 — ${dayGanZhi}日 · ${jieQi}`,
+      T(
+        lang,
+        `· 今日 — ${dayGanZhi}日 · ${jieQi}`,
+        `· Today — ${dayGanZhi}日 · ${jieQi}`,
+      ),
     )
     statusLines.push(
-      isEn
-        ? `· Annual — ${yearGanZhi}`
-        : `· 流年 — ${yearGanZhi}`,
+      T(
+        lang,
+        `· 流年 — ${yearGanZhi}`,
+        `· Annual — ${yearGanZhi}`,
+      ),
     )
   }
 

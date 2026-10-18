@@ -21,7 +21,7 @@ export default function QimenForm() {
       <div>
         <label htmlFor="qimen-event-time" className={labelCls}>{T(lang, '占算時間', 'Divination Time')}</label>
         <input id="qimen-event-time" type="datetime-local" className={inputCls} value={form.readingDateTime} onChange={e => setField('readingDateTime', e.target.value)} />
-        <p className="text-white/40 text-xs mt-1">{T(lang,
+        <p className="text-foreground/40 text-xs mt-1">{T(lang,
           '默認為當下（看當前局勢）；若您要擇吉時行動，可改為計劃行動的時刻。',
           'Defaults to now (read current situation). If choosing an auspicious time to act, set it to your planned action time.'
         )}</p>

@@ -28,7 +28,7 @@ export default function CreditsDisplay() {
               ({T(lang, '本次免費', 'free this time')})
             </span>
           ) : credits.costs && credits.costs[type] ? (
-            <span className="text-white/40 text-xs ml-1">
+            <span className="text-foreground/40 text-xs ml-1">
               ({T(lang, `本次消耗 ${credits.costs[type]} 點`, `costs ${credits.costs[type]} pts`)})
             </span>
           ) : null}

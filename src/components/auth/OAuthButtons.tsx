@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useLang } from '@/components/LanguageContext'
+import { T } from '@/lib/i18n'
 
 interface OAuthButtonsProps {
   mode: 'login' | 'register'
@@ -20,10 +21,11 @@ export function OAuthButtons({ mode, callbackUrl = '/divination', onError }: OAu
       await signIn('google', { callbackUrl })
     } catch {
       setLoadingProvider(null)
-      const errText =
-        lang === 'zh-TW'
-          ? 'Google 登入失敗，請重試'
-          : 'Google sign in failed. Please try again.'
+      const errText = T(
+        lang,
+        'Google 登入失敗，請重試',
+        'Google sign in failed. Please try again.'
+      )
       onError?.(errText)
     }
   }
@@ -31,11 +33,11 @@ export function OAuthButtons({ mode, callbackUrl = '/divination', onError }: OAu
   return (
     <div className="w-full space-y-3">
       <div className="flex items-center gap-3 my-5">
-        <div className="flex-1 h-px bg-white/10" />
-        <span className="text-xs text-white/40 tracking-wider font-sans select-none">
-          {lang === 'zh-TW' ? '或使用以下方式' : 'Or continue with'}
+        <div className="flex-1 h-px bg-foreground/10" />
+        <span className="text-xs text-foreground/40 tracking-wider font-sans select-none">
+          {T(lang, '或使用以下方式', 'Or continue with')}
         </span>
-        <div className="flex-1 h-px bg-white/10" />
+        <div className="flex-1 h-px bg-foreground/10" />
       </div>
 
       <button
@@ -43,11 +45,11 @@ export function OAuthButtons({ mode, callbackUrl = '/divination', onError }: OAu
         id="oauth-google-button"
         onClick={handleGoogleClick}
         disabled={loadingProvider !== null}
-        aria-label={lang === 'zh-TW' ? '使用 Google 帳號繼續' : 'Continue with Google'}
-        className="w-full py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-3 border border-white/15 bg-navy-800/80 hover:bg-navy-700/80 hover:border-gold/40 text-white shadow-sm active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label={T(lang, '使用 Google 帳號繼續', 'Continue with Google')}
+        className="w-full py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-3 border border-line/15 bg-surface/80 hover:bg-elevated/80 hover:border-gold/40 text-foreground shadow-sm active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loadingProvider === 'google' ? (
-          <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <span className="inline-block w-5 h-5 border-2 border-line/30 border-t-white rounded-full animate-spin" />
         ) : (
           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -70,12 +72,8 @@ export function OAuthButtons({ mode, callbackUrl = '/divination', onError }: OAu
         )}
         <span className="text-sm font-sans tracking-wide">
           {mode === 'login'
-            ? lang === 'zh-TW'
-              ? '使用 Google 帳號登入'
-              : 'Sign in with Google'
-            : lang === 'zh-TW'
-              ? '使用 Google 帳號註冊'
-              : 'Sign up with Google'}
+            ? T(lang, '使用 Google 帳號登入', 'Sign in with Google')
+            : T(lang, '使用 Google 帳號註冊', 'Sign up with Google')}
         </span>
       </button>
     </div>

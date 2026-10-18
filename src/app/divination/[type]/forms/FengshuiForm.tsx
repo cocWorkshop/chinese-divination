@@ -45,9 +45,11 @@ export default function FengshuiForm() {
               setField('yearBuilt', String(FENGSHUI_DEMO_EXAMPLE.exampleYear))
               setField(
                 'ownerInfo',
-                lang === 'en'
-                  ? FENGSHUI_DEMO_EXAMPLE.exampleOwnerInfo.en
-                  : FENGSHUI_DEMO_EXAMPLE.exampleOwnerInfo.zh
+                T(
+                  lang,
+                  FENGSHUI_DEMO_EXAMPLE.exampleOwnerInfo.zh,
+                  FENGSHUI_DEMO_EXAMPLE.exampleOwnerInfo.en
+                )
               )
             }}
             className="text-[11px] text-gold hover:text-gold-light underline cursor-pointer"
@@ -55,7 +57,7 @@ export default function FengshuiForm() {
             {T(lang, FENGSHUI_DEMO_EXAMPLE.applyLabel.zh, FENGSHUI_DEMO_EXAMPLE.applyLabel.en)}
           </button>
         </div>
-        <p className="text-white/60 text-[11px] leading-relaxed">
+        <p className="text-foreground/60 text-[11px] leading-relaxed">
           {T(lang, FENGSHUI_DEMO_EXAMPLE.exampleOwnerInfo.zh, FENGSHUI_DEMO_EXAMPLE.exampleOwnerInfo.en)}
         </p>
       </div>

@@ -83,21 +83,21 @@ export default function GiftLinksAdmin() {
     <div className="p-8 space-y-8">
       <div>
         <h1 className="text-2xl font-serif text-gold">禮品連結管理</h1>
-        <p className="text-white/40 text-sm mt-1">Gift Link Management</p>
+        <p className="text-foreground/40 text-sm mt-1">Gift Link Management</p>
       </div>
 
       {/* Budget info */}
       {budget && (
         <div className="rounded-xl p-4 flex gap-6 flex-wrap items-center" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
-          <div className="text-xs text-white/40">
-            📊 已釋放: <span className="text-white font-medium">{budget.distributed}</span>
-            {' · '}待釋放: <span className="text-white font-medium">{budget.allocated}</span>
+          <div className="text-xs text-foreground/40">
+            📊 已釋放: <span className="text-foreground font-medium">{budget.distributed}</span>
+            {' · '}待釋放: <span className="text-foreground font-medium">{budget.allocated}</span>
             {budget.limit > 0 && <>{' · '}上限: <span className="text-gold font-medium">{budget.limit}</span>
               {' · '}剩餘: <span className={`font-medium ${budget.limit - budget.distributed - budget.allocated > 0 ? 'text-green-400' : 'text-red-400'}`}>
                 {budget.limit - budget.distributed - budget.allocated}
               </span>
             </>}
-            {budget.limit === 0 && <>{' · '}<span className="text-white/30">無上限 (在設置中配置 giftLinkTotalBudget)</span></>}
+            {budget.limit === 0 && <>{' · '}<span className="text-foreground/30">無上限 (在設置中配置 giftLinkTotalBudget)</span></>}
           </div>
         </div>
       )}
@@ -108,29 +108,29 @@ export default function GiftLinksAdmin() {
         <h2 className="text-sm font-medium text-gold">創建新連結</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <label className="text-xs text-white/40 block mb-1">機緣數量</label>
+            <label className="text-xs text-foreground/40 block mb-1">機緣數量</label>
             <input type="number" min={1} value={form.credits}
               onChange={e => setForm({ ...form, credits: parseInt(e.target.value) || 1 })}
-              className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white" />
+              className="w-full px-3 py-2 rounded-lg text-sm bg-foreground/5 border border-line/10 text-foreground" />
           </div>
           <div>
-            <label className="text-xs text-white/40 block mb-1">最大領取人數 (0=無限)</label>
+            <label className="text-xs text-foreground/40 block mb-1">最大領取人數 (0=無限)</label>
             <input type="number" min={0} value={form.maxClaims}
               onChange={e => setForm({ ...form, maxClaims: parseInt(e.target.value) || 0 })}
-              className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white" />
+              className="w-full px-3 py-2 rounded-lg text-sm bg-foreground/5 border border-line/10 text-foreground" />
           </div>
           <div>
-            <label className="text-xs text-white/40 block mb-1">有效期 (小時)</label>
+            <label className="text-xs text-foreground/40 block mb-1">有效期 (小時)</label>
             <input type="number" min={0} value={form.expiresInHours}
               onChange={e => setForm({ ...form, expiresInHours: parseInt(e.target.value) || 0 })}
-              className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white" />
+              className="w-full px-3 py-2 rounded-lg text-sm bg-foreground/5 border border-line/10 text-foreground" />
           </div>
           <div>
-            <label className="text-xs text-white/40 block mb-1">備註</label>
+            <label className="text-xs text-foreground/40 block mb-1">備註</label>
             <input type="text" value={form.note}
               onChange={e => setForm({ ...form, note: e.target.value })}
               placeholder="如：推廣活動"
-              className="w-full px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 text-white placeholder-white/20" />
+              className="w-full px-3 py-2 rounded-lg text-sm bg-foreground/5 border border-line/10 text-foreground placeholder-foreground/20" />
           </div>
         </div>
         {createError && <p className="text-red-400 text-xs">{createError}</p>}
@@ -161,7 +161,7 @@ export default function GiftLinksAdmin() {
                   {isExpired(link.expiresAt) ? '已過期' : isExhausted(link) ? '已領完' : link.enabled ? '有效' : '停用'}
                 </span>
               </div>
-              <div className="text-xs text-white/40 mt-1">
+              <div className="text-xs text-foreground/40 mt-1">
                 {link.credits} 機緣 · {link.claimCount}/{link.maxClaims === 0 ? '∞' : link.maxClaims} 已領
                 {link.expiresAt && ` · 到期 ${new Date(link.expiresAt).toLocaleString('zh-TW')}`}
                 {link.note && ` · ${link.note}`}
@@ -169,11 +169,11 @@ export default function GiftLinksAdmin() {
             </div>
             <div className="flex gap-2">
               <button onClick={() => copyLink(link.code, link.id)}
-                className="px-3 py-1 rounded-lg text-xs bg-white/5 border border-white/10 text-white/60 hover:text-white transition-colors">
+                className="px-3 py-1 rounded-lg text-xs bg-foreground/5 border border-line/10 text-foreground/60 hover:text-foreground transition-colors">
                 {copiedId === link.id ? '✅ 已複製' : '📋 複製'}
               </button>
               <button onClick={() => toggle(link.id, !link.enabled)}
-                className="px-3 py-1 rounded-lg text-xs bg-white/5 border border-white/10 text-white/60 hover:text-white transition-colors">
+                className="px-3 py-1 rounded-lg text-xs bg-foreground/5 border border-line/10 text-foreground/60 hover:text-foreground transition-colors">
                 {link.enabled ? '⏸ 停用' : '▶ 啟用'}
               </button>
               <button onClick={() => remove(link.id)}
@@ -183,7 +183,7 @@ export default function GiftLinksAdmin() {
             </div>
           </motion.div>
         ))}
-        {links.length === 0 && <p className="text-white/40 text-sm text-center py-8">暫無禮品連結</p>}
+        {links.length === 0 && <p className="text-foreground/40 text-sm text-center py-8">暫無禮品連結</p>}
       </div>
     </div>
   )

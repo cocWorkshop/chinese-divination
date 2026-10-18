@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useLang } from '@/components/LanguageContext'
 import { OAuthButtons } from '@/components/auth/OAuthButtons'
 import YinYangIcon from '@/components/YinYangIcon'
+import { T } from '@/lib/i18n'
 
 export default function LoginPage() {
   return <Suspense><LoginInner /></Suspense>
@@ -34,11 +35,11 @@ function LoginInner() {
   useEffect(() => {
     if (authError) {
       if (authError === 'OAuthAccountNotLinked') {
-        setError(lang === 'zh-TW' ? '此郵箱已綁定其他登入方式，請使用原有方式登入' : 'This email is already associated with another login method.')
+        setError(T(lang, '此郵箱已綁定其他登入方式，請使用原有方式登入', 'This email is already associated with another login method.'))
       } else if (authError === 'OAuthCallbackError' || authError === 'OAuthSignin') {
-        setError(lang === 'zh-TW' ? '第三方授權登入失敗，請重試' : 'Third-party sign in failed. Please try again.')
+        setError(T(lang, '第三方授權登入失敗，請重試', 'Third-party sign in failed. Please try again.'))
       } else {
-        setError(lang === 'zh-TW' ? '登入驗證失敗，請重試' : 'Authentication failed. Please try again.')
+        setError(T(lang, '登入驗證失敗，請重試', 'Authentication failed. Please try again.'))
       }
     }
   }, [authError, lang])
@@ -59,10 +60,10 @@ function LoginInner() {
 
       if (!check.ok) {
         if (checkData.unverified) {
-          setError(lang === 'zh-TW' ? '郵箱尚未驗證，請查收驗證郵件' : 'Email not verified. Please check your inbox.')
+          setError(T(lang, '郵箱尚未驗證，請查收驗證郵件', 'Email not verified. Please check your inbox.'))
           setShowResend(true)
         } else {
-          setError(lang === 'zh-TW' ? '郵箱或密碼錯誤' : 'Invalid email or password')
+          setError(T(lang, '郵箱或密碼錯誤', 'Invalid email or password'))
           setShowResend(false)
         }
         setLoading(false)
@@ -74,14 +75,14 @@ function LoginInner() {
       setLoading(false)
 
       if (res?.error) {
-        setError(lang === 'zh-TW' ? '登入失敗，請重試' : 'Login failed, please try again')
+        setError(T(lang, '登入失敗，請重試', 'Login failed, please try again'))
       } else {
         // Priority: ref share-link > caller-supplied next > /divination default
         router.push(refCode ? `/share/${refCode}` : (safeNext ?? '/divination'))
       }
     } catch {
       setLoading(false)
-      setError(lang === 'zh-TW' ? '網路錯誤，請重試' : 'Network error, please try again')
+      setError(T(lang, '網路錯誤，請重試', 'Network error, please try again'))
     }
   }
 
@@ -91,34 +92,34 @@ function LoginInner() {
         <div className="text-center mb-8">
           <YinYangIcon size={48} className="mx-auto mb-4 text-gold" />
           <h1 className="text-2xl font-serif text-gold">
-            {lang === 'zh-TW' ? '登入玄機' : 'Sign in to Xuanji'}
+            {T(lang, '登入玄機', 'Sign in to Xuanji')}
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            {lang === 'zh-TW' ? '探索東方命理哲學與運勢解讀' : 'Explore oriental metaphysical wisdom'}
+            {T(lang, '探索東方命理哲學與運勢解讀', 'Explore oriental metaphysical wisdom')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
-              {lang === 'zh-TW' ? '電子郵箱' : 'Email'}
+              {T(lang, '電子郵箱', 'Email')}
             </label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
+              className="w-full px-4 py-3 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none focus:border-gold/60 transition-colors"
               placeholder="you@example.com"
             />
           </div>
           <div>
             <div className="flex justify-between items-center mb-1">
               <label className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                {lang === 'zh-TW' ? '密碼' : 'Password'}
+                {T(lang, '密碼', 'Password')}
               </label>
               <Link href="/forgot-password" className="text-xs text-gold hover:text-gold-light transition-colors">
-                {lang === 'zh-TW' ? '忘記密碼？' : 'Forgot password?'}
+                {T(lang, '忘記密碼？', 'Forgot password?')}
               </Link>
             </div>
             <input
@@ -126,7 +127,7 @@ function LoginInner() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
+              className="w-full px-4 py-3 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none focus:border-gold/60 transition-colors"
             />
           </div>
 
@@ -144,13 +145,13 @@ function LoginInner() {
                       body: JSON.stringify({ email }),
                     })
                     setResending(false)
-                    setError(lang === 'zh-TW' ? '驗證郵件已重新發送，請查收信箱' : 'Verification email resent, please check inbox')
+                    setError(T(lang, '驗證郵件已重新發送，請查收信箱', 'Verification email resent, please check inbox'))
                     setShowResend(false)
                   }}
                   disabled={resending}
                   className="mt-2 text-gold text-sm hover:text-gold-light transition-colors disabled:opacity-50 min-h-[36px] flex items-center"
                 >
-                  {resending ? '...' : (lang === 'zh-TW' ? '重新發送驗證郵件' : 'Resend verification email')}
+                  {resending ? '...' : (T(lang, '重新發送驗證郵件', 'Resend verification email'))}
                 </button>
               )}
             </div>
@@ -161,7 +162,7 @@ function LoginInner() {
             disabled={loading}
             className="w-full py-3.5 min-h-[44px] bg-gradient-to-r from-gold via-gold-light to-gold text-navy-950 rounded-xl font-serif font-bold text-base hover:brightness-105 active:scale-[0.99] transition-all shadow-md shadow-gold/15 disabled:opacity-50"
           >
-            {loading ? (lang === 'zh-TW' ? '登入中...' : 'Signing in...') : (lang === 'zh-TW' ? '登入' : 'Sign In')}
+            {loading ? (T(lang, '登入中...', 'Signing in...')) : (T(lang, '登入', 'Sign In'))}
           </button>
         </form>
 
@@ -171,10 +172,10 @@ function LoginInner() {
           onError={setError}
         />
 
-        <p className="text-center text-white/50 mt-6 text-sm">
-          {lang === 'zh-TW' ? '還沒有帳號？' : "Don't have an account?"}{' '}
+        <p className="text-center text-foreground/50 mt-6 text-sm">
+          {T(lang, '還沒有帳號？', "Don't have an account?")}{' '}
           <Link href="/register" className="text-gold hover:text-gold-light">
-            {lang === 'zh-TW' ? '立即註冊' : 'Register'}
+            {T(lang, '立即註冊', 'Register')}
           </Link>
         </p>
       </div>

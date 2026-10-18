@@ -37,6 +37,7 @@ import {
   type DetectableMsg,
 } from '@/lib/master/activationDetect'
 import type { CheckinHint } from '@/lib/master/turnEngine'
+import { T } from '@/lib/i18n'
 
 // Activation-resume thresholds (module-level: stable across renders).
 const CTA_AGED_THRESHOLD_MS = 30 * 60 * 1000 // CTA pending past this → ask user
@@ -116,7 +117,7 @@ const READING_COMPLETE_NOTE: Record<string, { zh: string; en: string }> = {
 
 function readingCompleteNoteText(type: string, lang: string): string {
   const note = READING_COMPLETE_NOTE[type] ?? READING_COMPLETE_NOTE.other
-  return lang === 'en' ? note.en : note.zh
+  return T(lang, note.zh, note.en)
 }
 
 // Both the in-session and activation-resume handoffs prefix their synthetic
@@ -236,8 +237,8 @@ const toolLabels: Record<string, { zh: string; en: string }> = {
 
 function labelFor(tool: string, lang: 'zh-TW' | 'en'): string {
   const m = toolLabels[tool]
-  if (m) return lang === 'en' ? m.en : m.zh
-  return lang === 'en' ? 'Processing...' : '處理中...'
+  if (m) return T(lang, m.zh, m.en)
+  return T(lang, '處理中...', 'Processing...')
 }
 
 interface ProviderProps {
@@ -573,7 +574,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
             const updated = [...prev]
             updated[updated.length - 1] = {
               ...assistantMsg,
-              content: (err as { error?: string }).error ?? (lang === 'en' ? 'Sorry, something went wrong.' : '抱歉，出了點問題。'),
+              content: (err as { error?: string }).error ?? (T(lang, '抱歉，出了點問題。', 'Sorry, something went wrong.')),
             }
             return updated
           })
@@ -739,7 +740,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
                   const updated = [...prev]
                   updated[updated.length - 1] = {
                     ...assistantMsg,
-                    content: event.error ?? (lang === 'en' ? 'Sorry, something went wrong.' : '抱歉，出了點問題。'),
+                    content: event.error ?? (T(lang, '抱歉，出了點問題。', 'Sorry, something went wrong.')),
                   }
                   return updated
                 })
@@ -768,9 +769,11 @@ export function MasterChatProvider({ children }: ProviderProps) {
             const updated = [...prev]
             updated[updated.length - 1] = {
               ...assistantMsg,
-              content: lang === 'en'
-                ? 'My connection to the celestial realm flickered — recovering…'
-                : '玄機與天機的連結閃了一下，正在恢復……',
+              content: T(
+                lang,
+                '玄機與天機的連結閃了一下，正在恢復……',
+                'My connection to the celestial realm flickered — recovering…'
+              ),
             }
             return updated
           })
@@ -841,9 +844,11 @@ export function MasterChatProvider({ children }: ProviderProps) {
           setInterruptCooldownUntil((cur) => (cur !== null && Date.now() >= cur ? null : cur))
         }, Math.max(0, clearsAt - now) + 250)
         toast.error(
-          lang === 'en'
-            ? 'Too many interruptions — please let the current reply finish.'
-            : '打斷過於頻繁，請等當前回應結束。',
+          T(
+            lang,
+            '打斷過於頻繁，請等當前回應結束。',
+            'Too many interruptions — please let the current reply finish.'
+          ),
           { duration: 3000 },
         )
         return
@@ -866,7 +871,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
           ) {
             updated[i] = {
               ...m,
-              content: m.content + (lang === 'en' ? '\n\n*…(interrupted)*' : '\n\n*…(被打斷)*'),
+              content: m.content + (T(lang, '\n\n*…(被打斷)*', '\n\n*…(interrupted)*')),
             }
             break
           }
@@ -958,9 +963,11 @@ export function MasterChatProvider({ children }: ProviderProps) {
             // Reuse the same handoff phrasing as the in-session readingComplete
             // listener: tell the master the chart now exists and re-check
             // multi-step CTA prerequisites before continuing.
-            const synthetic = lang === 'en'
-              ? `[reading complete] ${cta.type} reading saved (id: ${data.readingId}). The user just reopened the chat after completing it elsewhere. Re-check whether the current task still has missing prerequisites; if so, redirect to the next CTA. Otherwise proceed with the analysis.`
-              : `[占卜完成] ${cta.type} 的命盤已存好 (id: ${data.readingId})。用戶在他處完成後剛重新打開對話。請重新檢查當前任務是否還有缺失的前置占卜，若有則繼續發下一張 CTA 卡片；若已齊備，再進行分析。`
+            const synthetic = T(
+              lang,
+              `[占卜完成] ${cta.type} 的命盤已存好 (id: ${data.readingId})。用戶在他處完成後剛重新打開對話。請重新檢查當前任務是否還有缺失的前置占卜，若有則繼續發下一張 CTA 卡片；若已齊備，再進行分析。`,
+              `[reading complete] ${cta.type} reading saved (id: ${data.readingId}). The user just reopened the chat after completing it elsewhere. Re-check whether the current task still has missing prerequisites; if so, redirect to the next CTA. Otherwise proceed with the analysis.`
+            )
             // Clean completion marker (the synthetic goes to the LLM only).
             setMessages((prev) => [
               ...prev,
@@ -1148,16 +1155,17 @@ export function MasterChatProvider({ children }: ProviderProps) {
             ) {
               const labels =
                 READING_CARD_LABELS[detail.type] ?? READING_CARD_LABELS.other
-              const title = lang === 'en' ? labels.en : labels.zh
+              const title = T(lang, labels.zh, labels.en)
               const today = new Date()
-              const subtitle =
-                lang === 'en'
-                  ? today.toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })
-                  : `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`
+              const subtitle = T(
+                lang,
+                `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`,
+                today.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                }),
+              )
               return {
                 ...m,
                 kind: 'reading_card' as const,
@@ -1168,7 +1176,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
                   title,
                   subtitle,
                   url: `/dashboard?reading=${detail.readingId}`,
-                  note: lang === 'en' ? 'Just completed' : '剛完成',
+                  note: T(lang, '剛完成', 'Just completed'),
                 },
               }
             }
@@ -1184,9 +1192,11 @@ export function MasterChatProvider({ children }: ProviderProps) {
         // "continue" used to bias the model into skipping the re-check
         // and starting the reading interpretation while another required
         // chart was still missing.
-        const synthetic = lang === 'en'
-          ? `[reading complete] ${detail.type} reading saved (id: ${detail.readingId}). Re-check whether the current task still has missing prerequisites; if so, redirect to the next CTA. Otherwise proceed with the analysis.`
-          : `[占卜完成] ${detail.type} 的命盤已存好 (id: ${detail.readingId})。請重新檢查當前任務是否還有缺失的前置占卜，若有則繼續發下一張 CTA 卡片；若已齊備，再進行分析。`
+        const synthetic = T(
+          lang,
+          `[占卜完成] ${detail.type} 的命盤已存好 (id: ${detail.readingId})。請重新檢查當前任務是否還有缺失的前置占卜，若有則繼續發下一張 CTA 卡片；若已齊備，再進行分析。`,
+          `[reading complete] ${detail.type} reading saved (id: ${detail.readingId}). Re-check whether the current task still has missing prerequisites; if so, redirect to the next CTA. Otherwise proceed with the analysis.`,
+        )
         // Surface a clean completion marker right away (the synthetic itself is
         // sent to the LLM via runTurn but never rendered as a user bubble; on a
         // later reload loadHistory re-derives this same note from the stored row).
@@ -1219,9 +1229,11 @@ export function MasterChatProvider({ children }: ProviderProps) {
     const cancelled = pendingReading
     if (!cancelled) return
     setPendingReading(null)
-    const synthetic = lang === 'en'
-      ? `[user cancelled] User aborted the pending ${cancelled.type} reading. Acknowledge briefly and do NOT re-emit the same CTA. Switch topic or work with what you already have.`
-      : `[用戶取消] 用戶取消了 ${cancelled.type} 的占卜。請簡短確認，不要再次發出相同 CTA，改用現有資料回應或換個方向。`
+    const synthetic = T(
+      lang,
+      `[用戶取消] 用戶取消了 ${cancelled.type} 的占卜。請簡短確認，不要再次發出相同 CTA，改用現有資料回應或換個方向。`,
+      `[user cancelled] User aborted the pending ${cancelled.type} reading. Acknowledge briefly and do NOT re-emit the same CTA. Switch topic or work with what you already have.`,
+    )
     void runTurn({ messages: [synthetic] })
   }, [enabled, pendingReading, runTurn, lang])
 

@@ -7,6 +7,7 @@ import { useLang } from '@/components/LanguageContext'
 import { DivinationIcon } from '@/components/DivinationIcons'
 import StarField from '@/components/StarField'
 import MasterEntryCard from './MasterEntryCard'
+import { T } from '@/lib/i18n'
 
 interface VisibilityItem {
   type: string
@@ -55,7 +56,7 @@ export default function DivinationPage() {
   }, [])
 
   return (
-    <div className="relative flex-1 bg-navy-950">
+    <div className="relative flex-1 bg-background">
       <StarField />
       <div className="relative z-10 py-8 sm:py-12 px-3 sm:px-4 max-w-6xl mx-auto">
       <AnimatePresence mode="wait">
@@ -74,10 +75,10 @@ export default function DivinationPage() {
               className="hidden sm:block text-center mb-8"
             >
               <h1 className="text-2xl sm:text-3xl font-serif text-gold-light tracking-wide">
-                {lang === 'zh-TW' ? '正統術數 · 叩問天機' : 'Choose Your Metaphysical Oracle'}
+                {T(lang, '正統術數 · 叩問天機', 'Choose Your Metaphysical Oracle')}
               </h1>
-              <p className="text-xs text-white/50 font-serif tracking-widest mt-1.5 uppercase">
-                {lang === 'zh-TW' ? '六派源流 · 靜心求索' : 'Classical Systems of Insight'}
+              <p className="text-xs text-foreground/50 font-serif tracking-widest mt-1.5 uppercase">
+                {T(lang, '六派源流 · 靜心求索', 'Classical Systems of Insight')}
               </p>
             </motion.div>
 
@@ -98,29 +99,29 @@ export default function DivinationPage() {
                   >
                     {svc.id === "bazi" && (
                       <span className="absolute top-3 right-3 text-[10px] px-2.5 py-0.5 rounded-full font-serif font-medium border border-gold/30 bg-gold/15 text-gold-light tracking-wider">
-                        {lang === "en" ? "Popular" : "常叩"}
+                        {T(lang, "常叩", "Popular")}
                       </span>
                     )}
                     <div className="mb-3.5 transition-transform duration-300 group-hover:scale-105 flex items-center justify-start">
                       <DivinationIcon type={svc.id} size={42} className="text-gold" />
                     </div>
-                    <h2 className="text-lg sm:text-xl font-serif mb-1.5 transition-colors group-hover:text-gold-light text-white/95">
-                      {lang === 'en' ? svc.enName : svc.twName}
+                    <h2 className="text-lg sm:text-xl font-serif mb-1.5 transition-colors group-hover:text-gold-light text-foreground/95">
+                      {T(lang, svc.twName, svc.enName)}
                     </h2>
-                    <p className="text-xs sm:text-sm leading-relaxed mb-4 text-white/60 font-light min-h-[2.5rem]">
-                      {lang === 'en' ? svc.enDesc : svc.twDesc}
+                    <p className="text-xs sm:text-sm leading-relaxed mb-4 text-foreground/60 font-light min-h-[2.5rem]">
+                      {T(lang, svc.twDesc, svc.enDesc)}
                     </p>
                     <div className="flex items-center justify-between pt-2 border-t border-gold/10">
                       {costs[svc.id] != null ? (
                         <span className="stamp-gold text-[10px] py-0.5 px-2 select-none">
-                          ✧ {costs[svc.id]} {lang === 'en' ? 'Karma' : '機緣'}
+                          ✧ {costs[svc.id]} {T(lang, '機緣', 'Karma')}
                         </span>
                       ) : (
                         <span />
                       )}
                       <span className="text-gold/50 group-hover:text-gold transition-colors text-sm font-sans flex items-center gap-1">
                         <span className="text-xs font-serif hidden group-hover:inline-block transition-opacity">
-                          {lang === 'en' ? 'Inquire' : '入局'}
+                          {T(lang, '入局', 'Inquire')}
                         </span>
                         <span>→</span>
                       </span>

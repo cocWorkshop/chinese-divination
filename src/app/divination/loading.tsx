@@ -7,8 +7,8 @@ export default function DivinationLoading() {
     <div className="min-h-[60vh] flex items-center justify-center">
       <div className="text-center">
         <div className="text-4xl mb-4 animate-pulse">☯</div>
-        <p className="text-white/50 text-sm">正在準備占卜...</p>
-        <p className="text-white/30 text-xs mt-1">Preparing your divination...</p>
+        <p className="text-foreground/50 text-sm">正在準備占卜...</p>
+        <p className="text-foreground/30 text-xs mt-1">Preparing your divination...</p>
       </div>
     </div>
   )

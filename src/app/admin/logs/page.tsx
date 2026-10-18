@@ -238,12 +238,12 @@ export default function AdminSystemLogs() {
     return (
       <div className="flex items-center justify-center gap-2 mt-6">
         <button onClick={() => onChange(page - 1)} disabled={page <= 1}
-          className="px-3 py-1.5 text-sm rounded-lg border border-gold/20 text-white/60 hover:text-gold disabled:opacity-30 transition-colors">
+          className="px-3 py-1.5 text-sm rounded-lg border border-gold/20 text-foreground/60 hover:text-gold disabled:opacity-30 transition-colors">
           ←
         </button>
-        <span className="px-3 py-1.5 text-sm text-white/40">{page} / {pages}</span>
+        <span className="px-3 py-1.5 text-sm text-foreground/40">{page} / {pages}</span>
         <button onClick={() => onChange(page + 1)} disabled={page >= pages}
-          className="px-3 py-1.5 text-sm rounded-lg border border-gold/20 text-white/60 hover:text-gold disabled:opacity-30 transition-colors">
+          className="px-3 py-1.5 text-sm rounded-lg border border-gold/20 text-foreground/60 hover:text-gold disabled:opacity-30 transition-colors">
           →
         </button>
       </div>
@@ -255,7 +255,7 @@ export default function AdminSystemLogs() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-serif text-gold">系統日誌</h1>
-          <p className="text-white/40 text-sm mt-1">System Logs</p>
+          <p className="text-foreground/40 text-sm mt-1">System Logs</p>
         </div>
         <button
           onClick={async () => {
@@ -264,19 +264,19 @@ export default function AdminSystemLogs() {
             const d = await r.json()
             alert(`已清理：Auth ${d.authDeleted} 條, LLM ${d.llmDeleted} 條, Errors ${d.errorsDeleted} 條`)
           }}
-          className="px-3 py-1.5 rounded-lg text-xs border border-gold/20 text-white/50 hover:text-gold hover:border-gold/40 transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs border border-gold/20 text-foreground/50 hover:text-gold hover:border-gold/40 transition-colors"
         >
           🧹 清理過期日誌
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 p-1 bg-navy-900/50 rounded-xl w-fit border border-gold/10">
+      <div className="flex gap-1 mb-6 p-1 bg-surface/50 rounded-xl w-fit border border-gold/10">
         {[
           { key: 'divination' as Tab, label: '⏱️ 占卜耗時', count: divTotal },
           { key: 'llm' as Tab, label: '📋 LLM 調用', count: llmTotal },
           { key: 'auth' as Tab, label: '🔐 登入日誌', count: authTotal },
-          { key: 'readings' as Tab, label: '🔮 占卜日誌', count: readingsTotal },
+          { key: 'readings' as Tab, label: '占卜日誌', count: readingsTotal },
           { key: 'errors' as Tab, label: '🐛 前端錯誤', count: errTotal },
         ].map(t => (
           <button
@@ -285,7 +285,7 @@ export default function AdminSystemLogs() {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               tab === t.key
                 ? 'bg-gold/20 text-gold shadow-sm'
-                : 'text-white/50 hover:text-white/70'
+                : 'text-foreground/50 hover:text-foreground/70'
             }`}
           >
             {t.label}
@@ -306,8 +306,8 @@ export default function AdminSystemLogs() {
               { label: '進行中', value: divStats.pending.toString(), color: divStats.pending > 0 ? 'text-yellow-400' : 'text-gold' },
               { label: '平均耗時', value: `${(divStats.avg_latency / 1000).toFixed(0)}s`, color: 'text-gold' },
             ].map((s, i) => (
-              <div key={i} className="glass-card rounded-xl p-3 border border-gold/15 text-center">
-                <div className="text-white/40 text-[10px] uppercase tracking-wider">{s.label}</div>
+              <div key={i} className="card-quiet rounded-xl p-3 border border-gold/15 text-center">
+                <div className="text-foreground/40 text-[10px] uppercase tracking-wider">{s.label}</div>
                 <div className={`text-xl font-serif mt-0.5 ${s.color}`}>{s.value}</div>
               </div>
             ))}
@@ -317,9 +317,9 @@ export default function AdminSystemLogs() {
           {divTypeStats.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
               {divTypeStats.map(ts => (
-                <div key={ts.type} className="glass-card rounded-lg p-2.5 border border-gold/10 text-center">
+                <div key={ts.type} className="card-quiet rounded-lg p-2.5 border border-gold/10 text-center">
                   <div className="text-gold text-sm font-serif">{ts.type}</div>
-                  <div className="text-white/50 text-xs mt-0.5">{ts.count} 次 · 平均 {(ts.avg_ms / 1000).toFixed(0)}s</div>
+                  <div className="text-foreground/50 text-xs mt-0.5">{ts.count} 次 · 平均 {(ts.avg_ms / 1000).toFixed(0)}s</div>
                 </div>
               ))}
             </div>
@@ -339,7 +339,7 @@ export default function AdminSystemLogs() {
                 <button key={f.key}
                   onClick={() => { setDivTypeFilter(f.key); fetchDivLogs(1, f.key, divStatusFilter) }}
                   className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
-                    divTypeFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                    divTypeFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-foreground/50 border border-gold/15 hover:text-gold hover:border-gold/30'
                   }`}>{f.label}</button>
               ))}
             </div>
@@ -353,7 +353,7 @@ export default function AdminSystemLogs() {
                 <button key={f.key}
                   onClick={() => { setDivStatusFilter(f.key); fetchDivLogs(1, divTypeFilter, f.key) }}
                   className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
-                    divStatusFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                    divStatusFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-foreground/50 border border-gold/15 hover:text-gold hover:border-gold/30'
                   }`}>{f.label}</button>
               ))}
             </div>
@@ -362,14 +362,14 @@ export default function AdminSystemLogs() {
           {divLoading ? (
             <div className="text-gold animate-pulse p-8 text-center">Loading...</div>
           ) : divReadings.length === 0 ? (
-            <div className="glass-card rounded-xl p-12 text-center text-white/40">暫無記錄</div>
+            <div className="card-quiet rounded-xl p-12 text-center text-foreground/40">暫無記錄</div>
           ) : (
             <div className="space-y-2">
               {divReadings.map(r => {
                 const latencySec = r.llm ? (r.llm.latencyMs / 1000).toFixed(0) : '—'
-                const latencyColor = !r.llm ? 'text-white/30' : r.llm.latencyMs > 120000 ? 'text-red-400' : r.llm.latencyMs > 60000 ? 'text-yellow-400' : 'text-green-400'
+                const latencyColor = !r.llm ? 'text-foreground/30' : r.llm.latencyMs > 120000 ? 'text-red-400' : r.llm.latencyMs > 60000 ? 'text-yellow-400' : 'text-green-400'
                 return (
-                  <div key={r.id} className="glass-card rounded-xl p-3 border border-gold/10 flex items-center gap-2 sm:gap-3 text-xs">
+                  <div key={r.id} className="card-quiet rounded-xl p-3 border border-gold/10 flex items-center gap-2 sm:gap-3 text-xs">
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                       r.status === 'completed' ? 'bg-green-400' : r.status === 'failed' ? 'bg-red-400' : 'bg-yellow-400 animate-pulse'
                     }`} />
@@ -378,16 +378,16 @@ export default function AdminSystemLogs() {
                       {latencySec}s
                     </span>
                     {r.llm && (
-                      <span className="text-white/30 hidden sm:inline">
+                      <span className="text-foreground/30 hidden sm:inline">
                         {r.llm.promptTokens}+{r.llm.completionTokens} tk
                       </span>
                     )}
-                    <span className="text-white/50 flex-1 truncate hidden sm:inline">
+                    <span className="text-foreground/50 flex-1 truncate hidden sm:inline">
                       {r.user.name || r.user.email?.split('@')[0] || '—'}
                     </span>
-                    <span className="text-white/40 truncate max-w-[120px]">{r.question || '—'}</span>
-                    {r.llm && <span className="text-white/20 hidden sm:inline truncate max-w-[100px]">{r.llm.model.split('/').pop()}</span>}
-                    <span className="text-white/25 flex-shrink-0">
+                    <span className="text-foreground/40 truncate max-w-[120px]">{r.question || '—'}</span>
+                    {r.llm && <span className="text-foreground/20 hidden sm:inline truncate max-w-[100px]">{r.llm.model.split('/').pop()}</span>}
+                    <span className="text-foreground/25 flex-shrink-0">
                       {new Date(r.createdAt).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -410,8 +410,8 @@ export default function AdminSystemLogs() {
               { label: '平均延遲', value: `${(llmStats.avgLatencyMs / 1000).toFixed(1)}s` },
               { label: '錯誤', value: llmStats.errorCount.toString(), red: llmStats.errorCount > 0 },
             ].map((s, i) => (
-              <div key={i} className="glass-card rounded-xl p-3 border border-gold/15 text-center">
-                <div className="text-white/40 text-[10px] uppercase tracking-wider">{s.label}</div>
+              <div key={i} className="card-quiet rounded-xl p-3 border border-gold/15 text-center">
+                <div className="text-foreground/40 text-[10px] uppercase tracking-wider">{s.label}</div>
                 <div className={`text-xl font-serif mt-0.5 ${s.red ? 'text-red-400' : 'text-gold'}`}>{s.value}</div>
               </div>
             ))}
@@ -423,7 +423,7 @@ export default function AdminSystemLogs() {
               <button key={f}
                 onClick={() => { setLlmFilter(f); fetchLogs(1, f) }}
                 className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
-                  llmFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                  llmFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-foreground/50 border border-gold/15 hover:text-gold hover:border-gold/30'
                 }`}>
                 {f === 'all' ? '全部' : f}
               </button>
@@ -433,38 +433,38 @@ export default function AdminSystemLogs() {
           {llmLoading ? (
             <div className="text-gold animate-pulse p-8 text-center">Loading...</div>
           ) : logs.length === 0 ? (
-            <div className="glass-card rounded-xl p-12 text-center text-white/40">暫無日誌記錄</div>
+            <div className="card-quiet rounded-xl p-12 text-center text-foreground/40">暫無日誌記錄</div>
           ) : (
             <div className="space-y-2">
               {logs.map(log => (
-                <div key={log.id} className="glass-card rounded-xl border border-gold/10 overflow-hidden">
-                  <div className="p-3 cursor-pointer hover:bg-white/5 transition-colors flex items-center gap-3 text-xs"
+                <div key={log.id} className="card-quiet rounded-xl border border-gold/10 overflow-hidden">
+                  <div className="p-3 cursor-pointer hover:bg-foreground/5 transition-colors flex items-center gap-3 text-xs"
                     onClick={() => setExpanded(expanded === log.id ? null : log.id)}>
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${log.status === 'success' ? 'bg-green-400' : 'bg-red-400'}`} />
                     <span className="px-2 py-0.5 bg-gold/15 text-gold rounded-full">{log.endpoint}</span>
-                    <span className="text-white/50 flex-1 truncate">{log.model}</span>
-                    <span className="text-white/35">{log.totalTokens} tok</span>
-                    <span className="text-white/35">{(log.latencyMs / 1000).toFixed(1)}s</span>
-                    <span className="text-white/25 truncate max-w-[120px]">{log.user?.email || '—'}</span>
-                    <span className="text-white/25">{new Date(log.createdAt).toLocaleString('zh-TW')}</span>
+                    <span className="text-foreground/50 flex-1 truncate">{log.model}</span>
+                    <span className="text-foreground/35">{log.totalTokens} tok</span>
+                    <span className="text-foreground/35">{(log.latencyMs / 1000).toFixed(1)}s</span>
+                    <span className="text-foreground/25 truncate max-w-[120px]">{log.user?.email || '—'}</span>
+                    <span className="text-foreground/25">{new Date(log.createdAt).toLocaleString('zh-TW')}</span>
                   </div>
                   {expanded === log.id && (
-                    <div className="border-t border-gold/10 p-4 space-y-3 bg-navy-900/30">
+                    <div className="border-t border-gold/10 p-4 space-y-3 bg-surface/30">
                       <div className="grid grid-cols-3 gap-4 text-xs">
-                        <div><span className="text-white/40">Prompt:</span> <span className="text-white/70">{log.promptTokens}</span></div>
-                        <div><span className="text-white/40">Completion:</span> <span className="text-white/70">{log.completionTokens}</span></div>
-                        <div><span className="text-white/40">Tier:</span> <span className="text-white/70">{log.modelTier || '—'}</span></div>
+                        <div><span className="text-foreground/40">Prompt:</span> <span className="text-foreground/70">{log.promptTokens}</span></div>
+                        <div><span className="text-foreground/40">Completion:</span> <span className="text-foreground/70">{log.completionTokens}</span></div>
+                        <div><span className="text-foreground/40">Tier:</span> <span className="text-foreground/70">{log.modelTier || '—'}</span></div>
                       </div>
                       {log.inputPreview && (
                         <div>
-                          <div className="text-white/40 text-xs mb-1">Input:</div>
-                          <pre className="text-white/60 text-xs bg-navy-950/50 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-32">{log.inputPreview}</pre>
+                          <div className="text-foreground/40 text-xs mb-1">Input:</div>
+                          <pre className="text-foreground/60 text-xs bg-background/50 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-32">{log.inputPreview}</pre>
                         </div>
                       )}
                       {log.outputPreview && (
                         <div>
-                          <div className="text-white/40 text-xs mb-1">Output:</div>
-                          <pre className="text-white/60 text-xs bg-navy-950/50 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-32">{log.outputPreview}</pre>
+                          <div className="text-foreground/40 text-xs mb-1">Output:</div>
+                          <pre className="text-foreground/60 text-xs bg-background/50 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-32">{log.outputPreview}</pre>
                         </div>
                       )}
                       {log.errorMessage && (
@@ -493,8 +493,8 @@ export default function AdminSystemLogs() {
               { label: '失敗', value: authStats.totalFailure.toString(), color: authStats.totalFailure > 0 ? 'text-red-400' : 'text-gold' },
               { label: '今日', value: authStats.totalToday.toString(), color: 'text-gold' },
             ].map((s, i) => (
-              <div key={i} className="glass-card rounded-xl p-3 border border-gold/15 text-center">
-                <div className="text-white/40 text-[10px] uppercase tracking-wider">{s.label}</div>
+              <div key={i} className="card-quiet rounded-xl p-3 border border-gold/15 text-center">
+                <div className="text-foreground/40 text-[10px] uppercase tracking-wider">{s.label}</div>
                 <div className={`text-xl font-serif mt-0.5 ${s.color}`}>{s.value}</div>
               </div>
             ))}
@@ -507,7 +507,7 @@ export default function AdminSystemLogs() {
                 <button key={f}
                   onClick={() => { setAuthStatusFilter(f); fetchAuthLogs(1, f, authActionFilter, authDateFrom, authDateTo) }}
                   className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
-                    authStatusFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                    authStatusFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-foreground/50 border border-gold/15 hover:text-gold hover:border-gold/30'
                   }`}>
                   {f === 'all' ? '全部' : f === 'success' ? '✅ 成功' : '❌ 失敗'}
                 </button>
@@ -518,7 +518,7 @@ export default function AdminSystemLogs() {
                 <button key={f}
                   onClick={() => { setAuthActionFilter(f); fetchAuthLogs(1, authStatusFilter, f, authDateFrom, authDateTo) }}
                   className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
-                    authActionFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                    authActionFilter === f ? 'bg-gold text-navy-950 font-semibold' : 'text-foreground/50 border border-gold/15 hover:text-gold hover:border-gold/30'
                   }`}>
                   {f === 'all' ? '類型' : f === 'login' ? '登入' : f === 'logout' ? '登出' : '註冊'}
                 </button>
@@ -526,17 +526,17 @@ export default function AdminSystemLogs() {
             </div>
             <div className="flex gap-2 items-center">
               <input type="date" value={authDateFrom} onChange={e => setAuthDateFrom(e.target.value)}
-                className="px-2 py-1 rounded-lg text-xs bg-navy-900 border border-gold/15 text-white/70 focus:outline-none focus:border-gold/40" />
-              <span className="text-white/30 text-xs">至</span>
+                className="px-2 py-1 rounded-lg text-xs bg-surface border border-gold/15 text-foreground/70 focus:outline-none focus:border-gold/40" />
+              <span className="text-foreground/30 text-xs">至</span>
               <input type="date" value={authDateTo} onChange={e => setAuthDateTo(e.target.value)}
-                className="px-2 py-1 rounded-lg text-xs bg-navy-900 border border-gold/15 text-white/70 focus:outline-none focus:border-gold/40" />
+                className="px-2 py-1 rounded-lg text-xs bg-surface border border-gold/15 text-foreground/70 focus:outline-none focus:border-gold/40" />
               <button onClick={() => fetchAuthLogs(1, authStatusFilter, authActionFilter, authDateFrom, authDateTo)}
                 className="px-3 py-1.5 rounded-lg text-xs bg-gold/20 text-gold hover:bg-gold/30 transition-colors">
                 篩選
               </button>
               {(authDateFrom || authDateTo) && (
                 <button onClick={() => { setAuthDateFrom(''); setAuthDateTo(''); fetchAuthLogs(1, authStatusFilter, authActionFilter, '', '') }}
-                  className="px-2 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/60 transition-colors">
+                  className="px-2 py-1.5 rounded-lg text-xs text-foreground/40 hover:text-foreground/60 transition-colors">
                   清除
                 </button>
               )}
@@ -546,20 +546,20 @@ export default function AdminSystemLogs() {
           {authLoading ? (
             <div className="text-gold animate-pulse p-8 text-center">Loading...</div>
           ) : authLogs.length === 0 ? (
-            <div className="glass-card rounded-xl p-12 text-center text-white/40">暫無登入日誌</div>
+            <div className="card-quiet rounded-xl p-12 text-center text-foreground/40">暫無登入日誌</div>
           ) : (
             <div className="space-y-2">
               {authLogs.map(log => (
-                <div key={log.id} className="glass-card rounded-xl p-3 border border-gold/10 flex items-center gap-3 text-xs">
+                <div key={log.id} className="card-quiet rounded-xl p-3 border border-gold/10 flex items-center gap-3 text-xs">
                   <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${log.status === 'success' ? 'bg-green-400' : 'bg-red-400'}`} />
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                     log.action === 'login' ? 'bg-blue-400/15 text-blue-400' :
-                    log.action === 'logout' ? 'bg-white/10 text-white/50' :
-                    'bg-purple-400/15 text-purple-400'
+                    log.action === 'logout' ? 'bg-foreground/10 text-foreground/50' :
+                    'bg-gold/15 text-gold'
                   }`}>
                     {log.action === 'login' ? '登入' : log.action === 'logout' ? '登出' : '註冊'}
                   </span>
-                  <span className="text-white/70 flex-1 truncate">{log.email}</span>
+                  <span className="text-foreground/70 flex-1 truncate">{log.email}</span>
                   {log.reason && (
                     <span className="px-2 py-0.5 bg-red-400/10 text-red-400/70 rounded-full text-[10px]">
                       {log.reason === 'invalid_password' ? '密碼錯誤' :
@@ -568,8 +568,8 @@ export default function AdminSystemLogs() {
                        log.reason === 'email_exists' ? '郵箱已存在' : log.reason}
                     </span>
                   )}
-                  {log.ip && <span className="text-white/25 font-mono">{log.ip}</span>}
-                  <span className="text-white/25 flex-shrink-0">{new Date(log.createdAt).toLocaleString('zh-TW')}</span>
+                  {log.ip && <span className="text-foreground/25 font-mono">{log.ip}</span>}
+                  <span className="text-foreground/25 flex-shrink-0">{new Date(log.createdAt).toLocaleString('zh-TW')}</span>
                 </div>
               ))}
             </div>
@@ -586,9 +586,9 @@ export default function AdminSystemLogs() {
             <div>
               <div className="flex items-center justify-between mb-4 gap-3">
                 <button onClick={() => { setReadingDetail(null); setReadingLlmLogs([]); setReadingValidation(null) }} className="text-gold/60 hover:text-gold text-sm">← 返回列表</button>
-                <span className="text-white/40 text-xs font-mono truncate" title={readingDetail.id}>ID: {readingDetail.id}</span>
+                <span className="text-foreground/40 text-xs font-mono truncate" title={readingDetail.id}>ID: {readingDetail.id}</span>
               </div>
-              <div className="glass-card rounded-xl p-4 border border-gold/20 mb-4">
+              <div className="card-quiet rounded-xl p-4 border border-gold/20 mb-4">
                 {readingDetail.deletedAt && (
                   <div className="mb-3 px-3 py-2 rounded-lg bg-red-500/15 border border-red-500/40 text-red-300 text-xs">
                     ⚠ 已軟刪除（deletedAt = {new Date(readingDetail.deletedAt).toLocaleString('zh-TW')}）— 用戶側不可見，但保留於資料庫
@@ -596,27 +596,27 @@ export default function AdminSystemLogs() {
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <span className="text-white/40 text-xs block">用戶</span>
-                    <span className="text-white/80 font-mono text-xs">{readingDetail.user.email || '—'}</span>
-                    {readingDetail.user.name && <span className="text-white/40 text-xs block">{readingDetail.user.name}</span>}
+                    <span className="text-foreground/40 text-xs block">用戶</span>
+                    <span className="text-foreground/80 font-mono text-xs">{readingDetail.user.email || '—'}</span>
+                    {readingDetail.user.name && <span className="text-foreground/40 text-xs block">{readingDetail.user.name}</span>}
                   </div>
                   <div>
-                    <span className="text-white/40 text-xs block">類型</span>
+                    <span className="text-foreground/40 text-xs block">類型</span>
                     <span className="text-gold">{readingDetail.type}</span>
-                    <span className="text-white/30 text-xs block">{readingDetail.modelTier === 'model2' ? '✨ Premium' : 'Standard'}</span>
+                    <span className="text-foreground/30 text-xs block">{readingDetail.modelTier === 'model2' ? '◆ Premium' : 'Standard'}</span>
                   </div>
                   <div>
-                    <span className="text-white/40 text-xs block">對象</span>
-                    <span className="text-white/80">
+                    <span className="text-foreground/40 text-xs block">對象</span>
+                    <span className="text-foreground/80">
                       {readingDetail.targetType === 'family' && readingDetail.familyMember
                         ? `${readingDetail.familyMember.relation} ${readingDetail.familyMember.name || ''}`
                         : '本人'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-white/40 text-xs block">時間</span>
-                    <span className="text-white/80">{new Date(readingDetail.createdAt).toLocaleString('zh-TW')}</span>
-                    {readingDetail.rating && <span className="text-xs block mt-0.5">{'⭐'.repeat(readingDetail.rating)}</span>}
+                    <span className="text-foreground/40 text-xs block">時間</span>
+                    <span className="text-foreground/80">{new Date(readingDetail.createdAt).toLocaleString('zh-TW')}</span>
+                    {readingDetail.rating && <span className="text-xs block mt-0.5">{'✦'.repeat(readingDetail.rating)}</span>}
                   </div>
                 </div>
                 <div className="mt-3 pt-3 border-t border-gold/10 flex flex-wrap items-center gap-2 text-xs">
@@ -625,12 +625,12 @@ export default function AdminSystemLogs() {
                       readingDetail.status === 'completed' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
                         : readingDetail.status === 'pending' ? 'bg-yellow-500/15 text-yellow-300 border border-yellow-500/30'
                         : readingDetail.status === 'failed' ? 'bg-red-500/15 text-red-300 border border-red-500/30'
-                        : 'bg-white/10 text-white/60 border border-white/20'
+                        : 'bg-foreground/10 text-foreground/60 border border-line/20'
                     }`}
                   >
                     狀態：{readingDetail.status}
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/60 border border-white/10">
+                  <span className="px-2 py-0.5 rounded-full bg-foreground/5 text-foreground/60 border border-line/10">
                     語言：{readingDetail.language}
                   </span>
                   {readingDetail.shareToken && (
@@ -644,14 +644,14 @@ export default function AdminSystemLogs() {
                       🔗 share:{readingDetail.shareToken.slice(0, 8)}…
                     </span>
                   )}
-                  <span className="text-white/30 font-mono ml-auto" title={readingDetail.id}>
+                  <span className="text-foreground/30 font-mono ml-auto" title={readingDetail.id}>
                     {readingDetail.id.slice(0, 12)}…
                   </span>
                 </div>
                 {readingDetail.question && (
                   <div className="mt-3 pt-3 border-t border-gold/10">
-                    <span className="text-white/40 text-xs">問題：</span>
-                    <span className="text-white/70 text-sm ml-1">{readingDetail.question}</span>
+                    <span className="text-foreground/40 text-xs">問題：</span>
+                    <span className="text-foreground/70 text-sm ml-1">{readingDetail.question}</span>
                   </div>
                 )}
                 {readingLlmLogs.length > 0 && (() => {
@@ -662,13 +662,13 @@ export default function AdminSystemLogs() {
                   const offsetSec = Math.round(Math.abs(primary.offsetMs) / 1000)
                   return (
                     <div className="mt-3 pt-3 border-t border-gold/10">
-                      <div className="text-white/40 text-xs mb-1.5">關聯 LLM 呼叫（依時間就近匹配）</div>
+                      <div className="text-foreground/40 text-xs mb-1.5">關聯 LLM 呼叫（依時間就近匹配）</div>
                       <div className="flex flex-wrap gap-2 text-[11px]">
-                        <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 font-mono">
+                        <span className="px-2 py-0.5 rounded-full bg-gold/15 text-gold-light border border-gold/30 font-mono">
                           {primary.model}
                         </span>
                         {primary.modelTier && (
-                          <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/60 border border-white/10">
+                          <span className="px-2 py-0.5 rounded-full bg-foreground/5 text-foreground/60 border border-line/10">
                             {primary.modelTier}
                           </span>
                         )}
@@ -681,20 +681,20 @@ export default function AdminSystemLogs() {
                         >
                           {primary.status}
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/70 border border-white/10">
+                        <span className="px-2 py-0.5 rounded-full bg-foreground/5 text-foreground/70 border border-line/10">
                           ⏱ {(primary.latencyMs / 1000).toFixed(1)}s
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-white/5 text-white/70 border border-white/10">
+                        <span className="px-2 py-0.5 rounded-full bg-foreground/5 text-foreground/70 border border-line/10">
                           🔢 {primary.totalTokens.toLocaleString()} tok
-                          <span className="text-white/40 ml-1">
+                          <span className="text-foreground/40 ml-1">
                             ({primary.promptTokens.toLocaleString()}↑ / {primary.completionTokens.toLocaleString()}↓)
                           </span>
                         </span>
-                        <span className="text-white/30 ml-1" title={`Reading createdAt offset: ${primary.offsetMs}ms`}>
+                        <span className="text-foreground/30 ml-1" title={`Reading createdAt offset: ${primary.offsetMs}ms`}>
                           {sign}{offsetSec}s vs reading
                         </span>
                         {readingLlmLogs.length > 1 && (
-                          <span className="text-white/30">
+                          <span className="text-foreground/30">
                             +{readingLlmLogs.length - 1} 其他 log 在窗口內
                           </span>
                         )}
@@ -714,7 +714,7 @@ export default function AdminSystemLogs() {
                   { key: 'result' as const, label: '📜 解讀結果', available: true },
                   { key: 'input' as const, label: '📝 用戶輸入', available: true },
                   { key: 'calculation' as const, label: '🔢 程序計算', available: !!readingDetail.calculationData },
-                  { key: 'llmPrompt' as const, label: '🤖 LLM輸入', available: !!readingDetail.llmPrompt },
+                  { key: 'llmPrompt' as const, label: 'LLM輸入', available: !!readingDetail.llmPrompt },
                   { key: 'llmOutput' as const, label: '💬 LLM輸出', available: !!readingDetail.llmRawOutput },
                   { key: 'chat' as const, label: '☯ 玄機問答', available: !!readingDetail.chatMessages },
                   { key: 'validation' as const, label: readingValidation && !readingValidation.ok && readingValidation.parseable ? `⚠ Schema (${readingValidation.issues.length})` : '✓ Schema 校驗', available: !!readingValidation },
@@ -723,12 +723,12 @@ export default function AdminSystemLogs() {
                   <button key={t.key} onClick={() => setReadingDetailTab(t.key)} disabled={!t.available}
                     className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
                       readingDetailTab === t.key ? 'bg-gold text-navy-950 font-semibold'
-                        : t.available ? 'text-white/50 border border-gold/15 hover:text-gold' : 'text-white/20 border border-white/5 cursor-not-allowed'
+                        : t.available ? 'text-foreground/50 border border-gold/15 hover:text-gold' : 'text-foreground/20 border border-line/5 cursor-not-allowed'
                     }`}>{t.label}</button>
                 ))}
               </div>
 
-              <div className="glass-card rounded-xl border border-gold/20 overflow-hidden">
+              <div className="card-quiet rounded-xl border border-gold/20 overflow-hidden">
                 {readingDetailTab === 'result' && (
                   <div className="p-4">
                     <div className="flex justify-end gap-1 mb-3">
@@ -737,7 +737,7 @@ export default function AdminSystemLogs() {
                           key={m}
                           onClick={() => setResultViewMode(m)}
                           className={`px-2.5 py-1 rounded-md text-[11px] transition-colors ${
-                            resultViewMode === m ? 'bg-gold/20 text-gold border border-gold/40' : 'text-white/40 border border-white/10 hover:text-white/70'
+                            resultViewMode === m ? 'bg-gold/20 text-gold border border-gold/40' : 'text-foreground/40 border border-line/10 hover:text-foreground/70'
                           }`}
                         >
                           {m === 'rendered' ? '渲染視圖' : 'Schema JSON（除錯用）'}
@@ -752,18 +752,18 @@ export default function AdminSystemLogs() {
                         const topKeys = Object.keys(parsed).sort()
                         return (
                           <>
-                            <div className="mb-3 text-[11px] text-white/40">
-                              <span className="text-white/60">頂層欄位（{topKeys.length}）：</span>
+                            <div className="mb-3 text-[11px] text-foreground/40">
+                              <span className="text-foreground/60">頂層欄位（{topKeys.length}）：</span>
                               <span className="font-mono ml-1">{topKeys.join(' · ')}</span>
                             </div>
-                            <pre className="text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
+                            <pre className="text-foreground/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
                               {JSON.stringify(parsed, null, 2)}
                             </pre>
                           </>
                         )
                       } catch {
                         return (
-                          <pre className="text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
+                          <pre className="text-foreground/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
                             {readingDetail.result}
                           </pre>
                         )
@@ -772,7 +772,7 @@ export default function AdminSystemLogs() {
                   </div>
                 )}
                 {readingDetailTab === 'input' && (
-                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed">{JSON.stringify(readingDetail.inputData, null, 2)}</pre>
+                  <pre className="p-4 text-foreground/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed">{JSON.stringify(readingDetail.inputData, null, 2)}</pre>
                 )}
                 {readingDetailTab === 'calculation' && readingDetail.calculationData && (() => {
                   let parsed: unknown
@@ -780,7 +780,7 @@ export default function AdminSystemLogs() {
                     parsed = JSON.parse(readingDetail.calculationData)
                   } catch {
                     return (
-                      <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
+                      <pre className="p-4 text-foreground/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
                         {readingDetail.calculationData}
                       </pre>
                     )
@@ -810,34 +810,34 @@ export default function AdminSystemLogs() {
                   return (
                     <div className="p-4">
                       {keys.length > 0 && (
-                        <div className="mb-3 text-[11px] text-white/40">
-                          <span className="text-white/60">
+                        <div className="mb-3 text-[11px] text-foreground/40">
+                          <span className="text-foreground/60">
                             {wrapperKey ? `${wrapperKey} 內欄位（${keys.length}）：` : `頂層欄位（${keys.length}）：`}
                           </span>
                           <span className="font-mono ml-1 break-all">{keys.join(' · ')}</span>
                         </div>
                       )}
-                      <pre className="text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
+                      <pre className="text-foreground/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
                         {JSON.stringify(parsed, null, 2)}
                       </pre>
                     </div>
                   )
                 })()}
                 {readingDetailTab === 'llmPrompt' && readingDetail.llmPrompt && (
-                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{readingDetail.llmPrompt}</pre>
+                  <pre className="p-4 text-foreground/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">{readingDetail.llmPrompt}</pre>
                 )}
                 {readingDetailTab === 'llmOutput' && readingDetail.llmRawOutput && (
-                  <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed">{readingDetail.llmRawOutput}</pre>
+                  <pre className="p-4 text-foreground/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed">{readingDetail.llmRawOutput}</pre>
                 )}
                 {readingDetailTab === 'chat' && readingDetail.chatMessages && (() => {
                   try {
                     const msgs = JSON.parse(readingDetail.chatMessages) as { role: string; content: string; timestamp?: string }[]
                     return (
                       <div className="p-4 space-y-3 max-h-[70vh] overflow-y-auto">
-                        {msgs.length === 0 ? <p className="text-white/30 text-sm">暫無問答記錄</p> : msgs.map((msg, i) => (
+                        {msgs.length === 0 ? <p className="text-foreground/30 text-sm">暫無問答記錄</p> : msgs.map((msg, i) => (
                           <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`rounded-2xl px-3 py-2 text-sm leading-relaxed max-w-[85%] ${
-                              msg.role === 'user' ? 'bg-gold text-navy-950 rounded-br-sm' : 'bg-white/5 border border-gold/20 text-white/80 rounded-bl-sm'
+                              msg.role === 'user' ? 'bg-gold text-navy-950 rounded-br-sm' : 'bg-foreground/5 border border-gold/20 text-foreground/80 rounded-bl-sm'
                             }`}>
                               <p className="whitespace-pre-wrap">{msg.content}</p>
                               {msg.timestamp && <p className="text-[10px] opacity-50 mt-1">{new Date(msg.timestamp).toLocaleString('zh-TW')}</p>}
@@ -846,12 +846,12 @@ export default function AdminSystemLogs() {
                         ))}
                       </div>
                     )
-                  } catch { return <pre className="p-4 text-white/70 text-xs whitespace-pre-wrap">{readingDetail.chatMessages}</pre> }
+                  } catch { return <pre className="p-4 text-foreground/70 text-xs whitespace-pre-wrap">{readingDetail.chatMessages}</pre> }
                 })()}
                 {readingDetailTab === 'validation' && readingValidation && (
                   <div className="p-4 space-y-3 max-h-[70vh] overflow-y-auto">
                     <div className="flex items-center gap-2 flex-wrap text-xs">
-                      <span className="text-white/40">Schema：</span>
+                      <span className="text-foreground/40">Schema：</span>
                       <span className="px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-mono">
                         {readingValidation.schemaName}
                       </span>
@@ -877,15 +877,15 @@ export default function AdminSystemLogs() {
                     )}
 
                     {readingValidation.parseable && readingValidation.ok && (
-                      <p className="text-white/50 text-sm">
+                      <p className="text-foreground/50 text-sm">
                         所有必填欄位皆存在且型別正確（passthrough 模式 — 額外欄位被保留，例如 calculator 注入的 pillars/dayMaster/daYun 等不算違規）。
                       </p>
                     )}
 
                     {readingValidation.parseable && !readingValidation.ok && readingValidation.issues.length > 0 && (
                       <div>
-                        <p className="text-white/40 text-[11px] mb-2">
-                          每一行對應 Zod 校驗發現的一個問題。<span className="text-white/60">path</span> 指出有問題的欄位（從 result 根節點起算），<span className="text-white/60">code</span> 指出 Zod 違規類別。
+                        <p className="text-foreground/40 text-[11px] mb-2">
+                          每一行對應 Zod 校驗發現的一個問題。<span className="text-foreground/60">path</span> 指出有問題的欄位（從 result 根節點起算），<span className="text-foreground/60">code</span> 指出 Zod 違規類別。
                         </p>
                         <div className="space-y-1.5">
                           {readingValidation.issues.map((iss, i) => (
@@ -898,7 +898,7 @@ export default function AdminSystemLogs() {
                               </span>
                               <div className="flex-1 min-w-0">
                                 <div className="text-amber-200 font-mono text-[11px] break-all">{iss.path}</div>
-                                <div className="text-white/60 text-[11px] mt-0.5">{iss.message}</div>
+                                <div className="text-foreground/60 text-[11px] mt-0.5">{iss.message}</div>
                               </div>
                             </div>
                           ))}
@@ -909,8 +909,8 @@ export default function AdminSystemLogs() {
                 )}
                 {readingDetailTab === 'raw' && (
                   <div className="p-4">
-                    <p className="text-white/40 text-[11px] mb-2">完整資料庫記錄 — 包含所有 Reading 欄位、user/familyMember 關聯、feedbacks。除錯用。</p>
-                    <pre className="text-white/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
+                    <p className="text-foreground/40 text-[11px] mb-2">完整資料庫記錄 — 包含所有 Reading 欄位、user/familyMember 關聯、feedbacks。除錯用。</p>
+                    <pre className="text-foreground/70 text-xs whitespace-pre-wrap overflow-x-auto font-mono leading-relaxed max-h-[70vh] overflow-y-auto">
                       {JSON.stringify(readingDetail, null, 2)}
                     </pre>
                   </div>
@@ -921,9 +921,9 @@ export default function AdminSystemLogs() {
                 <div className="mt-4">
                   <h3 className="text-gold font-serif text-sm mb-2">用戶反饋</h3>
                   {readingDetail.feedbacks.map((fb, i) => (
-                    <div key={i} className="glass-card rounded-xl p-3 border border-gold/10 mb-2 text-xs">
-                      {fb.rating && <span>{'⭐'.repeat(fb.rating)}</span>}
-                      {fb.feedback && <p className="text-white/70 mt-1">{fb.feedback}</p>}
+                    <div key={i} className="card-quiet rounded-xl p-3 border border-gold/10 mb-2 text-xs">
+                      {fb.rating && <span>{'✦'.repeat(fb.rating)}</span>}
+                      {fb.feedback && <p className="text-foreground/70 mt-1">{fb.feedback}</p>}
                     </div>
                   ))}
                 </div>
@@ -947,7 +947,7 @@ export default function AdminSystemLogs() {
                     <button key={f.key}
                       onClick={() => { setReadingsTypeFilter(f.key); fetchReadings(1, f.key, readingsEmailSearch) }}
                       className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
-                        readingsTypeFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-white/50 border border-gold/15 hover:text-gold hover:border-gold/30'
+                        readingsTypeFilter === f.key ? 'bg-gold text-navy-950 font-semibold' : 'text-foreground/50 border border-gold/15 hover:text-gold hover:border-gold/30'
                       }`}>{f.label}</button>
                   ))}
                 </div>
@@ -964,7 +964,7 @@ export default function AdminSystemLogs() {
                         fetchReadings(1, readingsTypeFilter, readingsEmailInput.trim())
                       }
                     }}
-                    className="px-3 py-1.5 rounded-lg text-xs bg-navy-900 border border-gold/15 text-white placeholder-white/30 focus:outline-none focus:border-gold/40 w-48 sm:w-64"
+                    className="px-3 py-1.5 rounded-lg text-xs bg-surface border border-gold/15 text-foreground placeholder-foreground/30 focus:outline-none focus:border-gold/40 w-48 sm:w-64"
                   />
                   <button
                     onClick={() => {
@@ -982,7 +982,7 @@ export default function AdminSystemLogs() {
                         setReadingsEmailSearch('')
                         fetchReadings(1, readingsTypeFilter, '')
                       }}
-                      className="px-2 py-1.5 rounded-lg text-xs text-white/40 hover:text-white/60 transition-colors"
+                      className="px-2 py-1.5 rounded-lg text-xs text-foreground/40 hover:text-foreground/60 transition-colors"
                     >
                       清除
                     </button>
@@ -993,36 +993,36 @@ export default function AdminSystemLogs() {
               {readingsLoading ? (
                 <div className="text-gold animate-pulse p-8 text-center">Loading...</div>
               ) : readings.length === 0 ? (
-                <div className="glass-card rounded-xl p-12 text-center text-white/40">暫無占卜記錄</div>
+                <div className="card-quiet rounded-xl p-12 text-center text-foreground/40">暫無占卜記錄</div>
               ) : (
                 <div className="space-y-2">
                   {readings.map(r => (
                     <div key={r.id}
                       onClick={() => fetchReadingDetail(r.id)}
-                      className="glass-card rounded-xl p-3 border border-gold/10 hover:border-gold/30 cursor-pointer transition-colors flex items-center gap-3 text-xs">
+                      className="card-quiet rounded-xl p-3 border border-gold/10 hover:border-gold/30 cursor-pointer transition-colors flex items-center gap-3 text-xs">
                       <span className="px-2 py-0.5 bg-gold/15 text-gold rounded-full">{r.type}</span>
                       <span
                         className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
                           r.status === 'completed' ? 'bg-emerald-500/15 text-emerald-300'
                             : r.status === 'pending' ? 'bg-yellow-500/15 text-yellow-300'
                             : r.status === 'failed' ? 'bg-red-500/15 text-red-300'
-                            : 'bg-white/10 text-white/60'
+                            : 'bg-foreground/10 text-foreground/60'
                         }`}
                         title={`狀態：${r.status}`}
                       >
                         {r.status === 'completed' ? '✓' : r.status === 'pending' ? '⏳' : r.status === 'failed' ? '✗' : r.status}
                       </span>
-                      <span className="text-white/30 text-[10px]">{r.language}</span>
-                      <span className="text-white/70 flex-1 truncate font-mono text-xs" title={r.user.email || ''}>
+                      <span className="text-foreground/30 text-[10px]">{r.language}</span>
+                      <span className="text-foreground/70 flex-1 truncate font-mono text-xs" title={r.user.email || ''}>
                         {r.user.email || '—'}
-                        {r.user.name && <span className="text-white/40 font-sans ml-1">({r.user.name})</span>}
+                        {r.user.name && <span className="text-foreground/40 font-sans ml-1">({r.user.name})</span>}
                       </span>
-                      <span className="text-white/40">{r.targetType === 'family' && r.familyMember ? r.familyMember.relation : '本人'}</span>
-                      <span className="text-white/40">{r.inputData?.birthDate || '—'} {r.inputData?.birthTime || ''}</span>
-                      <span className="text-white/30">{r.modelTier === 'model2' ? '✨' : '○'}</span>
-                      <span className="text-white/30">{r.shareToken ? '🔗' : ''}</span>
-                      <span className="text-white/30">{r.rating ? '⭐'.repeat(r.rating) : '—'}</span>
-                      <span className="text-white/25">{new Date(r.createdAt).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-foreground/40">{r.targetType === 'family' && r.familyMember ? r.familyMember.relation : '本人'}</span>
+                      <span className="text-foreground/40">{r.inputData?.birthDate || '—'} {r.inputData?.birthTime || ''}</span>
+                      <span className="text-foreground/30">{r.modelTier === 'model2' ? '◆' : '○'}</span>
+                      <span className="text-foreground/30">{r.shareToken ? '🔗' : ''}</span>
+                      <span className="text-foreground/30">{r.rating ? '✦'.repeat(r.rating) : '—'}</span>
+                      <span className="text-foreground/25">{new Date(r.createdAt).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   ))}
                 </div>
@@ -1039,32 +1039,32 @@ export default function AdminSystemLogs() {
           {errLoading ? (
             <div className="text-gold animate-pulse p-8 text-center">Loading...</div>
           ) : errors.length === 0 ? (
-            <div className="glass-card rounded-xl p-12 text-center text-white/40">
+            <div className="card-quiet rounded-xl p-12 text-center text-foreground/40">
               <div className="text-3xl mb-2">✅</div>
               <p>暫無錯誤記錄 / No errors recorded</p>
             </div>
           ) : (
             <div className="space-y-2">
               {errors.map(err => (
-                <div key={err.id} className="glass-card rounded-xl p-4 border border-red-400/10">
+                <div key={err.id} className="card-quiet rounded-xl p-4 border border-red-400/10">
                   <div className="flex items-start justify-between gap-4 mb-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="px-2 py-0.5 bg-red-400/10 text-red-400 text-xs rounded-full font-mono">
                         {err.status || 'ERR'}
                       </span>
-                      <span className="text-white/70 text-sm font-mono">{err.endpoint}</span>
+                      <span className="text-foreground/70 text-sm font-mono">{err.endpoint}</span>
                     </div>
-                    <span className="text-white/25 text-xs flex-shrink-0">
+                    <span className="text-foreground/25 text-xs flex-shrink-0">
                       {new Date(err.createdAt).toLocaleString('zh-TW')}
                     </span>
                   </div>
-                  <p className="text-white/60 text-sm mb-1 break-all">{err.error}</p>
+                  <p className="text-foreground/60 text-sm mb-1 break-all">{err.error}</p>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs">
                     {err.user && (
-                      <span className="text-white/50">👤 {err.user.name || '—'} <span className="text-white/30">({err.user.email})</span></span>
+                      <span className="text-foreground/50">👤 {err.user.name || '—'} <span className="text-foreground/30">({err.user.email})</span></span>
                     )}
-                    {err.context && <span className="text-white/30">📋 {err.context}</span>}
-                    {err.userAgent && <span className="text-white/20 truncate max-w-xs" title={err.userAgent}>🌐 {err.userAgent.slice(0, 60)}</span>}
+                    {err.context && <span className="text-foreground/30">📋 {err.context}</span>}
+                    {err.userAgent && <span className="text-foreground/20 truncate max-w-xs" title={err.userAgent}>🌐 {err.userAgent.slice(0, 60)}</span>}
                   </div>
                 </div>
               ))}

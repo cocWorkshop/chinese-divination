@@ -71,12 +71,12 @@ function VerifyEmailContent() {
               </div>
 
               <h1 className="text-2xl font-serif text-gold mb-1">{c.title}</h1>
-              <p className="text-white/50 text-xs mb-1 font-serif">{c.titleEn}</p>
+              <p className="text-foreground/50 text-xs mb-1 font-serif">{c.titleEn}</p>
               
               <div className="my-5 h-px bg-gold/20" />
               
-              <p className="text-white/70 text-sm mb-1 font-serif">{c.desc}</p>
-              <p className="text-white/40 text-xs mb-6 font-serif">{c.descEn}</p>
+              <p className="text-foreground/70 text-sm mb-1 font-serif">{c.desc}</p>
+              <p className="text-foreground/40 text-xs mb-6 font-serif">{c.descEn}</p>
 
               {(status === 'verified' || status === 'already_verified') && (
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -89,7 +89,7 @@ function VerifyEmailContent() {
                   </Link>
                   <Link
                     href="/"
-                    className="w-full sm:w-auto flex-1 min-h-[44px] px-5 py-2.5 border border-white/10 text-white/60 hover:text-white rounded-xl hover:bg-white/5 transition-colors font-serif inline-flex items-center justify-center"
+                    className="w-full sm:w-auto flex-1 min-h-[44px] px-5 py-2.5 border border-line/10 text-foreground/60 hover:text-foreground rounded-xl hover:bg-foreground/5 transition-colors font-serif inline-flex items-center justify-center"
                   >
                     首頁 / Home
                   </Link>
@@ -109,7 +109,7 @@ function VerifyEmailContent() {
                     </Link>
                     <Link
                       href="/"
-                      className="w-full sm:w-auto flex-1 min-h-[44px] px-5 py-2.5 border border-white/10 text-white/60 hover:text-white rounded-xl hover:bg-white/5 transition-colors font-serif inline-flex items-center justify-center text-xs"
+                      className="w-full sm:w-auto flex-1 min-h-[44px] px-5 py-2.5 border border-line/10 text-foreground/60 hover:text-foreground rounded-xl hover:bg-foreground/5 transition-colors font-serif inline-flex items-center justify-center text-xs"
                     >
                       返回首頁 / Home
                     </Link>
@@ -177,7 +177,7 @@ function ResendButton() {
         value={email}
         onChange={e => setEmail(e.target.value)}
         placeholder="輸入您的郵箱 / Enter your email"
-        className="w-full px-4 py-2.5 bg-navy-800/80 border border-gold/20 rounded-xl text-white text-sm focus:outline-none focus:border-gold/50 font-serif"
+        className="w-full px-4 py-2.5 bg-surface/80 border border-gold/20 rounded-xl text-foreground text-sm focus:outline-none focus:border-gold/50 font-serif"
       />
       <button
         onClick={resend}

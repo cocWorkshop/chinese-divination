@@ -13,10 +13,10 @@ const TYPE_INFO: Record<string, { icon: string; zh: string; en: string }> = {
   bazi: { icon: '☰', zh: '八字命理', en: 'BaZi' },
   iching: { icon: '☯', zh: '易經占卜', en: 'I Ching' },
   liuyao: { icon: '☯', zh: '六爻占卜', en: 'Liu Yao' },
-  ziwei: { icon: '⭐', zh: '紫微斗數', en: 'Zi Wei' },
-  qimen: { icon: '⚡', zh: '奇門遁甲', en: 'Qi Men' },
-  fengshui: { icon: '🏯', zh: '風水佈局', en: 'Feng Shui' },
-  meihua: { icon: '🌸', zh: '梅花易數', en: 'Mei Hua' },
+  ziwei: { icon: '紫', zh: '紫微斗數', en: 'Zi Wei' },
+  qimen: { icon: '門', zh: '奇門遁甲', en: 'Qi Men' },
+  fengshui: { icon: '堪', zh: '風水佈局', en: 'Feng Shui' },
+  meihua: { icon: '梅', zh: '梅花易數', en: 'Mei Hua' },
 }
 
 const DEFAULT_VISIBILITY: VisibilityItem[] = [
@@ -107,27 +107,27 @@ export default function AdminSettings() {
 
   const textField = (key: string, label: string, desc?: string) => (
     <div>
-      <label className="text-white/60 text-sm block mb-2">{label}</label>
+      <label className="text-foreground/60 text-sm block mb-2">{label}</label>
       <input
         type="text"
         value={settings[key] || ''}
         onChange={e => set(key, e.target.value)}
-        className="w-full px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/50 text-sm"
+        className="w-full px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none focus:border-gold/50 text-sm"
       />
-      {desc && <p className="text-white/30 text-xs mt-1">{desc}</p>}
+      {desc && <p className="text-foreground/30 text-xs mt-1">{desc}</p>}
     </div>
   )
 
   const numberField = (key: string, label: string, desc?: string) => (
     <div>
-      <label className="text-white/60 text-sm block mb-2">{label}</label>
+      <label className="text-foreground/60 text-sm block mb-2">{label}</label>
       <input
         type="number"
         value={settings[key] || '0'}
         onChange={e => set(key, e.target.value)}
-        className="w-32 px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/50 text-sm"
+        className="w-32 px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none focus:border-gold/50 text-sm"
       />
-      {desc && <p className="text-white/30 text-xs mt-1">{desc}</p>}
+      {desc && <p className="text-foreground/30 text-xs mt-1">{desc}</p>}
     </div>
   )
 
@@ -140,15 +140,15 @@ export default function AdminSettings() {
 
   const selectField = (key: string, label: string, options: { v: string; l: string }[], desc?: string) => (
     <div>
-      <label className="text-white/60 text-sm block mb-2">{label}</label>
+      <label className="text-foreground/60 text-sm block mb-2">{label}</label>
       <select
         value={settings[key] || ''}
         onChange={e => set(key, e.target.value)}
-        className="w-full px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/50 text-sm"
+        className="w-full px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none focus:border-gold/50 text-sm"
       >
         {options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
       </select>
-      {desc && <p className="text-white/30 text-xs mt-1">{desc}</p>}
+      {desc && <p className="text-foreground/30 text-xs mt-1">{desc}</p>}
     </div>
   )
 
@@ -175,16 +175,16 @@ export default function AdminSettings() {
     <div className="p-8 max-w-2xl">
       <div className="mb-8">
         <h1 className="text-2xl font-serif text-gold">系統設置</h1>
-        <p className="text-white/40 text-sm mt-1">Global configuration</p>
+        <p className="text-foreground/40 text-sm mt-1">Global configuration</p>
       </div>
 
       <div className="space-y-6">
         {/* Model Configuration */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
-            <span>🤖</span> 模型配置 / Model Configuration
+        <div className="card-quiet rounded-xl p-6">
+          <h2 className="text-foreground/80 font-medium mb-4 flex items-center gap-2">
+            <span>儀</span> 模型配置 / Model Configuration
           </h2>
-          <p className="text-white/40 text-xs mb-2">每個功能可獨立配置模型、思考強度、最大Tokens 與超時。留空則回退到下方「全局默認」。/ Each function configures its own model, reasoning, max-tokens and timeout; blank falls back to the global defaults below.</p>
+          <p className="text-foreground/40 text-xs mb-2">每個功能可獨立配置模型、思考強度、最大Tokens 與超時。留空則回退到下方「全局默認」。/ Each function configures its own model, reasoning, max-tokens and timeout; blank falls back to the global defaults below.</p>
           <p className="text-amber-300/70 text-xs mb-4">⚠️ 「思考強度 / Reasoning」僅對支援推理的模型生效（如 Claude 3.7+/4、OpenAI o系列/GPT-5、Gemini 2.5 thinking、Grok）。對 claude-3-5-haiku、gpt-4o 等非推理模型無效（會被安全忽略）。/ Reasoning only affects reasoning-capable models; it is silently ignored by non-reasoning models.</p>
           <div className="space-y-5">
             {fnBlock('占卜 / Divination',
@@ -207,19 +207,19 @@ export default function AdminSettings() {
         </div>
 
         {/* Karma Economy & Gating Rules / 機緣體系與收費規則 */}
-        <div className="glass-card rounded-xl p-6 space-y-6">
-          <div className="border-b border-white/10 pb-4">
+        <div className="card-quiet rounded-xl p-6 space-y-6">
+          <div className="border-b border-line/10 pb-4">
             <h2 className="text-xl font-bold text-gold flex items-center gap-2">
               <span>☯</span> 機緣體系與收費規則 / Karma Economy & Gating Rules
             </h2>
-            <p className="text-white/50 text-xs mt-1 leading-relaxed">
+            <p className="text-foreground/50 text-xs mt-1 leading-relaxed">
               全站統一以「機緣」（Karma Credits）衡量天機因果流轉。包含善緣結付（註冊、每日登入、分享引薦）、天機啟盤（各術數排盤起卦）、大師請益以及大運階梯解鎖機制。
             </p>
           </div>
 
           {/* Section 1: Inflows / 善緣贈予 */}
           <div>
-            <h3 className="text-sm font-semibold text-white/90 flex items-center gap-2 mb-3">
+            <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2 mb-3">
               <span className="text-amber-400">✦</span> 因果流轉 · 善緣贈予 (Inflows & Rewards)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -231,11 +231,11 @@ export default function AdminSettings() {
           </div>
 
           {/* Section 2: Outflows / 天機啟盤消耗 */}
-          <div className="border-t border-white/10 pt-5">
-            <h3 className="text-sm font-semibold text-white/90 flex items-center gap-2 mb-3">
+          <div className="border-t border-line/10 pt-5">
+            <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2 mb-3">
               <span className="text-amber-400">✦</span> 天機啟盤 · 消耗規則 (Divination & Consultation Costs)
             </h3>
-            <p className="text-white/40 text-xs mb-3">每次啟動命盤排盤、起卦筮爻或深入諮商時所扣減之機緣點數。</p>
+            <p className="text-foreground/40 text-xs mb-3">每次啟動命盤排盤、起卦筮爻或深入諮商時所扣減之機緣點數。</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {numberField('cost_bazi', '八字命理啟盤 / BaZi', '預設 5 點機緣')}
               {numberField('cost_ziwei', '紫微斗數排盤 / Zi Wei', '預設 5 點機緣')}
@@ -250,16 +250,16 @@ export default function AdminSettings() {
           </div>
 
           {/* Section 3: Decadal Gating / 大運階梯解鎖 */}
-          <div className="border-t border-white/10 pt-5">
+          <div className="border-t border-line/10 pt-5">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-white/90 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-foreground/90 flex items-center gap-2">
                 <span className="text-amber-400">✦</span> 大運階梯解鎖規則 (Decadal Gating)
               </h3>
               <span className="text-[10px] px-2 py-0.5 rounded bg-gold/10 text-gold border border-gold/20">
                 三十年世 · 階梯解鎖
               </span>
             </div>
-            <div className="p-3.5 rounded-lg bg-navy-950/60 border border-gold/20 text-xs text-white/70 leading-relaxed mb-4">
+            <div className="p-3.5 rounded-lg bg-background/60 border border-gold/20 text-xs text-foreground/70 leading-relaxed mb-4">
               <p className="text-gold/90 font-medium mb-1">古籍云：“三十年為一世，立命而後通變。”</p>
               <p>
                 古制三十年為一世。在八字命理及紫微斗數之大運/大限批算中，規約前 <strong>{settings.free_dayun_limit || '3'}</strong> 步大運（凡三十年，涵蓋求學、立命、初涉俗世）完全免費開放精批；自第 <strong>{Number(settings.free_dayun_limit || 3) + 1}</strong> 步大運及之後，每窺探一步大運（十年流年星度詳批）需結付相應機緣。
@@ -274,17 +274,17 @@ export default function AdminSettings() {
 
 
         {/* Divination Visibility */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
+        <div className="card-quiet rounded-xl p-6">
+          <h2 className="text-foreground/80 font-medium mb-4 flex items-center gap-2">
             <span>👁</span> 占卜類型顯示 / Divination Visibility
           </h2>
-          <p className="text-white/40 text-xs mb-4">控制首頁和選擇頁面顯示哪些占卜類型及順序 / Control which types appear and their display order</p>
+          <p className="text-foreground/40 text-xs mb-4">控制首頁和選擇頁面顯示哪些占卜類型及順序 / Control which types appear and their display order</p>
           <div className="space-y-2">
             {visibilityItems.map((item, idx) => {
               const info = TYPE_INFO[item.type]
               if (!info) return null
               return (
-                <div key={item.type} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-navy-800/50">
+                <div key={item.type} className="flex items-center gap-3 py-2 px-3 rounded-lg bg-surface/50">
                   <div className="flex flex-col gap-0.5">
                     <button
                       type="button"
@@ -294,7 +294,7 @@ export default function AdminSettings() {
                         ;[arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]
                         setVisibilityItems(arr.map((it, i) => ({ ...it, order: i + 1 })))
                       }}
-                      className="text-white/40 hover:text-gold disabled:opacity-20 text-xs leading-none"
+                      className="text-foreground/40 hover:text-gold disabled:opacity-20 text-xs leading-none"
                     >▲</button>
                     <button
                       type="button"
@@ -304,13 +304,13 @@ export default function AdminSettings() {
                         ;[arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]]
                         setVisibilityItems(arr.map((it, i) => ({ ...it, order: i + 1 })))
                       }}
-                      className="text-white/40 hover:text-gold disabled:opacity-20 text-xs leading-none"
+                      className="text-foreground/40 hover:text-gold disabled:opacity-20 text-xs leading-none"
                     >▼</button>
                   </div>
                   <span className="text-2xl w-8 text-center">{info.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <span className="text-white/80 text-sm">{info.zh}</span>
-                    <span className="text-white/40 text-xs ml-2">{info.en}</span>
+                    <span className="text-foreground/80 text-sm">{info.zh}</span>
+                    <span className="text-foreground/40 text-xs ml-2">{info.en}</span>
                   </div>
                   <div className="relative flex-shrink-0">
                     <input
@@ -330,7 +330,7 @@ export default function AdminSettings() {
                         ))
                       }}
                       className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 cursor-pointer ${
-                        item.visible ? 'bg-jade' : 'bg-navy-800 border border-white/20'
+                        item.visible ? 'bg-jade' : 'bg-surface border border-line/20'
                       }`}
                     >
                       <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
@@ -345,11 +345,11 @@ export default function AdminSettings() {
         </div>
 
         {/* Global LLM fallback defaults */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
+        <div className="card-quiet rounded-xl p-6">
+          <h2 className="text-foreground/80 font-medium mb-4 flex items-center gap-2">
             <span>⏳</span> 全局默認 / Global LLM Defaults
           </h2>
-          <p className="text-white/40 text-xs mb-4">當某功能未單獨設定時使用。/ Used only when a function above leaves a field blank.</p>
+          <p className="text-foreground/40 text-xs mb-4">當某功能未單獨設定時使用。/ Used only when a function above leaves a field blank.</p>
           <div className="space-y-4">
             {selectField('llmReasoningEffort', '全局思考強度 / Global reasoning', REASONING_OPTIONS, '默認 medium')}
             {numberField('llmTimeoutSeconds', '全局請求超時（秒）/ Global timeout (seconds)', '默認 240 秒')}
@@ -358,8 +358,8 @@ export default function AdminSettings() {
         </div>
 
         {/* Service Switches */}
-        <div className="glass-card rounded-xl p-6">
-          <h2 className="text-white/80 font-medium mb-4 flex items-center gap-2">
+        <div className="card-quiet rounded-xl p-6">
+          <h2 className="text-foreground/80 font-medium mb-4 flex items-center gap-2">
             <span>🔌</span> 服務開關 / Service Switches
           </h2>
           <div className="space-y-4">
@@ -379,7 +379,7 @@ export default function AdminSettings() {
                   <div className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
                     settings[item.key] === 'true'
                       ? item.danger ? 'bg-red-500' : 'bg-jade'
-                      : 'bg-navy-800 border border-white/20'
+                      : 'bg-surface border border-line/20'
                   }`}>
                     <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
                       settings[item.key] === 'true' ? 'translate-x-5' : 'translate-x-0'
@@ -387,10 +387,10 @@ export default function AdminSettings() {
                   </div>
                 </div>
                 <div>
-                  <p className={`text-sm font-medium ${item.danger && settings[item.key] === 'true' ? 'text-red-400' : 'text-white/80'}`}>
-                    {item.label} <span className="text-white/30 font-normal">/ {item.enLabel}</span>
+                  <p className={`text-sm font-medium ${item.danger && settings[item.key] === 'true' ? 'text-red-400' : 'text-foreground/80'}`}>
+                    {item.label} <span className="text-foreground/30 font-normal">/ {item.enLabel}</span>
                   </p>
-                  <p className="text-white/40 text-xs mt-0.5">{item.desc}</p>
+                  <p className="text-foreground/40 text-xs mt-0.5">{item.desc}</p>
                 </div>
               </label>
             ))}

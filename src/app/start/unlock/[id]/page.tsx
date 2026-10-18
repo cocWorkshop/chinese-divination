@@ -100,7 +100,7 @@ export default function StartUnlockPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative w-full space-y-5 glass-card rounded-2xl p-6 sm:p-8"
+          className="relative w-full space-y-5 card-quiet rounded-2xl p-6 sm:p-8"
           style={{ border: '1px solid var(--border-gold, rgba(212,175,55,0.4))' }}
         >
           <header className="text-center">

@@ -104,7 +104,7 @@ export default function AdminWelcomePage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-serif text-gold">歡迎語管理</h1>
-          <p className="text-white/40 text-sm mt-1">Welcome Messages</p>
+          <p className="text-foreground/40 text-sm mt-1">Welcome Messages</p>
         </div>
         <button
           onClick={addNew}
@@ -115,37 +115,37 @@ export default function AdminWelcomePage() {
       </div>
 
       {/* Rules table */}
-      <div className="glass-card rounded-xl overflow-hidden">
+      <div className="card-quiet rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gold/20">
-              <th className="text-left px-4 py-3 text-white/60">Name</th>
-              <th className="text-left px-4 py-3 text-white/60">Stage</th>
-              <th className="text-left px-4 py-3 text-white/60">Recommend</th>
-              <th className="text-center px-4 py-3 text-white/60">Priority</th>
-              <th className="text-center px-4 py-3 text-white/60">Messages</th>
-              <th className="text-center px-4 py-3 text-white/60">Enabled</th>
-              <th className="text-right px-4 py-3 text-white/60">Actions</th>
+              <th className="text-left px-4 py-3 text-foreground/60">Name</th>
+              <th className="text-left px-4 py-3 text-foreground/60">Stage</th>
+              <th className="text-left px-4 py-3 text-foreground/60">Recommend</th>
+              <th className="text-center px-4 py-3 text-foreground/60">Priority</th>
+              <th className="text-center px-4 py-3 text-foreground/60">Messages</th>
+              <th className="text-center px-4 py-3 text-foreground/60">Enabled</th>
+              <th className="text-right px-4 py-3 text-foreground/60">Actions</th>
             </tr>
           </thead>
           <tbody>
             {rules.map(rule => (
-              <tr key={rule.id} className="border-b border-gold/10 hover:bg-white/5">
-                <td className="px-4 py-3 text-white/80">{rule.name}</td>
-                <td className="px-4 py-3 text-white/60">
+              <tr key={rule.id} className="border-b border-gold/10 hover:bg-foreground/5">
+                <td className="px-4 py-3 text-foreground/80">{rule.name}</td>
+                <td className="px-4 py-3 text-foreground/60">
                   {rule.condition.stage || 'any'}
                   {rule.condition.isWeekend && ' (weekend)'}
                 </td>
-                <td className="px-4 py-3 text-white/60">{rule.recommendType || 'random'}</td>
-                <td className="px-4 py-3 text-center text-white/60">{rule.priority}</td>
-                <td className="px-4 py-3 text-center text-white/60">
+                <td className="px-4 py-3 text-foreground/60">{rule.recommendType || 'random'}</td>
+                <td className="px-4 py-3 text-center text-foreground/60">{rule.priority}</td>
+                <td className="px-4 py-3 text-center text-foreground/60">
                   {(rule.messages.zh?.length || 0)} zh / {(rule.messages.en?.length || 0)} en
                 </td>
                 <td className="px-4 py-3 text-center">
                   <div
                     onClick={() => toggleEnabled(rule)}
                     className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 cursor-pointer mx-auto ${
-                      rule.enabled ? 'bg-jade' : 'bg-navy-800 border border-white/20'
+                      rule.enabled ? 'bg-jade' : 'bg-surface border border-line/20'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
@@ -160,7 +160,7 @@ export default function AdminWelcomePage() {
               </tr>
             ))}
             {rules.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-white/40">No welcome rules yet</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-foreground/40">No welcome rules yet</td></tr>
             )}
           </tbody>
         </table>
@@ -168,40 +168,40 @@ export default function AdminWelcomePage() {
 
       {/* Edit modal */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="glass-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4" style={{ borderColor: 'var(--border-gold, rgba(212,168,83,0.3))' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim">
+          <div className="card-quiet rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto mx-4" style={{ borderColor: 'var(--border-gold, rgba(212,168,83,0.3))' }}>
             <h2 className="text-lg font-serif text-gold mb-4">{editing.id ? 'Edit Rule' : 'New Rule'}</h2>
 
             <div className="space-y-4">
               {/* Name */}
               <div>
-                <label className="text-white/60 text-sm block mb-1">Name</label>
+                <label className="text-foreground/60 text-sm block mb-1">Name</label>
                 <input
                   type="text"
                   value={editing.name}
                   onChange={e => setEditing({ ...editing, name: e.target.value })}
-                  className="w-full px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/50 text-sm"
+                  className="w-full px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none focus:border-gold/50 text-sm"
                 />
               </div>
 
               {/* Stage */}
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="text-white/60 text-sm block mb-1">Stage</label>
+                  <label className="text-foreground/60 text-sm block mb-1">Stage</label>
                   <select
                     value={editing.condition.stage || 'any'}
                     onChange={e => setEditing({ ...editing, condition: { ...editing.condition, stage: e.target.value } })}
-                    className="w-full px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none text-sm"
+                    className="w-full px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none text-sm"
                   >
                     {STAGE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-white/60 text-sm block mb-1">Weekend Only</label>
+                  <label className="text-foreground/60 text-sm block mb-1">Weekend Only</label>
                   <div
                     onClick={() => setEditing({ ...editing, condition: { ...editing.condition, isWeekend: !editing.condition.isWeekend } })}
                     className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 cursor-pointer mt-2 ${
-                      editing.condition.isWeekend ? 'bg-jade' : 'bg-navy-800 border border-white/20'
+                      editing.condition.isWeekend ? 'bg-jade' : 'bg-surface border border-line/20'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
@@ -214,45 +214,45 @@ export default function AdminWelcomePage() {
               {/* Recommend Type & Priority */}
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="text-white/60 text-sm block mb-1">Recommend Type</label>
+                  <label className="text-foreground/60 text-sm block mb-1">Recommend Type</label>
                   <select
                     value={editing.recommendType || ''}
                     onChange={e => setEditing({ ...editing, recommendType: e.target.value || null })}
-                    className="w-full px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none text-sm"
+                    className="w-full px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none text-sm"
                   >
                     {TYPE_OPTIONS.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
                   </select>
                 </div>
                 <div className="w-32">
-                  <label className="text-white/60 text-sm block mb-1">Priority</label>
+                  <label className="text-foreground/60 text-sm block mb-1">Priority</label>
                   <input
                     type="number"
                     value={editing.priority}
                     onChange={e => setEditing({ ...editing, priority: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none text-sm"
+                    className="w-full px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none text-sm"
                   />
                 </div>
               </div>
 
               {/* Messages ZH */}
               <div>
-                <label className="text-white/60 text-sm block mb-1">Messages (中文) — one per line</label>
+                <label className="text-foreground/60 text-sm block mb-1">Messages (中文) — one per line</label>
                 <textarea
                   value={(editing.messages.zh || []).join('\n')}
                   onChange={e => setEditing({ ...editing, messages: { ...editing.messages, zh: e.target.value.split('\n').filter(Boolean) } })}
                   rows={4}
-                  className="w-full px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none text-sm font-mono"
+                  className="w-full px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none text-sm font-mono"
                 />
               </div>
 
               {/* Messages EN */}
               <div>
-                <label className="text-white/60 text-sm block mb-1">Messages (English) — one per line</label>
+                <label className="text-foreground/60 text-sm block mb-1">Messages (English) — one per line</label>
                 <textarea
                   value={(editing.messages.en || []).join('\n')}
                   onChange={e => setEditing({ ...editing, messages: { ...editing.messages, en: e.target.value.split('\n').filter(Boolean) } })}
                   rows={4}
-                  className="w-full px-4 py-2 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none text-sm font-mono"
+                  className="w-full px-4 py-2 bg-surface border border-gold/20 rounded-lg text-foreground focus:outline-none text-sm font-mono"
                 />
               </div>
 
@@ -261,21 +261,21 @@ export default function AdminWelcomePage() {
                 <div
                   onClick={() => setEditing({ ...editing, enabled: !editing.enabled })}
                   className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${
-                    editing.enabled ? 'bg-jade' : 'bg-navy-800 border border-white/20'
+                    editing.enabled ? 'bg-jade' : 'bg-surface border border-line/20'
                   }`}
                 >
                   <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
                     editing.enabled ? 'translate-x-5' : 'translate-x-0'
                   }`} />
                 </div>
-                <span className="text-white/60 text-sm">Enabled</span>
+                <span className="text-foreground/60 text-sm">Enabled</span>
               </label>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setEditing(null)}
-                className="px-4 py-2 text-white/60 hover:text-white text-sm"
+                className="px-4 py-2 text-foreground/60 hover:text-foreground text-sm"
               >
                 Cancel
               </button>
