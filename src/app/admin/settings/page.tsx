@@ -246,6 +246,8 @@ export default function AdminSettings() {
               {numberField('cost_fengshui', '堪輿風水定穴 / Feng Shui', '預設 3 點機緣')}
               {numberField('cost_chat', '卦盤深入解惑 / In-depth Chat', '預設 2 點機緣 / 次')}
               {numberField('cost_master', '請益玄機大師 / Ask Master', '預設 1 點機緣 / 問')}
+              {numberField('masterMaxTurns', '大師單次對話輪數上限 / Master turns per conversation', '預設 50。接近上限時大師會自然收尾；到達上限後顯示上限提示，用戶可開新對話')}
+              {numberField('masterDailyTurnLimit', '大師每日輪數上限 / Master turns per day', '每位用戶每日可向大師提問的總輪數')}
             </div>
           </div>
 

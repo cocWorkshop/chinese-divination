@@ -7,6 +7,8 @@ import remarkGfm from 'remark-gfm'
 import { useLang } from '../LanguageContext'
 import { T } from '@/lib/i18n'
 import YinYangIcon from '@/components/YinYangIcon'
+import { useEffect } from 'react'
+import { useOptionalMasterChatActions } from '@/components/master/MasterChatContext'
 
 const XuanjiChat = dynamic(() => import('./XuanjiChat'), { ssr: false })
 
@@ -21,6 +23,20 @@ interface XuanjiChatCardProps {
 
 export default function XuanjiChatCard({ readingResult, readingType, readingId, isShared, chatMessages, delay = 0.15 }: XuanjiChatCardProps) {
   const { lang } = useLang()
+  const masterChat = useOptionalMasterChatActions()
+  // The global Master widget sits below the reading; when it's available it
+  // replaces this per-reading Q&A. The reading is registered so every Master
+  // turn carries it as context.
+  const masterReplacesQa = !isShared && !!readingId && !!masterChat?.enabled
+  const setViewingReading = masterChat?.setViewingReading
+
+  useEffect(() => {
+    if (!masterReplacesQa || !readingId || !setViewingReading) return
+    setViewingReading(readingId)
+    return () => setViewingReading(null)
+  }, [masterReplacesQa, readingId, setViewingReading])
+
+  if (masterReplacesQa) return null
 
   // For shared readings: show chat history read-only if available
   if (isShared) {

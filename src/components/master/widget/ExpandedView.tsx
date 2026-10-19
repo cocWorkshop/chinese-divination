@@ -489,6 +489,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                     isEn={isEn}
                     onCtaClick={handleCtaClick}
                     onReadingCardClick={handleReadingCardClick}
+                    onStartNewSession={() => { void startNewSession() }}
                     isSelectMode={isSelectMode}
                     isSelected={selectedIndices.has(i)}
                     onToggleSelect={() => {

@@ -25,6 +25,7 @@ import { renderPersonalizedPrompt } from '@/lib/master/personalizedPrompt'
 import { calculateGrowth } from '@/lib/growth/growthSystem'
 import { checkMasterDailyLimit } from '@/lib/master/dailyLimiter'
 import { runMasterTurn, type EngineEvent, type CheckinHint } from '@/lib/master/turnEngine'
+import { sliceReading } from '@/lib/master/slicers'
 import { SolarDay, SolarTime } from 'tyme4ts'
 import { FUNNEL_COOKIE_NAME, verifyFunnelToken } from '@/lib/funnelSession'
 import { createRequestLogger, logger } from '@/lib/logger'
@@ -127,6 +128,7 @@ export async function POST(req: NextRequest) {
       reflection?: unknown
       clientTime?: unknown
       tzOffsetMin?: unknown
+      viewingReadingId?: unknown
     }
     const VALID_HINTS: readonly CheckinHint[] = [
       'gap', 'cta_pending_aged', 'unanswered_user', 'ambiguous_resume', 'long_gap_resume',
@@ -246,20 +248,21 @@ export async function POST(req: NextRequest) {
     // 'masterMaxTurns', defaults to 50. Checkins and reflections are exempt
     // (they're system-initiated, not user-initiated).
     let currentTurnCount = 0
+    let maxTurns = 50
     if (!isCheckin && !isReflection) {
       const maxTurnsSetting = await prisma.adminSetting.findUnique({ where: { key: 'masterMaxTurns' } })
-      const maxTurns = parseInt(maxTurnsSetting?.value || '50', 10) || 50
+      maxTurns = parseInt(maxTurnsSetting?.value || '50', 10) || 50
       currentTurnCount = await prisma.masterChatMessage.count({
         where: { userId, sessionId: sessionId!, role: 'user' },
       })
       if (currentTurnCount >= maxTurns) {
         const msg = T(
           lang,
-          '老夫今日耗神頗多，需閉目養息片刻。\n\n下次再會時，點「新對話」即可續接 —— 你說過的，我都記著。',
-          'The Master needs to rest and gather his thoughts. Let\'s continue our conversation next time — start a "New Chat" whenever you\'re ready. Everything I\'ve learned about you is safely kept.'
+          `本次對話已達 ${maxTurns} 輪上限。點「新對話」即可繼續 —— 你說過的，大師都記著。`,
+          `This conversation has reached its ${maxTurns}-turn limit. Start a "New Chat" to continue — everything the Master has learned about you is kept.`
         )
         return new Response(
-          JSON.stringify({ error: msg }),
+          JSON.stringify({ error: msg, turnLimitReached: true, maxTurns }),
           { status: 429, headers: { 'Content-Type': 'application/json' } },
         )
       }
@@ -323,6 +326,9 @@ export async function POST(req: NextRequest) {
       personalizedPrompt,
       turnType,
       isFirstMessage: !isCheckin && !isReflection && userMessages.length > 0,
+      sessionBudget: !isCheckin && !isReflection
+        ? { turn: currentTurnCount + 1, maxTurns }
+        : undefined,
     })
 
     // Proactive checkin appendix — additional per-hint context (gap duration,
@@ -330,6 +336,31 @@ export async function POST(req: NextRequest) {
     if (isCheckin) {
       const checkinAppendix = await buildCheckinAppendix(userId, sessionId, lang, checkinHint)
       systemPrompt += `\n\n---\n\n${checkinAppendix}`
+    }
+
+    // The reading the user is looking at right now (result page). The
+    // per-reading Q&A widget is hidden in favour of the Master, so the Master
+    // must carry that reading in context. Ownership-checked.
+    if (typeof body.viewingReadingId === 'string' && body.viewingReadingId.length > 0 && body.viewingReadingId.length < 64) {
+      const viewing = await prisma.reading.findFirst({
+        where: { id: body.viewingReadingId, userId, deletedAt: null },
+        select: { id: true, type: true, createdAt: true, result: true },
+      })
+      if (viewing) {
+        try {
+          const sliced = sliceReading(viewing.type, viewing.id, viewing.createdAt.toISOString(), viewing.result)
+          const snapshot = JSON.stringify({ header: sliced.header, overview: sliced.overview, sections: sliced.sections }).slice(0, 6000)
+          systemPrompt += [
+            '\n\n---\n\n## Reading currently on the user\'s screen',
+            `The user is viewing reading \`${viewing.id}\` (${viewing.type}) right now. Unless they clearly refer to something else, questions like 「這個」「這盤」「這裡說的」 refer to THIS reading. Answer grounded in it; use \`get_reading_detail\` with this id for sections not included below. Don't recite what is already visible on their screen — interpret it.`,
+            '```json',
+            snapshot,
+            '```',
+          ].join('\n')
+        } catch (err) {
+          log.warn({ err }, 'viewing reading slice failed')
+        }
+      }
     }
 
     // Resolve the main answer model; background summarization inside

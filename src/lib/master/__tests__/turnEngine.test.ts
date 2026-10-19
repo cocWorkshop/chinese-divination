@@ -52,7 +52,7 @@ vi.mock('@/lib/logger', () => ({
   },
 }))
 
-import { runMasterTurn } from '../turnEngine'
+import { runMasterTurn, isPassReply } from '../turnEngine'
 
 async function* makeStream(chunks: any[]) {
   for (const c of chunks) {
@@ -303,6 +303,48 @@ describe('runMasterTurn', () => {
     })
     for await (const _ of genReflection) {}
     expect(masterSessionUpdateMock).not.toHaveBeenCalled()
+  })
+
+  it('recognizes [PASS] replies in reflection turns', () => {
+    expect(isPassReply('[PASS]')).toBe(true)
+    expect(isPassReply('[pass]')).toBe(true)
+    expect(isPassReply(' [PASS]。 ')).toBe(true)
+    expect(isPassReply('[NEXT][PASS]')).toBe(true)
+    expect(isPassReply('今日先到這裡')).toBe(false)
+  })
+
+  it('silently drops [PASS] reflection turns without emitting bubbles or persisting message', async () => {
+    appendMasterChatMessageMock.mockClear()
+    streamLLMMock.mockReturnValue(
+      makeStream([
+        { type: 'content', text: '[PASS]' },
+        { type: 'done', finishReason: 'stop' },
+      ])
+    )
+
+    const events: any[] = []
+    const gen = runMasterTurn({
+      userId: 'user_1',
+      sessionId: 'session_1',
+      isCheckin: false,
+      isReflection: true,
+      systemPrompt: 'System',
+      initialMessages: [],
+      model: 'openai/gpt-4o',
+      toolCtx: {} as any,
+      masterSessionPk: 'pk_123',
+      lang: 'zh-TW',
+    })
+
+    for await (const ev of gen) {
+      events.push(ev)
+    }
+
+    // Should only yield done event, NO content or bubble_break events
+    const contentEvents = events.filter((e) => e.type === 'content' || e.type === 'bubble_break')
+    expect(contentEvents.length).toBe(0)
+    expect(events.some((e) => e.type === 'done')).toBe(true)
+    expect(appendMasterChatMessageMock).not.toHaveBeenCalled()
   })
 })
 

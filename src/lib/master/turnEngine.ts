@@ -113,6 +113,11 @@ export interface RunTurnInput {
 /** Hard cap on tool-calling iterations (runaway guard, not the primary limit — the dedupe cache is). */
 const MAX_TOOL_LOOPS = 12
 
+/** Reflection "nothing to add" sentinel — see master-appendices/reflection.md. */
+export function isPassReply(content: string): boolean {
+  return content.replace(/\[NEXT\]/g, '').trim().replace(/[。.\s]/g, '').toUpperCase() === '[PASS]'
+}
+
 export async function* runMasterTurn(
   input: RunTurnInput,
 ): AsyncGenerator<EngineEvent, void, void> {
@@ -164,7 +169,12 @@ export async function* runMasterTurn(
       if (text) buffered.push({ type: 'content', text })
     }
     const emitBreak = () => buffered.push({ type: 'bubble_break' })
+    // Reflection turns are held back until the model finishes: if it has
+    // nothing worth adding it answers `[PASS]`, and we drop the turn
+    // silently rather than streaming a disconnected stock farewell.
+    const holdOutput = input.isReflection
     const flushBuffered = function* (): Generator<EngineEvent> {
+      if (holdOutput) return
       while (buffered.length > 0) {
         yield buffered.shift()!
       }
@@ -331,6 +341,16 @@ export async function* runMasterTurn(
     // never resolved into a marker, etc.).
     bubbleStreamer.flush(emitContent)
     yield* flushBuffered()
+
+    if (holdOutput) {
+      if (isPassReply(assistantContent)) {
+        // Nothing worth adding — end silently: no bubble, no persisted row.
+        buffered.length = 0
+        yield { type: 'done', durationMs: monitor.finish().totalDurationMs }
+        return
+      }
+      while (buffered.length > 0) yield buffered.shift()!
+    }
 
     // Persist the assistant turn.
     await appendMasterChatMessage({

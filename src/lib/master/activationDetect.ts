@@ -25,7 +25,7 @@ export interface DetectableMsg {
   role: 'user' | 'assistant' | 'system'
   content: string
   timestamp: string
-  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting' | 'system_note' | 'feedback_prompt'
+  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting' | 'system_note' | 'feedback_prompt' | 'limit_notice'
   ctaPayload?: DetectableCtaPayload
 }
 

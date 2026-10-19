@@ -83,7 +83,7 @@ export interface MasterMsg {
   content: string
   timestamp: string
   /** Optional special-rendering kind. Default is text. */
-  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting' | 'system_note' | 'feedback_prompt'
+  kind?: 'text' | 'cta_card' | 'reading_card' | 'greeting' | 'system_note' | 'feedback_prompt' | 'limit_notice'
   ctaPayload?: CtaCardPayload
   readingCardPayload?: ReadingCardPayload
   feedbackPromptReason?: 'slow_response' | 'milestone' | 'timeout'
@@ -220,6 +220,12 @@ export interface MasterChatActionsValue {
   clearSession: () => Promise<void>
   markDisclosureSeen: () => Promise<void>
   setPortraitEnabled: (enabled: boolean) => Promise<void>
+  /**
+   * Register the reading the user is currently looking at (result page).
+   * Sent with every turn so the Master answers with that reading in context.
+   * Pass null on unmount.
+   */
+  setViewingReading: (readingId: string | null) => void
 }
 
 const MasterChatContext = createContext<MasterChatContextValue | null>(null)
@@ -273,6 +279,12 @@ export function MasterChatProvider({ children }: ProviderProps) {
   // line that headers the expanded greeting — no double self-introduction.
   const [widgetOpener] = useState<string>(() => pickOpener(lang))
   const abortRef = useRef<AbortController | null>(null)
+  // Reading the user is currently viewing; attached to each turn so the
+  // Master always has the on-screen reading in context.
+  const viewingReadingRef = useRef<string | null>(null)
+  const setViewingReading = useCallback((readingId: string | null) => {
+    viewingReadingRef.current = readingId
+  }, [])
   const sendingRef = useRef(false)
   // Resolves when the in-flight turn fully cleans up (sendingRef → false,
   // SSE reader closed, error toasts shown). Interrupt-then-restart awaits
@@ -564,17 +576,29 @@ export function MasterChatProvider({ children }: ProviderProps) {
         const res = await fetch('/api/master', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...payload, clientTime: new Date().toISOString(), tzOffsetMin: new Date().getTimezoneOffset() }),
+          body: JSON.stringify({
+            ...payload,
+            viewingReadingId: viewingReadingRef.current ?? undefined,
+            clientTime: new Date().toISOString(),
+            tzOffsetMin: new Date().getTimezoneOffset(),
+          }),
           signal: abortRef.current.signal,
         })
 
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Request failed' }))
+          const err = (await res.json().catch(() => ({ error: 'Request failed' }))) as {
+            error?: string
+            turnLimitReached?: boolean
+            dailyLimitReached?: boolean
+          }
+          const isLimit = !!(err.turnLimitReached || err.dailyLimitReached)
           setMessages((prev) => {
             const updated = [...prev]
             updated[updated.length - 1] = {
               ...assistantMsg,
-              content: (err as { error?: string }).error ?? (T(lang, '抱歉，出了點問題。', 'Sorry, something went wrong.')),
+              role: isLimit ? 'system' : 'assistant',
+              kind: isLimit ? 'limit_notice' : 'text',
+              content: err.error ?? (T(lang, '抱歉，出了點問題。', 'Sorry, something went wrong.')),
             }
             return updated
           })
@@ -786,6 +810,8 @@ export function MasterChatProvider({ children }: ProviderProps) {
           pendingCards.length = 0
           setMessages((prev) => [...prev, ...cards])
         }
+        // Silent turn (reflection answered `[PASS]`): drop the empty slot.
+        setMessages((prev) => prev.filter((m) => !(m === assistantMsg && m.content === '')))
         setLoading(false)
         setToolStatus(null)
         sendingRef.current = false
@@ -1347,6 +1373,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
       clearSession,
       markDisclosureSeen,
       setPortraitEnabled,
+      setViewingReading,
     }),
     [
       enabled,
@@ -1360,6 +1387,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
       clearSession,
       markDisclosureSeen,
       setPortraitEnabled,
+      setViewingReading,
     ],
   )
 
@@ -1384,4 +1412,9 @@ export function useMasterChatActions(): MasterChatActionsValue {
     throw new Error('useMasterChatActions must be used within a MasterChatProvider')
   }
   return ctx
+}
+
+/** Like useMasterChatActions, but returns null outside a MasterChatProvider. */
+export function useOptionalMasterChatActions(): MasterChatActionsValue | null {
+  return useContext(MasterChatActionsContext)
 }

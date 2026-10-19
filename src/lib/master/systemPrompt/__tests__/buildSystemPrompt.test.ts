@@ -64,6 +64,32 @@ describe('buildMasterSystemPrompt', () => {
     expect(prompt).toContain('八字合盘')
     expect(prompt).toContain('卦命互參')
   })
+
+  it('injects session budget note when approaching or at max turns', () => {
+    // 50 max turns, threshold is 5 turns remaining (Math.round(50*0.1) = 5)
+    const early = buildMasterSystemPrompt({
+      lang: 'zh-TW',
+      currentDateTime: '2026-04-11T00:00:00Z',
+      sessionBudget: { turn: 20, maxTurns: 50 },
+    })
+    expect(early).not.toContain('Session budget')
+
+    const near = buildMasterSystemPrompt({
+      lang: 'zh-TW',
+      currentDateTime: '2026-04-11T00:00:00Z',
+      sessionBudget: { turn: 47, maxTurns: 50 },
+    })
+    expect(near).toContain('Session budget — 3 turn(s) left')
+    expect(near).toContain('Steer toward a natural resting point')
+
+    const last = buildMasterSystemPrompt({
+      lang: 'zh-TW',
+      currentDateTime: '2026-04-11T00:00:00Z',
+      sessionBudget: { turn: 50, maxTurns: 50 },
+    })
+    expect(last).toContain('Session budget — this is the LAST turn')
+    expect(last).toContain('close naturally in the same reply')
+  })
 })
 
 describe('buildCapabilityCatalog', () => {

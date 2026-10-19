@@ -31,6 +31,7 @@ interface Props {
   isSelectMode?: boolean
   isSelected?: boolean
   onToggleSelect?: () => void
+  onStartNewSession?: () => void
 }
 
 export default function MessageBubble({
@@ -43,6 +44,7 @@ export default function MessageBubble({
   isSelectMode = false,
   isSelected = false,
   onToggleSelect,
+  onStartNewSession,
 }: Props) {
   const isUser = msg.role === 'user'
 
@@ -106,6 +108,45 @@ export default function MessageBubble({
         >
           ✓ {msg.content}
         </span>
+      </motion.div>
+    )
+  }
+
+  // Hard-limit notice — system-level, visually distinct from the Master's
+  // voice so it never reads like an abrupt in-character goodbye.
+  if (msg.kind === 'limit_notice') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex justify-center my-3"
+        role="status"
+      >
+        <div
+          className="max-w-[90%] w-full rounded-lg px-4 py-3 text-center"
+          style={{
+            background: 'var(--card-bg)',
+            border: '1px dashed var(--card-border)',
+          }}
+        >
+          <div className="text-[11px] tracking-widest mb-1" style={{ color: 'var(--gold)' }}>
+            {TEN(isEn, '對話已達上限', 'CONVERSATION LIMIT REACHED')}
+          </div>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            {msg.content}
+          </p>
+          {onStartNewSession && (
+            <button
+              type="button"
+              onClick={onStartNewSession}
+              className="mt-2.5 text-xs px-3 py-1 rounded-full border transition-colors hover:bg-[var(--gold)]/10"
+              style={{ color: 'var(--gold)', borderColor: 'var(--gold)' }}
+            >
+              {TEN(isEn, '開啟新對話', 'Start a new chat')}
+            </button>
+          )}
+        </div>
       </motion.div>
     )
   }

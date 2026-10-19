@@ -35,6 +35,28 @@ export interface BuildMasterSystemPromptInput {
   turnType?: TurnType
   /** Whether this is the first user message in a new topic (injects answer templates). */
   isFirstMessage?: boolean
+  /** Per-session turn budget; drives the "approaching the limit → wrap up naturally" note. */
+  sessionBudget?: { turn: number; maxTurns: number }
+}
+
+/** Remaining turns at or below which the master is told to begin wrapping up. */
+export function wrapUpThreshold(maxTurns: number): number {
+  return Math.max(3, Math.min(8, Math.round(maxTurns * 0.1)))
+}
+
+export function buildSessionBudgetNote(budget: { turn: number; maxTurns: number }): string | null {
+  const remaining = budget.maxTurns - budget.turn
+  if (remaining > wrapUpThreshold(budget.maxTurns)) return null
+  if (remaining <= 0) {
+    return [
+      '## Session budget — this is the LAST turn of this conversation',
+      'Answer the user fully, then close naturally in the same reply: tie off the current topic in one line (reference what was just discussed), and mention they can continue in a 「新對話」/"New Chat" any time. Do not ask a follow-up question.',
+    ].join('\n')
+  }
+  return [
+    `## Session budget — ${remaining} turn(s) left in this conversation`,
+    'Steer toward a natural resting point: finish the current thread rather than opening new branches, and avoid offering multiple new topics. When the current topic reaches a resting point, close gracefully with a line tied to what was discussed. Do NOT mention turn counts or limits explicitly.',
+  ].join('\n')
 }
 
 // Lazy-loaded appendix cache
@@ -89,8 +111,9 @@ export function buildMasterSystemPrompt(input: BuildMasterSystemPromptInput): st
 
   // ─── Dynamic context ───
   const contextBlock = buildContextBlock(input)
+  const budgetNote = input.sessionBudget ? buildSessionBudgetNote(input.sessionBudget) : null
 
-  return [stablePrefix, personalized, appendixBlock, contextBlock]
+  return [stablePrefix, personalized, appendixBlock, contextBlock, budgetNote]
     .filter(Boolean)
     .join('\n\n---\n\n')
 }
