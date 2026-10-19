@@ -11,17 +11,14 @@
  * with no surrounding prose.
  */
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import toast from 'react-hot-toast'
 import type { MasterMsg } from '../MasterChatContext'
 import { formatTime } from './formatTime'
-import { copyToClipboard } from './chatCopy'
 
 import MasterFeedbackPrompt from './MasterFeedbackPrompt'
-import { DivinationIcon, CopyIcon, CheckSealIcon } from '@/components/DivinationIcons'
+import { DivinationIcon } from '@/components/DivinationIcons'
 import { TEN } from '@/lib/i18n'
 
 interface Props {
@@ -48,18 +45,6 @@ export default function MessageBubble({
   onToggleSelect,
 }: Props) {
   const isUser = msg.role === 'user'
-  const [copied, setCopied] = useState(false)
-
-  const handleCopy = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!msg.content) return
-    const ok = await copyToClipboard(msg.content)
-    if (ok) {
-      setCopied(true)
-      toast.success(TEN(isEn, '已複製！', 'Copied!'))
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
 
   const renderSelectionIndicator = () => {
     if (!isSelectMode) return null
@@ -280,67 +265,19 @@ export default function MessageBubble({
         }}
       >
         {isUser ? (
-          <>
-            <p
-              className="text-sm leading-relaxed whitespace-pre-line"
-              style={{ color: 'var(--text-primary, #e0e0e0)' }}
-            >
-              {msg.content}
-            </p>
-            {!isSelectMode && msg.content && (
-              <div className="flex items-center justify-end mt-1.5 pt-1 border-t border-[rgba(212,175,55,0.15)]">
-                <button
-                  onClick={handleCopy}
-                  className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded text-[var(--text-muted)] hover:text-[var(--gold)] transition-all"
-                  title={TEN(isEn, '複製此條提問', 'Copy message')}
-                  aria-label={TEN(isEn, '複製此條提問', 'Copy message')}
-                >
-                  {copied ? (
-                    <>
-                      <CheckSealIcon size={11} color="var(--gold)" />
-                      <span className="text-[var(--gold)]">{TEN(isEn, '已複製', 'Copied')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <CopyIcon size={11} />
-                      <span>{TEN(isEn, '複製', 'Copy')}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </>
+          <p
+            className="text-sm leading-relaxed whitespace-pre-line"
+            style={{ color: 'var(--text-primary, #e0e0e0)' }}
+          >
+            {msg.content}
+          </p>
         ) : msg.content ? (
-          <>
-            <div
-              className="text-sm leading-relaxed font-serif prose-master"
-              style={{ color: 'var(--text-primary, #e0e0e0)' }}
-            >
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-            </div>
-            {!isSelectMode && !(loading && isLastMessage) && (
-              <div className="flex items-center justify-end mt-2 pt-1 border-t border-[var(--card-border)]/40">
-                <button
-                  onClick={handleCopy}
-                  className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded text-[var(--text-muted)] hover:text-[var(--gold)] hover:bg-[rgba(212,175,55,0.08)] transition-all"
-                  title={TEN(isEn, '複製此條回答', 'Copy reply')}
-                  aria-label={TEN(isEn, '複製此條回答', 'Copy reply')}
-                >
-                  {copied ? (
-                    <>
-                      <CheckSealIcon size={12} color="var(--gold)" />
-                      <span className="text-[var(--gold)]">{TEN(isEn, '已複製', 'Copied')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <CopyIcon size={12} />
-                      <span>{TEN(isEn, '複製', 'Copy')}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </>
+          <div
+            className="text-sm leading-relaxed font-serif prose-master"
+            style={{ color: 'var(--text-primary, #e0e0e0)' }}
+          >
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+          </div>
         ) : (
           loading && (
             <span
