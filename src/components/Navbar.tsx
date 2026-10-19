@@ -176,10 +176,10 @@ export default function Navbar() {
             <button
               onClick={() => { if (lang === 'zh-TW') setLang('en'); else setLang('zh-TW') }}
               className="px-2.5 py-1 rounded-lg border border-gold/30 text-gold/80 hover:border-gold hover:text-gold text-xs font-serif transition-colors"
-              aria-label={T(lang, 'Switch to English', '切換到中文')}
-              title={T(lang, 'Switch to English', '切換到中文')}
+              aria-label={T(lang, 'Switch to English', '切換到繁體中文')}
+              title={T(lang, 'Switch to English', '切換到繁體中文')}
             >
-              {T(lang, 'Switch to English', '切換到中文')}
+              {T(lang, 'Switch to English', '切換到繁體中文')}
             </button>
 
             {session ? (
@@ -357,7 +357,7 @@ export default function Navbar() {
             onClick={() => { if (lang === 'zh-TW') setLang('en'); else setLang('zh-TW') }}
             className="text-left text-gold/80 hover:text-gold py-1.5 font-serif text-sm"
           >
-            {T(lang, 'Switch to English', '切換到中文')}
+            {T(lang, 'Switch to English', '切換到繁體中文')}
           </button>
           {session && (
             <Link href="/profile" className="text-foreground/80 hover:text-gold py-1.5 font-serif text-sm flex items-center justify-between" onClick={() => setMenuOpen(false)}>
