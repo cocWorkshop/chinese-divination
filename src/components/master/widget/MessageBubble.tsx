@@ -11,14 +11,17 @@
  * with no surrounding prose.
  */
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import toast from 'react-hot-toast'
 import type { MasterMsg } from '../MasterChatContext'
 import { formatTime } from './formatTime'
+import { copyToClipboard } from './chatCopy'
 
 import MasterFeedbackPrompt from './MasterFeedbackPrompt'
-import { DivinationIcon } from '@/components/DivinationIcons'
+import { DivinationIcon, CopyIcon, CheckSealIcon } from '@/components/DivinationIcons'
 import { TEN } from '@/lib/i18n'
 
 interface Props {
@@ -28,6 +31,9 @@ interface Props {
   isEn: boolean
   onCtaClick: (msg: MasterMsg) => void
   onReadingCardClick: (url: string) => void
+  isSelectMode?: boolean
+  isSelected?: boolean
+  onToggleSelect?: () => void
 }
 
 export default function MessageBubble({
@@ -37,8 +43,53 @@ export default function MessageBubble({
   isEn,
   onCtaClick,
   onReadingCardClick,
+  isSelectMode = false,
+  isSelected = false,
+  onToggleSelect,
 }: Props) {
   const isUser = msg.role === 'user'
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!msg.content) return
+    const ok = await copyToClipboard(msg.content)
+    if (ok) {
+      setCopied(true)
+      toast.success(TEN(isEn, '已複製！', 'Copied!'))
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  const renderSelectionIndicator = () => {
+    if (!isSelectMode) return null
+    return (
+      <div
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleSelect?.()
+        }}
+        className="flex-shrink-0 self-center mr-2.5 sm:mr-3 cursor-pointer select-none"
+        aria-hidden
+      >
+        <div
+          className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+            isSelected
+              ? 'bg-[var(--gold)] text-[#080c17] shadow-sm'
+              : 'border border-[var(--gold)]/40 hover:border-[var(--gold)] bg-transparent'
+          }`}
+          role="checkbox"
+          aria-checked={isSelected}
+        >
+          {isSelected && (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   // Hide empty assistant text bubbles that aren't the in-flight last message.
   if (
@@ -101,13 +152,17 @@ export default function MessageBubble({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex justify-start"
+        className={`flex justify-start items-center ${isSelectMode ? 'cursor-pointer' : ''}`}
+        onClick={isSelectMode ? onToggleSelect : undefined}
       >
+        {renderSelectionIndicator()}
         <div
-          className="max-w-[90%] sm:max-w-[80%] rounded-xl p-4"
+          className={`max-w-[90%] sm:max-w-[80%] rounded-xl p-4 transition-all ${
+            isSelected ? 'ring-2 ring-[var(--gold)] shadow-md' : ''
+          }`}
           style={{
             background: 'var(--accent-bg, rgba(212,175,55,0.08))',
-            border: '1px solid var(--border-gold, rgba(212,175,55,0.35))',
+            border: `1px solid ${isSelected ? 'var(--gold)' : 'var(--border-gold, rgba(212,175,55,0.35))'}`,
             borderLeft: '3px solid var(--gold, #d4a853)',
           }}
         >
@@ -127,7 +182,14 @@ export default function MessageBubble({
             {msg.ctaPayload.ctaDescription}
           </p>
           <button
-            onClick={() => onCtaClick(msg)}
+            onClick={(e) => {
+              if (isSelectMode) {
+                e.stopPropagation()
+                onToggleSelect?.()
+              } else {
+                onCtaClick(msg)
+              }
+            }}
             className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-[0_0_12px_rgba(212,175,55,0.3)]"
             style={{ backgroundColor: 'var(--gold)', color: '#000' }}
           >
@@ -145,14 +207,25 @@ export default function MessageBubble({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex justify-start"
+        className={`flex justify-start items-center ${isSelectMode ? 'cursor-pointer' : ''}`}
+        onClick={isSelectMode ? onToggleSelect : undefined}
       >
+        {renderSelectionIndicator()}
         <button
-          onClick={() => onReadingCardClick(card.url)}
-          className="max-w-[90%] sm:max-w-[80%] rounded-xl p-3.5 text-left transition-all hover:shadow-[0_0_12px_rgba(212,175,55,0.2)]"
+          onClick={(e) => {
+            if (isSelectMode) {
+              e.stopPropagation()
+              onToggleSelect?.()
+            } else {
+              onReadingCardClick(card.url)
+            }
+          }}
+          className={`max-w-[90%] sm:max-w-[80%] rounded-xl p-3.5 text-left transition-all hover:shadow-[0_0_12px_rgba(212,175,55,0.2)] ${
+            isSelected ? 'ring-2 ring-[var(--gold)] bg-[rgba(212,175,55,0.08)]' : ''
+          }`}
           style={{
             background: 'transparent',
-            border: '1px dashed var(--border-gold, rgba(212,175,55,0.4))',
+            border: `1px dashed ${isSelected ? 'var(--gold)' : 'var(--border-gold, rgba(212,175,55,0.4))'}`,
           }}
         >
           <div className="flex items-start gap-2.5">
@@ -187,29 +260,87 @@ export default function MessageBubble({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+      className={`flex items-center w-full ${isUser && !isSelectMode ? 'justify-end' : 'justify-start'} ${
+        isSelectMode ? 'cursor-pointer' : ''
+      }`}
+      onClick={isSelectMode ? onToggleSelect : undefined}
     >
+      {renderSelectionIndicator()}
       <div
-        className="max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3"
+        className={`${isUser && isSelectMode ? 'ml-auto ' : ''}max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 transition-all ${
+          isSelected ? 'ring-2 ring-[var(--gold)] shadow-sm' : ''
+        }`}
         style={{
-          background: isUser ? 'var(--accent-bg)' : 'var(--card-bg)',
-          border: `1px solid ${isUser ? 'var(--border-gold)' : 'var(--card-border)'}`,
+          background: isSelected
+            ? 'rgba(212,175,55,0.12)'
+            : isUser
+              ? 'var(--accent-bg)'
+              : 'var(--card-bg)',
+          border: `1px solid ${isSelected ? 'var(--gold)' : isUser ? 'var(--border-gold)' : 'var(--card-border)'}`,
         }}
       >
         {isUser ? (
-          <p
-            className="text-sm leading-relaxed whitespace-pre-line"
-            style={{ color: 'var(--text-primary, #e0e0e0)' }}
-          >
-            {msg.content}
-          </p>
+          <>
+            <p
+              className="text-sm leading-relaxed whitespace-pre-line"
+              style={{ color: 'var(--text-primary, #e0e0e0)' }}
+            >
+              {msg.content}
+            </p>
+            {!isSelectMode && msg.content && (
+              <div className="flex items-center justify-end mt-1.5 pt-1 border-t border-[rgba(212,175,55,0.15)]">
+                <button
+                  onClick={handleCopy}
+                  className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded text-[var(--text-muted)] hover:text-[var(--gold)] transition-all"
+                  title={TEN(isEn, '複製此條提問', 'Copy message')}
+                  aria-label={TEN(isEn, '複製此條提問', 'Copy message')}
+                >
+                  {copied ? (
+                    <>
+                      <CheckSealIcon size={11} color="var(--gold)" />
+                      <span className="text-[var(--gold)]">{TEN(isEn, '已複製', 'Copied')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <CopyIcon size={11} />
+                      <span>{TEN(isEn, '複製', 'Copy')}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         ) : msg.content ? (
-          <div
-            className="text-sm leading-relaxed font-serif prose-master"
-            style={{ color: 'var(--text-primary, #e0e0e0)' }}
-          >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-          </div>
+          <>
+            <div
+              className="text-sm leading-relaxed font-serif prose-master"
+              style={{ color: 'var(--text-primary, #e0e0e0)' }}
+            >
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+            </div>
+            {!isSelectMode && !(loading && isLastMessage) && (
+              <div className="flex items-center justify-end mt-2 pt-1 border-t border-[var(--card-border)]/40">
+                <button
+                  onClick={handleCopy}
+                  className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded text-[var(--text-muted)] hover:text-[var(--gold)] hover:bg-[rgba(212,175,55,0.08)] transition-all"
+                  title={TEN(isEn, '複製此條回答', 'Copy reply')}
+                  aria-label={TEN(isEn, '複製此條回答', 'Copy reply')}
+                >
+                  {copied ? (
+                    <>
+                      <CheckSealIcon size={12} color="var(--gold)" />
+                      <span className="text-[var(--gold)]">{TEN(isEn, '已複製', 'Copied')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <CopyIcon size={12} />
+                      <span>{TEN(isEn, '複製', 'Copy')}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           loading && (
             <span
@@ -223,7 +354,6 @@ export default function MessageBubble({
             </span>
           )
         )}
-        {/* Timestamp hidden — clutters the conversation flow */}
       </div>
     </motion.div>
   )

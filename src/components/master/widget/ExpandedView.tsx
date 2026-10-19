@@ -14,13 +14,15 @@
 import { useEffect, useMemo, useRef, useState, KeyboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 import { useMasterChat, type MasterMsg } from '../MasterChatContext'
 import { useLang } from '@/components/LanguageContext'
 import { renderGreeting } from '@/lib/master/greetings'
 import { withCtaNonce } from '@/lib/master/ctaNav'
 import MessageBubble from './MessageBubble'
 import type { GateIntent } from './CollapsedBar'
-import { MasterSageIcon, SunMoonIcon, CloseIcon } from '@/components/DivinationIcons'
+import { MasterSageIcon, SunMoonIcon, CloseIcon, CopyIcon } from '@/components/DivinationIcons'
+import { copyToClipboard, formatMessagesForCopy } from './chatCopy'
 import { T } from '@/lib/i18n'
 import { langKey } from '@/lib/i18n'
 
@@ -50,6 +52,8 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
 
   const [input, setInput] = useState('')
   const [showMemoryPanel, setShowMemoryPanel] = useState(false)
+  const [isSelectMode, setIsSelectMode] = useState(false)
+  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const userScrolledRef = useRef(false)
@@ -87,31 +91,76 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
   // Auto-scroll on new messages. Instant on first paint, smooth thereafter.
   useEffect(() => {
     const el = scrollRef.current
-    if (!el || userScrolledRef.current) return
+    if (!el || userScrolledRef.current || isSelectMode) return
     const behavior: ScrollBehavior = justOpenedRef.current ? 'auto' : 'smooth'
     requestAnimationFrame(() => {
       el.scrollTo({ top: el.scrollHeight, behavior })
     })
     if (justOpenedRef.current) justOpenedRef.current = false
-  }, [messages, toolStatus])
+  }, [messages, toolStatus, isSelectMode])
 
   // Focus input on mount.
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 100)
   }, [])
 
-  // Escape collapses the overlay (standard modal dismissal). Document-level
-  // so it works regardless of where focus sits; skipped while the memory
-  // gate modal is up so Escape doesn't dismiss the view underneath it.
+  // Escape exits selection mode first, or collapses the overlay (standard modal dismissal).
   useEffect(() => {
     const onKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape' && !gateVisible) {
-        setShape('collapsed')
+        if (isSelectMode) {
+          setIsSelectMode(false)
+          setSelectedIndices(new Set())
+        } else {
+          setShape('collapsed')
+        }
       }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [gateVisible, setShape])
+  }, [gateVisible, isSelectMode, setShape])
+
+  const selectableIndices = useMemo(() => {
+    return messages
+      .map((m, idx) => ({ m, idx }))
+      .filter(({ m }) => m.kind !== 'feedback_prompt' && (m.content || m.readingCardPayload || m.ctaPayload))
+      .map(({ idx }) => idx)
+  }, [messages])
+
+  const allSelected = selectableIndices.length > 0 && selectableIndices.every((i) => selectedIndices.has(i))
+
+  const handleToggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIndices(new Set())
+    } else {
+      setSelectedIndices(new Set(selectableIndices))
+    }
+  }
+
+  const handleCopySelected = async () => {
+    if (selectedIndices.size === 0) return
+    const sortedIndices = Array.from(selectedIndices).sort((a, b) => a - b)
+    const selectedMsgs = sortedIndices.map((i) => messages[i]).filter(Boolean)
+    const formatted = formatMessagesForCopy(selectedMsgs, isEn)
+    if (!formatted) {
+      toast.error(T(lang, '無有效文字可複製', 'No copyable text'))
+      return
+    }
+    const ok = await copyToClipboard(formatted)
+    if (ok) {
+      toast.success(
+        T(
+          lang,
+          `已複製 ${selectedIndices.size} 條聊天記錄！`,
+          `Copied ${selectedIndices.size} chat messages!`
+        )
+      )
+      setIsSelectMode(false)
+      setSelectedIndices(new Set())
+    } else {
+      toast.error(T(lang, '複製失敗，請重試', 'Copy failed, please retry'))
+    }
+  }
 
   const handleSend = (text?: string) => {
     const msg = (text ?? input).trim()
@@ -240,9 +289,37 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                 )}
               </button>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              {!showMemoryPanel && messages.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (isSelectMode) {
+                      setIsSelectMode(false)
+                      setSelectedIndices(new Set())
+                    } else {
+                      setIsSelectMode(true)
+                      setSelectedIndices(new Set())
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 px-2.5 h-8 rounded-full text-xs transition-colors ${
+                    isSelectMode
+                      ? 'bg-[rgba(212,175,55,0.2)] text-[var(--gold)] border-[var(--gold)] font-medium shadow-sm'
+                      : 'hover:bg-[rgba(212,175,55,0.08)] text-[var(--text-muted)]'
+                  }`}
+                  style={{ border: '1px solid var(--card-border)' }}
+                  title={isSelectMode ? T(lang, '退出選擇模式', 'Exit selection mode') : T(lang, '多選複製聊天記錄', 'Select & copy messages')}
+                  aria-label={isSelectMode ? T(lang, '退出選擇模式', 'Exit selection mode') : T(lang, '多選複製聊天記錄', 'Select & copy messages')}
+                >
+                  <CopyIcon size={13} color="var(--gold)" />
+                  <span>{isSelectMode ? T(lang, '完成', 'Done') : T(lang, '選擇複製', 'Select')}</span>
+                </button>
+              )}
               <button
-                onClick={() => { void startNewSession() }}
+                onClick={() => {
+                  setIsSelectMode(false)
+                  setSelectedIndices(new Set())
+                  void startNewSession()
+                }}
                 className="flex items-center gap-1.5 px-3 h-8 rounded-full text-xs transition-colors hover:bg-[rgba(212,175,55,0.08)]"
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--card-border)' }}
                 title={T(lang, '開始新對話', 'Start a new chat')}
@@ -388,6 +465,16 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                     isEn={isEn}
                     onCtaClick={handleCtaClick}
                     onReadingCardClick={handleReadingCardClick}
+                    isSelectMode={isSelectMode}
+                    isSelected={selectedIndices.has(i)}
+                    onToggleSelect={() => {
+                      setSelectedIndices((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(i)) next.delete(i)
+                        else next.add(i)
+                        return next
+                      })
+                    }}
                   />
                 ))}
 
@@ -421,72 +508,117 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                 </AnimatePresence>
               </div>
 
-              {/* Input row */}
-              <div className="relative px-4 sm:px-5 py-3" style={{ borderTop: '1px solid var(--card-border)' }}>
-                <AnimatePresence>
-                  {cooldownLeft > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      role="status"
-                      className="mb-2 px-3 py-2 rounded-lg text-xs leading-relaxed"
-                      style={{
-                        color: 'var(--text-secondary)',
-                        border: '1px solid var(--card-border)',
-                        background: 'var(--accent-bg)',
-                      }}
+              {/* Bottom bar: Selection action bar OR normal input row */}
+              {isSelectMode ? (
+                <div
+                  className="relative px-4 sm:px-5 py-3 flex items-center justify-between gap-3 animate-fadeIn"
+                  style={{
+                    borderTop: '1px solid var(--card-border)',
+                    backgroundColor: 'var(--card-bg)',
+                  }}
+                >
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <button
+                      onClick={handleToggleSelectAll}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-[var(--card-border)] hover:bg-[rgba(212,175,55,0.08)] transition-all font-serif"
+                      style={{ color: 'var(--text-secondary)' }}
                     >
-                      {T(
-                        lang,
-                        `剛才的訊息未送出 — 打斷過於頻繁。請等當前回應結束，或約 ${cooldownLeft} 秒後再試。`,
-                        `Your last message wasn't sent — too many interruptions. Let the current reply finish, or try again in ~${cooldownLeft}s.`
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                <div className="flex gap-2 items-end">
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => {
-                      setInput(e.target.value)
-                      notifyTyping(e.target.value.length)
-                    }}
-                    onKeyDown={handleKeyDown}
-                    onFocus={(e) => {
-                      if (needsMemoryGate) {
-                        onRequestGate({ kind: 'open' })
-                        e.currentTarget.blur()
-                      }
-                    }}
-                    placeholder={T(lang, '請問大師...', 'Ask the Master...')}
-                    rows={1}
-                    className="flex-1 resize-none rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-1 transition-all"
-                    style={{
-                      color: 'var(--text-primary)',
-                      backgroundColor: 'var(--card-bg)',
-                      border: '1px solid var(--card-border)',
-                      maxHeight: '120px',
-                    }}
-                    disabled={loading || needsMemoryGate}
-                  />
-                  <button
-                    onClick={() => {
-                      if (needsMemoryGate) {
-                        onRequestGate({ kind: 'open' })
-                        return
-                      }
-                      handleSend()
-                    }}
-                    disabled={loading || (!needsMemoryGate && !input.trim())}
-                    className="rounded-xl px-4 py-2.5 text-sm font-medium transition-all disabled:opacity-20 hover:shadow-[0_0_15px_rgba(212,175,55,0.3)]"
-                    style={{ backgroundColor: 'var(--gold)', color: '#000' }}
-                  >
-                    {T(lang, '發送', 'Send')}
-                  </button>
+                      {allSelected ? T(lang, '取消全選', 'Deselect all') : T(lang, '全選', 'Select all')}
+                    </button>
+                    <span className="text-xs font-serif" style={{ color: 'var(--gold)' }}>
+                      {T(lang, `已選 ${selectedIndices.size} 條`, `${selectedIndices.size} selected`)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setIsSelectMode(false)
+                        setSelectedIndices(new Set())
+                      }}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-[var(--card-border)] hover:bg-[rgba(212,175,55,0.08)] transition-all"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      {T(lang, '取消', 'Cancel')}
+                    </button>
+                    <button
+                      onClick={handleCopySelected}
+                      disabled={selectedIndices.size === 0}
+                      className="flex items-center gap-1.5 text-xs px-4 py-1.5 rounded-lg font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-[0_0_12px_rgba(212,175,55,0.3)] active:scale-[0.98]"
+                      style={{ backgroundColor: 'var(--gold)', color: '#080c17' }}
+                    >
+                      <CopyIcon size={14} color="#080c17" />
+                      <span>{T(lang, '複製記錄', 'Copy Selected')}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="relative px-4 sm:px-5 py-3" style={{ borderTop: '1px solid var(--card-border)' }}>
+                  <AnimatePresence>
+                    {cooldownLeft > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        role="status"
+                        className="mb-2 px-3 py-2 rounded-lg text-xs leading-relaxed"
+                        style={{
+                          color: 'var(--text-secondary)',
+                          border: '1px solid var(--card-border)',
+                          background: 'var(--accent-bg)',
+                        }}
+                      >
+                        {T(
+                          lang,
+                          `剛才的訊息未送出 — 打斷過於頻繁。請等當前回應結束，或約 ${cooldownLeft} 秒後再試。`,
+                          `Your last message wasn't sent — too many interruptions. Let the current reply finish, or try again in ~${cooldownLeft}s.`
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <div className="flex gap-2 items-end">
+                    <textarea
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => {
+                        setInput(e.target.value)
+                        notifyTyping(e.target.value.length)
+                      }}
+                      onKeyDown={handleKeyDown}
+                      onFocus={(e) => {
+                        if (needsMemoryGate) {
+                          onRequestGate({ kind: 'open' })
+                          e.currentTarget.blur()
+                        }
+                      }}
+                      placeholder={T(lang, '請問大師...', 'Ask the Master...')}
+                      rows={1}
+                      className="flex-1 resize-none rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-1 transition-all"
+                      style={{
+                        color: 'var(--text-primary)',
+                        backgroundColor: 'var(--card-bg)',
+                        border: '1px solid var(--card-border)',
+                        maxHeight: '120px',
+                      }}
+                      disabled={loading || needsMemoryGate}
+                    />
+                    <button
+                      onClick={() => {
+                        if (needsMemoryGate) {
+                          onRequestGate({ kind: 'open' })
+                          return
+                        }
+                        handleSend()
+                      }}
+                      disabled={loading || (!needsMemoryGate && !input.trim())}
+                      className="rounded-xl px-4 py-2.5 text-sm font-medium transition-all disabled:opacity-20 hover:shadow-[0_0_15px_rgba(212,175,55,0.3)]"
+                      style={{ backgroundColor: 'var(--gold)', color: '#000' }}
+                    >
+                      {T(lang, '發送', 'Send')}
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
