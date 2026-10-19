@@ -138,6 +138,8 @@ describe('chatCopy helpers', () => {
         style: {},
         focus: vi.fn(),
         select: vi.fn(),
+        setAttribute: vi.fn(),
+        setSelectionRange: vi.fn(),
       }
       ;(globalThis as any).document = {
         createElement: vi.fn().mockReturnValue(fakeElement),

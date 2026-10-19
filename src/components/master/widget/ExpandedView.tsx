@@ -294,24 +294,48 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                 <button
                   onClick={() => {
                     if (isSelectMode) {
-                      setIsSelectMode(false)
-                      setSelectedIndices(new Set())
+                      if (selectedIndices.size > 0) {
+                        void handleCopySelected()
+                      } else {
+                        setIsSelectMode(false)
+                        setSelectedIndices(new Set())
+                      }
                     } else {
                       setIsSelectMode(true)
                       setSelectedIndices(new Set())
                     }
                   }}
                   className={`flex items-center gap-1.5 px-2.5 h-8 rounded-full text-xs transition-colors ${
-                    isSelectMode
-                      ? 'bg-[rgba(212,175,55,0.2)] text-[var(--gold)] border-[var(--gold)] font-medium shadow-sm'
-                      : 'hover:bg-[rgba(212,175,55,0.08)] text-[var(--text-muted)]'
+                    isSelectMode && selectedIndices.size > 0
+                      ? 'bg-[var(--gold)] text-[#080c17] font-medium shadow-sm hover:brightness-110 active:scale-[0.98]'
+                      : isSelectMode
+                        ? 'bg-[rgba(212,175,55,0.2)] text-[var(--gold)] border-[var(--gold)] font-medium shadow-sm'
+                        : 'hover:bg-[rgba(212,175,55,0.08)] text-[var(--text-muted)]'
                   }`}
-                  style={{ border: '1px solid var(--card-border)' }}
-                  title={isSelectMode ? T(lang, '退出選擇模式', 'Exit selection mode') : T(lang, '多選複製聊天記錄', 'Select & copy messages')}
-                  aria-label={isSelectMode ? T(lang, '退出選擇模式', 'Exit selection mode') : T(lang, '多選複製聊天記錄', 'Select & copy messages')}
+                  style={{ border: isSelectMode && selectedIndices.size > 0 ? 'none' : '1px solid var(--card-border)' }}
+                  title={
+                    isSelectMode
+                      ? selectedIndices.size > 0
+                        ? T(lang, '完成並複製所選記錄', 'Copy selected messages')
+                        : T(lang, '退出選擇模式', 'Exit selection mode')
+                      : T(lang, '多選複製聊天記錄', 'Select & copy messages')
+                  }
+                  aria-label={
+                    isSelectMode
+                      ? selectedIndices.size > 0
+                        ? T(lang, '完成並複製所選記錄', 'Copy selected messages')
+                        : T(lang, '退出選擇模式', 'Exit selection mode')
+                      : T(lang, '多選複製聊天記錄', 'Select & copy messages')
+                  }
                 >
-                  <CopyIcon size={13} color="var(--gold)" />
-                  <span>{isSelectMode ? T(lang, '完成', 'Done') : T(lang, '選擇複製', 'Select')}</span>
+                  <CopyIcon size={13} color={isSelectMode && selectedIndices.size > 0 ? '#080c17' : 'var(--gold)'} />
+                  <span>
+                    {!isSelectMode
+                      ? T(lang, '選擇複製', 'Select')
+                      : selectedIndices.size > 0
+                        ? T(lang, `完成複製 (${selectedIndices.size})`, `Copy (${selectedIndices.size})`)
+                        : T(lang, '完成', 'Done')}
+                  </span>
                 </button>
               )}
               <button
