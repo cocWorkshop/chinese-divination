@@ -1,20 +1,15 @@
 // Consistent yin-yang icon across all platforms (replaces ☯ emoji)
-export default function YinYangIcon({ size = 24, className = '' }: { size?: number; className?: string }) {
+export default function YinYangIcon({ size = 24, className = '', color }: { size?: number; className?: string; color?: string }) {
+  const stroke = color || 'currentColor'
+  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
   return (
-    // <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-    //   <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke="#d4a853" strokeWidth="2"/>
-    //   <path d="M50 2a48 48 0 0 1 0 96a24 24 0 0 1 0-48a24 24 0 0 0 0-48z" fill="#d4a853"/>
-    //   <circle cx="50" cy="26" r="7" fill="#0a0f1e"/>
-    //   <circle cx="50" cy="74" r="7" fill="#d4a853"/>
-    // </svg>
-
-      <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke="#d4a853" strokeWidth="2"/>
-      <path d="M50 2a48 48 0 0 1 0 96a24 24 0 0 1 0-48a24 24 0 0 0 0-48z" fill="#d4a853"/>
-      <circle cx="50" cy="26" r="8" fill="#0a0f1e"/>
-      <circle cx="50" cy="26" r="4" fill="#d4a853"/>
-      <circle cx="50" cy="74" r="8" fill="#d4a853"/>
-      <circle cx="50" cy="74" r="4" fill="#0a0f1e"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
+      <circle cx="50" cy="50" r="48" className="fill-gold/15 dark:fill-navy-950" stroke={stroke} strokeWidth="2"/>
+      <path d="M50 2a48 48 0 0 1 0 96a24 24 0 0 1 0-48a24 24 0 0 0 0-48z" fill={stroke}/>
+      <circle cx="50" cy="26" r="8" className="fill-gold/15 dark:fill-navy-950"/>
+      <circle cx="50" cy="26" r="4" fill={stroke}/>
+      <circle cx="50" cy="74" r="8" fill={stroke}/>
+      <circle cx="50" cy="74" r="4" className="fill-gold/15 dark:fill-navy-950"/>
     </svg>
   )
 }

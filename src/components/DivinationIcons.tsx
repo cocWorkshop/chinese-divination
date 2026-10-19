@@ -10,10 +10,11 @@ export interface IconProps {
 
 // 八字命理 — Four Pillars of Destiny
 export function BaZiIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || '#d4a853'
+  const stroke = color || 'currentColor'
+  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke={stroke} strokeWidth="1.5" opacity="0.3"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
+      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
       {/* Four pillars */}
       <rect x="18" y="25" width="14" height="50" rx="3" fill="none" stroke={stroke} strokeWidth="2"/>
       <rect x="36" y="25" width="14" height="50" rx="3" fill="none" stroke={stroke} strokeWidth="2"/>
@@ -42,10 +43,11 @@ export { default as IChingIcon } from './YinYangIcon'
 
 // 紫微斗數 — Star constellation / celestial chart
 export function ZiWeiIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || '#d4a853'
+  const stroke = color || 'currentColor'
+  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke={stroke} strokeWidth="1.5" opacity="0.3"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
+      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
       {/* Central star */}
       <polygon points="50,15 56,35 78,35 60,47 67,68 50,55 33,68 40,47 22,35 44,35" fill={stroke} opacity="0.9"/>
       {/* Orbit rings */}
@@ -64,10 +66,11 @@ export function ZiWeiIcon({ size = 24, className = '', color }: IconProps) {
 
 // 奇門遁甲 — Nine-palace grid with mystical compass feel
 export function QiMenIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || '#d4a853'
+  const stroke = color || 'currentColor'
+  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke={stroke} strokeWidth="1.5" opacity="0.3"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
+      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
       {/* 3x3 Grid */}
       <rect x="20" y="20" width="60" height="60" rx="3" fill="none" stroke={stroke} strokeWidth="1.5"/>
       <line x1="40" y1="20" x2="40" y2="80" stroke={stroke} strokeWidth="1" opacity="0.6"/>
@@ -88,10 +91,11 @@ export function QiMenIcon({ size = 24, className = '', color }: IconProps) {
 
 // 風水佈局 — Mountain & water with compass
 export function FengShuiIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || '#d4a853'
+  const stroke = color || 'currentColor'
+  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke={stroke} strokeWidth="1.5" opacity="0.3"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
+      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
       {/* Mountain */}
       <path d="M50 22 L72 65 L28 65 Z" fill="none" stroke={stroke} strokeWidth="2"/>
       <path d="M36 45 L50 22 L64 45" fill="none" stroke={stroke} strokeWidth="1" opacity="0.4"/>
@@ -106,10 +110,11 @@ export function FengShuiIcon({ size = 24, className = '', color }: IconProps) {
 
 // 梅花六壬 — Plum blossom with divination lines
 export function MeiHuaIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || '#d4a853'
+  const stroke = color || 'currentColor'
+  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke={stroke} strokeWidth="1.5" opacity="0.3"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
+      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
       {/* Five petals of plum blossom */}
       <circle cx="50" cy="30" r="10" fill="none" stroke={stroke} strokeWidth="1.5"/>
       <circle cx="69" cy="42" r="10" fill="none" stroke={stroke} strokeWidth="1.5" opacity="0.8"/>
@@ -128,10 +133,11 @@ export function MeiHuaIcon({ size = 24, className = '', color }: IconProps) {
 
 // 六爻神課 — Three classical bronze coins with square holes & hexagram line
 export function LiuYaoIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || '#d4a853'
+  const stroke = color || 'currentColor'
+  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke={stroke} strokeWidth="1.5" opacity="0.3"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
+      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
       {/* Top coin */}
       <circle cx="50" cy="35" r="16" fill="none" stroke={stroke} strokeWidth="1.75"/>
       <rect x="45" y="30" width="10" height="10" rx="1" fill="none" stroke={stroke} strokeWidth="1.5"/>
@@ -151,10 +157,11 @@ export function LiuYaoIcon({ size = 24, className = '', color }: IconProps) {
 
 // 小六壬掌訣
 export function XiaoLiuRenIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || '#d4a853'
+  const stroke = color || 'currentColor'
+  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke={stroke} strokeWidth="1.5" opacity="0.3"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
+      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
       {/* Palm outline */}
       <path d="M30 75 C30 85 45 90 55 90 C70 90 75 75 75 55 L75 40 C75 35 70 35 70 40 L70 50 L70 30 C70 25 65 25 65 30 L65 50 L65 22 C65 17 60 17 60 22 L60 50 L60 28 C60 23 55 23 55 28 L55 58 L45 50 C40 46 35 50 38 56 L46 66 L42 70 C36 70 30 70 30 75 Z" fill="none" stroke={stroke} strokeWidth="1.75"/>
       {/* Six points */}
@@ -170,10 +177,11 @@ export function XiaoLiuRenIcon({ size = 24, className = '', color }: IconProps) 
 
 // 塔羅牌陣
 export function TarotIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || '#d4a853'
+  const stroke = color || 'currentColor'
+  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="#0a0f1e" stroke={stroke} strokeWidth="1.5" opacity="0.3"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
+      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
       <rect x="32" y="20" width="36" height="60" rx="3" fill="none" stroke={stroke} strokeWidth="1.75"/>
       <rect x="36" y="24" width="28" height="52" rx="2" fill="none" stroke={stroke} strokeWidth="0.75" opacity="0.6"/>
       {/* Celestial Tarot emblem */}

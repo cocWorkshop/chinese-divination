@@ -221,7 +221,7 @@ export default function HomePage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <Link
                 href="/divination/bazi"
-                className="p-3 rounded-xl bg-foreground/[0.03] hover:bg-gold/[0.1] border border-gold/15 hover:border-gold/40 text-center transition-all group"
+                className="p-3 rounded-xl bg-gold/[0.05] dark:bg-gold/[0.06] hover:bg-gold/[0.12] border border-gold/15 hover:border-gold/40 text-center transition-all group"
               >
                 <div className="mb-1.5 group-hover:scale-110 transition-transform flex items-center justify-center">
                   <DivinationIcon type="bazi" size={26} className="text-gold" />
@@ -231,7 +231,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/divination/liuyao"
-                className="p-3 rounded-xl bg-foreground/[0.03] hover:bg-gold/[0.1] border border-gold/15 hover:border-gold/40 text-center transition-all group"
+                className="p-3 rounded-xl bg-gold/[0.05] dark:bg-gold/[0.06] hover:bg-gold/[0.12] border border-gold/15 hover:border-gold/40 text-center transition-all group"
               >
                 <div className="mb-1.5 group-hover:scale-110 transition-transform flex items-center justify-center">
                   <DivinationIcon type="liuyao" size={26} className="text-gold" />
@@ -241,7 +241,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/divination/ziwei"
-                className="p-3 rounded-xl bg-foreground/[0.03] hover:bg-gold/[0.1] border border-gold/15 hover:border-gold/40 text-center transition-all group"
+                className="p-3 rounded-xl bg-gold/[0.05] dark:bg-gold/[0.06] hover:bg-gold/[0.12] border border-gold/15 hover:border-gold/40 text-center transition-all group"
               >
                 <div className="mb-1.5 group-hover:scale-110 transition-transform flex items-center justify-center">
                   <DivinationIcon type="ziwei" size={26} className="text-gold" />
@@ -251,7 +251,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/divination/qimen"
-                className="p-3 rounded-xl bg-foreground/[0.03] hover:bg-gold/[0.1] border border-gold/15 hover:border-gold/40 text-center transition-all group"
+                className="p-3 rounded-xl bg-gold/[0.05] dark:bg-gold/[0.06] hover:bg-gold/[0.12] border border-gold/15 hover:border-gold/40 text-center transition-all group"
               >
                 <div className="mb-1.5 group-hover:scale-110 transition-transform flex items-center justify-center">
                   <DivinationIcon type="qimen" size={26} className="text-gold" />
