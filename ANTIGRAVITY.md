@@ -95,6 +95,12 @@ BASE_URL=http://localhost:8088 ./tests/run_tests.sh  # Run against local dev ser
 ./scripts/verify-famous-bazi.ts # Validate historical charts against BaZi calculator
 ```
 
+### Agent Discipline & Testing Rules (See `agents.md`)
+
+- **Issue-to-Test Imperative**: Every bug fix, refactor, or behavior modification MUST include corresponding Vitest tests. Never commit a fix without regression test coverage.
+- **Dev & Build Isolation**: Never run `npm run build` while `next dev` is running concurrently without cleaning `.next` and restarting `next dev`. Overwriting `.next` causes runtime `Cannot find module ... vendor-chunks` 500 crashes.
+- **Quality Gates**: Every change must pass `npx tsc --noEmit` (0 errors), `npx eslint src` (0 errors/warnings), and `npx vitest run` (100% pass).
+
 ---
 
 ## Workspace Directory Structure

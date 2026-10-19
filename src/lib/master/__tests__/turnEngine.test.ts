@@ -346,5 +346,39 @@ describe('runMasterTurn', () => {
     expect(events.some((e) => e.type === 'done')).toBe(true)
     expect(appendMasterChatMessageMock).not.toHaveBeenCalled()
   })
+
+  it('silently drops [PASS] in ambiguous_resume checkins without emitting bubbles or persisting message', async () => {
+    appendMasterChatMessageMock.mockClear()
+    streamLLMMock.mockReturnValue(
+      makeStream([
+        { type: 'content', text: '[PASS]' },
+        { type: 'done', finishReason: 'stop' },
+      ])
+    )
+
+    const events: any[] = []
+    const gen = runMasterTurn({
+      userId: 'user_1',
+      sessionId: 'session_1',
+      isCheckin: true,
+      checkinHint: 'ambiguous_resume',
+      isReflection: false,
+      systemPrompt: 'System',
+      initialMessages: [],
+      model: 'openai/gpt-4o',
+      toolCtx: {} as any,
+      masterSessionPk: 'pk_123',
+      lang: 'zh-TW',
+    })
+
+    for await (const ev of gen) {
+      events.push(ev)
+    }
+
+    const contentEvents = events.filter((e) => e.type === 'content' || e.type === 'bubble_break')
+    expect(contentEvents.length).toBe(0)
+    expect(events.some((e) => e.type === 'done')).toBe(true)
+    expect(appendMasterChatMessageMock).not.toHaveBeenCalled()
+  })
 })
 

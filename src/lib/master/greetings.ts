@@ -20,6 +20,17 @@ import { T } from '@/lib/i18n'
 
 export type GreetingLang = 'zh-TW' | 'en'
 
+export interface UserProfileSummary {
+  dayMasterOrMainStar?: { 'zh-TW': string; en: string } | null
+  realmTitle?: { 'zh-TW': string; en: string } | null
+  recentTopic?: { 'zh-TW': string; en: string } | null
+}
+
+export interface TemporalInsightInfo {
+  'zh-TW': string
+  en: string
+}
+
 export interface GreetingInput {
   lang: GreetingLang
   hasReadings: boolean
@@ -52,6 +63,95 @@ export interface GreetingInput {
    * expanded view's greeting.
    */
   presetOpener?: string
+  temporalInsight?: TemporalInsightInfo | null
+  userProfileSummary?: UserProfileSummary | null
+}
+
+const STEM_ELEMENT_MAP: Record<string, { zh: string; en: string; element: 'wood' | 'fire' | 'earth' | 'metal' | 'water' }> = {
+  甲: { zh: '甲木', en: 'Jia Wood', element: 'wood' },
+  乙: { zh: '乙木', en: 'Yi Wood', element: 'wood' },
+  丙: { zh: '丙火', en: 'Bing Fire', element: 'fire' },
+  丁: { zh: '丁火', en: 'Ding Fire', element: 'fire' },
+  戊: { zh: '戊土', en: 'Wu Earth', element: 'earth' },
+  己: { zh: '己土', en: 'Ji Earth', element: 'earth' },
+  庚: { zh: '庚金', en: 'Geng Metal', element: 'metal' },
+  辛: { zh: '辛金', en: 'Xin Metal', element: 'metal' },
+  壬: { zh: '壬水', en: 'Ren Water', element: 'water' },
+  癸: { zh: '癸水', en: 'Gui Water', element: 'water' },
+}
+
+export function formatDayMaster(stem: string, lang: GreetingLang = 'zh-TW'): string {
+  if (!stem) return ''
+  const firstChar = stem.charAt(0)
+  const mapped = STEM_ELEMENT_MAP[firstChar]
+  if (mapped) {
+    return T(lang, mapped.zh, mapped.en)
+  }
+  return stem
+}
+
+const TEMPORAL_INSIGHTS: Record<'wood' | 'fire' | 'earth' | 'metal' | 'water', { zh: string; en: string }> = {
+  wood: {
+    zh: '青陽敷榮，木氣漸舒。利在定策萌發，宜徐圖致遠。',
+    en: 'Wood Qi flourishes gently. Favors planning and quiet beginnings; patience yields endurance.',
+  },
+  fire: {
+    zh: '離明當運，神采充暢。宜燭照事理，忌心浮氣躁。',
+    en: 'Fire Qi burns bright and active. Ideal for illumination and clear perception; beware restlessness.',
+  },
+  earth: {
+    zh: '土厚德聚，中正守真。宜培元固本，忌妄變常規。',
+    en: 'Earth Qi is solid and centering. Nurture foundations and integrity; avoid erratic changes.',
+  },
+  metal: {
+    zh: '秋氣肅成，白帝行令。宜辨析是非，斬斷紛擾。',
+    en: 'Metal Qi is sharp and discerning. Favorable for cutting through ambiguity and resolving doubts.',
+  },
+  water: {
+    zh: '水德善柔，智圓行方。宜順勢化解，避險藏鋒。',
+    en: 'Water Qi flows with subtle wisdom. Favorable for adapting with grace and quietly conserving strength.',
+  },
+}
+
+const FALLBACK_INSIGHT = {
+  zh: '四時循序，陰陽相生。隨順時令，動靜自適。',
+  en: 'The cosmic seasons rotate in balance. Flow with the natural rhythm of timing.',
+}
+
+export function computeTemporalInsight(
+  dayGanZhi?: string | null,
+  jieQi?: string | null,
+  lang: GreetingLang = 'zh-TW',
+): string {
+  if (!dayGanZhi || dayGanZhi.length === 0) {
+    return T(lang, FALLBACK_INSIGHT.zh, FALLBACK_INSIGHT.en)
+  }
+  const stem = dayGanZhi.charAt(0)
+  const mapped = STEM_ELEMENT_MAP[stem]
+  if (!mapped) {
+    return T(lang, FALLBACK_INSIGHT.zh, FALLBACK_INSIGHT.en)
+  }
+  const insight = TEMPORAL_INSIGHTS[mapped.element]
+  return T(lang, insight.zh, insight.en)
+}
+
+const TOPIC_LABELS: Record<string, { zh: string; en: string }> = {
+  career: { zh: '事業轉機', en: 'Career & Ambition' },
+  wealth: { zh: '財富運勢', en: 'Wealth & Assets' },
+  marriage: { zh: '婚姻感情', en: 'Love & Marriage' },
+  relationship: { zh: '人際緣分', en: 'Relationships' },
+  health: { zh: '身心安康', en: 'Health & Vitality' },
+  family: { zh: '家庭六親', en: 'Family Dynamics' },
+  study: { zh: '學業功名', en: 'Academics & Tests' },
+}
+
+export function formatRecentTopic(topicKey: string, lang: GreetingLang = 'zh-TW'): string {
+  const norm = topicKey.trim().toLowerCase()
+  const found = TOPIC_LABELS[norm]
+  if (found) {
+    return T(lang, found.zh, found.en)
+  }
+  return topicKey
 }
 
 /** Destiny-chart types: stable, birth-anchored charts the Master can reference. */
@@ -156,69 +256,130 @@ function buildState2Suggestions(
     : T(lang, '今年', 'this year')
 
   if (hasBoth) {
+    const crossChartPromptsZh = [
+      '請以八字、紫微互參，看我的格局',
+      '互參我的八字喜忌與紫微大限',
+      '從星曜與五行看我當前的轉機',
+    ]
+    const crossChartPromptsEn = [
+      'Cross-reference my BaZi and Zi Wei',
+      'Synthesize my favorable elements and major limits',
+      'Examine my turning points via stars and elements',
+    ]
+
+    const yearPromptsZh = [
+      `${yearLabel}的運勢如何？`,
+      `${yearLabel}最需留意的變數在哪？`,
+      `${yearLabel}利在開拓還是守成？`,
+    ]
+    const yearPromptsEn = [
+      `How does ${yearLabel} look for me?`,
+      `What key variables should I watch in ${yearLabel}?`,
+      `Does ${yearLabel} favor expansion or steady defense?`,
+    ]
+
+    const thirdPromptsZh = [
+      '想為家人也起一張盤',
+      '我當下最該防範的心性盲點是什麼？',
+      '請大師為我提煉近期的趨吉之法',
+    ]
+    const thirdPromptsEn = [
+      'Cast a chart for someone in my family',
+      'What core blind spot should I guard against right now?',
+      'What practical adjustments will maximize my fortune?',
+    ]
+
+    const idx1 = Math.floor(Math.random() * crossChartPromptsZh.length)
+    const idx2 = Math.floor(Math.random() * yearPromptsZh.length)
+    const idx3 = Math.floor(Math.random() * thirdPromptsZh.length)
+
     return T(
       lang,
-      [
-        '請以八字、紫微互參，看我的格局',
-        `${yearLabel}的運勢如何？`,
-        '想為家人也起一張盤',
-      ],
-      [
-        'Cross-reference my BaZi and Zi Wei',
-        `How does ${yearLabel} look for me?`,
-        'Cast a chart for someone in my family',
-      ],
+      [crossChartPromptsZh[idx1], yearPromptsZh[idx2], thirdPromptsZh[idx3]],
+      [crossChartPromptsEn[idx1], yearPromptsEn[idx2], thirdPromptsEn[idx3]],
     )
   }
 
   if (hasDestiny) {
     const ownChart = hasBazi ? T(lang, '八字', 'BaZi') : T(lang, '紫微', 'Zi Wei')
     const otherChart = hasBazi ? T(lang, '紫微', 'Zi Wei') : T(lang, '八字', 'BaZi')
+
+    const ownPromptsZh = [
+      `帶我細看我的${ownChart}命盤`,
+      `我${ownChart}命局中最突出的優勢是什麼？`,
+      `看我當前大運走勢與關鍵時機`,
+    ]
+    const ownPromptsEn = [
+      `Walk me through my ${ownChart} chart`,
+      `What is the most prominent strength in my ${ownChart}?`,
+      `Examine my current major cycle and key timing`,
+    ]
+
+    const yearPromptsZh = [
+      `${yearLabel}的運勢如何？`,
+      `${yearLabel}最利哪方面發展？`,
+    ]
+    const yearPromptsEn = [
+      `How does ${yearLabel} look for me?`,
+      `Which life domain is most favored in ${yearLabel}?`,
+    ]
+
+    const otherPromptsZh = [
+      `我也想看${otherChart}`,
+      '想為身邊人也推算一張盤',
+    ]
+    const otherPromptsEn = [
+      `Cast my ${otherChart} chart too`,
+      'Cast a chart for someone close to me',
+    ]
+
+    const idx1 = Math.floor(Math.random() * ownPromptsZh.length)
+    const idx2 = Math.floor(Math.random() * yearPromptsZh.length)
+    const idx3 = Math.floor(Math.random() * otherPromptsZh.length)
+
     return T(
       lang,
-      [
-        `帶我細看我的${ownChart}命盤`,
-        `${yearLabel}的運勢如何？`,
-        `我也想看${otherChart}`,
-      ],
-      [
-        `Walk me through my ${ownChart} chart`,
-        `How does ${yearLabel} look for me?`,
-        `Cast my ${otherChart} chart too`,
-      ],
+      [ownPromptsZh[idx1], yearPromptsZh[idx2], otherPromptsZh[idx3]],
+      [ownPromptsEn[idx1], yearPromptsEn[idx2], otherPromptsEn[idx3]],
     )
   }
 
   if (oracleCount > 0) {
+    const q1Zh = ['請再為我看上次起的卦', '上次所占之事的轉折點在何時？']
+    const q1En = ['Re-read my last hexagram', 'When is the turning point of my last cast?']
+    const q2Zh = ['我有新問題，想再起一卦', '當前局面有何趨吉避凶之策？']
+    const q2En = ['I have a new question — cast another', 'How to mitigate obstacles in my situation?']
+    const q3Zh = ['想看大局，請為我起八字', '想看生平格局，為我排盤']
+    const q3En = ['Cast my BaZi to see the bigger picture', 'Cast my destiny chart for long-term vision']
+
+    const idx1 = Math.floor(Math.random() * q1Zh.length)
+    const idx2 = Math.floor(Math.random() * q2Zh.length)
+    const idx3 = Math.floor(Math.random() * q3Zh.length)
+
     return T(
       lang,
-      [
-        '請再為我看上次起的卦',
-        '我有新問題，想再起一卦',
-        '想看大局，請為我起八字',
-      ],
-      [
-        'Re-read my last hexagram',
-        'I have a new question — cast another',
-        'Cast my BaZi to see the bigger picture',
-      ],
+      [q1Zh[idx1], q2Zh[idx2], q3Zh[idx3]],
+      [q1En[idx1], q2En[idx2], q3En[idx3]],
     )
   }
 
   // hasReadings was true but no self-charted readings (e.g. only family
   // readings on file). Stay generic but still anchor the year if available.
+  const generic1Zh = ['取出上次的占卜給我看', '檢視我已保存的推演紀錄']
+  const generic1En = ['Show me my last reading', 'Review my saved reading records']
+  const generic2Zh = [`${yearLabel}的運勢如何？`, `${yearLabel}有哪些關鍵機遇？`]
+  const generic2En = [`How does ${yearLabel} look for me?`, `What key opportunities are in ${yearLabel}?`]
+  const generic3Zh = ['玄機大師還能為我做什麼？', '為我分析未來的行運節奏']
+  const generic3En = ['What else can you do for me?', 'Analyze my future life timing rhythm']
+
+  const gIdx1 = Math.floor(Math.random() * generic1Zh.length)
+  const gIdx2 = Math.floor(Math.random() * generic2Zh.length)
+  const gIdx3 = Math.floor(Math.random() * generic3Zh.length)
+
   return T(
     lang,
-    [
-      '取出上次的占卜給我看',
-      `${yearLabel}的運勢如何？`,
-      '玄機大師還能為我做什麼？',
-    ],
-    [
-      'Show me my last reading',
-      `How does ${yearLabel} look for me?`,
-      'What else can you do for me?',
-    ],
+    [generic1Zh[gIdx1], generic2Zh[gIdx2], generic3Zh[gIdx3]],
+    [generic1En[gIdx1], generic2En[gIdx2], generic3En[gIdx3]],
   )
 }
 

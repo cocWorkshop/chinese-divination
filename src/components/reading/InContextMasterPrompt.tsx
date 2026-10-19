@@ -4,19 +4,22 @@ import { useMasterChat } from '@/components/master/MasterChatContext'
 import { motion } from 'framer-motion'
 import { MasterSageIcon } from '@/components/DivinationIcons'
 import { T } from '@/lib/i18n'
+import { useMemo, useEffect } from 'react'
 
 interface InContextMasterPromptProps {
   divinationType: string
   readingId?: string | null
   lang?: string
+  result?: string | Record<string, unknown> | null
 }
 
 export default function InContextMasterPrompt({
   divinationType,
   readingId,
   lang = 'zh-TW',
+  result,
 }: InContextMasterPromptProps) {
-  const { setShape, sendMessage, loading } = useMasterChat()
+  const { setShape, sendMessage, loading, setViewingReading } = useMasterChat()
 
   const getPrompts = (): string[] => {
     switch (divinationType) {
@@ -93,12 +96,36 @@ export default function InContextMasterPrompt({
     }
   }
 
-  const prompts = getPrompts()
+  // Dynamic LLM-generated suggested questions from divination result
+  const dynamicQuestions: string[] = useMemo(() => {
+    if (!result) return []
+    try {
+      const parsed = typeof result === 'string' ? JSON.parse(result) : result
+      if (Array.isArray(parsed?.suggestedQuestions) && parsed.suggestedQuestions.length > 0) {
+        return parsed.suggestedQuestions
+          .filter((q: unknown): q is string => typeof q === 'string' && q.trim().length > 0)
+      }
+    } catch {
+      // not valid JSON yet or streaming
+    }
+    return []
+  }, [result])
+
+  const prompts = dynamicQuestions.length > 0 ? dynamicQuestions : getPrompts()
+
+  useEffect(() => {
+    if (readingId && setViewingReading) {
+      setViewingReading(readingId, dynamicQuestions.length > 0 ? dynamicQuestions : undefined)
+    }
+  }, [readingId, setViewingReading, dynamicQuestions])
 
   const handleAsk = (promptText: string) => {
+    if (readingId && setViewingReading) {
+      setViewingReading(readingId, dynamicQuestions.length > 0 ? dynamicQuestions : undefined)
+    }
     setShape('expanded')
     if (!loading) {
-      sendMessage(promptText)
+      void sendMessage(promptText)
     }
   }
 

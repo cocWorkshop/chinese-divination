@@ -32,9 +32,18 @@ export default function XuanjiChatCard({ readingResult, readingType, readingId, 
 
   useEffect(() => {
     if (!masterReplacesQa || !readingId || !setViewingReading) return
-    setViewingReading(readingId)
+    let questions: string[] | undefined
+    try {
+      const parsed = typeof readingResult === 'string' ? JSON.parse(readingResult) : readingResult
+      if (Array.isArray(parsed?.suggestedQuestions) && parsed.suggestedQuestions.length > 0) {
+        questions = parsed.suggestedQuestions.filter((q: unknown): q is string => typeof q === 'string' && q.trim().length > 0)
+      }
+    } catch {
+      /* ignore JSON parse failure */
+    }
+    setViewingReading(readingId, questions)
     return () => setViewingReading(null)
-  }, [masterReplacesQa, readingId, setViewingReading])
+  }, [masterReplacesQa, readingId, readingResult, setViewingReading])
 
   if (masterReplacesQa) return null
 

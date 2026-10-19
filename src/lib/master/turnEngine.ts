@@ -169,10 +169,10 @@ export async function* runMasterTurn(
       if (text) buffered.push({ type: 'content', text })
     }
     const emitBreak = () => buffered.push({ type: 'bubble_break' })
-    // Reflection turns are held back until the model finishes: if it has
-    // nothing worth adding it answers `[PASS]`, and we drop the turn
-    // silently rather than streaming a disconnected stock farewell.
-    const holdOutput = input.isReflection
+    // Reflection and ambiguous-resume turns are held back until the model finishes:
+    // if it has nothing worth adding it answers `[PASS]`, and we drop the turn
+    // silently rather than streaming disconnected stock filler.
+    const holdOutput = input.isReflection || (input.isCheckin && input.checkinHint === 'ambiguous_resume')
     const flushBuffered = function* (): Generator<EngineEvent> {
       if (holdOutput) return
       while (buffered.length > 0) {

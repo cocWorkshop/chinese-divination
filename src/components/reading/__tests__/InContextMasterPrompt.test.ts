@@ -117,4 +117,43 @@ describe('InContextMasterPrompt prompt logic', () => {
     expect(zh).toHaveLength(3)
     expect(zh[0]).toContain('天時玄機')
   })
+
+  it('prefers dynamic LLM suggestedQuestions when present in reading result', () => {
+    const mockResult = JSON.stringify({
+      chart: { year: '丙午' },
+      suggestedQuestions: [
+        '今年我的事業會有什麼重大轉機？',
+        '命中正緣何時顯現？',
+        '如何化解近期的五行相沖？',
+      ],
+    })
+
+    const parsed = JSON.parse(mockResult)
+    const dynamicQuestions = (parsed.suggestedQuestions as string[]).filter(
+      (q: unknown): q is string => typeof q === 'string' && q.trim().length > 0
+    )
+
+    expect(dynamicQuestions).toHaveLength(3)
+    expect(dynamicQuestions[0]).toBe('今年我的事業會有什麼重大轉機？')
+    expect(dynamicQuestions[1]).toBe('命中正緣何時顯現？')
+    expect(dynamicQuestions[2]).toBe('如何化解近期的五行相沖？')
+  })
+
+  it('falls back gracefully when reading result is malformed or missing suggestedQuestions', () => {
+    const malformed = 'not-valid-json'
+    let dynamicQuestions: string[] = []
+    try {
+      const parsed = JSON.parse(malformed)
+      if (Array.isArray(parsed?.suggestedQuestions)) {
+        dynamicQuestions = parsed.suggestedQuestions
+      }
+    } catch {
+      // falls back to getPrompts
+    }
+
+    expect(dynamicQuestions).toHaveLength(0)
+    const fallback = getPromptsForType('bazi', true)
+    expect(fallback).toHaveLength(3)
+    expect(fallback[0]).toContain('喜用神')
+  })
 })

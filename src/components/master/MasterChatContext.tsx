@@ -150,6 +150,15 @@ export interface GreetingHints {
     jieQi: string
     yearGanZhi: string
   } | null
+  temporalInsight?: {
+    'zh-TW': string
+    en: string
+  } | null
+  userProfileSummary?: {
+    dayMasterOrMainStar?: { 'zh-TW': string; en: string } | null
+    realmTitle?: { 'zh-TW': string; en: string } | null
+    recentTopic?: { 'zh-TW': string; en: string } | null
+  } | null
 }
 
 interface MasterChatContextValue {
@@ -206,6 +215,16 @@ interface MasterChatContextValue {
    * himself" with two different sentences in one session.
    */
   widgetOpener: string
+  /**
+   * Register the reading the user is currently looking at (result page).
+   * Sent with every turn so the Master answers with that reading in context.
+   * Pass null on unmount.
+   */
+  setViewingReading: (readingId: string | null, suggestedQuestions?: string[] | null) => void
+  /** Currently viewing reading ID, if any. */
+  viewingReadingId: string | null
+  /** Dynamic LLM-generated follow-up questions from the on-screen reading. */
+  viewingReadingQuestions: string[]
 }
 
 export interface MasterChatActionsValue {
@@ -225,7 +244,7 @@ export interface MasterChatActionsValue {
    * Sent with every turn so the Master answers with that reading in context.
    * Pass null on unmount.
    */
-  setViewingReading: (readingId: string | null) => void
+  setViewingReading: (readingId: string | null, suggestedQuestions?: string[] | null) => void
 }
 
 const MasterChatContext = createContext<MasterChatContextValue | null>(null)
@@ -282,8 +301,16 @@ export function MasterChatProvider({ children }: ProviderProps) {
   // Reading the user is currently viewing; attached to each turn so the
   // Master always has the on-screen reading in context.
   const viewingReadingRef = useRef<string | null>(null)
-  const setViewingReading = useCallback((readingId: string | null) => {
+  const [viewingReadingId, setViewingReadingId] = useState<string | null>(null)
+  const [viewingReadingQuestions, setViewingReadingQuestions] = useState<string[]>([])
+  const setViewingReading = useCallback((readingId: string | null, suggestedQuestions?: string[] | null) => {
     viewingReadingRef.current = readingId
+    setViewingReadingId(readingId)
+    if (suggestedQuestions && suggestedQuestions.length > 0) {
+      setViewingReadingQuestions(suggestedQuestions)
+    } else if (!readingId) {
+      setViewingReadingQuestions([])
+    }
   }, [])
   const sendingRef = useRef(false)
   // Resolves when the in-flight turn fully cleans up (sendingRef → false,
@@ -385,6 +412,12 @@ export function MasterChatProvider({ children }: ProviderProps) {
         lastReading?: { type: string; createdAt: string } | null
         readingTypeCounts?: Record<string, number>
         temporalContext?: { dayGanZhi: string; jieQi: string; yearGanZhi: string } | null
+        temporalInsight?: { 'zh-TW': string; en: string } | null
+        userProfileSummary?: {
+          dayMasterOrMainStar?: { 'zh-TW': string; en: string } | null
+          realmTitle?: { 'zh-TW': string; en: string } | null
+          recentTopic?: { 'zh-TW': string; en: string } | null
+        } | null
         disclosureSeen?: boolean
         portraitEnabled?: boolean
       }
@@ -444,6 +477,8 @@ export function MasterChatProvider({ children }: ProviderProps) {
         lastReading: data.lastReading ?? null,
         readingTypeCounts: data.readingTypeCounts ?? {},
         temporalContext: data.temporalContext ?? null,
+        temporalInsight: data.temporalInsight ?? null,
+        userProfileSummary: data.userProfileSummary ?? null,
       })
       setDisclosureSeen(data.disclosureSeen ?? true)
       setPortraitEnabledState(data.portraitEnabled ?? true)
@@ -1030,15 +1065,20 @@ export function MasterChatProvider({ children }: ProviderProps) {
       await runTurn({ checkin: 'unanswered_user' })
       return
     }
-    if (last.role === 'assistant' && isConversationClosed(detectableMessages, lang)) {
-      // Conversation looks closed; stay silent.
+    if (last.role === 'assistant') {
+      if (isConversationClosed(detectableMessages, lang)) {
+        // Conversation looks closed; stay silent.
+        return
+      }
+      if (ageMs > LONG_GAP_THRESHOLD_MS) {
+        await runTurn({ checkin: 'long_gap_resume' })
+        return
+      }
+      // If the assistant was the last speaker and it hasn't been a long gap,
+      // the assistant already answered and is waiting for the user. Do NOT
+      // badger the user with repetitive greetings on repeated opens.
       return
     }
-    if (ageMs > LONG_GAP_THRESHOLD_MS) {
-      await runTurn({ checkin: 'long_gap_resume' })
-      return
-    }
-    await runTurn({ checkin: 'ambiguous_resume' })
   }, [enabled, messages, runTurn, lang, isUserActivelyTyping])
 
   // ── Idle reflection scheduler ────────────────────────────────────────────
@@ -1350,13 +1390,16 @@ export function MasterChatProvider({ children }: ProviderProps) {
       historyLoaded,
       widgetOpener,
       interruptCooldownUntil,
+      setViewingReading,
+      viewingReadingId,
+      viewingReadingQuestions,
     }),
     [
       enabled, shape, toggleShape, messages, loading, toolStatus, pendingReading,
       greetingHints, disclosureSeen, portraitEnabled,
       sendMessage, notifyTyping, cancelPendingReading, startNewSession, clearSession,
       markDisclosureSeen, setPortraitEnabled, historyLoaded, widgetOpener,
-      interruptCooldownUntil,
+      interruptCooldownUntil, setViewingReading, viewingReadingId, viewingReadingQuestions,
     ],
   )
 

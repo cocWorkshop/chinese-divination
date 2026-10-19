@@ -73,6 +73,17 @@ export function findLatestPendingCTA(
       }
       if (supersededByLaterReading) continue
 
+      // If the assistant already sent a follow-up message after this CTA,
+      // it has already checked in. Do not nag repeatedly on subsequent opens.
+      let alreadyFollowedUp = false
+      for (let j = i + 1; j < messages.length; j++) {
+        if (messages[j].role === 'assistant') {
+          alreadyFollowedUp = true
+          break
+        }
+      }
+      if (alreadyFollowedUp) continue
+
       const target: 'self' | 'family' = inferCtaTarget(m.ctaPayload)
       return { timestamp: m.timestamp, type: ctaType, target }
     }

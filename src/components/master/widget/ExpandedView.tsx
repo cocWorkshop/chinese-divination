@@ -23,6 +23,7 @@ import MessageBubble from './MessageBubble'
 import type { GateIntent } from './CollapsedBar'
 import { MasterSageIcon, SunMoonIcon, CloseIcon, CopyIcon } from '@/components/DivinationIcons'
 import { copyToClipboard, formatMessagesForCopy } from './chatCopy'
+import { MasterWelcomeBoard } from './MasterWelcomeBoard'
 import { T } from '@/lib/i18n'
 import { langKey } from '@/lib/i18n'
 
@@ -48,7 +49,11 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
     interruptCooldownUntil,
     portraitEnabled,
     setPortraitEnabled,
+    viewingReadingId,
+    viewingReadingQuestions,
   } = useMasterChat()
+
+  const isReadingMode = Boolean(viewingReadingId || (viewingReadingQuestions && viewingReadingQuestions.length > 0))
 
   const [input, setInput] = useState('')
   const [showMemoryPanel, setShowMemoryPanel] = useState(false)
@@ -73,6 +78,8 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
         lastReading: greetingHints.lastReading,
         readingTypeCounts: greetingHints.readingTypeCounts,
         temporalContext: greetingHints.temporalContext,
+        temporalInsight: greetingHints.temporalInsight,
+        userProfileSummary: greetingHints.userProfileSummary,
         // Reuse the opener picked once at provider mount — the user
         // already saw this exact line in the collapsed bar's hint, so
         // randomizing again here would produce two introductions.
@@ -84,6 +91,8 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
       greetingHints.lastReading,
       greetingHints.readingTypeCounts,
       greetingHints.temporalContext,
+      greetingHints.temporalInsight,
+      greetingHints.userProfileSummary,
       widgetOpener,
     ],
   )
@@ -316,14 +325,14 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                   title={
                     isSelectMode
                       ? selectedIndices.size > 0
-                        ? T(lang, '完成並複製所選記錄', 'Copy selected messages')
+                        ? T(lang, '完成', 'Done')
                         : T(lang, '退出選擇模式', 'Exit selection mode')
                       : T(lang, '多選複製聊天記錄', 'Select & copy messages')
                   }
                   aria-label={
                     isSelectMode
                       ? selectedIndices.size > 0
-                        ? T(lang, '完成並複製所選記錄', 'Copy selected messages')
+                        ? T(lang, '完成', 'Done')
                         : T(lang, '退出選擇模式', 'Exit selection mode')
                       : T(lang, '多選複製聊天記錄', 'Select & copy messages')
                   }
@@ -333,7 +342,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                     {!isSelectMode
                       ? T(lang, '選擇複製', 'Select')
                       : selectedIndices.size > 0
-                        ? T(lang, `完成複製 (${selectedIndices.size})`, `Copy (${selectedIndices.size})`)
+                        ? T(lang, `完成 (${selectedIndices.size})`, `Done (${selectedIndices.size})`)
                         : T(lang, '完成', 'Done')}
                   </span>
                 </button>
@@ -455,28 +464,17 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                 aria-label="Chat messages"
               >
                 {showWelcome && (
-                  <div className="flex flex-col items-center text-center pt-8 pb-4">
-                    <div className="w-16 h-px mb-6" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
-                    <p
-                      className="font-serif text-sm sm:text-base leading-relaxed whitespace-pre-line max-w-md"
-                      style={{ color: 'var(--text-primary, #e0e0e0)' }}
-                    >
-                      {greeting.text}
-                    </p>
-                    <div className="w-16 h-px mt-6" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
-
-                    <div className="flex flex-wrap justify-center gap-2 mt-6">
-                      {greeting.suggestions.map((s, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleSend(s)}
-                          className="text-xs px-3.5 py-2 rounded-full border hover:bg-[rgba(212,175,55,0.08)] transition-all"
-                          style={{ color: 'var(--gold)', borderColor: 'var(--border-gold, rgba(212,175,55,0.2))' }}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="pt-2 pb-4">
+                    <MasterWelcomeBoard
+                      greeting={greeting}
+                      viewingReadingQuestions={viewingReadingQuestions}
+                      isReadingMode={isReadingMode}
+                      temporalInsight={greetingHints.temporalInsight}
+                      userProfileSummary={greetingHints.userProfileSummary}
+                      temporalContext={greetingHints.temporalContext}
+                      lang={langKey(lang)}
+                      onSelectSuggestion={handleSend}
+                    />
                   </div>
                 )}
 

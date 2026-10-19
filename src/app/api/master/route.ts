@@ -33,6 +33,7 @@ import { sseResponse } from '@/lib/sse'
 import * as Sentry from '@sentry/nextjs'
 import { T } from '@/lib/i18n'
 import { langKey } from '@/lib/i18n'
+import { computeTemporalInsight, formatDayMaster, formatRecentTopic } from '@/lib/master/greetings'
 
 /**
  * Resolve the inactivity threshold (hours) after which an active master chat
@@ -454,11 +455,17 @@ export async function GET() {
     if (!session?.user?.id) return jsonError('Unauthorized', 401)
     const userId = session.user.id
 
-    // Load reading-state hints + user flags in parallel.
-    const [userFlags, lastReading, typeCounts] = await Promise.all([
+    // Load reading-state hints, user flags, destiny chart, and portrait in parallel.
+    const [userRow, lastReading, typeCounts, destinyReading, portraitRow] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        select: { masterMemoryDisclosureSeenAt: true, portraitEnabled: true },
+        select: {
+          masterMemoryDisclosureSeenAt: true,
+          portraitEnabled: true,
+          usageDivination: true,
+          usageMaster: true,
+          usageChat: true,
+        },
       }),
       prisma.reading.findFirst({
         where: { userId, deletedAt: null },
@@ -475,6 +482,17 @@ export async function GET() {
         where: { userId, targetType: 'self', deletedAt: null },
         _count: { _all: true },
       }),
+      prisma.reading.findFirst({
+        where: {
+          userId,
+          targetType: 'self',
+          type: { in: ['bazi', 'ziwei'] },
+          deletedAt: null,
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { type: true, result: true },
+      }),
+      loadPortrait(userId),
     ])
 
     // Silently auto-archive a stale active session (idle > MASTER_SESSION_STALE_HOURS,
@@ -520,6 +538,80 @@ export async function GET() {
       readingTypeCounts[row.type] = row._count._all
     }
 
+    const temporalContext = (() => {
+      try {
+        return getTemporalContext()
+      } catch {
+        return null
+      }
+    })()
+
+    const temporalInsight = temporalContext
+      ? {
+          'zh-TW': computeTemporalInsight(temporalContext.dayGanZhi, temporalContext.jieQi, 'zh-TW'),
+          en: computeTemporalInsight(temporalContext.dayGanZhi, temporalContext.jieQi, 'en'),
+        }
+      : null
+
+    const growth = userRow ? calculateGrowth(userRow) : null
+    const realmTitle = growth?.currentRealm?.title
+      ? {
+          'zh-TW': growth.currentRealm.title['zh-TW'],
+          en: growth.currentRealm.title.en,
+        }
+      : null
+
+    let dayMasterOrMainStar: { 'zh-TW': string; en: string } | null = null
+    if (destinyReading?.result) {
+      try {
+        const resObj = typeof destinyReading.result === 'string'
+          ? (JSON.parse(destinyReading.result) as Record<string, unknown>)
+          : (destinyReading.result as Record<string, unknown>)
+        if (destinyReading.type === 'bazi') {
+          const pillars = resObj?.pillars as Record<string, unknown> | undefined
+          const dayPillar = pillars?.day as Record<string, unknown> | undefined
+          const stem = (dayPillar?.stem || resObj?.dayMaster) as string | undefined
+          if (typeof stem === 'string' && stem.length > 0) {
+            dayMasterOrMainStar = {
+              'zh-TW': formatDayMaster(stem, 'zh-TW'),
+              en: formatDayMaster(stem, 'en'),
+            }
+          }
+        } else if (destinyReading.type === 'ziwei') {
+          const palaces = resObj?.palaces as Record<string, unknown> | undefined
+          const mingGong = palaces?.['命宫'] as Record<string, unknown> | undefined
+          const rawStars = Array.isArray(resObj?.mainStars) && resObj.mainStars.length > 0
+            ? resObj.mainStars
+            : Array.isArray(mingGong?.stars)
+              ? mingGong.stars
+              : []
+          if (rawStars.length > 0) {
+            const starNames = rawStars
+              .slice(0, 2)
+              .map((s: unknown) => typeof s === 'string' ? s : ((s as { name?: string })?.name || ''))
+              .filter(Boolean)
+            if (starNames.length > 0) {
+              dayMasterOrMainStar = {
+                'zh-TW': starNames.join(''),
+                en: starNames.join(' / '),
+              }
+            }
+          }
+        }
+      } catch {
+        /* best-effort */
+      }
+    }
+
+    let recentTopic: { 'zh-TW': string; en: string } | null = null
+    if (portraitRow?.topics && portraitRow.topics.length > 0) {
+      const topTopic = portraitRow.topics[0]
+      recentTopic = {
+        'zh-TW': formatRecentTopic(topTopic, 'zh-TW'),
+        en: formatRecentTopic(topTopic, 'en'),
+      }
+    }
+
     return jsonResponse({
       messages,
       hasReadings: lastReading != null,
@@ -527,9 +619,15 @@ export async function GET() {
         ? { type: lastReading.type, createdAt: lastReading.createdAt.toISOString() }
         : null,
       readingTypeCounts,
-      temporalContext: getTemporalContext(),
-      disclosureSeen: userFlags?.masterMemoryDisclosureSeenAt != null,
-      portraitEnabled: userFlags?.portraitEnabled ?? true,
+      temporalContext,
+      temporalInsight,
+      userProfileSummary: {
+        dayMasterOrMainStar,
+        realmTitle,
+        recentTopic,
+      },
+      disclosureSeen: userRow?.masterMemoryDisclosureSeenAt != null,
+      portraitEnabled: userRow?.portraitEnabled ?? true,
     })
   } catch (err) {
     logger.error({ err, endpoint: 'master', method: 'GET' }, 'master history load failed')
@@ -738,7 +836,7 @@ function buildActivationAppendix(
       '## Activation — ambiguous resume',
       'The user reopened the chat but there is no obvious thread to pick up.',
       '',
-      'Scan the last 3-5 turns. If you find ONE specific thing worth saying → 1-2 short bubbles. If nothing → one short closing line ("Welcome back — I\'ll be here.") and stop. Same rule as reflection: empty filler is worse than a silent stop.',
+      'Scan the last 3-5 turns. If you find ONE specific thing worth saying → 1-2 short bubbles. If nothing → reply with exactly [PASS] and nothing else. The system will stay silent. Same rule as reflection: empty filler is worse than a silent stop.',
     ].join('\n')
   }
   // zh-TW
@@ -775,7 +873,7 @@ function buildActivationAppendix(
     '## 主動續話 — 找一個值得補的點',
     '用戶重新打開對話，但沒有明顯的話頭可接。',
     '',
-    '掃最近 3-5 輪。**找到一個具體值得補的東西** → 1-2 個短氣泡。**找不到** → 一句短結尾（「嗯，您回來了。有事再說。」）打住。規則同 reflection：empty 比 filler 好。',
+    '掃最近 3-5 輪。**找到一個具體值得補的東西** → 1-2 個短氣泡。**找不到** → 回覆 [PASS] 保持沈默。規則同 reflection：嚴禁無意義的打擾或重複問候。',
   ].join('\n')
 }
 

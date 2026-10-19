@@ -154,7 +154,12 @@ export default function ReadingResultCard({
 
       {/* In-Context Master Consultation Prompts — once reading is complete */}
       {!streaming && (
-        <InContextMasterPrompt divinationType={type} readingId={readingId} lang={lang} />
+        <InContextMasterPrompt
+          divinationType={type}
+          readingId={readingId}
+          lang={lang}
+          result={result}
+        />
       )}
 
       {/* Feedback widget — only once a saved reading exists (not mid-stream) */}

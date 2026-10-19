@@ -166,4 +166,14 @@ describe('findLatestPendingCTA', () => {
     ]
     expect(findLatestPendingCTA(msgs)).toBeNull()
   })
+
+  it('returns null when assistant has already followed up after the CTA (prevents repeated nagging)', () => {
+    const msgs: DetectableMsg[] = [
+      userMsg('想看八字', -15),
+      ctaMsg('bazi', '為自己', -10),
+      assistantMsg('上次為您推薦的八字排盤，您還想做嗎？', -5),
+    ]
+    // Assistant already asked once; subsequent chat opens must NOT keep nagging
+    expect(findLatestPendingCTA(msgs)).toBeNull()
+  })
 })

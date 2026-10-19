@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { renderGreeting } from '../greetings'
+import {
+  renderGreeting,
+  computeTemporalInsight,
+  formatDayMaster,
+  formatRecentTopic,
+} from '../greetings'
 
 const TEMPORAL = {
   dayGanZhi: '癸亥',
@@ -189,5 +194,59 @@ describe('renderGreeting — anti-pattern guards', () => {
     expect(result.text).not.toContain('list_readings')
     expect(result.text).not.toContain('tool')
     expect(result.text).not.toContain('工具')
+  })
+})
+
+describe('computeTemporalInsight', () => {
+  it('maps wood stems (甲, 乙) to wood insight', () => {
+    expect(computeTemporalInsight('甲子', '春分', 'zh-TW')).toContain('青陽敷榮')
+    expect(computeTemporalInsight('乙丑', '春分', 'en')).toContain('Wood Qi')
+  })
+
+  it('maps fire stems (丙, 丁) to fire insight', () => {
+    expect(computeTemporalInsight('丙寅', '夏至', 'zh-TW')).toContain('離明當運')
+    expect(computeTemporalInsight('丁卯', '夏至', 'en')).toContain('Fire Qi')
+  })
+
+  it('maps earth stems (戊, 己) to earth insight', () => {
+    expect(computeTemporalInsight('戊辰', '立夏', 'zh-TW')).toContain('土厚德聚')
+    expect(computeTemporalInsight('己巳', '立夏', 'en')).toContain('Earth Qi')
+  })
+
+  it('maps metal stems (庚, 辛) to metal insight', () => {
+    expect(computeTemporalInsight('庚午', '秋分', 'zh-TW')).toContain('秋氣肅成')
+    expect(computeTemporalInsight('辛未', '秋分', 'en')).toContain('Metal Qi')
+  })
+
+  it('maps water stems (壬, 癸) to water insight', () => {
+    expect(computeTemporalInsight('壬申', '冬至', 'zh-TW')).toContain('水德善柔')
+    expect(computeTemporalInsight('癸酉', '冬至', 'en')).toContain('Water Qi')
+  })
+
+  it('returns harmonious cosmic fallback when dayGanZhi is empty or unknown', () => {
+    expect(computeTemporalInsight('', '清明', 'zh-TW')).toContain('四時循序')
+    expect(computeTemporalInsight(null, '清明', 'en')).toContain('cosmic seasons')
+  })
+})
+
+describe('formatDayMaster', () => {
+  it('formats single-character stems to five-element day master badge', () => {
+    expect(formatDayMaster('庚', 'zh-TW')).toBe('庚金')
+    expect(formatDayMaster('庚', 'en')).toBe('Geng Metal')
+    expect(formatDayMaster('甲', 'zh-TW')).toBe('甲木')
+    expect(formatDayMaster('癸', 'zh-TW')).toBe('癸水')
+  })
+
+  it('preserves multi-character strings when passed', () => {
+    expect(formatDayMaster('庚金', 'zh-TW')).toBe('庚金')
+  })
+})
+
+describe('formatRecentTopic', () => {
+  it('formats topic keys into dignified metaphysical domain titles', () => {
+    expect(formatRecentTopic('career', 'zh-TW')).toBe('事業轉機')
+    expect(formatRecentTopic('career', 'en')).toBe('Career & Ambition')
+    expect(formatRecentTopic('wealth', 'zh-TW')).toBe('財富運勢')
+    expect(formatRecentTopic('marriage', 'zh-TW')).toBe('婚姻感情')
   })
 })
