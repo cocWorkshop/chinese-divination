@@ -53,12 +53,12 @@ export default function TimeModeInput({ layoutId, showHints = false }: { layoutI
               <option value="">{T(lang, '請選擇時辰', 'Select Shichen')}</option>
               {shichen.map(s => <option key={s.value} value={s.value}>{T(lang, s.zh, s.en)}</option>)}
             </select>
-            {showHints && <p className="text-foreground/40 text-xs mt-1">{T(lang, '自動取時辰中間值，無真太陽時校正', 'Uses midpoint of shichen, no true solar time correction')}</p>}
+            {showHints && <p className="text-foreground/60 text-xs mt-1">{T(lang, '自動取時辰中間值，無真太陽時校正', 'Uses midpoint of shichen, no true solar time correction')}</p>}
           </motion.div>
         ) : (
           <motion.div key="precise" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} transition={{ duration: 0.2 }}>
             <input id={`${layoutId}-exact-time`} type="time" className={inputCls} value={form.exactTime} onChange={e => setField('exactTime', e.target.value)} required />
-            {showHints && <p className="text-foreground/40 text-xs mt-1">{T(lang, '將根據出生地經度進行真太陽時校正', 'True solar time correction based on birthplace longitude')}</p>}
+            {showHints && <p className="text-foreground/60 text-xs mt-1">{T(lang, '將根據出生地經度進行真太陽時校正', 'True solar time correction based on birthplace longitude')}</p>}
           </motion.div>
         )}
       </AnimatePresence>

@@ -48,7 +48,7 @@ export default function BaziForm() {
             <label htmlFor="bazi-birth-place" className={labelCls}>
               {T(lang, '出生地', 'Birthplace')}
               {form.timeMode === 'precise' && <span className="text-gold ml-1">*</span>}
-              {form.timeMode === 'fuzzy' && <span className="text-foreground/40 ml-1">{T(lang, '（可選）', '(optional)')}</span>}
+              {form.timeMode === 'fuzzy' && <span className="text-foreground/60 ml-1">{T(lang, '（可選）', '(optional)')}</span>}
             </label>
             <BirthplaceInput
               inputId="bazi-birth-place"

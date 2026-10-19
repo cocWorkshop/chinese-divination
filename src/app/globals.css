@@ -74,6 +74,7 @@ body {
 }
 
 :root {
+  color-scheme: light;
   --font-noto-serif: 'Noto Serif TC', serif;
   --font-inter: 'Inter', sans-serif;
 
@@ -119,6 +120,7 @@ body {
 }
 
 .dark {
+  color-scheme: dark;
   --bg-primary: #0a0f1e;
   --bg-surface: #111d35;
   --bg-card: rgba(17, 29, 53, 0.6);
@@ -215,6 +217,29 @@ body {
   background-color: var(--input-bg) !important;
   color: var(--text-primary) !important;
   border-color: var(--border-color) !important;
+}
+
+:root:not(.dark) label {
+  color: var(--text-secondary);
+}
+
+option {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+:root:not(.dark) input[type="date"]::-webkit-calendar-picker-indicator,
+:root:not(.dark) input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.65;
+  cursor: pointer;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85);
+  opacity: 0.75;
+  cursor: pointer;
 }
 
 /* Placeholder */

@@ -72,8 +72,8 @@ export const typeInfo: Record<string, { zhName: string; twName: string; enName: 
 export { T } from '@/lib/i18n'
 
 // Shared form control styles
-export const inputCls = "w-full px-4 py-3 bg-navy-800 border border-gold/20 rounded-lg text-white focus:outline-none focus:border-gold/60 transition-colors"
-export const labelCls = "block text-white/70 text-sm mb-1"
+export const inputCls = "w-full px-4 py-3 bg-input border border-gold/25 rounded-lg text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-gold/60 transition-colors"
+export const labelCls = "block text-foreground/85 text-sm mb-1 font-serif font-medium"
 
 // Shape of the form state object shared across the flow.
 export type DivinationFormState = Record<string, string>

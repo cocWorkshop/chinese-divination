@@ -84,7 +84,7 @@ export default function CoinCastPanel({
                     ))}
                   </div>
                   <span className="text-gold text-xs font-mono font-semibold">{line.value}</span>
-                  <span className={`text-xs ${isChanging ? 'text-amber-400 font-medium' : 'text-foreground/50'}`}>
+                  <span className={`text-xs ${isChanging ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-foreground/70'}`}>
                     {T(lang, label.zh, label.en)}
                   </span>
                   <div className="ml-auto flex items-center gap-0.5">

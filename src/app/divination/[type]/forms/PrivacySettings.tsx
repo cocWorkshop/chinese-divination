@@ -50,7 +50,7 @@ export default function PrivacySettings() {
           <p className="text-foreground/80 text-sm font-medium leading-tight">
             {T(lang, '儲存到歷史記錄', 'Save to reading history')}
           </p>
-          <p className="text-foreground/40 text-xs mt-0.5">
+          <p className="text-foreground/60 text-xs mt-0.5">
             {T(lang, '允許儲存本次解卦結果，可在「歷史」中查看', 'Store this reading in your history for future reference')}
           </p>
         </div>
@@ -78,7 +78,7 @@ export default function PrivacySettings() {
             <p className="text-foreground/80 text-sm font-medium leading-tight">
               {T(lang, '儲存生辰資訊到我的資料', 'Save birth info to my profile')}
             </p>
-            <p className="text-foreground/40 text-xs mt-0.5">
+            <p className="text-foreground/60 text-xs mt-0.5">
               {T(lang, '將出生日期、時辰、出生地、性別儲存至個人資料，下次自動填充', 'Store birth date, hour, place & gender in your profile for auto-fill next time')}
             </p>
           </div>
@@ -86,8 +86,8 @@ export default function PrivacySettings() {
       )}
 
       {(!saveHistory && !saveProfile) && (
-        <p className="text-amber-400/80 text-xs flex items-center gap-1.5 pt-1">
-          <AlertIcon className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+        <p className="text-amber-600 dark:text-amber-400 text-xs flex items-center gap-1.5 pt-1">
+          <AlertIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
           <span>{T(lang, '本次占卜結果不會被儲存，請自行記錄', 'This reading will not be stored anywhere. Please note it down if needed.')}</span>
         </p>
       )}
