@@ -5,13 +5,15 @@ node_modules
 .next
 
 # Environment (secrets)
+.env
 .env.local
 .env.production
 .env.*.local
 
-# Agent
+# Agent & Scratch
 AGENT_TASK.md
-
+scratch/
+claude-proxy/
 
 .playwright-mcp
 .claude/worktrees
@@ -30,4 +32,3 @@ db_backup/*.json.gz
 coverage/
 scripts/*.ps1
 scripts/heartbeat_url.txt
-

@@ -1,14 +1,14 @@
 name: Deploy Production
 
 on:
-  workflow_dispatch: # 手动触发，保证生产发布的严肃性与可控性
+  workflow_dispatch: # Manual trigger to ensure controlled production releases
 
 concurrency:
   group: deploy-production
-  cancel-in-progress: false # 生产部署不应该被并发打断
+  cancel-in-progress: false # Production deployments should not be interrupted
 
 jobs:
-  # 质量门禁：复用 CI 工作流，确保类型检查、lint、测试及数据库迁移回放通过后再部署
+  # Quality gate: reuse CI workflow (type-check, lint, tests, and migration replay) before deploying
   ci:
     uses: ./.github/workflows/ci.yml
 
@@ -34,14 +34,14 @@ jobs:
           docker stop chinese-divination || true
           docker rm chinese-divination || true
 
-          # 加载生产环境变量文件（优先使用 /home/elvin/.env.chinese-divination-production）
+          # Load production environment variables from host-managed env file
           ENV_FILE_FLAG=""
-          if [ -f /home/elvin/.env.chinese-divination-production ]; then
-            echo "📄 Using /home/elvin/.env.chinese-divination-production"
-            ENV_FILE_FLAG="--env-file /home/elvin/.env.chinese-divination-production"
-          elif [ -f /home/elvin/projects/chinese-divination/.env.production ]; then
-            echo "📄 Using /home/elvin/projects/chinese-divination/.env.production"
-            ENV_FILE_FLAG="--env-file /home/elvin/projects/chinese-divination/.env.production"
+          if [ -f "$HOME/.env.chinese-divination-production" ]; then
+            echo "📄 Using $HOME/.env.chinese-divination-production"
+            ENV_FILE_FLAG="--env-file $HOME/.env.chinese-divination-production"
+          elif [ -f "$HOME/projects/chinese-divination/.env.production" ]; then
+            echo "📄 Using $HOME/projects/chinese-divination/.env.production"
+            ENV_FILE_FLAG="--env-file $HOME/projects/chinese-divination/.env.production"
           elif [ -f .env.production ]; then
             echo "📄 Using .env.production"
             ENV_FILE_FLAG="--env-file .env.production"
@@ -51,10 +51,10 @@ jobs:
           fi
 
           echo "🚀 Running new production container: chinese-divination..."
-          # 配置说明：
-          # - --network host: 直连宿主机网络，访问本地 PostgreSQL (127.0.0.1:5432) 和 8094 端口
-          # - --memory 2g: 限制内存防止内存泄漏
-          # - -e PORT=8094: 监听生产反向代理端口 8094
+          # Configuration notes:
+          # - --network host: Direct host networking to access local PostgreSQL (127.0.0.1:5432) and port 8094
+          # - --memory 2g: Enforce container memory ceiling
+          # - -e PORT=8094: Bind production reverse-proxy target port 8094
           docker run -d \
             --name chinese-divination \
             --restart unless-stopped \
@@ -84,7 +84,7 @@ jobs:
               exit 1
             fi
 
-            # 探测健康检查端点 (生产端口 8094)
+            # Probe health check endpoint on production port 8094
             if docker exec chinese-divination wget -q -O /dev/null http://127.0.0.1:8094/api/config/nav 2>/dev/null; then
               echo "✅ Production application is healthy and ready on port 8094!"
               docker ps --filter "name=chinese-divination"

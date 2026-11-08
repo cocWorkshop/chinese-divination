@@ -75,11 +75,10 @@ describe('Build & Runtime Integrity Guard', () => {
   })
 
   it('enforces that .next cache integrity rule is codified in documentation', () => {
-    const agentsPath = path.join(process.cwd(), 'agents.md')
-    const claudePath = path.join(process.cwd(), 'CLAUDE.md')
+    const agentsPath = path.join(process.cwd(), 'AGENTS.md')
     const antigravityPath = path.join(process.cwd(), 'ANTIGRAVITY.md')
 
-    const hasDocumentation = fs.existsSync(agentsPath) || fs.existsSync(claudePath) || fs.existsSync(antigravityPath)
+    const hasDocumentation = fs.existsSync(agentsPath) || fs.existsSync(antigravityPath)
     expect(hasDocumentation).toBe(true)
   })
 })

@@ -5,13 +5,15 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Prisma](https://img.shields.io/static/v1?label=Prisma&message=6.0&color=2D3748&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![Architecture](https://img.shields.io/badge/Architecture-Neuro--Symbolic_FSM-D4AF37)](#2-core-architectural-paradigm-the-neuro-symbolic-approach)
-[![Prompt Cache](https://img.shields.io/static/v1?label=Prompt%20Cache&message=%3E90%25%20Hit%20Rate&color=10B981)](#4-context-economics--prompt-cache-optimization)
-[![Testing](https://img.shields.io/static/v1?label=Vitest&message=100%25%20Regression%20Locked&color=6E9F18&logo=vitest&logoColor=white)](#7-production-engineering-observability--quality-gates)
+[![Prompt Cache](https://img.shields.io/static/v1?label=Prompt%20Cache&message=~85%25%20Prefix%20Isolated&color=10B981)](#4-context-economics--prompt-cache-optimization)
+[![Testing](https://img.shields.io/static/v1?label=Vitest&message=1,368%2B%20Tests%20Passing&color=6E9F18&logo=vitest&logoColor=white)](#7-production-engineering-observability--quality-gates)
 
 > **Systems Architecture & Engineering Scope**:  
 > While the application surface interfaces with classical Chinese metaphysical systems (*BaZi, Zi Wei Dou Shu, Qi Men Dun Jia, Liu Yao*), from an AI Systems perspective this platform serves as an end-to-end **high-dimensional discrete combinatorial testbed designed to solve catastrophic LLM hallucination in strict deterministic domains**.
 >
 > Pure autoregressive Large Language Models (LLMs) fail inherently at non-linear astronomical calculations, ephemeris boundary cutoffs (VSOP87 solar longitude), true solar time ($\Delta t$) normalization, and multi-layered cyclic matrix permutations. **Xuanji** addresses these failure modes via a production-grade **Neuro-Symbolic Multi-Agent Architecture**: 100% deterministic TypeScript engines compute canonical state matrices, while a multi-agent orchestration engine drives semantic interpretation, context compaction, and stateful conversational steering.
+>
+> **Specification-Driven Agentic Engineering**: Designed and governed using a strict Human-in-the-Loop (HITL) architectural specification workflow (codified in [`AGENTS.md`](AGENTS.md)). Every symbolic calculator, Zod AST schema walker, PostgreSQL locking CTE, and SSE streaming state machine is verified against a 4-stage CI quality gate (`tsc --noEmit`, `eslint`, and **1,368+ deterministic Vitest unit and DB-backed integration tests**).
 
 ---
 
@@ -35,7 +37,7 @@
 ┌──────────────────────────────────────────┐  ┌──────────────────────────────────────────┐
 │        SYMBOLIC COMPUTE TIER             │  │            NEURAL REASONING              │
 │  • True Solar Time (EoT + Longitude)     │  │  • OpenRouter / Anthropic / OpenAI SDK   │
-│  • BaZi: VSOP87 Solar Terms & Weighted   │  │  • Prompt-Cache Prefix Alignment (>90%)  │
+│  • BaZi: VSOP87 Solar Terms & Weighted   │  │  • KV Cache Prefix Alignment (~85% Static)│
 │    5-Element Tensor Matrix               │  │  • Hierarchical 3-Tier Context Memory   │
 │  • Zi Wei: 12-Palace Dynamic Astrolabe   │  │  • Two-Stage Sliding Window Compaction   │
 │  • Qi Men: Yin/Yang 9-Ju Rotating Rings  │  │  • Dual-Axis Async User Portrait Updates │
@@ -73,7 +75,7 @@ Building production AI systems requires solving critical infrastructure challeng
 | Architectural Pillar | Production Engineering Implementation | Systems Impact & Metrics |
 | :--- | :--- | :--- |
 | **Neuro-Symbolic Boundary** | Deterministic TS mathematical engines (`bazi`, `ziwei`, `qimen`, `liuyao`, `meihua`) + post-LLM Zod schema convergence (`_finalize.ts`). | **0% mathematical/ephemeris hallucination**; byte-identical canonical state outputs for identical coordinates. |
-| **Prompt-Cache Alignment** | Strict separation of static prefix (`master.md` + tool/skill registries) from dynamic per-turn suffix (`buildSystemPrompt.ts`). | **>90% prefix cache hit rate** (Anthropic/OpenAI 5-min TTL), reducing input token costs by **~80%** and slashing TTFT. |
+| **Prompt-Cache Alignment** | Strict separation of static prefix (`master.md` + tool/skill registries) from dynamic per-turn suffix (`buildSystemPrompt.ts`). | **~85% of system prompt tokens isolated** ahead of the 5-min KV cache boundary, cutting uncached prompt overhead by **~80%** and slashing TTFT. |
 | **Hierarchical Memory** | Relational `MasterChatMessage` $\rightarrow$ 60K token sliding-window compaction (`compression.ts`) $\rightarrow$ Asynchronous `UserPortrait` extraction. | **80% working-memory token reclamation** at zero LLM cost via Stage-1 tool stubbing; bounded $O(1)$ context budget. |
 | **Turn Engine FSM & Resilience** | 1500ms client burst debouncer, hash-based tool deduplication `(name, hash(args))`, 75–120s jittered reflection with silent `[PASS]` protocol. | Eliminates cyclical tool loops (`MAX_TOOL_LOOPS = 12` hard cap) and suppresses intrusive or unprompted AI responses. |
 | **Cascading Stream Abort** | End-to-end signal propagation: Client `AbortController` $\rightarrow$ Next.js `req.signal` $\rightarrow$ Upstream LLM `fetch` abort (`stream.ts`). | Halts upstream cloud GPU token burn within **milliseconds** of user disconnect; enforces **Zero-Dirty-Write** DB guarantees. |
@@ -235,7 +237,7 @@ In [`src/lib/master/systemPrompt/buildSystemPrompt.ts`](src/lib/master/systemPro
 │          Sacred identity, tone constraints, [NEXT] & [PASS] syntax rules   │ │
 ├────────────────────────────────────────────────────────────────────────────┤ │ 100% STATIC
 │ BLOCK 2: CAPABILITY CATALOG (buildCapabilityCatalog())                     │ │ CACHEABLE PREFIX
-│          Deterministic schema & usage rules for all registered tools       │ │ (>90% Hit Rate,
+│          Deterministic schema & usage rules for all registered tools       │ │ (~85% of Prompt,
 ├────────────────────────────────────────────────────────────────────────────┤ │  ~80% Cost Cut,
 │ BLOCK 3: SKILLS CATALOG (buildSkillsCatalog(lang))                         │ │  Minimal TTFT)
 │          Domain interpretation heuristics & structured reasoning guides    │ ▼
