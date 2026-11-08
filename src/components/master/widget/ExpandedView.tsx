@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState, KeyboardEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useMasterChat, type MasterMsg } from '../MasterChatContext'
@@ -67,6 +67,8 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
   // top → bottom (which exposes the entire history in fast-forward).
   const justOpenedRef = useRef(true)
   const router = useRouter()
+  const pathname = usePathname()
+  const isWorkspace = pathname?.startsWith('/divination') || pathname?.startsWith('/reading')
 
   // Templated greeting (NOT LLM-generated) — rendered when the message list
   // is empty.
@@ -237,11 +239,15 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        className={`fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 ${
+          isWorkspace
+            ? 'lg:inset-auto lg:top-16 lg:bottom-0 lg:right-0 lg:left-auto lg:w-[440px] xl:w-[480px] 2xl:w-[520px] lg:z-30 lg:p-0 lg:block'
+            : ''
+        }`}
+        style={{ paddingTop: isWorkspace ? undefined : 'env(safe-area-inset-top)' }}
       >
         <div
-          className="absolute inset-0"
+          className={`absolute inset-0 ${isWorkspace ? 'lg:hidden' : ''}`}
           style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.06) 0%, var(--bg-primary) 70%)' }}
         />
 
@@ -250,10 +256,13 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 40, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 220, damping: 24 }}
-          className="relative w-full max-w-[100vw] h-full sm:h-[85vh] sm:max-w-2xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden shadow-2xl"
-          style={{ border: '1px solid var(--card-border)' }}
-          role="dialog"
-          aria-modal="true"
+          className={`relative w-full max-w-[100vw] h-full sm:h-[85vh] sm:max-w-2xl flex flex-col rounded-none sm:rounded-2xl overflow-hidden shadow-2xl ${
+            isWorkspace
+              ? 'border border-[var(--card-border)] lg:w-full lg:max-w-none lg:h-full lg:rounded-none lg:border-l lg:border-t-0 lg:border-r-0 lg:border-b-0 lg:border-[rgba(212,168,83,0.25)] lg:shadow-2xl'
+              : 'border border-[var(--card-border)]'
+          }`}
+          role={isWorkspace ? 'region' : 'dialog'}
+          aria-modal={isWorkspace ? undefined : true}
           aria-label={T(lang, '玄機大師對話', 'Master Xuanji chat')}
         >
           <div className="absolute inset-0" style={{ backgroundColor: 'var(--bg-primary)', opacity: 0.98 }} />
@@ -367,9 +376,10 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
               </button>
               <button
                 onClick={() => setShape('collapsed')}
-                className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full transition-colors shrink-0"
+                className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full transition-colors shrink-0 hover:bg-[rgba(212,175,55,0.08)]"
                 style={{ color: 'var(--text-muted)' }}
-                aria-label={T(lang, '收合對話', 'Close chat')}
+                title={isWorkspace ? T(lang, '收起大師面板', 'Collapse Master panel') : T(lang, '收合對話', 'Close chat')}
+                aria-label={isWorkspace ? T(lang, '收起大師面板', 'Collapse Master panel') : T(lang, '收合對話', 'Close chat')}
               >
                 <CloseIcon size={15} />
               </button>

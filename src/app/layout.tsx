@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { SessionProvider } from 'next-auth/react'
 import { LanguageProvider } from '@/components/LanguageContext'
 import Navbar from '@/components/Navbar'
+import MainContent from '@/components/MainContent'
 // ChatWidget removed — chat is now embedded in result pages as "玄機" tab
 import { MasterChatProvider } from '@/components/master/MasterChatContext'
 import MasterChatWidget from '@/components/master/MasterChatWidget'
@@ -167,9 +168,9 @@ export default function RootLayout({
               Skip to content
             </a>
             <Navbar />
-            <main id="main-content" className="pt-16 flex-1 flex flex-col pb-20">
+            <MainContent>
               {children}
-            </main>
+            </MainContent>
 
             <SentryClientInit />
             <NativeInitializer />

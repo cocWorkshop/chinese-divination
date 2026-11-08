@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
+import { useMasterChat } from '@/components/master/MasterChatContext'
 import { DivinationIcon } from '@/components/DivinationIcons'
 import StarField from '@/components/StarField'
 import MasterEntryCard from './MasterEntryCard'
@@ -31,6 +32,8 @@ const getRouteId = (type: string) => routeIdMap[type] || type
 
 export default function DivinationPage() {
   const { lang } = useLang()
+  const { shape } = useMasterChat()
+  const isExpanded = shape === 'expanded'
   const [visibleServices, setVisibleServices] = useState<{ id: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
   const [costs, setCosts] = useState<Record<string, number>>({})
 
@@ -59,7 +62,7 @@ export default function DivinationPage() {
     <div className="relative flex-1 bg-background flex flex-col min-h-[calc(100vh-4rem)] -mb-20 overflow-hidden">
       <StarField />
       {/* Oracle Cards Container: Centered vertically when height is sufficient, with bottom padding for fixed dock */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center py-3 sm:py-5 px-3 sm:px-4 max-w-4xl mx-auto w-full pb-24 sm:pb-28">
+      <div className={`relative z-10 flex-1 flex flex-col justify-center py-3 sm:py-5 px-3 sm:px-4 max-w-4xl mx-auto w-full transition-all duration-300 ${isExpanded ? 'pb-8 sm:pb-10' : 'pb-24 sm:pb-28'}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key="services-grid"
@@ -69,8 +72,8 @@ export default function DivinationPage() {
             transition={{ duration: 0.3 }}
             className="w-full flex flex-col justify-center"
           >
-            {/* Oracle Cards Grid: 2 columns on mobile, 3 columns on desktop, styled after DivinationLayout Demo */}
-            <div className="w-full grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4.5">
+            {/* Oracle Cards Grid: 2 columns on mobile, 3 columns on desktop (2 columns when Master panel is expanded) */}
+            <div className={`w-full grid gap-2.5 sm:gap-4.5 ${isExpanded ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'}`}>
               {visibleServices.map((svc, i) => (
                 <motion.div
                   key={svc.id}
@@ -123,12 +126,14 @@ export default function DivinationPage() {
         </AnimatePresence>
       </div>
 
-      {/* Master Xuanji Entrance: Fixed at the bottom of viewport across all screen sizes, layered on top (z-30) */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none pb-2 sm:pb-3 pt-6 px-3 sm:px-4 bg-gradient-to-t from-[var(--bg-primary,#070b14)] via-[var(--bg-primary,#070b14)]/95 to-transparent">
-        <div className="max-w-4xl mx-auto pointer-events-auto">
-          <MasterEntryCard />
+      {/* Master Xuanji Entrance: Fixed at the bottom of viewport when collapsed, hidden when expanded to avoid duplicate inputs */}
+      {!isExpanded && (
+        <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none pb-2 sm:pb-3 pt-6 px-3 sm:px-4 bg-gradient-to-t from-[var(--bg-primary,#070b14)] via-[var(--bg-primary,#070b14)]/95 to-transparent">
+          <div className="max-w-4xl mx-auto pointer-events-auto">
+            <MasterEntryCard />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -125,7 +125,7 @@ export default function InContextMasterPrompt({
     }
     setShape('expanded')
     if (!loading) {
-      void sendMessage(promptText)
+      void sendMessage(promptText, { immediate: true })
     }
   }
 
