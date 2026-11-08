@@ -192,4 +192,25 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     expect(iconsContent).toContain('export function FengShuiIcon')
     expect(iconsContent).toContain('export function DivinationIcon')
   })
+
+  it('should render StarField with subtle cosmic motion, harmonic twinkle, and subtle meteors', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const starContent = fs.readFileSync(path.resolve(__dirname, '../../../components/StarField.tsx'), 'utf-8')
+
+    // Subtle cosmic float & harmonic twinkle
+    expect(starContent).toContain('s.vx')
+    expect(starContent).toContain('s.vy')
+    expect(starContent).toContain('alphaAmp')
+    expect(starContent).toContain('Math.sin')
+
+    // Occasional subtle meteor feature
+    expect(starContent).toContain('spawnMeteor')
+    expect(starContent).toContain('meteor.active')
+
+    // Respect reduced motion and theme awareness
+    expect(starContent).toContain('prefersReduced')
+    expect(starContent).toContain('themeObserver')
+    expect(starContent).toContain('visibilitychange')
+  })
 })

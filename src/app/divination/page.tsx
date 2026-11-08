@@ -56,7 +56,7 @@ export default function DivinationPage() {
   }, [])
 
   return (
-    <div className="relative flex-1 bg-background flex flex-col min-h-[calc(100vh-4rem)] -mb-20">
+    <div className="relative flex-1 bg-background flex flex-col min-h-[calc(100vh-4rem)] -mb-20 overflow-hidden">
       <StarField />
       {/* Oracle Cards Container: Centered vertically when height is sufficient, with bottom padding for fixed dock */}
       <div className="relative z-10 flex-1 flex flex-col justify-center py-3 sm:py-5 px-3 sm:px-4 max-w-4xl mx-auto w-full pb-24 sm:pb-28">
