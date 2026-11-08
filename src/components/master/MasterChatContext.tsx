@@ -182,7 +182,7 @@ interface MasterChatContextValue {
   disclosureSeen: boolean
   /** Whether portrait extraction + personalized prompt are enabled for this user. */
   portraitEnabled: boolean
-  sendMessage: (content: string) => Promise<void>
+  sendMessage: (content: string, options?: { immediate?: boolean }) => Promise<void>
   /**
    * Report composer activity so the proactive paths (idle reflection +
    * activation-resume checkin) don't speak over a user who's mid-message.
@@ -232,7 +232,7 @@ export interface MasterChatActionsValue {
   shape: Shape
   setShape: (s: Shape) => void
   toggleShape: () => void
-  sendMessage: (content: string) => Promise<void>
+  sendMessage: (content: string, options?: { immediate?: boolean }) => Promise<void>
   notifyTyping: (draftLength: number) => void
   cancelPendingReading: () => void
   startNewSession: () => Promise<void>
@@ -461,16 +461,16 @@ export function MasterChatProvider({ children }: ProviderProps) {
             expanded.push({ ...m, kind: m.kind ?? 'text' })
           }
         }
-        // Never replace the transcript while a turn is streaming — the expand /
-        // readingsChanged refreshes fire on the CTA→reading handoff exactly when
-        // runTurn is mid-stream, and clobbering `messages` here drops the
-        // in-flight assistant bubble (and the reply gets appended to a stale row).
+        // Never replace the transcript while a turn is streaming or user messages
+        // are pending in queue — the expand / readingsChanged refreshes fire on
+        // the CTA→reading handoff or widget open exactly when messages are in-flight,
+        // and clobbering `messages` here drops the optimistic user bubble.
         // Hints/disclosure/portrait below are safe to refresh regardless.
-        if (!sendingRef.current) setMessages(expanded)
+        if (!sendingRef.current && pendingSendsRef.current.length === 0) setMessages(expanded)
       } else {
         // Fresh load with empty messages (e.g. after a soft reset) — clear
-        // any stale local state (but not mid-stream, per above).
-        if (!sendingRef.current) setMessages([])
+        // any stale local state (but not mid-stream or with pending sends, per above).
+        if (!sendingRef.current && pendingSendsRef.current.length === 0) setMessages([])
       }
       setGreetingHints({
         hasReadings: data.hasReadings ?? false,
@@ -963,7 +963,7 @@ export function MasterChatProvider({ children }: ProviderProps) {
   // (after debounce) detects the in-flight stream and aborts it before
   // firing the new turn. See its rate-limit + cleanup logic.
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, options?: { immediate?: boolean }) => {
       if (!enabled) return
       const trimmed = content.trim()
       if (!trimmed) return
@@ -980,9 +980,14 @@ export function MasterChatProvider({ children }: ProviderProps) {
       ])
 
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
-      debounceTimerRef.current = setTimeout(() => {
+      if (options?.immediate) {
+        debounceTimerRef.current = null
         void flushPendingSends()
-      }, BURST_DEBOUNCE_MS)
+      } else {
+        debounceTimerRef.current = setTimeout(() => {
+          void flushPendingSends()
+        }, BURST_DEBOUNCE_MS)
+      }
     },
     [enabled, flushPendingSends],
   )

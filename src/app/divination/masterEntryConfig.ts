@@ -161,23 +161,30 @@ export interface MasterEntryActionParams {
   prompt?: string
   routerPush: (url: string) => void
   setShape: (shape: 'collapsed' | 'expanded') => void
-  sendMessage?: (text: string) => void | Promise<void>
+  sendMessage?: (text: string, options?: { immediate?: boolean }) => void | Promise<void>
+  startNewSession?: () => Promise<void>
 }
 
-export function handleMasterEntryAction({
+export async function handleMasterEntryAction({
   masterEnabled,
   prompt,
   routerPush,
   setShape,
   sendMessage,
-}: MasterEntryActionParams): void {
+  startNewSession,
+}: MasterEntryActionParams): Promise<void> {
   if (!masterEnabled) {
     routerPush('/login?callbackUrl=' + encodeURIComponent('/divination'))
     return
   }
 
+  // Requirement: Asking Master Xuanji via preset shortcut / entry card starts a fresh new session
+  if (startNewSession) {
+    await startNewSession()
+  }
+
   setShape('expanded')
   if (prompt && sendMessage) {
-    void sendMessage(prompt)
+    await sendMessage(prompt, { immediate: true })
   }
 }

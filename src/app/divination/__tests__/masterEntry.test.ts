@@ -68,23 +68,40 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     expect(mockSendMessage).not.toHaveBeenCalled()
   })
 
-  it('should expand master widget and send message when authenticated user clicks quick prompt chip', () => {
+  it('should expand master widget and send message immediately with a fresh session when authenticated user clicks quick prompt chip', async () => {
     const mockRouterPush = vi.fn()
     const mockSetShape = vi.fn()
     const mockSendMessage = vi.fn()
+    const mockStartNewSession = vi.fn().mockResolvedValue(undefined)
     const testPrompt = '我想合參八字與紫微'
 
-    handleMasterEntryAction({
+    await handleMasterEntryAction({
       masterEnabled: true,
       prompt: testPrompt,
       routerPush: mockRouterPush,
       setShape: mockSetShape,
       sendMessage: mockSendMessage,
+      startNewSession: mockStartNewSession,
     })
 
     expect(mockRouterPush).not.toHaveBeenCalled()
+    expect(mockStartNewSession).toHaveBeenCalledTimes(1)
     expect(mockSetShape).toHaveBeenCalledWith('expanded')
-    expect(mockSendMessage).toHaveBeenCalledWith(testPrompt)
+    expect(mockSendMessage).toHaveBeenCalledWith(testPrompt, { immediate: true })
+  })
+
+  it('should safeguard optimistic bubbles against race conditions in MasterChatContext loadHistory', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const contextContent = fs.readFileSync(
+      path.resolve(__dirname, '../../../components/master/MasterChatContext.tsx'),
+      'utf-8'
+    )
+
+    // loadHistory must check pendingSendsRef.current.length === 0 to prevent wiping prompt bubbles
+    expect(contextContent).toContain('pendingSendsRef.current.length === 0')
+    // sendMessage must support { immediate?: boolean }
+    expect(contextContent).toContain('options?: { immediate?: boolean }')
   })
 
   it('should use Traditional Chinese 玄機 for stamp in MasterEntryCard', async () => {

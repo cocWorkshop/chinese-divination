@@ -75,19 +75,25 @@ const PROMPT_THEMES: Record<QuickPrompt['theme'], { bg: string; border: string; 
 export default function MasterEntryCard() {
   const { lang } = useLang()
   const router = useRouter()
-  const { enabled: masterEnabled, setShape: setMasterShape, sendMessage } = useMasterChatActions()
+  const {
+    enabled: masterEnabled,
+    setShape: setMasterShape,
+    sendMessage,
+    startNewSession,
+  } = useMasterChatActions()
   const [query, setQuery] = useState('')
   const [showPresets, setShowPresets] = useState(false)
 
   const quickPrompts = getMasterQuickPrompts(lang)
 
-  const handleAction = (promptText?: string) => {
-    handleMasterEntryAction({
+  const handleAction = async (promptText?: string) => {
+    await handleMasterEntryAction({
       masterEnabled,
       prompt: promptText,
       routerPush: (url) => router.push(url),
       setShape: setMasterShape,
       sendMessage,
+      startNewSession,
     })
   }
 
