@@ -54,21 +54,13 @@ export default function ModalShell({
     // Remember the trigger so focus returns there on close.
     restoreFocusRef.current = document.activeElement as HTMLElement | null
 
-    // History sentinel: browser/Android "back" dismisses the overlay
-    // instead of leaving the page.
-    window.history.pushState({ __xjOverlay: shellId }, '')
-    const onPopState = () => {
-      // popstate fired while we are (still) the topmost overlay → close.
-      onCloseRef.current()
-    }
-    window.addEventListener('popstate', onPopState)
-
-    // Global registry for the native hardware-back handler.
+    // Global registry for the native hardware-back handler (Capacitor/Android LIFO).
     const unregister = registerOverlay(shellId, () => onCloseRef.current())
 
     // Focus the dialog; trap Tab cycles inside it.
     const dialog = dialogRef.current
     dialog?.focus()
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
@@ -95,13 +87,7 @@ export default function ModalShell({
 
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      document.removeEventListener('popstate', onPopState)
       unregister()
-      // Consume our own sentinel if it is still the current history entry
-      // (i.e. the modal closed via button/Escape rather than back).
-      if ((window.history.state as { __xjOverlay?: string } | null)?.__xjOverlay === shellId) {
-        window.history.back()
-      }
       restoreFocusRef.current?.focus?.()
     }
   }, [isOpen, shellId])
