@@ -34,6 +34,7 @@ export default function DivinationPage() {
   const { lang } = useLang()
   const { shape } = useMasterChat()
   const isExpanded = shape === 'expanded'
+  const [presetsExpanded, setPresetsExpanded] = useState(false)
   const [visibleServices, setVisibleServices] = useState<{ id: string; twName: string; enName: string; twDesc: string; enDesc: string }[]>([])
   const [costs, setCosts] = useState<Record<string, number>>({})
 
@@ -59,21 +60,34 @@ export default function DivinationPage() {
   }, [])
 
   return (
-    <div className="relative flex-1 bg-background flex flex-col min-h-[calc(100vh-4rem)] -mb-20 overflow-hidden">
+    <div className={`relative flex-1 bg-background flex flex-col min-h-[calc(100vh-4rem)] -mb-20 ${presetsExpanded ? 'overflow-y-auto' : 'overflow-hidden'}`}>
       <StarField />
-      {/* Oracle Cards Container: Centered vertically when height is sufficient, with bottom padding for fixed dock */}
-      <div className={`relative z-10 flex-1 flex flex-col justify-center py-3 sm:py-5 px-3 sm:px-4 max-w-4xl mx-auto w-full transition-all duration-300 ${isExpanded ? 'pb-8 sm:pb-10' : 'pb-24 sm:pb-28'}`}>
+      {/* Oracle Cards Container: Centered vertically when height is sufficient, with dynamic bottom padding that squeezes cards when presets expand */}
+      <div className={`relative z-10 flex-1 flex flex-col justify-center py-2.5 sm:py-4 px-3 sm:px-4 max-w-4xl mx-auto w-full transition-all duration-300 ease-out ${
+        isExpanded
+          ? 'pb-8 sm:pb-10'
+          : presetsExpanded
+          ? 'pb-36 sm:pb-44'
+          : 'pb-24 sm:pb-28'
+      }`}>
         <AnimatePresence mode="wait">
           <motion.div
             key="services-grid"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{
+              opacity: 1,
+              y: presetsExpanded ? (typeof window !== 'undefined' && window.innerWidth < 640 ? -68 : -52) : 0,
+            }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             className="w-full flex flex-col justify-center"
           >
             {/* Oracle Cards Grid: 2 columns on mobile, 3 columns on desktop (2 columns when Master panel is expanded) */}
-            <div className={`w-full grid gap-2.5 sm:gap-4.5 ${isExpanded ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'}`}>
+            <div className={`w-full grid transition-all duration-300 ease-out ${
+              isExpanded ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'
+            } ${
+              presetsExpanded ? 'gap-2 sm:gap-3.5' : 'gap-2.5 sm:gap-4.5'
+            }`}>
               {visibleServices.map((svc, i) => (
                 <motion.div
                   key={svc.id}
@@ -83,7 +97,9 @@ export default function DivinationPage() {
                 >
                   <Link
                     href={`/divination/${svc.id}`}
-                    className="oriental-sanctuary-card p-3 sm:p-5 h-full w-full text-left flex flex-col justify-between hover:border-gold/45 hover:shadow-lg hover:shadow-gold/10 hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer relative overflow-hidden rounded-2xl"
+                    className={`oriental-sanctuary-card h-full w-full text-left flex flex-col justify-between hover:border-gold/45 hover:shadow-lg hover:shadow-gold/10 hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer relative overflow-hidden rounded-2xl ${
+                      presetsExpanded ? 'p-2.5 sm:p-4' : 'p-3 sm:p-5'
+                    }`}
                   >
                     {svc.id === 'bazi' && (
                       <span className="absolute top-2.5 right-2.5 text-[9px] sm:text-[10px] px-1.5 sm:px-2.5 py-0.5 rounded-full font-serif font-medium border border-gold/30 bg-gold/15 text-gold-light tracking-wider">
@@ -91,17 +107,23 @@ export default function DivinationPage() {
                       </span>
                     )}
                     <div>
-                      <div className="text-xl sm:text-2xl mb-1.5 transition-transform duration-200 group-hover:scale-105 flex items-center justify-start">
-                        <DivinationIcon type={svc.id} size={26} className="text-xl sm:text-2xl" />
+                      <div className={`transition-all duration-300 group-hover:scale-105 flex items-center justify-start ${
+                        presetsExpanded ? 'text-lg sm:text-xl mb-1' : 'text-xl sm:text-2xl mb-1.5'
+                      }`}>
+                        <DivinationIcon type={svc.id} size={presetsExpanded ? 22 : 26} className="text-xl sm:text-2xl" />
                       </div>
                       <h2 className="text-sm sm:text-lg font-serif font-medium text-foreground/95 group-hover:text-gold transition-colors truncate sm:overflow-visible">
                         {T(lang, svc.twName, svc.enName)}
                       </h2>
-                      <p className="text-[11px] sm:text-xs text-foreground/60 font-light mt-1 line-clamp-2 leading-relaxed min-h-[2rem] sm:min-h-[2.25rem]">
+                      <p className={`text-[11px] sm:text-xs text-foreground/60 font-light mt-1 line-clamp-2 leading-relaxed transition-all duration-300 ${
+                        presetsExpanded ? 'min-h-[1.5rem] sm:min-h-[1.75rem]' : 'min-h-[2rem] sm:min-h-[2.25rem]'
+                      }`}>
                         {T(lang, svc.twDesc, svc.enDesc)}
                       </p>
                     </div>
-                    <div className="pt-2 mt-2 border-t border-gold/10 flex items-center justify-between text-[10px] sm:text-xs">
+                    <div className={`border-t border-gold/10 flex items-center justify-between text-[10px] sm:text-xs transition-all duration-300 ${
+                      presetsExpanded ? 'pt-1.5 mt-1.5' : 'pt-2 mt-2'
+                    }`}>
                       {costs[svc.id] != null ? (
                         <span className="text-amber-300/80 font-serif select-none">
                           ✧ {costs[svc.id]} {T(lang, '機緣', 'Karma')}
@@ -130,7 +152,10 @@ export default function DivinationPage() {
       {!isExpanded && (
         <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none pb-2 sm:pb-3 pt-6 px-3 sm:px-4 bg-gradient-to-t from-background via-background/95 to-transparent">
           <div className="max-w-4xl mx-auto pointer-events-auto">
-            <MasterEntryCard />
+            <MasterEntryCard
+              presetsExpanded={presetsExpanded}
+              onTogglePresets={setPresetsExpanded}
+            />
           </div>
         </div>
       )}

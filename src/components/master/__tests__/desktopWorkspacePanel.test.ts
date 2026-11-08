@@ -46,7 +46,7 @@ describe('Desktop Split-Screen Sanctuary Workspace (Design A)', () => {
     expect(content).toContain("isExpanded ? 'grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'")
     // MasterEntryCard dock is hidden when expanded
     expect(content).toContain('!isExpanded &&')
-    expect(content).toContain('<MasterEntryCard />')
+    expect(content).toContain('<MasterEntryCard')
   })
 
   it('Footer should shift synchronously with MainContent on desktop when expanded in workspace', () => {

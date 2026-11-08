@@ -237,4 +237,29 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     const cssContent = fs.readFileSync(path.resolve(__dirname, '../../globals.css'), 'utf-8')
     expect(cssContent).not.toContain(':root:not(.dark) .xj-stars {\n  display: none !important;\n}')
   })
+
+  it('should naturally squeeze oracle cards upward and compress grid layout when presets expand', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const pageContent = fs.readFileSync(path.resolve(__dirname, '../page.tsx'), 'utf-8')
+    const cardContent = fs.readFileSync(path.resolve(__dirname, '../MasterEntryCard.tsx'), 'utf-8')
+
+    // MasterEntryCard accepts controlled presetsExpanded & onTogglePresets
+    expect(cardContent).toContain('presetsExpanded?: boolean')
+    expect(cardContent).toContain('onTogglePresets?: (expanded: boolean) => void')
+    expect(cardContent).toContain('togglePresets')
+
+    // page.tsx manages presetsExpanded state and passes it down
+    expect(pageContent).toContain('const [presetsExpanded, setPresetsExpanded] = useState(false)')
+    expect(pageContent).toContain('presetsExpanded={presetsExpanded}')
+    expect(pageContent).toContain('onTogglePresets={setPresetsExpanded}')
+
+    // Squeezes grid position upward via motion translation
+    expect(pageContent).toContain('y: presetsExpanded ?')
+
+    // Dynamically compresses bottom padding, card padding, and grid gap
+    expect(pageContent).toContain("presetsExpanded ? 'gap-2 sm:gap-3.5' : 'gap-2.5 sm:gap-4.5'")
+    expect(pageContent).toContain("presetsExpanded ? 'p-2.5 sm:p-4' : 'p-3 sm:p-5'")
+    expect(pageContent).toContain("presetsExpanded\n          ? 'pb-36 sm:pb-44'\n          : 'pb-24 sm:pb-28'")
+  })
 })

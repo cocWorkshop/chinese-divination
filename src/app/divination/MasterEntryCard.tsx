@@ -72,7 +72,15 @@ const PROMPT_THEMES: Record<QuickPrompt['theme'], { bg: string; border: string; 
   },
 }
 
-export default function MasterEntryCard() {
+interface MasterEntryCardProps {
+  presetsExpanded?: boolean
+  onTogglePresets?: (expanded: boolean) => void
+}
+
+export default function MasterEntryCard({
+  presetsExpanded: controlledPresetsExpanded,
+  onTogglePresets,
+}: MasterEntryCardProps = {}) {
   const { lang } = useLang()
   const router = useRouter()
   const {
@@ -83,6 +91,13 @@ export default function MasterEntryCard() {
   } = useMasterChatActions()
   const [query, setQuery] = useState('')
   const [showPresets, setShowPresets] = useState(false)
+  const isPresetsOpen = controlledPresetsExpanded !== undefined ? controlledPresetsExpanded : showPresets
+
+  const togglePresets = () => {
+    const next = !isPresetsOpen
+    setShowPresets(next)
+    onTogglePresets?.(next)
+  }
 
   const quickPrompts = getMasterQuickPrompts(lang)
 
@@ -150,15 +165,15 @@ export default function MasterEntryCard() {
               {/* Little dropdown arrow placed under the button */}
               <button
                 type="button"
-                onClick={() => setShowPresets(!showPresets)}
+                onClick={togglePresets}
                 className="mt-1 flex items-center justify-center w-8 h-4 rounded text-gold/60 hover:text-gold-light hover:bg-gold/10 transition-all cursor-pointer"
-                title={showPresets ? T(lang, '收起預設方向', 'Collapse presets') : T(lang, '展開預設方向', 'Expand presets')}
-                aria-label={showPresets ? T(lang, '收起預設方向', 'Collapse presets') : T(lang, '展開預設方向', 'Expand presets')}
-                aria-expanded={showPresets}
+                title={isPresetsOpen ? T(lang, '收起預設方向', 'Collapse presets') : T(lang, '展開預設方向', 'Expand presets')}
+                aria-label={isPresetsOpen ? T(lang, '收起預設方向', 'Collapse presets') : T(lang, '展開預設方向', 'Expand presets')}
+                aria-expanded={isPresetsOpen}
               >
                 <ChevronDownIcon
                   size={14}
-                  className={`transition-transform duration-200 ${showPresets ? 'rotate-180' : ''}`}
+                  className={`transition-transform duration-200 ${isPresetsOpen ? 'rotate-180' : ''}`}
                 />
               </button>
             </div>
@@ -166,7 +181,7 @@ export default function MasterEntryCard() {
 
           {/* Expandable 8 presets container */}
           <AnimatePresence initial={false}>
-            {showPresets && (
+            {isPresetsOpen && (
               <motion.div
                 key="presets"
                 initial={{ height: 0, opacity: 0 }}
