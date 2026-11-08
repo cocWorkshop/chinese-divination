@@ -3,10 +3,10 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14_App_Router-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-6.0-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![Prisma](https://img.shields.io/static/v1?label=Prisma&message=6.0&color=2D3748&logo=prisma&logoColor=white)](https://www.prisma.io/)
 [![Architecture](https://img.shields.io/badge/Architecture-Neuro--Symbolic_FSM-D4AF37)](#2-core-architectural-paradigm-the-neuro-symbolic-approach)
-[![Prompt Cache](https://img.shields.io/badge/Prompt_Cache-%3E90%25_Hit_Rate-10B981)](#4-context-economics--prompt-cache-optimization)
-[![Testing](https://img.shields.io/badge/Vitest-100%25_Regression_Locked-6E9F18?logo=vitest&logoColor=white)](#7-production-engineering-observability--quality-gates)
+[![Prompt Cache](https://img.shields.io/static/v1?label=Prompt%20Cache&message=%3E90%25%20Hit%20Rate&color=10B981)](#4-context-economics--prompt-cache-optimization)
+[![Testing](https://img.shields.io/static/v1?label=Vitest&message=100%25%20Regression%20Locked&color=6E9F18&logo=vitest&logoColor=white)](#7-production-engineering-observability--quality-gates)
 
 > **Engineering Positioning**: While the end-user surface operates in the domain of traditional Chinese metaphysics (*BaZi, Zi Wei Dou Shu, Qi Men Dun Jia, Liu Yao*), from a systems architecture perspective this repository serves as a **high-dimensional discrete combinatorial testbed with extreme LLM hallucination sensitivity**. 
 >
