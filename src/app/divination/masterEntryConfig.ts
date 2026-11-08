@@ -11,7 +11,7 @@ export interface QuickPrompt {
   icon: string
   label: string
   prompt: string
-  theme: 'gold' | 'azure' | 'jade' | 'rose' | 'amber' | 'purple'
+  theme: 'gold' | 'azure' | 'jade' | 'rose' | 'amber' | 'purple' | 'teal' | 'indigo'
 }
 
 export function getMasterEntryConfig(lang: string): MasterEntryConfig {
@@ -79,6 +79,20 @@ export function getMasterQuickPrompts(lang: string): QuickPrompt[] {
         label: 'Critical choice',
         prompt: 'Master Xuanji, I am facing an important crossroads decision and would like your counsel on the auspicious path.',
       },
+      {
+        id: 'fengshui',
+        icon: '✦',
+        theme: 'teal',
+        label: 'Home Fengshui',
+        prompt: 'Master Xuanji, I would like guidance on my living environment and Fengshui alignment.',
+      },
+      {
+        id: 'wellbeing',
+        icon: '✦',
+        theme: 'indigo',
+        label: 'Health & Serenity',
+        prompt: 'Master Xuanji, I would like insights and guidance on my personal wellbeing and inner peace.',
+      },
     ]
   }
 
@@ -124,6 +138,20 @@ export function getMasterQuickPrompts(lang: string): QuickPrompt[] {
       theme: 'purple',
       label: '當下抉擇指引',
       prompt: '玄機大師，我正面臨一個重要抉擇，難以定奪，請為我推演各方利弊契機。',
+    },
+    {
+      id: 'fengshui',
+      icon: '✦',
+      theme: 'teal',
+      label: '居家風水化煞',
+      prompt: '玄機大師，我想了解居家風水佈局與化煞調和的建議，請為我指引。',
+    },
+    {
+      id: 'wellbeing',
+      icon: '✦',
+      theme: 'indigo',
+      label: '身心安泰轉機',
+      prompt: '玄機大師，我近來感到身心有些困頓，想了解身心安泰與心緒調養的轉機指引。',
     },
   ]
 }

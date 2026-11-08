@@ -55,6 +55,20 @@ const PROMPT_THEMES: Record<QuickPrompt['theme'], { bg: string; border: string; 
     dot: 'text-[#a78bfa]',
     hover: 'hover:bg-[rgba(167,139,250,0.16)] hover:border-[rgba(167,139,250,0.45)]',
   },
+  teal: {
+    bg: 'bg-[rgba(20,184,166,0.07)]',
+    border: 'border-[rgba(20,184,166,0.22)]',
+    text: 'text-[#5eead4]',
+    dot: 'text-[#2dd4bf]',
+    hover: 'hover:bg-[rgba(20,184,166,0.16)] hover:border-[rgba(20,184,166,0.45)]',
+  },
+  indigo: {
+    bg: 'bg-[rgba(129,140,248,0.07)]',
+    border: 'border-[rgba(129,140,248,0.22)]',
+    text: 'text-[#a5b4fc]',
+    dot: 'text-[#818cf8]',
+    hover: 'hover:bg-[rgba(129,140,248,0.16)] hover:border-[rgba(129,140,248,0.45)]',
+  },
 }
 
 export default function MasterEntryCard() {
@@ -64,8 +78,6 @@ export default function MasterEntryCard() {
   const [query, setQuery] = useState('')
 
   const quickPrompts = getMasterQuickPrompts(lang)
-  const row1 = quickPrompts.slice(0, 3)
-  const row2 = quickPrompts.slice(3, 6)
 
   const handleAction = (promptText?: string) => {
     handleMasterEntryAction({
@@ -80,21 +92,6 @@ export default function MasterEntryCard() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     handleAction(query.trim() || undefined)
-  }
-
-  const renderPromptButton = (item: QuickPrompt) => {
-    const style = PROMPT_THEMES[item.theme] || PROMPT_THEMES.gold
-    return (
-      <button
-        key={item.id}
-        type="button"
-        onClick={() => handleAction(item.prompt)}
-        className={`inline-flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1 rounded-lg transition-all duration-200 cursor-pointer font-serif border shadow-sm ${style.bg} ${style.border} ${style.text} ${style.hover}`}
-      >
-        <span className={`${style.dot} text-[10px]`}>✦</span>
-        <span>{item.label}</span>
-      </button>
-    )
   }
 
   return (
@@ -112,14 +109,22 @@ export default function MasterEntryCard() {
           aria-hidden="true"
         />
 
-        {/* Quick prompt pills rows on top of the input box - strictly balanced 3+3 centered */}
-        <div className="relative z-10 mb-3 sm:mb-3.5 flex flex-col items-center gap-1.5 sm:gap-2">
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5">
-            {row1.map(renderPromptButton)}
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5">
-            {row2.map(renderPromptButton)}
-          </div>
+        {/* Quick prompt pills - 2*4 on mobile, 4*2 on desktop */}
+        <div className="relative z-10 mb-3 sm:mb-3.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+          {quickPrompts.map((item) => {
+            const style = PROMPT_THEMES[item.theme] || PROMPT_THEMES.gold
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleAction(item.prompt)}
+                className={`w-full inline-flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs px-2 py-1.5 rounded-lg transition-all duration-200 cursor-pointer font-serif border shadow-sm truncate ${style.bg} ${style.border} ${style.text} ${style.hover}`}
+              >
+                <span className={`${style.dot} text-[10px] shrink-0`}>✦</span>
+                <span className="truncate">{item.label}</span>
+              </button>
+            )
+          })}
         </div>
 
         {/* Command bar input + submit button */}
