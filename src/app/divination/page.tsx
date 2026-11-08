@@ -58,9 +58,8 @@ export default function DivinationPage() {
   return (
     <div className="relative flex-1 bg-background">
       <StarField />
-      <div className="relative z-10 py-8 sm:py-12 px-3 sm:px-4 max-w-6xl mx-auto">
-      <AnimatePresence mode="wait">
-        {(
+      <div className="relative z-10 py-6 sm:py-10 px-3 sm:px-4 max-w-6xl mx-auto">
+        <AnimatePresence mode="wait">
           <motion.div
             key="services-grid"
             initial={{ opacity: 0 }}
@@ -68,22 +67,17 @@ export default function DivinationPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Title — hidden on mobile */}
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="hidden sm:block text-center mb-8"
-            >
-              <h1 className="text-2xl sm:text-3xl font-serif text-gold-light tracking-wide">
-                {T(lang, '正統術數 · 叩問天機', 'Choose Your Metaphysical Oracle')}
-              </h1>
-              <p className="text-xs text-foreground/50 font-serif tracking-widest mt-1.5 uppercase">
-                {T(lang, '六派源流 · 靜心求索', 'Classical Systems of Insight')}
-              </p>
-            </motion.div>
-
-            {/* Master Xuanji Entrance */}
+            {/* Master Xuanji Entrance (Command Bar) */}
             <MasterEntryCard />
+
+            {/* Subtle Divider to Classical Divination Portals */}
+            <div className="flex items-center gap-3 my-5 sm:my-7 max-w-4xl mx-auto">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
+              <span className="text-[11px] sm:text-xs text-foreground/40 font-serif tracking-widest uppercase select-none">
+                {T(lang, '自選術數起盤', 'Classical Systems')}
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
               {visibleServices.map((svc, i) => (
@@ -91,7 +85,7 @@ export default function DivinationPage() {
                   key={svc.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + i * 0.06 }}
+                  transition={{ delay: 0.15 + i * 0.05 }}
                 >
                   <Link
                     href={`/divination/${svc.id}`}
@@ -135,8 +129,7 @@ export default function DivinationPage() {
             </div>
 
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
       </div>
     </div>
   )

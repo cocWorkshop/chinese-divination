@@ -34,6 +34,19 @@ describe('ExpandedView copy button & suggestions logic', () => {
     expect(fileContent).toContain('T(lang, `完成 (${selectedIndices.size})`')
   })
 
+  it('ExpandedView header employs mobile-responsive classes and whitespace-nowrap to prevent text wrapping on small screens', () => {
+    const fileContent = fs.readFileSync(
+      path.resolve(process.cwd(), 'src/components/master/widget/ExpandedView.tsx'),
+      'utf-8'
+    )
+    // Prevents text breaking into 2 lines vertically (e.g. 玄機大 / 師)
+    expect(fileContent).toContain('whitespace-nowrap shrink-0')
+    // Responsive button labels on small mobile viewports
+    expect(fileContent).toContain('hidden sm:inline')
+    // Responsive container padding
+    expect(fileContent).toContain('px-3.5 sm:px-5')
+  })
+
   it('prefers viewingReadingQuestions over greeting.suggestions when present', () => {
     const viewingReadingQuestions = ['八字中的喜用神如何作用？', '正緣何時顯現？', '近兩年事業發展轉機？']
     const greetingSuggestions = ['請以八字、紫微互參', '今年運勢如何？', '想為家人起盤']

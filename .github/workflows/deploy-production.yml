@@ -1,0 +1,105 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch: # 手动触发，保证生产发布的严肃性与可控性
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # 生产部署不应该被并发打断
+
+jobs:
+  # 质量门禁：复用 CI 工作流，确保类型检查、lint、测试及数据库迁移回放通过后再部署
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          echo "🔨 Building Docker image chinese-divination:latest for production..."
+          docker build --network=host -t chinese-divination:latest .
+
+      - name: Deploy Production Container
+        run: |
+          echo "🛑 Stopping and cleaning up previous production container..."
+          docker stop chinese-divination || true
+          docker rm chinese-divination || true
+
+          # 加载生产环境变量文件（优先使用 /home/elvin/.env.chinese-divination-production）
+          ENV_FILE_FLAG=""
+          if [ -f /home/elvin/.env.chinese-divination-production ]; then
+            echo "📄 Using /home/elvin/.env.chinese-divination-production"
+            ENV_FILE_FLAG="--env-file /home/elvin/.env.chinese-divination-production"
+          elif [ -f /home/elvin/projects/chinese-divination/.env.production ]; then
+            echo "📄 Using /home/elvin/projects/chinese-divination/.env.production"
+            ENV_FILE_FLAG="--env-file /home/elvin/projects/chinese-divination/.env.production"
+          elif [ -f .env.production ]; then
+            echo "📄 Using .env.production"
+            ENV_FILE_FLAG="--env-file .env.production"
+          else
+            echo "❌ Error: No production env file found!"
+            exit 1
+          fi
+
+          echo "🚀 Running new production container: chinese-divination..."
+          # 配置说明：
+          # - --network host: 直连宿主机网络，访问本地 PostgreSQL (127.0.0.1:5432) 和 8094 端口
+          # - --memory 2g: 限制内存防止内存泄漏
+          # - -e PORT=8094: 监听生产反向代理端口 8094
+          docker run -d \
+            --name chinese-divination \
+            --restart unless-stopped \
+            --memory 2g \
+            --network host \
+            $ENV_FILE_FLAG \
+            -e HOSTNAME=0.0.0.0 \
+            -e NODE_ENV=production \
+            -e PORT=8094 \
+            --health-cmd "wget -q -O /dev/null http://127.0.0.1:\${PORT:-8094}/api/config/nav || exit 1" \
+            --health-interval 30s \
+            --health-timeout 10s \
+            --health-retries 3 \
+            --health-start-period 90s \
+            chinese-divination:latest
+
+      - name: Verify Production Health
+        run: |
+          echo "⏳ Waiting for production container startup and database migrations..."
+          for i in $(seq 1 30); do
+            STATUS=$(docker inspect --format '{{.State.Status}}' chinese-divination 2>/dev/null || echo "not_found")
+            RESTART_COUNT=$(docker inspect --format '{{.RestartCount}}' chinese-divination 2>/dev/null || echo "0")
+
+            if [ "$STATUS" = "exited" ] || [ "$STATUS" = "dead" ] || [ "$RESTART_COUNT" -gt 0 ]; then
+              echo "❌ Production container crashed during startup! (Status: $STATUS, RestartCount: $RESTART_COUNT)"
+              docker logs --tail 50 chinese-divination
+              exit 1
+            fi
+
+            # 探测健康检查端点 (生产端口 8094)
+            if docker exec chinese-divination wget -q -O /dev/null http://127.0.0.1:8094/api/config/nav 2>/dev/null; then
+              echo "✅ Production application is healthy and ready on port 8094!"
+              docker ps --filter "name=chinese-divination"
+              exit 0
+            fi
+
+            echo "Waiting for production service to be healthy (attempt $i/30)..."
+            sleep 2
+          done
+
+          echo "❌ Health check timed out after 60s. Production container failed to become healthy:"
+          docker logs --tail 50 chinese-divination
+          exit 1
+
+      - name: Prune Dangling Images
+        if: always()
+        run: |
+          docker image prune -f

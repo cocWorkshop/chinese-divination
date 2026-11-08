@@ -260,26 +260,26 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
 
           {/* Header */}
           <div
-            className="relative flex items-center justify-between px-5 py-3.5"
+            className="relative flex items-center justify-between px-3.5 sm:px-5 py-3 sm:py-3.5 gap-1.5 sm:gap-2.5 min-w-0"
             style={{ borderBottom: '1px solid var(--card-border)' }}
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 shrink">
               <span
-                className="leading-none"
+                className="leading-none shrink-0"
                 style={{ filter: 'drop-shadow(0 1px 3px rgba(212,175,55,0.4))' }}
                 aria-hidden
               >
-                <MasterSageIcon size={24} color="var(--gold)" />
+                <MasterSageIcon size={22} color="var(--gold)" />
               </span>
-              <span className="font-serif text-lg tracking-wide" style={{ color: 'var(--gold)' }}>
+              <span className="font-serif text-base sm:text-lg tracking-wide whitespace-nowrap shrink-0" style={{ color: 'var(--gold)' }}>
                 {showMemoryPanel
                   ? (T(lang, '記憶設定', 'Memory Settings'))
                   : (T(lang, '玄機大師', 'Master Xuanji'))}
               </span>
-              {loading && !showMemoryPanel && <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse" />}
+              {loading && !showMemoryPanel && <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse shrink-0" />}
               <button
                 onClick={() => setShowMemoryPanel(!showMemoryPanel)}
-                className={`text-[11px] px-2.5 py-0.5 rounded-full transition-all flex items-center gap-1.5 ${
+                className={`text-[11px] px-2 sm:px-2.5 py-0.5 rounded-full transition-all flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap ${
                   showMemoryPanel
                     ? 'bg-[rgba(212,168,83,0.18)] text-[var(--gold)] border-[var(--gold)] font-medium'
                     : 'text-[var(--text-muted)] hover:bg-[rgba(212,175,55,0.08)]'
@@ -291,14 +291,14 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                 <span>{showMemoryPanel ? (T(lang, '← 返回對話', '← Chat')) : (T(lang, '記憶', 'Memory'))}</span>
                 {!showMemoryPanel && (
                   <span
-                    className={`w-1.5 h-1.5 rounded-full ${
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                       portraitEnabled ? 'bg-emerald-400' : 'bg-red-400'
                     }`}
                   />
                 )}
               </button>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {!showMemoryPanel && messages.length > 0 && (
                 <button
                   onClick={() => {
@@ -314,7 +314,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                       setSelectedIndices(new Set())
                     }
                   }}
-                  className={`flex items-center gap-1.5 px-2.5 h-8 rounded-full text-xs transition-colors ${
+                  className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 h-7 sm:h-8 rounded-full text-xs transition-colors shrink-0 whitespace-nowrap ${
                     isSelectMode && selectedIndices.size > 0
                       ? 'bg-[var(--gold)] text-[#080c17] font-medium shadow-sm hover:brightness-110 active:scale-[0.98]'
                       : isSelectMode
@@ -338,13 +338,17 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                   }
                 >
                   <CopyIcon size={13} color={isSelectMode && selectedIndices.size > 0 ? '#080c17' : 'var(--gold)'} />
-                  <span>
-                    {!isSelectMode
-                      ? T(lang, '選擇複製', 'Select')
-                      : selectedIndices.size > 0
+                  {!isSelectMode ? (
+                    <span className="hidden sm:inline">
+                      {T(lang, '選擇複製', 'Select')}
+                    </span>
+                  ) : (
+                    <span>
+                      {selectedIndices.size > 0
                         ? T(lang, `完成 (${selectedIndices.size})`, `Done (${selectedIndices.size})`)
                         : T(lang, '完成', 'Done')}
-                  </span>
+                    </span>
+                  )}
                 </button>
               )}
               <button
@@ -353,21 +357,21 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                   setSelectedIndices(new Set())
                   void startNewSession()
                 }}
-                className="flex items-center gap-1.5 px-3 h-8 rounded-full text-xs transition-colors hover:bg-[rgba(212,175,55,0.08)]"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 h-7 sm:h-8 rounded-full text-xs transition-colors hover:bg-[rgba(212,175,55,0.08)] shrink-0 whitespace-nowrap"
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--card-border)' }}
                 title={T(lang, '開始新對話', 'Start a new chat')}
                 aria-label={T(lang, '開始新對話', 'Start a new chat')}
               >
                 <SunMoonIcon size={14} isDark={false} color="var(--gold)" />
-                <span>{T(lang, '新對話', 'New chat')}</span>
+                <span className="hidden sm:inline">{T(lang, '新對話', 'New chat')}</span>
               </button>
               <button
                 onClick={() => setShape('collapsed')}
-                className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+                className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full transition-colors shrink-0"
                 style={{ color: 'var(--text-muted)' }}
                 aria-label={T(lang, '收合對話', 'Close chat')}
               >
-                <CloseIcon size={16} />
+                <CloseIcon size={15} />
               </button>
             </div>
           </div>
