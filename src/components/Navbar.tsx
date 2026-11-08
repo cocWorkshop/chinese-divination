@@ -104,15 +104,23 @@ export default function Navbar() {
     try {
       const res = await fetch('/api/share', { method: 'POST' })
       const data = await res.json()
-      if (res.ok) {
+      if (res.ok && data.code) {
         router.push(`/share/${data.code}`)
       } else {
-        toast.error(data.error || T(lang, '操作失敗', 'Failed'))
+        const errorMsg = data.code === 'TOO_MANY_ACTIVE_LINKS' || data.error?.includes('Too many active share links')
+          ? T(lang, '已有過多有效分享連結，請先分享現有連結', 'Too many active share links. Please share your existing links first.')
+          : data.code === 'RATE_LIMITED' || data.error?.includes('Too many requests')
+          ? T(lang, '操作過於頻繁，請稍候再試', 'Too many requests. Please try again later.')
+          : data.code === 'UNAUTHORIZED' || data.error === 'Unauthorized'
+          ? T(lang, '請先登入', 'Please log in first')
+          : T(lang, '操作失敗，請稍候再試', data.error || 'Failed, please try again later')
+        toast.error(errorMsg)
       }
     } catch {
       toast.error(T(lang, '網絡錯誤', 'Network error'))
+    } finally {
+      setSharing(false)
     }
-    setSharing(false)
   }
 
   if (isFunnel) return null

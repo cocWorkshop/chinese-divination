@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useLang } from '@/components/LanguageContext'
 import { useTheme } from '@/components/ThemeProvider'
@@ -22,7 +22,9 @@ export default function SharePage() {
   const { lang } = useLang()
   const { theme, toggleTheme } = useTheme()
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const router = useRouter()
   const [copied, setCopied] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
   const [bonusCredits, setBonusCredits] = useState(3)
   const [visibleTypes, setVisibleTypes] = useState<string[]>([])
 
@@ -88,6 +90,36 @@ export default function SharePage() {
     setCopied(true)
     toast.success(Ts(lang, '已複製連結！', 'Link copied!'))
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleRegenerate = async () => {
+    if (!session || regenerating) return
+    setRegenerating(true)
+    try {
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ forceNew: true }),
+      })
+      const data = await res.json()
+      if (res.ok && data.code) {
+        toast.success(T(lang, '已生成新的分享連結', 'New share link generated'))
+        router.push(`/share/${data.code}`)
+      } else {
+        const errorMsg = data.code === 'TOO_MANY_ACTIVE_LINKS' || data.error?.includes('Too many active share links')
+          ? T(lang, '已有過多有效分享連結，請先分享現有連結', 'Too many active share links. Please share your existing links first.')
+          : data.code === 'RATE_LIMITED' || data.error?.includes('Too many requests')
+          ? T(lang, '操作過於頻繁，請稍候再試', 'Too many requests. Please try again later.')
+          : data.code === 'UNAUTHORIZED' || data.error === 'Unauthorized'
+          ? T(lang, '請先登入', 'Please log in first')
+          : T(lang, '操作失敗，請稍候再試', data.error || 'Failed, please try again later')
+        toast.error(errorMsg)
+      }
+    } catch {
+      toast.error(T(lang, '網絡錯誤', 'Network error'))
+    } finally {
+      setRegenerating(false)
+    }
   }
 
   const shareButtons = [
@@ -265,22 +297,33 @@ export default function SharePage() {
               <LinkIcon size={15} className="text-gold/60 flex-shrink-0" />
               <code className="text-[var(--text-secondary)] text-xs break-all">{shareUrl}</code>
             </div>
-            <button
-              onClick={copyLink}
-              className="mt-3 px-4 py-2 min-h-[40px] bg-gold/10 border border-gold/30 text-gold rounded-lg text-sm hover:bg-gold/20 transition-colors inline-flex items-center justify-center gap-1.5 font-serif"
-            >
-              {copied ? (
-                <>
-                  <CheckSealIcon size={16} className="text-emerald-400" />
-                  <span>{T(lang, '已複製', 'Copied')}</span>
-                </>
-              ) : (
-                <>
-                  <CopyIcon size={16} />
-                  <span>{T(lang, '複製連結', 'Copy Link')}</span>
-                </>
-              )}
-            </button>
+            <div className="mt-3 flex items-center justify-center gap-2.5 flex-wrap">
+              <button
+                onClick={copyLink}
+                className="px-4 py-2 min-h-[40px] bg-gold/10 border border-gold/30 text-gold rounded-lg text-sm hover:bg-gold/20 transition-colors inline-flex items-center justify-center gap-1.5 font-serif"
+              >
+                {copied ? (
+                  <>
+                    <CheckSealIcon size={16} className="text-emerald-400" />
+                    <span>{T(lang, '已複製', 'Copied')}</span>
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon size={16} />
+                    <span>{T(lang, '複製連結', 'Copy Link')}</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleRegenerate}
+                disabled={regenerating}
+                className="px-3.5 py-2 min-h-[40px] bg-foreground/5 border border-gold/20 text-foreground/70 hover:text-gold hover:border-gold/40 rounded-lg text-xs transition-colors inline-flex items-center justify-center gap-1.5 font-serif disabled:opacity-50"
+                title={T(lang, '舊連結將失效，並生成一組全新分享碼', 'Previous links will be refreshed and a new code generated')}
+              >
+                <SparkleIcon size={14} className={regenerating ? 'animate-spin' : ''} />
+                <span>{regenerating ? T(lang, '生成中...', 'Generating...') : T(lang, '重新生成連結', 'Regenerate Link')}</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-4 gap-2 mb-6">
