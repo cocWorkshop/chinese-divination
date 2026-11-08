@@ -164,9 +164,9 @@ export default function MysticalLoader({
           animate={{ rotate: 360 }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
         >
-          <YinYangIcon size={iconSize} className="drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]" />
+          <YinYangIcon size={iconSize} className="drop-shadow-[0_2px_8px_rgba(45,31,14,0.12)] dark:drop-shadow-[0_0_15px_rgba(212,168,83,0.5)]" />
         </motion.div>
-        <p className="text-gold/70 text-sm font-serif">
+        <p className="text-gold-dark dark:text-gold/70 text-sm font-serif">
           {message || (T(lang, '載入中...', 'Loading...'))}
         </p>
       </div>
@@ -195,7 +195,7 @@ export default function MysticalLoader({
       >
         {/* Outer ring with trigram symbols */}
         <motion.div
-          className="absolute inset-0"
+          className="absolute inset-0 pointer-events-none"
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1, rotate: -360 }}
           transition={{
@@ -207,15 +207,15 @@ export default function MysticalLoader({
           {['☰', '☱', '☲', '☳', '☴', '☵', '☶', '☷'].map((trigram, i) => (
             <motion.span
               key={i}
-              className="absolute text-gold/60"
+              className="absolute text-gold-dark/85 dark:text-gold/85 font-serif select-none drop-shadow-sm"
               style={{
                 left: `${50 + 45 * Math.cos((i * Math.PI) / 4 - Math.PI / 2)}%`,
                 top: `${50 + 45 * Math.sin((i * Math.PI) / 4 - Math.PI / 2)}%`,
                 transform: 'translate(-50%, -50%)',
-                fontSize: 'clamp(1rem, 4vmin, 2rem)',
+                fontSize: 'clamp(1.1rem, 4.5vmin, 2.2rem)',
               }}
               initial={{ opacity: 0 }}
-              animate={{ opacity: [0.3, 0.8, 0.3] }}
+              animate={{ opacity: [0.55, 0.95, 0.55] }}
               transition={{ duration: 2, repeat: Infinity, delay: 0.8 + i * 0.15 }}
             >
               {trigram}
@@ -235,15 +235,18 @@ export default function MysticalLoader({
             rotate: { duration: 8, repeat: Infinity, ease: 'linear' },
           }}
         >
-          <YinYangIcon size={200} className="w-full h-full drop-shadow-[0_0_24px_rgba(212,168,83,0.5)]" />
+          <YinYangIcon
+            size={200}
+            className="w-full h-full drop-shadow-[0_4px_20px_rgba(45,31,14,0.18)] dark:drop-shadow-[0_0_24px_rgba(212,168,83,0.5)]"
+          />
         </motion.div>
 
         {/* Pulsing glow */}
         <motion.div
           className="absolute inset-0 rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(212,168,83,0.15) 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, var(--border-gold) 0%, transparent 70%)' }}
           initial={{ opacity: 0 }}
-          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.8, 0.5] }}
+          animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.75, 0.4] }}
           transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
         />
       </motion.div>
