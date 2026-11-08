@@ -30,7 +30,7 @@ export function getMasterEntryConfig(lang: string): MasterEntryConfig {
     role: '命理總顧問',
     badge: '玄機',
     description: '心有困惑，直問玄機大師；或自選下方六大正統術數起盤。',
-    ctaButton: '向大師提問',
+    ctaButton: '請教大師',
   }
 }
 

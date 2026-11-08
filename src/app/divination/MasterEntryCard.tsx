@@ -144,10 +144,9 @@ export default function MasterEntryCard() {
 
           <button
             type="submit"
-            className="px-5 py-2.5 rounded-xl font-serif text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer border border-gold/40 hover:border-gold bg-gold/15 hover:bg-gold/25 text-gold-light hover:text-foreground shadow-sm shadow-gold/5 active:scale-98 flex-shrink-0"
+            className="px-5 py-2.5 rounded-xl font-serif text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-center cursor-pointer border border-gold/40 hover:border-gold bg-gold/15 hover:bg-gold/25 text-gold-light hover:text-foreground shadow-sm shadow-gold/5 active:scale-98 flex-shrink-0"
           >
-            <span>{T(lang, '向大師提問', 'Ask Master')}</span>
-            <span className="transition-transform group-hover:translate-x-0.5 font-sans text-xs">→</span>
+            <span>{T(lang, '請教大師', 'Ask Master')}</span>
           </button>
         </form>
       </div>

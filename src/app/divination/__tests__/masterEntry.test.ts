@@ -130,9 +130,11 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     // Domain-based subtle themes must be mapped
     expect(cardContent).toContain('PROMPT_THEMES')
 
-    // Must feature the clean command bar input
+    // Must feature the clean command bar input with 請教大師 (no arrow)
     expect(cardContent).toContain('<input')
-    expect(cardContent).toContain('向大師提問')
+    expect(cardContent).toContain("T(lang, '請教大師', 'Ask Master')")
+    expect(cardContent).not.toContain('向大師提問')
+    expect(cardContent).not.toContain('→')
     expect(pageContent).toContain('自選術數起盤')
   })
 })
