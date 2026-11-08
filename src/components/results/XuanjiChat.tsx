@@ -9,6 +9,7 @@ import YinYangIcon from '@/components/YinYangIcon'
 import { SparkleIcon, RefreshIcon } from '@/components/DivinationIcons'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkCjkFriendly from '@/lib/remarkCjkFriendly'
 import { T } from '@/lib/i18n'
 
 interface Message {
@@ -311,7 +312,7 @@ export default function XuanjiChat({ readingResult, readingType, readingId }: {
                 >
                   {msg.role === 'assistant' ? (
                     <div className="classic-prose text-sm max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1 [&>h1]:text-gold [&>h2]:text-gold [&>h3]:text-gold [&>h4]:text-gold [&>strong]:text-gold/90 [&>ul>li::marker]:text-gold/50 [&>ol>li::marker]:text-gold/50">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkCjkFriendly]}>{msg.content}</ReactMarkdown>
                     </div>
                   ) : (
                     msg.content

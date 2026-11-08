@@ -849,7 +849,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
             50% { transform: scale(1.8); opacity: 0; }
           }
           .prose-master p { margin: 0.3em 0; }
-          .prose-master strong { color: var(--gold); }
+          .prose-master strong { font-weight: 600; color: var(--gold); }
           .scrollbar-thin::-webkit-scrollbar { width: 4px; }
           .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
           .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }

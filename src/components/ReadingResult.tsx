@@ -2,6 +2,7 @@
 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkCjkFriendly from '@/lib/remarkCjkFriendly'
 
 interface ReadingResultProps {
   content: string
@@ -11,7 +12,7 @@ export default function ReadingResult({ content }: ReadingResultProps) {
   return (
     <div className="classic-prose max-w-none reading-result">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkCjkFriendly]}
         components={{
           h1: ({ children }) => (
             <h1 className="text-2xl font-serif text-gold border-b border-gold/30 pb-2 mb-4">{children}</h1>

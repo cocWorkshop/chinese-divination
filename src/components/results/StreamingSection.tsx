@@ -14,6 +14,7 @@
 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkCjkFriendly from '@/lib/remarkCjkFriendly'
 import SectionDrawer from './SectionDrawer'
 import { useLang } from '../LanguageContext'
 import { T } from '@/lib/i18n'
@@ -55,7 +56,7 @@ export default function StreamingSection({
     >
       <div className={`text-[var(--text-secondary)] text-base leading-relaxed ziwei-markdown overflow-x-auto break-words transition-all duration-500 ${streaming && !hasContent ? 'blur-[6px] opacity-60 select-none' : ''}`}>
         {hasContent ? (
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{content!}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm, remarkCjkFriendly]}>{content!}</ReactMarkdown>
         ) : streaming ? (
           <p className="text-[var(--text-muted)] leading-relaxed">
             {T(lang,

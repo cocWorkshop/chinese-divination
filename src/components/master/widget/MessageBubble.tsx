@@ -14,6 +14,7 @@
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkCjkFriendly from '@/lib/remarkCjkFriendly'
 import type { MasterMsg } from '../MasterChatContext'
 import { formatTime } from './formatTime'
 
@@ -326,7 +327,7 @@ export default function MessageBubble({
             className="text-sm leading-relaxed font-serif prose-master"
             style={{ color: 'var(--text-primary, #e0e0e0)' }}
           >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkCjkFriendly]}>{msg.content}</ReactMarkdown>
           </div>
         ) : (
           loading && (

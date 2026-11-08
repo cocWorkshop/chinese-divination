@@ -441,6 +441,10 @@ option {
   .classic-prose th { background: var(--accent-bg); color: var(--gold); }
   .classic-prose hr { border-color: var(--border-color); margin: 0.8em 0; }
   .classic-prose a { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* Xuanji Master prose styles */
+  .prose-master p { margin: 0.3em 0; }
+  .prose-master strong { font-weight: 600; color: var(--gold); }
 }
 
 /* ─── Modern Oriental Mystical Design Utilities ─── */
