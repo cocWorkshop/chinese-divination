@@ -414,6 +414,17 @@ export function CloseIcon({ size = 16, className = '', color }: IconProps) {
   )
 }
 
+// 开辟新篇 / 加号 — Plus / New Chat
+export function PlusIcon({ size = 16, className = '', color }: IconProps) {
+  const stroke = color || 'currentColor'
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  )
+}
+
 // 乾坤重转 — Refresh / Retry
 export function RefreshIcon({ size = 16, className = '', color }: IconProps) {
   const stroke = color || 'currentColor'

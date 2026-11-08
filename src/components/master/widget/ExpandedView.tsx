@@ -21,7 +21,7 @@ import { renderGreeting } from '@/lib/master/greetings'
 import { withCtaNonce } from '@/lib/master/ctaNav'
 import MessageBubble from './MessageBubble'
 import type { GateIntent } from './CollapsedBar'
-import { MasterSageIcon, SunMoonIcon, CloseIcon, CopyIcon } from '@/components/DivinationIcons'
+import { MasterSageIcon, PlusIcon, CloseIcon, CopyIcon } from '@/components/DivinationIcons'
 import { copyToClipboard, formatMessagesForCopy } from './chatCopy'
 import { MasterWelcomeBoard } from './MasterWelcomeBoard'
 import { T } from '@/lib/i18n'
@@ -362,7 +362,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                 title={T(lang, '開始新對話', 'Start a new chat')}
                 aria-label={T(lang, '開始新對話', 'Start a new chat')}
               >
-                <SunMoonIcon size={14} isDark={false} color="var(--gold)" />
+                <PlusIcon size={13} color="var(--gold)" />
                 <span className="hidden sm:inline">{T(lang, '新對話', 'New chat')}</span>
               </button>
               <button

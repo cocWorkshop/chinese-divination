@@ -45,6 +45,9 @@ describe('ExpandedView copy button & suggestions logic', () => {
     expect(fileContent).toContain('hidden sm:inline')
     // Responsive container padding
     expect(fileContent).toContain('px-3.5 sm:px-5')
+    // Uses intuitive PlusIcon for new chat instead of ambiguous SunMoonIcon
+    expect(fileContent).toContain('<PlusIcon')
+    expect(fileContent).not.toContain('<SunMoonIcon')
   })
 
   it('prefers viewingReadingQuestions over greeting.suggestions when present', () => {
