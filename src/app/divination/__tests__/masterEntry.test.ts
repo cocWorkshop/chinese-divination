@@ -132,14 +132,16 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     expect(cardContent).toContain('<input')
     expect(cardContent).toContain("T(lang, '請教大師', 'Ask Master')")
     expect(cardContent).not.toContain('向大師提問')
-    // User explicitly requested removing '正統術數' and '自選起盤', using a subtle divider instead
+    // User explicitly requested removing '正統術數', '自選起盤', and any top divider line above oracle cards
     expect(pageContent).not.toContain('正統術數')
     expect(pageContent).not.toContain('自選起盤')
-    expect(pageContent).toContain('bg-gradient-to-r from-transparent via-gold/15 to-transparent')
+    expect(pageContent).not.toContain('h-px flex-1 bg-gradient-to-r')
 
     // Vertical centering when viewport height is sufficient (min-h-[calc(100vh-4rem)] + justify-center)
     expect(pageContent).toContain('min-h-[calc(100vh-4rem)]')
     expect(pageContent).toContain('justify-center')
+    // Offsets <main>'s layout pb-20 to avoid forcing an artificial vertical scrollbar
+    expect(pageContent).toContain('-mb-20')
 
     // Fixed dock layout: Master card pinned at bottom of viewport (fixed bottom-0 z-30)
     expect(pageContent).toContain('fixed bottom-0')
@@ -151,6 +153,15 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     const widgetContent = fs.readFileSync(path.resolve(__dirname, '../../../components/master/MasterChatWidget.tsx'), 'utf-8')
     expect(widgetContent).toContain("pathname === '/divination'")
     expect(widgetContent).toContain('isDivinationHub ? null')
+
+    // Footer suppresses rendering on /divination page to avoid forcing scrollbars beneath fixed dock
+    const footerContent = fs.readFileSync(path.resolve(__dirname, '../../../components/Footer.tsx'), 'utf-8')
+    expect(footerContent).toContain("pathname === '/divination'")
+
+    // globals.css uses overflow-y: auto instead of forcing a persistent scrollbar via overflow-y: scroll
+    const cssContent = fs.readFileSync(path.resolve(__dirname, '../../globals.css'), 'utf-8')
+    expect(cssContent).toContain('overflow-y: auto;')
+    expect(cssContent).not.toContain('overflow-y: scroll;')
   })
 
   it('should globally map divination icons to DivinationLayout Demo archetypes with authentic BaZi destiny scroll', async () => {

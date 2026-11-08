@@ -56,10 +56,10 @@ export default function DivinationPage() {
   }, [])
 
   return (
-    <div className="relative flex-1 bg-background flex flex-col min-h-[calc(100vh-4rem)]">
+    <div className="relative flex-1 bg-background flex flex-col min-h-[calc(100vh-4rem)] -mb-20">
       <StarField />
       {/* Oracle Cards Container: Centered vertically when height is sufficient, with bottom padding for fixed dock */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center py-4 sm:py-6 px-3 sm:px-4 max-w-4xl mx-auto w-full pb-32 sm:pb-36">
+      <div className="relative z-10 flex-1 flex flex-col justify-center py-3 sm:py-5 px-3 sm:px-4 max-w-4xl mx-auto w-full pb-24 sm:pb-28">
         <AnimatePresence mode="wait">
           <motion.div
             key="services-grid"
@@ -69,11 +69,6 @@ export default function DivinationPage() {
             transition={{ duration: 0.3 }}
             className="w-full flex flex-col justify-center"
           >
-            {/* Subtle Divider (Text removed per user request) */}
-            <div className="flex items-center gap-3 mb-3 sm:mb-5 w-full px-2" aria-hidden="true">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
-            </div>
-
             {/* Oracle Cards Grid: 2 columns on mobile, 3 columns on desktop, styled after DivinationLayout Demo */}
             <div className="w-full grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4.5">
               {visibleServices.map((svc, i) => (

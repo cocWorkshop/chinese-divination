@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 /* Stable viewport width: guarantees that fixed elements (e.g. MasterFab)
-   and centered layouts sit at the exact same horizontal position regardless of
-   whether a page has scrollable content or fits within the viewport. */
+   and centered layouts sit at the exact same horizontal position without forcing
+   a persistent scrollbar when page height fits within the viewport. */
 html {
-  overflow-y: scroll;
+  overflow-y: auto;
   scrollbar-gutter: stable;
 }
 

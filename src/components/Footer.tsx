@@ -1,10 +1,15 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { useLang } from '@/components/LanguageContext'
 import { T } from '@/lib/i18n'
 
 export default function Footer() {
   const { lang } = useLang()
+  const pathname = usePathname()
+
+  // On /divination, MasterEntryCard is fixed to the bottom of the viewport; suppress Footer to prevent unwanted scrollbars
+  if (pathname === '/divination') return null
 
   return (
     <footer className="py-6 text-center text-xs border-t border-gold/10" style={{ color: 'var(--text-muted)' }}>
