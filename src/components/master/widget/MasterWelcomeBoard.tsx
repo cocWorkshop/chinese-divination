@@ -43,7 +43,7 @@ export function MasterWelcomeBoard({
     return (
       <div
         data-testid="welcome-board-reading"
-        className="w-full max-w-lg mx-auto flex flex-col items-center text-center py-4 px-3 sm:px-4 rounded-xl border border-[var(--border-gold,rgba(212,175,55,0.2))] bg-[rgba(26,23,20,0.6)] backdrop-blur-sm shadow-sm"
+        className="w-full max-w-lg mx-auto flex flex-col items-center text-center py-4 px-3 sm:px-4 rounded-xl border border-[var(--border-gold,rgba(212,175,55,0.2))] bg-[var(--card-bg)] backdrop-blur-sm shadow-sm"
       >
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[11px] sm:text-xs font-serif tracking-wider px-2.5 py-0.5 rounded-full border border-[var(--border-gold,rgba(212,175,55,0.3))] text-[var(--gold)] bg-[rgba(212,175,55,0.06)]">
@@ -100,7 +100,7 @@ export function MasterWelcomeBoard({
     return (
       <div
         data-testid="welcome-board-established"
-        className="w-full max-w-lg mx-auto flex flex-col items-center text-center py-4 px-3 sm:px-4 rounded-xl border border-[var(--border-gold,rgba(212,175,55,0.2))] bg-[rgba(26,23,20,0.6)] backdrop-blur-sm shadow-sm space-y-3"
+        className="w-full max-w-lg mx-auto flex flex-col items-center text-center py-4 px-3 sm:px-4 rounded-xl border border-[var(--border-gold,rgba(212,175,55,0.2))] bg-[var(--card-bg)] backdrop-blur-sm shadow-sm space-y-3"
       >
         {/* Opener text */}
         <p className="font-serif text-xs sm:text-sm leading-relaxed text-[var(--text-primary,#e0e0e0)] max-w-md">
@@ -172,7 +172,7 @@ export function MasterWelcomeBoard({
   return (
     <div
       data-testid="welcome-board-first-time"
-      className="w-full max-w-lg mx-auto flex flex-col items-center text-center py-4 px-3 sm:px-4 rounded-xl border border-[var(--border-gold,rgba(212,175,55,0.2))] bg-[rgba(26,23,20,0.6)] backdrop-blur-sm shadow-sm space-y-3"
+      className="w-full max-w-lg mx-auto flex flex-col items-center text-center py-4 px-3 sm:px-4 rounded-xl border border-[var(--border-gold,rgba(212,175,55,0.2))] bg-[var(--card-bg)] backdrop-blur-sm shadow-sm space-y-3"
     >
       <div className="w-12 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--gold), transparent)' }} />
 

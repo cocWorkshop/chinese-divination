@@ -225,9 +225,16 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     expect(starContent).toContain('spawnMeteor')
     expect(starContent).toContain('meteor.active')
 
-    // Respect reduced motion and theme awareness
+    // Respect reduced motion and theme awareness across dark & light modes
     expect(starContent).toContain('prefersReduced')
     expect(starContent).toContain('themeObserver')
     expect(starContent).toContain('visibilitychange')
+    // Dual-theme palette support (visible in both dark mode and light parchment mode)
+    expect(starContent).toContain('goldPaletteLight')
+    expect(starContent).toContain('pearlPaletteLight')
+
+    // globals.css does not suppress StarField in light mode
+    const cssContent = fs.readFileSync(path.resolve(__dirname, '../../globals.css'), 'utf-8')
+    expect(cssContent).not.toContain(':root:not(.dark) .xj-stars {\n  display: none !important;\n}')
   })
 })

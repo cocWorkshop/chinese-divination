@@ -12,7 +12,8 @@ interface Star {
   speed: number
   vx: number
   vy: number
-  colorRgb: string
+  isPearl: boolean
+  paletteIdx: number
   hasGlow: boolean
 }
 
@@ -43,16 +44,20 @@ export default function StarField() {
     const isMobile = width < 640
     const starCount = isMobile ? 65 : 130
 
-    // Palette: 70% warm oriental gold, 30% celestial pearl white
-    const goldPalette = ['212, 168, 83', '232, 194, 120', '195, 145, 60']
-    const pearlPalette = ['230, 238, 250', '245, 240, 230']
+    // Dual-theme palette:
+    // Dark mode (玄夜): Warm oriental gold & celestial pearl white
+    const goldPaletteDark = ['212, 168, 83', '232, 194, 120', '195, 145, 60']
+    const pearlPaletteDark = ['230, 238, 250', '245, 240, 230']
+
+    // Light mode (宣紙): Ancient Dunhuang celestial chart on tea parchment
+    // Deep antique cinnabar-gold, bronze amber, and soft celestial mineral slate
+    const goldPaletteLight = ['180, 130, 40', '160, 110, 30', '195, 145, 55']
+    const pearlPaletteLight = ['110, 125, 155', '135, 105, 80']
 
     const stars: Star[] = []
     for (let i = 0; i < starCount; i++) {
       const isPearl = Math.random() < 0.3
-      const colorRgb = isPearl
-        ? pearlPalette[Math.floor(Math.random() * pearlPalette.length)]
-        : goldPalette[Math.floor(Math.random() * goldPalette.length)]
+      const paletteIdx = Math.floor(Math.random() * 3)
 
       const r = Math.random() < 0.12 ? Math.random() * 0.9 + 1.4 : Math.random() * 0.9 + 0.5
       const baseAlpha = Math.random() * 0.35 + 0.2
@@ -69,7 +74,8 @@ export default function StarField() {
         // Gentle upward/sideway drift
         vx: (Math.random() - 0.5) * 0.04,
         vy: -(Math.random() * 0.08 + 0.03),
-        colorRgb,
+        isPearl,
+        paletteIdx,
         hasGlow: r > 1.6,
       })
     }
@@ -103,12 +109,23 @@ export default function StarField() {
       nextMeteorTime = time + Math.random() * 12000 + 9000 // next in 9-21s
     }
 
+    // Theme awareness: dynamically track dark / light theme
+    let isDark = document.documentElement.classList.contains('dark')
+    const themeObserver = new MutationObserver(() => {
+      isDark = document.documentElement.classList.contains('dark')
+    })
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+
     // If reduced motion is requested, render one quiet static frame
     if (prefersReduced) {
+      const goldPalette = isDark ? goldPaletteDark : goldPaletteLight
+      const pearlPalette = isDark ? pearlPaletteDark : pearlPaletteLight
       stars.forEach((s) => {
+        const palette = s.isPearl ? pearlPalette : goldPalette
+        const colorRgb = palette[s.paletteIdx % palette.length]
         ctx.beginPath()
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(${s.colorRgb}, ${s.baseAlpha})`
+        ctx.fillStyle = `rgba(${colorRgb}, ${s.baseAlpha * (isDark ? 1 : 0.85)})`
         ctx.fill()
       })
       return
@@ -117,20 +134,16 @@ export default function StarField() {
     let animId: number
     let paused = false
 
-    // Theme awareness: pause in light mode
-    let isDark = document.documentElement.classList.contains('dark')
-    const themeObserver = new MutationObserver(() => {
-      isDark = document.documentElement.classList.contains('dark')
-    })
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-
     const render = (timestamp: number) => {
-      if (paused || !isDark) {
+      if (paused) {
         animId = requestAnimationFrame(render)
         return
       }
 
       ctx.clearRect(0, 0, width, height)
+
+      const goldPalette = isDark ? goldPaletteDark : goldPaletteLight
+      const pearlPalette = isDark ? pearlPaletteDark : pearlPaletteLight
 
       // 1. Render starry sky with gentle twinkle and cosmic drift
       for (let i = 0; i < stars.length; i++) {
@@ -147,22 +160,28 @@ export default function StarField() {
 
         // Smooth harmonic twinkle
         const alpha = Math.max(
-          0.05,
-          Math.min(0.95, s.baseAlpha + s.alphaAmp * Math.sin(timestamp * s.speed + s.phase))
+          isDark ? 0.05 : 0.12,
+          Math.min(
+            isDark ? 0.95 : 0.75,
+            s.baseAlpha + s.alphaAmp * Math.sin(timestamp * s.speed + s.phase)
+          )
         )
+
+        const palette = s.isPearl ? pearlPalette : goldPalette
+        const colorRgb = palette[s.paletteIdx % palette.length]
 
         // Soft outer aura for brighter landmark stars
         if (s.hasGlow) {
           ctx.beginPath()
           ctx.arc(s.x, s.y, s.r * 2.8, 0, Math.PI * 2)
-          ctx.fillStyle = `rgba(${s.colorRgb}, ${alpha * 0.22})`
+          ctx.fillStyle = `rgba(${colorRgb}, ${alpha * (isDark ? 0.22 : 0.16)})`
           ctx.fill()
         }
 
         // Star core
         ctx.beginPath()
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(${s.colorRgb}, ${alpha})`
+        ctx.fillStyle = `rgba(${colorRgb}, ${alpha})`
         ctx.fill()
       }
 
@@ -183,9 +202,15 @@ export default function StarField() {
           const tailY = meteor.y - Math.sin(meteor.angle) * meteor.length
 
           const grad = ctx.createLinearGradient(tailX, tailY, meteor.x, meteor.y)
-          grad.addColorStop(0, 'rgba(212, 168, 83, 0)')
-          grad.addColorStop(0.7, `rgba(212, 168, 83, ${meteor.alpha * 0.4})`)
-          grad.addColorStop(1, `rgba(255, 248, 220, ${meteor.alpha})`)
+          if (isDark) {
+            grad.addColorStop(0, 'rgba(212, 168, 83, 0)')
+            grad.addColorStop(0.7, `rgba(212, 168, 83, ${meteor.alpha * 0.4})`)
+            grad.addColorStop(1, `rgba(255, 248, 220, ${meteor.alpha})`)
+          } else {
+            grad.addColorStop(0, 'rgba(180, 130, 40, 0)')
+            grad.addColorStop(0.7, `rgba(180, 130, 40, ${meteor.alpha * 0.45})`)
+            grad.addColorStop(1, `rgba(140, 90, 20, ${meteor.alpha * 0.85})`)
+          }
 
           ctx.save()
           ctx.beginPath()

@@ -350,9 +350,9 @@ option {
   display: none;
 }
 
-/* Star backdrops are 玄夜-only — 宣紙 morning reading needs no stars. */
+/* Star backdrops are visible in both themes — deep gold & mineral slate dots in light mode */
 :root:not(.dark) .xj-stars {
-  display: none !important;
+  opacity: 0.95;
 }
 
 /* Thin theme-aware scrollbar (poster modal lists etc.) */

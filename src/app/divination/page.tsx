@@ -128,7 +128,7 @@ export default function DivinationPage() {
 
       {/* Master Xuanji Entrance: Fixed at the bottom of viewport when collapsed, hidden when expanded to avoid duplicate inputs */}
       {!isExpanded && (
-        <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none pb-2 sm:pb-3 pt-6 px-3 sm:px-4 bg-gradient-to-t from-[var(--bg-primary,#070b14)] via-[var(--bg-primary,#070b14)]/95 to-transparent">
+        <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none pb-2 sm:pb-3 pt-6 px-3 sm:px-4 bg-gradient-to-t from-background via-background/95 to-transparent">
           <div className="max-w-4xl mx-auto pointer-events-auto">
             <MasterEntryCard />
           </div>
