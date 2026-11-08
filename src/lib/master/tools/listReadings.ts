@@ -44,6 +44,7 @@ export const listReadingsTool = defineTool<z.infer<typeof InputSchema>, z.infer<
     'Parameters: `{ type?, targetType?, familyMemberId?, limit? }` where `type` is one of bazi/ziwei/iching/qimen/meihua/fengshui/liuyao/other, ' +
     "`targetType` is 'self' or 'family', and `limit` defaults to 10 (max 30). " +
     'Returns: `{ readings: Array<{id, type, createdAt, targetType, familyMemberId, question, hasInterpretation, isPaipanOnly, status}> }`. ' +
+    'DISCIPLINE FOR EVENT DIVINATIONS (liuyao, iching, meihua, qimen, fengshui): Always check `question` — event divinations strictly follow 「一事一占」 (one divination per matter) and are valid ONLY for that specific inquiry. If the user asks about a new or different matter, you MUST NOT reuse existing event readings — call `prefill_divination_form` to start a new reading. ' +
     'If the result is empty for the type the user needs, you MUST call `prefill_divination_form` and render a CTA card — never fabricate readings.',
   inputSchema: InputSchema,
   outputSchema: OutputSchema,

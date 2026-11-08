@@ -345,15 +345,20 @@ export async function POST(req: NextRequest) {
     if (typeof body.viewingReadingId === 'string' && body.viewingReadingId.length > 0 && body.viewingReadingId.length < 64) {
       const viewing = await prisma.reading.findFirst({
         where: { id: body.viewingReadingId, userId, deletedAt: null },
-        select: { id: true, type: true, createdAt: true, result: true },
+        select: { id: true, type: true, createdAt: true, result: true, question: true },
       })
       if (viewing) {
         try {
           const sliced = sliceReading(viewing.type, viewing.id, viewing.createdAt.toISOString(), viewing.result)
-          const snapshot = JSON.stringify({ header: sliced.header, overview: sliced.overview, sections: sliced.sections }).slice(0, 6000)
+          const snapshot = JSON.stringify({ question: viewing.question, header: sliced.header, overview: sliced.overview, sections: sliced.sections }).slice(0, 6000)
+          const isEventDivination = ['liuyao', 'iching', 'meihua', 'qimen', 'fengshui'].includes(viewing.type)
           systemPrompt += [
             '\n\n---\n\n## Reading currently on the user\'s screen',
-            `The user is viewing reading \`${viewing.id}\` (${viewing.type}) right now. Unless they clearly refer to something else, questions like 「這個」「這盤」「這裡說的」 refer to THIS reading. Answer grounded in it; use \`get_reading_detail\` with this id for sections not included below. Don't recite what is already visible on their screen — interpret it.`,
+            `The user is viewing reading \`${viewing.id}\` (${viewing.type}) right now.` +
+              (viewing.question ? ` Original question: 「${viewing.question}」.` : ''),
+            isEventDivination
+              ? `EVENT DIVINATION DISCIPLINE: This reading is an event-specific divination cast for: 「${viewing.question || 'the matter on screen'}」. Follow 「一事一占」: if the user asks a follow-up about THIS SAME matter, answer grounded in it. But if the user switches to a DIFFERENT topic or asks a new event question, NEVER reuse this reading! Politely explain 「一事一占」 and call \`prefill_divination_form\` to guide them to cast a fresh reading for the new matter.`
+              : `Unless they clearly refer to something else, questions like 「這個」「這盤」「這裡說的」 refer to THIS reading. Answer grounded in it; use \`get_reading_detail\` with this id for sections not included below. Don't recite what is already visible on their screen — interpret it.`,
             '```json',
             snapshot,
             '```',

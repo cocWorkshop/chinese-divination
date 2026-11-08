@@ -257,6 +257,7 @@ describe('get_reading tool', () => {
         reading: {
           findFirst: vi.fn().mockResolvedValue({
             id: 'r1', type: 'bazi',
+            question: '測試問題',
             createdAt: new Date('2026-04-11T12:00:00Z'),
             result: JSON.stringify({
               type: 'bazi', version: 2,
@@ -274,13 +275,24 @@ describe('get_reading tool', () => {
     const result = await masterToolRegistry.execute('get_reading', { readingId: 'r1' }, ctx)
     expect(result.ok).toBe(true)
     if (result.ok) {
-      const data = result.data as { header: Record<string, unknown>, overview: string, sections: string[] }
+      const data = result.data as { header: Record<string, unknown>, overview: string, sections: string[], question?: string }
       expect((data.header.dayMaster as Record<string, unknown>).strengthLabel).toBe('身强')
       expect(data.overview).toBe('本命总论')
+      expect(data.question).toBe('測試問題')
       expect(data.sections).toContain('career')
       expect(data.sections).toContain('marriage')
       expect(data.sections).toContain('daYunAnalysis')
     }
+  })
+
+  it('enforces 一事一占 discipline in get_reading and list_readings tool descriptions', () => {
+    const getReadingDef = masterToolRegistry.get('get_reading')
+    expect(getReadingDef?.description).toContain('一事一占')
+    expect(getReadingDef?.description).toContain('prefill_divination_form')
+
+    const listReadingsDef = masterToolRegistry.get('list_readings')
+    expect(listReadingsDef?.description).toContain('一事一占')
+    expect(listReadingsDef?.description).toContain('prefill_divination_form')
   })
 
   it('returns NOT_FOUND when reading does not belong to the user', async () => {
