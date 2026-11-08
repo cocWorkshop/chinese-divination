@@ -134,5 +134,11 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     expect(cardContent).not.toContain('向大師提問')
     expect(cardContent).not.toContain('→')
     expect(pageContent).toContain('自選術數起盤')
+    expect(pageContent).toContain('或向玄機大師請益')
+
+    // Responsive layout: Master card top on mobile (order-1) / bottom on desktop (md:order-3)
+    expect(pageContent).toContain('order-1 md:order-3')
+    // Oracle cards: 2 columns on mobile (grid-cols-2)
+    expect(pageContent).toContain('grid-cols-2 lg:grid-cols-3')
   })
 })

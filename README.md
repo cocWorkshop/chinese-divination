@@ -120,49 +120,49 @@ Rather than relying on brittle peer-to-peer agent handoffs that suffer from cont
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Idle: Session Hydrated (GET /api/master)
+    [*] --> Idle: Session Hydrated via GET /api/master
 
     state "Client Burst Buffer (1500ms)" as Burst {
         Typing: User Sends Fragmented Messages
         Timer: Reset 1500ms Sliding Window
         Typing --> Timer: New Message Input
-        Timer --> BatchFlush: 1500ms Elapsed (messages: string[])
+        Timer --> BatchFlush: 1500ms Elapsed with Batched Messages
     }
 
     Idle --> Burst: User Input Event
-    Idle --> ProactiveCheckin: Activation Trigger (gap / cta_pending_aged / unanswered_user)
+    Idle --> ProactiveCheckin: Activation Trigger
     Idle --> IdleReflection: 75-120s Inactivity Timer Fires
 
-    Burst --> TurnInit: POST /api/master (Cancel Active Stream if Preempted)
-    ProactiveCheckin --> TurnInit: Inject Ephemeral Synthetic [activation_trigger:*]
-    IdleReflection --> TurnInit: Inject Ephemeral Synthetic [reflection_trigger] (Hold Output)
+    Burst --> TurnInit: POST /api/master (Cancel Stream if Preempted)
+    ProactiveCheckin --> TurnInit: Inject Ephemeral Activation Trigger
+    IdleReflection --> TurnInit: Inject Ephemeral Reflection Trigger (Hold Output)
 
     state "Server Turn Engine FSM (runMasterTurn)" as Engine {
-        TurnInit --> StreamLLM: Build Cache-Aligned Prompt + Compressed History
-        StreamLLM --> BubbleParser: Stream Chunk (content / tool_call_delta)
+        TurnInit --> StreamLLM: Build Cache-Aligned Prompt + History
+        StreamLLM --> BubbleParser: Stream Content or Tool Deltas
         
-        BubbleParser --> DedupeCheck: finishReason == 'tool_calls'
-        DedupeCheck --> ExecuteTool: Cache Miss (name::JSON(args))
-        DedupeCheck --> InjectCachedResult: Cache Hit (Skip Execution)
+        BubbleParser --> DedupeCheck: Tool Calls Finish Reason
+        DedupeCheck --> ExecuteTool: Cache Miss on Tool Name and Args Hash
+        DedupeCheck --> InjectCachedResult: Cache Hit Skips Execution
         ExecuteTool --> LoopGuard: Record Tool Telemetry
         InjectCachedResult --> LoopGuard
         
-        LoopGuard --> StreamLLM: loopCount < MAX_TOOL_LOOPS (12)
-        LoopGuard --> ForcedSynthesis: loopCount >= 12 OR Empty Prose
-        ForcedSynthesis --> BubbleParser: Call streamLLM (tools: undefined)
+        LoopGuard --> StreamLLM: Under Loop Cap (max 12)
+        LoopGuard --> ForcedSynthesis: Reached Cap or Empty Prose
+        ForcedSynthesis --> BubbleParser: Call streamLLM without Tools
 
-        BubbleParser --> PassCheck: finishReason == 'stop'
-        PassCheck --> SilentDiscard: holdOutput && isPassReply('[PASS]')
+        BubbleParser --> PassCheck: Stop Finish Reason
+        PassCheck --> SilentDiscard: Hold Output and Model Emits PASS
         PassCheck --> PersistTurn: Substantive Reply
     }
 
-    StreamLLM --> Aborted: Client Disconnect / Preemption (req.signal)
-    Aborted --> ZeroDirtyWrite: Abort Upstream Fetch & Drop Unfinished Turn
+    StreamLLM --> Aborted: Client Disconnect or Preemption
+    Aborted --> ZeroDirtyWrite: Abort Upstream Fetch and Drop Turn
     ZeroDirtyWrite --> Idle
 
-    SilentDiscard --> Idle: Emit 'done' (0 DB Rows Written, 0 UI Bubbles)
-    PersistTurn --> PostTurnAsync: Write MasterChatMessage + Increment Session Budget
-    PostTurnAsync --> Idle: Emit SSE 'metrics' & 'done' -> Async Portrait Check
+    SilentDiscard --> Idle: Silent Close without Persistence
+    PersistTurn --> PostTurnAsync: Write MasterChatMessage and Bump Budget
+    PostTurnAsync --> Idle: Emit SSE Done and Async Portrait Check
 ```
 
 ### 3.3 Key Engineering Mechanisms in the Turn Engine
@@ -346,11 +346,11 @@ stateDiagram-v2
     [*] --> InitTransaction: POST /api/divination/init
 
     state "Phase 1: Atomic Reservation (Prisma $transaction)" as Phase1 {
-        InitTransaction --> CheckBalance: Lock User Row & Verify credits >= cost
-        CheckBalance --> Reject402: credits < cost
-        CheckBalance --> ReserveHold: Decrement User.credits -= cost
-        ReserveHold --> CreatePending: Insert Reading (status='pending', creditsHeld=cost)
-        CreatePending --> AuditHold: Insert CreditLog (action='divination_hold')
+        InitTransaction --> CheckBalance: Lock User Row and Verify Credits
+        CheckBalance --> Reject402: Insufficient Credits
+        CheckBalance --> ReserveHold: Decrement User.credits by cost
+        ReserveHold --> CreatePending: Insert Reading (pending, creditsHeld)
+        CreatePending --> AuditHold: Insert CreditLog (divination_hold)
     }
 
     Reject402 --> [*]: HTTP 402 INSUFFICIENT_CREDITS
@@ -358,21 +358,21 @@ stateDiagram-v2
 
     state "Phase 2: Execution & Dual-Channel Convergence (_finalize.ts)" as Phase2 {
         LLMExecution --> ParseAndValidate: Raw LLM Output
-        ParseAndValidate --> SettleSuccess: JSON Valid + Zod Schema Passed
-        ParseAndValidate --> TriggerRefund: Parse Failed / Empty Renderable Content
-        LLMExecution --> TriggerRefund: Upstream Timeout / Client Abort / Crash
-        LLMExecution --> TriggerRefund: Stale Sweeper (pending > 15 mins)
+        ParseAndValidate --> SettleSuccess: JSON Valid and Zod Schema Passed
+        ParseAndValidate --> TriggerRefund: Parse Failed or Empty Content
+        LLMExecution --> TriggerRefund: Upstream Timeout or Abort
+        LLMExecution --> TriggerRefund: Stale Sweeper (pending over 15 mins)
     }
 
     state "Phase 3A: Settlement (markCompleted)" as Phase3A {
-        SettleSuccess --> CompleteRow: status = 'completed', Persist Result & Prompts
+        SettleSuccess --> CompleteRow: Status completed and Persist Result
     }
 
     state "Phase 3B: Single-Winner Refund CTE (markFailed -> refundHold)" as Phase3B {
-        TriggerRefund --> LockingCTE: SELECT ... FOR UPDATE WHERE creditsHeld > 0 AND status <> 'completed'
-        LockingCTE --> ZeroHold: UPDATE creditsHeld = 0 RETURNING pre-update held amount
-        ZeroHold --> RestoreCredits: Increment User.credits += held (Winner Only)
-        RestoreCredits --> AuditRefund: Insert CreditLog (action='refund') + User Notification
+        TriggerRefund --> LockingCTE: Single-Winner CTE with FOR UPDATE
+        LockingCTE --> ZeroHold: Zero creditsHeld RETURNING held amount
+        ZeroHold --> RestoreCredits: Increment User.credits by held (Winner Only)
+        RestoreCredits --> AuditRefund: Insert CreditLog refund and User Notification
     }
 
     CompleteRow --> [*]
@@ -464,8 +464,8 @@ Governed by [`AGENTS.md`](AGENTS.md), every bug fix, schema evolution, or prompt
 
 #### 1. Clone & Install Dependencies
 ```bash
-git clone <repository-url> chinese-divination-dev
-cd chinese-divination-dev
+git clone https://github.com/cocWorkshop/chinese-divination.git
+cd chinese-divination
 npm install
 ```
 

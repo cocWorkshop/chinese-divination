@@ -66,20 +66,25 @@ export default function DivinationPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
+            className="flex flex-col"
           >
-            {/* Master Xuanji Entrance (Command Bar) */}
-            <MasterEntryCard />
+            {/* Master Xuanji Entrance: Top on mobile, Bottom on desktop (md:) */}
+            <div className="order-1 md:order-3 w-full">
+              <MasterEntryCard />
+            </div>
 
-            {/* Subtle Divider to Classical Divination Portals */}
-            <div className="flex items-center gap-3 my-5 sm:my-7 max-w-4xl mx-auto">
+            {/* Subtle Divider between Master & Classical Divination Systems */}
+            <div className="order-2 flex items-center gap-3 my-3 sm:my-6 max-w-4xl mx-auto w-full">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
-              <span className="text-[11px] sm:text-xs text-foreground/40 font-serif tracking-widest uppercase select-none">
-                {T(lang, '自選術數起盤', 'Classical Systems')}
+              <span className="text-[11px] sm:text-xs text-foreground/40 font-serif tracking-widest uppercase select-none text-center">
+                <span className="md:hidden">{T(lang, '自選術數起盤', 'Classical Systems')}</span>
+                <span className="hidden md:inline">{T(lang, '或向玄機大師請益', 'Or Consult Master Xuanji')}</span>
               </span>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
+            {/* Oracle Cards Grid: 2 columns on mobile (order-3), 3 columns on desktop (order-1) */}
+            <div className="order-3 md:order-1 w-full grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-5">
               {visibleServices.map((svc, i) => (
                 <motion.div
                   key={svc.id}
@@ -89,32 +94,35 @@ export default function DivinationPage() {
                 >
                   <Link
                     href={`/divination/${svc.id}`}
-                    className="oriental-sanctuary-card p-5 sm:p-6 h-full w-full text-left block hover:shadow-2xl hover:shadow-gold/15 hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+                    className="oriental-sanctuary-card p-3 sm:p-6 h-full w-full text-left flex flex-col justify-between hover:shadow-2xl hover:shadow-gold/15 hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
                   >
                     {svc.id === "bazi" && (
-                      <span className="absolute top-3 right-3 text-[10px] px-2.5 py-0.5 rounded-full font-serif font-medium border border-gold/30 bg-gold/15 text-gold-light tracking-wider">
+                      <span className="absolute top-2.5 sm:top-3 right-2.5 sm:right-3 text-[9px] sm:text-[10px] px-2 sm:px-2.5 py-0.5 rounded-full font-serif font-medium border border-gold/30 bg-gold/15 text-gold-light tracking-wider">
                         {T(lang, "常叩", "Popular")}
                       </span>
                     )}
-                    <div className="mb-3.5 transition-transform duration-300 group-hover:scale-105 flex items-center justify-start">
-                      <DivinationIcon type={svc.id} size={42} className="text-gold" />
+                    <div>
+                      <div className="mb-2 sm:mb-3.5 transition-transform duration-300 group-hover:scale-105 flex items-center justify-start">
+                        <span className="sm:hidden"><DivinationIcon type={svc.id} size={30} className="text-gold" /></span>
+                        <span className="hidden sm:inline-block"><DivinationIcon type={svc.id} size={42} className="text-gold" /></span>
+                      </div>
+                      <h2 className="text-sm sm:text-xl font-serif mb-1 sm:mb-1.5 transition-colors group-hover:text-gold-light text-foreground/95 truncate sm:overflow-visible">
+                        {T(lang, svc.twName, svc.enName)}
+                      </h2>
+                      <p className="text-[11px] sm:text-sm leading-relaxed mb-3 sm:mb-4 text-foreground/60 font-light line-clamp-2 sm:line-clamp-none min-h-[2rem] sm:min-h-[2.5rem]">
+                        {T(lang, svc.twDesc, svc.enDesc)}
+                      </p>
                     </div>
-                    <h2 className="text-lg sm:text-xl font-serif mb-1.5 transition-colors group-hover:text-gold-light text-foreground/95">
-                      {T(lang, svc.twName, svc.enName)}
-                    </h2>
-                    <p className="text-xs sm:text-sm leading-relaxed mb-4 text-foreground/60 font-light min-h-[2.5rem]">
-                      {T(lang, svc.twDesc, svc.enDesc)}
-                    </p>
                     <div className="flex items-center justify-between pt-2 border-t border-gold/10">
                       {costs[svc.id] != null ? (
-                        <span className="stamp-gold text-[10px] py-0.5 px-2 select-none">
+                        <span className="stamp-gold text-[9px] sm:text-[10px] py-0.5 px-1.5 sm:px-2 select-none">
                           ✧ {costs[svc.id]} {T(lang, '機緣', 'Karma')}
                         </span>
                       ) : (
                         <span />
                       )}
-                      <span className="text-gold/50 group-hover:text-gold transition-colors text-sm font-sans flex items-center gap-1">
-                        <span className="text-xs font-serif hidden group-hover:inline-block transition-opacity">
+                      <span className="text-gold/50 group-hover:text-gold transition-colors text-xs sm:text-sm font-sans flex items-center gap-1">
+                        <span className="text-[11px] sm:text-xs font-serif hidden group-hover:inline-block transition-opacity">
                           {T(lang, '入局', 'Inquire')}
                         </span>
                         <span>→</span>
