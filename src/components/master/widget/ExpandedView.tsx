@@ -33,6 +33,102 @@ interface Props {
   onRequestGate: (intent: GateIntent) => void
 }
 
+interface OracleDetail {
+  twName: string
+  enName: string
+  icon: string
+  guidanceChips: { tw: string; en: string }[]
+}
+
+const ORACLE_DETAILS: Record<string, OracleDetail> = {
+  bazi: {
+    twName: '八字命理',
+    enName: 'BaZi Chart',
+    icon: '📜',
+    guidanceChips: [
+      { tw: '不知出生時辰如何定盤？', en: 'How to cast if exact birth hour is unknown?' },
+      { tw: '早子時與夜子時如何劃分？', en: 'How to divide early vs late Zi hour?' },
+      { tw: '真太陽時經度校正要訣', en: 'Solar time & longitude correction tips' },
+    ],
+  },
+  ziwei: {
+    twName: '紫微斗數',
+    enName: 'ZiWei DouShu',
+    icon: '✨',
+    guidanceChips: [
+      { tw: '閏月出生在紫微中如何排盤？', en: 'How is leap month calculated in ZiWei?' },
+      { tw: '時辰交界（如11:00）如何定時？', en: 'How to resolve boundary hour casting?' },
+      { tw: '出生地經緯度對命盤有何影響？', en: 'Impact of birth coordinates on chart?' },
+    ],
+  },
+  liuyao: {
+    twName: '六爻神卦',
+    enName: 'LiuYao Divination',
+    icon: '🪙',
+    guidanceChips: [
+      { tw: '起卦搖銅錢時如何集中意念？', en: 'How to focus intent when tossing coins?' },
+      { tw: '同一個問題可以多次重占嗎？', en: 'Can I recast for the exact same concern?' },
+      { tw: '六爻動爻過多時如何取用？', en: 'How to interpret multiple changing lines?' },
+    ],
+  },
+  iching: {
+    twName: '易經周易',
+    enName: 'I Ching Hexagram',
+    icon: '☯',
+    guidanceChips: [
+      { tw: '心念如何收束以契合易理？', en: 'How to focus mind to align with the I Ching?' },
+      { tw: '本卦與變卦的核心關係是什麼？', en: 'Base vs changed hexagram relationship?' },
+      { tw: '何時宜動？何時宜靜？', en: 'When to act vs when to hold still?' },
+    ],
+  },
+  tarot: {
+    twName: '塔羅牌陣',
+    enName: 'Tarot Spread',
+    icon: '🃏',
+    guidanceChips: [
+      { tw: '抽牌時如何收束雜念？', en: 'How to quiet the mind during card draw?' },
+      { tw: '逆位牌象徵阻滯還是轉機？', en: 'Do reversed cards mean blocks or turning points?' },
+      { tw: '如何向牌面提出更精準的問句？', en: 'How to formulate clearer card questions?' },
+    ],
+  },
+  meihua: {
+    twName: '梅花易數',
+    enName: 'Plum Blossom',
+    icon: '🌸',
+    guidanceChips: [
+      { tw: '先天起卦與後天起卦如何抉擇？', en: 'Choosing between pre-heaven & post-heaven?' },
+      { tw: '起卦時如何捕捉眼前外應靈兆？', en: 'How to perceive spontaneous outer omens?' },
+    ],
+  },
+  qimen: {
+    twName: '奇門遁甲',
+    enName: 'QiMen DunJia',
+    icon: '🧭',
+    guidanceChips: [
+      { tw: '奇門問事如何以事定宮？', en: 'How to designate focal palace by inquiry?' },
+      { tw: '當前時辰局數的感應玄機？', en: 'Resonance of current hour cosmic bureau?' },
+    ],
+  },
+  fengshui: {
+    twName: '風水堪輿',
+    enName: 'FengShui Audit',
+    icon: '🏔️',
+    guidanceChips: [
+      { tw: '如何準確測定住宅大門坐向？', en: 'How to accurately measure entrance facing?' },
+      { tw: '住宅缺角對不同家庭成員的影響？', en: 'Impact of missing corners on members?' },
+    ],
+  },
+  xiaoliuren: {
+    twName: '小六壬',
+    enName: 'Xiao Liu Ren',
+    icon: '✋',
+    guidanceChips: [
+      { tw: '小六壬掐指推算之法？', en: 'Rules for Xiao Liu Ren finger counting?' },
+      { tw: '急事突發如何立斷吉凶？', en: 'How to judge sudden urgent matters?' },
+    ],
+  },
+}
+
 export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGate }: Props) {
   const { lang } = useLang()
   const isEn = lang === 'en'
@@ -69,6 +165,19 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
   const router = useRouter()
   const pathname = usePathname()
   const isWorkspace = pathname?.startsWith('/divination') || pathname?.startsWith('/reading')
+  const oracleMatch = pathname?.match(/^\/divination\/([a-z0-9_-]+)$/)
+  const currentOracleType = oracleMatch && oracleMatch[1] !== 'undefined' ? oracleMatch[1] : null
+  const activeOracleMeta: OracleDetail | null = currentOracleType
+    ? ORACLE_DETAILS[currentOracleType] || {
+        twName: '正統術數',
+        enName: 'Divination',
+        icon: '📜',
+        guidanceChips: [
+          { tw: '本次起盤需注意什麼心念？', en: 'What mindset should I hold for this reading?' },
+          { tw: '起盤完成後大師會如何解讀？', en: 'How will the Master analyze my result?' },
+        ],
+      }
+    : null
 
   // Templated greeting (NOT LLM-generated) — rendered when the message list
   // is empty.
@@ -220,12 +329,18 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
 
   const handleCtaClick = (msg: MasterMsg) => {
     if (!msg.ctaPayload) return
-    setShape('collapsed')
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024
+    if (!isDesktop) {
+      setShape('collapsed')
+    }
     router.push(withCtaNonce(msg.ctaPayload.url))
   }
 
   const handleReadingCardClick = (url: string) => {
-    setShape('collapsed')
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024
+    if (!isDesktop) {
+      setShape('collapsed')
+    }
     router.push(url)
   }
 
@@ -469,6 +584,48 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
             </div>
           ) : (
             <>
+              {/* Oracle Companion Guidance Banner (active on /divination/[type] routes) */}
+              {activeOracleMeta && (
+                <div className="relative px-3.5 sm:px-5 py-3 border-b border-[var(--border-gold,rgba(212,175,55,0.25))] bg-[rgba(212,168,83,0.06)] shrink-0">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                      <span className="text-xs font-serif font-medium truncate" style={{ color: 'var(--gold)' }}>
+                        {T(
+                          lang,
+                          `正在左側進行【${activeOracleMeta.twName}】起盤 · 大師伴隨中`,
+                          `Casting ${activeOracleMeta.enName} on the left · Master Accompanying`
+                        )}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-[var(--text-muted)] shrink-0 font-serif">
+                      {T(lang, '伴隨導引', 'Guide')}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-2.5">
+                    {T(
+                      lang,
+                      '您正在左側填寫起盤參數。若對生辰時辰、曆法或起卦有任何疑問，可隨時向大師諮詢；起盤完成後，卦象將自動載入此處。',
+                      'Enter your casting info on the left. Feel free to ask Master Xuanji any questions about birth times or casting rules. Results will auto-load here.'
+                    )}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activeOracleMeta.guidanceChips.map((chip, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleSend(T(lang, chip.tw, chip.en))}
+                        disabled={loading}
+                        className="text-[11px] px-2.5 py-1 rounded-full border border-[var(--card-border)] hover:border-[var(--gold)] hover:bg-[rgba(212,175,55,0.1)] text-[var(--text-primary)] transition-all text-left flex items-center gap-1 active:scale-95 disabled:opacity-40"
+                        style={{ backgroundColor: 'var(--card-bg)' }}
+                      >
+                        <span className="text-[9px]" style={{ color: 'var(--gold)' }}>✦</span>
+                        <span>{T(lang, chip.tw, chip.en)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Transcript */}
               <div
                 ref={scrollRef}
@@ -504,6 +661,7 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                     onStartNewSession={() => { void startNewSession() }}
                     isSelectMode={isSelectMode}
                     isSelected={selectedIndices.has(i)}
+                    currentOracleType={currentOracleType}
                     onToggleSelect={() => {
                       setSelectedIndices((prev) => {
                         const next = new Set(prev)
@@ -628,7 +786,15 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                           e.currentTarget.blur()
                         }
                       }}
-                      placeholder={T(lang, '請問大師...', 'Ask the Master...')}
+                      placeholder={
+                        activeOracleMeta
+                          ? T(
+                              lang,
+                              `向大師諮詢【${activeOracleMeta.twName}】起盤疑問...`,
+                              `Ask Master about this ${activeOracleMeta.enName} casting...`
+                            )
+                          : T(lang, '請問大師...', 'Ask the Master...')
+                      }
                       rows={1}
                       className="flex-1 resize-none rounded-xl px-4 py-2.5 text-base focus:outline-none focus:ring-1 transition-all"
                       style={{
@@ -654,6 +820,17 @@ export default function ExpandedView({ needsMemoryGate, gateVisible, onRequestGa
                       {T(lang, '發送', 'Send')}
                     </button>
                   </div>
+                  {activeOracleMeta && (
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-[var(--text-muted)] px-1 font-serif">
+                      <span className="flex items-center gap-1.5" style={{ color: 'var(--gold)' }}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                        <span>{T(lang, '起盤完成後將自動載入卦象詳批', 'Chart will auto-load here upon completion')}</span>
+                      </span>
+                      <span className="hidden sm:inline opacity-60">
+                        {T(lang, 'Enter 送出 · Shift+Enter 換行', 'Enter to send')}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
             </>

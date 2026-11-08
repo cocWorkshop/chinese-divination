@@ -32,6 +32,7 @@ interface Props {
   isSelected?: boolean
   onToggleSelect?: () => void
   onStartNewSession?: () => void
+  currentOracleType?: string | null
 }
 
 export default function MessageBubble({
@@ -45,6 +46,7 @@ export default function MessageBubble({
   isSelected = false,
   onToggleSelect,
   onStartNewSession,
+  currentOracleType,
 }: Props) {
   const isUser = msg.role === 'user'
 
@@ -207,20 +209,27 @@ export default function MessageBubble({
           <p className="text-[10px] leading-relaxed mb-3" style={{ color: 'var(--text-muted, #888)' }}>
             {msg.ctaPayload.ctaDescription}
           </p>
-          <button
-            onClick={(e) => {
-              if (isSelectMode) {
-                e.stopPropagation()
-                onToggleSelect?.()
-              } else {
-                onCtaClick(msg)
-              }
-            }}
-            className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-[0_0_12px_rgba(212,175,55,0.3)]"
-            style={{ backgroundColor: 'var(--gold)', color: '#000' }}
-          >
-            {msg.ctaPayload.ctaLabel}
-          </button>
+          {currentOracleType && msg.ctaPayload.divinationType === currentOracleType ? (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gold/15 text-gold-dark dark:text-gold-light border border-gold/30 text-xs font-serif font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+              <span>{TEN(isEn, '正在左側起盤中...', 'Casting on the left...')}</span>
+            </div>
+          ) : (
+            <button
+              onClick={(e) => {
+                if (isSelectMode) {
+                  e.stopPropagation()
+                  onToggleSelect?.()
+                } else {
+                  onCtaClick(msg)
+                }
+              }}
+              className="text-sm px-4 py-2 rounded-lg font-medium transition-all hover:shadow-[0_0_12px_rgba(212,175,55,0.3)] active:scale-98"
+              style={{ backgroundColor: 'var(--gold)', color: '#000' }}
+            >
+              {msg.ctaPayload.ctaLabel}
+            </button>
+          )}
         </div>
       </motion.div>
     )
