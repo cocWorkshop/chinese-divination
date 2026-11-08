@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import { useMasterChatActions } from '@/components/master/MasterChatContext'
+import { ChevronDownIcon } from '@/components/DivinationIcons'
 import { T } from '@/lib/i18n'
 import {
   getMasterQuickPrompts,
@@ -76,6 +77,7 @@ export default function MasterEntryCard() {
   const router = useRouter()
   const { enabled: masterEnabled, setShape: setMasterShape, sendMessage } = useMasterChatActions()
   const [query, setQuery] = useState('')
+  const [showPresets, setShowPresets] = useState(false)
 
   const quickPrompts = getMasterQuickPrompts(lang)
 
@@ -109,50 +111,83 @@ export default function MasterEntryCard() {
           aria-hidden="true"
         />
 
-        {/* Quick prompt pills - 2*4 on mobile, 4*2 on desktop */}
-        <div className="relative z-10 mb-3 sm:mb-3.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
-          {quickPrompts.map((item) => {
-            const style = PROMPT_THEMES[item.theme] || PROMPT_THEMES.gold
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleAction(item.prompt)}
-                className={`w-full inline-flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs px-2 py-1.5 rounded-lg transition-all duration-200 cursor-pointer font-serif border shadow-sm truncate ${style.bg} ${style.border} ${style.text} ${style.hover}`}
-              >
-                <span className={`${style.dot} text-[10px] shrink-0`}>✦</span>
-                <span className="truncate">{item.label}</span>
-              </button>
-            )
-          })}
-        </div>
+        {/* Command bar input + submit button + dropdown toggle */}
+        <form onSubmit={handleSubmit} className="relative z-10">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-2 sm:gap-2.5">
+            <div className="relative flex-1 flex items-center bg-[#070b14]/90 border border-gold/30 hover:border-gold/50 focus-within:border-gold rounded-xl px-3.5 py-2.5 shadow-inner transition-colors">
+              <span className="stamp-gold text-[10px] py-0.5 px-1.5 select-none mr-2 flex-shrink-0">
+                {T(lang, '玄機', 'XuanJi')}
+              </span>
+              <span className="text-gold/25 mr-2.5 font-light select-none">|</span>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={T(
+                  lang,
+                  '輸入你想問的事，向玄機大師提問（如：近期適合換工作嗎？）...',
+                  'Ask Master Xuanji anything (e.g. Is now a good time for a job change?)...',
+                )}
+                className="w-full bg-transparent text-xs sm:text-sm text-foreground/90 placeholder:text-foreground/40 focus:outline-none font-serif"
+              />
+            </div>
 
-        {/* Command bar input + submit button */}
-        <form onSubmit={handleSubmit} className="relative z-10 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
-          <div className="relative flex-1 flex items-center bg-[#070b14]/90 border border-gold/30 hover:border-gold/50 focus-within:border-gold rounded-xl px-3.5 py-2.5 shadow-inner transition-colors">
-            <span className="stamp-gold text-[10px] py-0.5 px-1.5 select-none mr-2 flex-shrink-0">
-              {T(lang, '玄機', 'XuanJi')}
-            </span>
-            <span className="text-gold/25 mr-2.5 font-light select-none">|</span>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={T(
-                lang,
-                '輸入你想問的事，向玄機大師提問（如：近期適合換工作嗎？）...',
-                'Ask Master Xuanji anything (e.g. Is now a good time for a job change?)...',
-              )}
-              className="w-full bg-transparent text-xs sm:text-sm text-foreground/90 placeholder:text-foreground/40 focus:outline-none font-serif"
-            />
+            {/* Button + Dropdown Arrow Container */}
+            <div className="flex flex-col items-center flex-shrink-0">
+              <button
+                type="submit"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-serif text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-center cursor-pointer border border-gold/40 hover:border-gold bg-gold/15 hover:bg-gold/25 text-gold-light hover:text-foreground shadow-sm shadow-gold/5 active:scale-98"
+              >
+                <span>{T(lang, '請教大師', 'Ask Master')}</span>
+              </button>
+
+              {/* Little dropdown arrow placed under the button */}
+              <button
+                type="button"
+                onClick={() => setShowPresets(!showPresets)}
+                className="mt-1 flex items-center justify-center w-8 h-4 rounded text-gold/60 hover:text-gold-light hover:bg-gold/10 transition-all cursor-pointer"
+                title={showPresets ? T(lang, '收起預設方向', 'Collapse presets') : T(lang, '展開預設方向', 'Expand presets')}
+                aria-label={showPresets ? T(lang, '收起預設方向', 'Collapse presets') : T(lang, '展開預設方向', 'Expand presets')}
+                aria-expanded={showPresets}
+              >
+                <ChevronDownIcon
+                  size={14}
+                  className={`transition-transform duration-200 ${showPresets ? 'rotate-180' : ''}`}
+                />
+              </button>
+            </div>
           </div>
 
-          <button
-            type="submit"
-            className="px-5 py-2.5 rounded-xl font-serif text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-center cursor-pointer border border-gold/40 hover:border-gold bg-gold/15 hover:bg-gold/25 text-gold-light hover:text-foreground shadow-sm shadow-gold/5 active:scale-98 flex-shrink-0"
-          >
-            <span>{T(lang, '請教大師', 'Ask Master')}</span>
-          </button>
+          {/* Expandable 8 presets container */}
+          <AnimatePresence initial={false}>
+            {showPresets && (
+              <motion.div
+                key="presets"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-3 border-t border-gold/15 mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+                  {quickPrompts.map((item) => {
+                    const style = PROMPT_THEMES[item.theme] || PROMPT_THEMES.gold
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleAction(item.prompt)}
+                        className={`w-full inline-flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs px-2 py-1.5 rounded-lg transition-all duration-200 cursor-pointer font-serif border shadow-sm truncate ${style.bg} ${style.border} ${style.text} ${style.hover}`}
+                      >
+                        <span className={`${style.dot} text-[10px] shrink-0`}>✦</span>
+                        <span className="truncate">{item.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </form>
       </div>
     </motion.div>

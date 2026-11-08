@@ -116,12 +116,11 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     expect(pageContent).not.toContain('六派源流 · 靜心求索')
     expect(pageContent).not.toContain('六派源流 · 洞察命理契機')
 
-    // Prompt pills must be located on top of the input form in a strict 2*4 (mobile) and 4*2 (desktop) grid
-    const gridIdx = cardContent.indexOf('grid-cols-2')
-    const formIdx = cardContent.indexOf('<form')
-    expect(gridIdx).toBeGreaterThan(0)
+    // Presets are hidden by default and toggled by dropdown arrow under the 請教大師 button
+    expect(cardContent).toContain('ChevronDownIcon')
+    expect(cardContent).toContain('showPresets')
+    expect(cardContent).toContain('grid-cols-2')
     expect(cardContent).toContain('sm:grid-cols-4')
-    expect(formIdx).toBeGreaterThan(gridIdx)
 
     // Center alignment and full-width buttons inside grid cells
     expect(cardContent).toContain('justify-center')

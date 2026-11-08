@@ -425,6 +425,16 @@ export function PlusIcon({ size = 16, className = '', color }: IconProps) {
   )
 }
 
+// 下拉箭头 — Chevron Down
+export function ChevronDownIcon({ size = 16, className = '', color }: IconProps) {
+  const stroke = color || 'currentColor'
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}
+
 // 乾坤重转 — Refresh / Retry
 export function RefreshIcon({ size = 16, className = '', color }: IconProps) {
   const stroke = color || 'currentColor'
