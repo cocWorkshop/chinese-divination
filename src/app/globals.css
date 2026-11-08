@@ -10,6 +10,22 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* ─── Desktop Split-Screen Workspace Scroll Isolation ───
+   When Master Xuanji is expanded in desktop workspace mode (divination/reading),
+   lock the root window scrollbar so it does not collide with the fixed Master dock
+   at the far right of the viewport. The left workspace pane owns its own scrollbar. */
+@media (min-width: 1024px) {
+  html.workspace-docked {
+    height: 100vh !important;
+    overflow: hidden !important;
+    scrollbar-gutter: auto !important;
+  }
+  body.workspace-docked {
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+}
+
 /* Native app safe areas (Capacitor / PWA) */
 body {
   padding-top: env(safe-area-inset-top);

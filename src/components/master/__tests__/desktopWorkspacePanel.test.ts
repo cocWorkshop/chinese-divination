@@ -64,4 +64,24 @@ describe('Desktop Split-Screen Sanctuary Workspace (Design A)', () => {
 
     expect(content).toContain('sendMessage(promptText, { immediate: true })')
   })
+
+  it('MainContent isolates left scroll container on desktop and locks root window scroll to prevent right edge clash', () => {
+    const mainContentPath = path.resolve(__dirname, '../../MainContent.tsx')
+    const content = fs.readFileSync(mainContentPath, 'utf-8')
+
+    // Root scrollbar lock
+    expect(content).toContain("document.documentElement.classList.add('workspace-docked')")
+    expect(content).toContain("document.body.classList.add('workspace-docked')")
+
+    // Left pane independent scroll height & custom scrollbar
+    expect(content).toContain('lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:overflow-x-hidden lg:mt-16 lg:pt-0')
+    expect(content).toContain('custom-scrollbar')
+
+    // Global CSS rule for workspace-docked root lock
+    const cssPath = path.resolve(__dirname, '../../../app/globals.css')
+    const cssContent = fs.readFileSync(cssPath, 'utf-8')
+    expect(cssContent).toContain('html.workspace-docked')
+    expect(cssContent).toContain('overflow: hidden !important;')
+    expect(cssContent).toContain('scrollbar-gutter: auto !important;')
+  })
 })
