@@ -8,9 +8,48 @@
 [![Prompt Cache](https://img.shields.io/static/v1?label=Prompt%20Cache&message=%3E90%25%20Hit%20Rate&color=10B981)](#4-context-economics--prompt-cache-optimization)
 [![Testing](https://img.shields.io/static/v1?label=Vitest&message=100%25%20Regression%20Locked&color=6E9F18&logo=vitest&logoColor=white)](#7-production-engineering-observability--quality-gates)
 
-> **Engineering Positioning**: While the end-user surface operates in the domain of traditional Chinese metaphysics (*BaZi, Zi Wei Dou Shu, Qi Men Dun Jia, Liu Yao*), from a systems architecture perspective this repository serves as a **high-dimensional discrete combinatorial testbed with extreme LLM hallucination sensitivity**. 
+> **Systems Architecture & Engineering Scope**:  
+> While the application surface interfaces with classical Chinese metaphysical systems (*BaZi, Zi Wei Dou Shu, Qi Men Dun Jia, Liu Yao*), from an AI Systems perspective this platform serves as an end-to-end **high-dimensional discrete combinatorial testbed designed to solve catastrophic LLM hallucination in strict deterministic domains**.
 >
-> Pure autoregressive LLMs fail catastrophically at astronomical coordinate transformations, solar longitude (VSOP87) ephemeris calculations, Equation of Time ($\Delta t$) true solar time normalization, and multi-layered matrix permutations. **Xuanji** solves this via a strict **Neuro-Symbolic Architecture**: 100% deterministic TypeScript mathematical engines compute canonical state matrices, while a multi-agent LLM orchestration engine acts strictly as a semantic interpreter, router, and stateful conversational counselor.
+> Pure autoregressive Large Language Models (LLMs) fail inherently at non-linear astronomical calculations, ephemeris boundary cutoffs (VSOP87 solar longitude), true solar time ($\Delta t$) normalization, and multi-layered cyclic matrix permutations. **Xuanji** addresses these failure modes via a production-grade **Neuro-Symbolic Multi-Agent Architecture**: 100% deterministic TypeScript engines compute canonical state matrices, while a multi-agent orchestration engine drives semantic interpretation, context compaction, and stateful conversational steering.
+
+---
+
+### Quick Architecture Overview for Reviewers
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 CLIENT SURFACES                                        │
+│         Next.js 14 App Router (SSR/SPA)  │  Cross-Platform Mobile (Capacitor 8)        │
+└──────────────────────────────────────────┬─────────────────────────────────────────────┘
+                                           │ HTTP/2 Server-Sent Events (SSE)
+                                           ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        API GATEWAY & MULTI-AGENT ORCHESTRATOR                          │
+│  • Burst-Debounced Input Buffer (1500ms)      • Upstream Cascading Abort (req.signal)  │
+│  • Agent Turn Engine (Async Generator FSM)     • Per-Turn Tool Deduplication Cache      │
+│  • 15s Heartbeat Reverse-Proxy Guard           • Jittered Idle Reflection & [PASS]      │
+└─────────────────────┬────────────────────────────────────────────┬─────────────────────┘
+                      │ Deterministic Tool Call                    │ LLM Inference Stream
+                      ▼                                            ▼
+┌──────────────────────────────────────────┐  ┌──────────────────────────────────────────┐
+│        SYMBOLIC COMPUTE TIER             │  │            NEURAL REASONING              │
+│  • True Solar Time (EoT + Longitude)     │  │  • OpenRouter / Anthropic / OpenAI SDK   │
+│  • BaZi: VSOP87 Solar Terms & Weighted   │  │  • Prompt-Cache Prefix Alignment (>90%)  │
+│    5-Element Tensor Matrix               │  │  • Hierarchical 3-Tier Context Memory   │
+│  • Zi Wei: 12-Palace Dynamic Astrolabe   │  │  • Two-Stage Sliding Window Compaction   │
+│  • Qi Men: Yin/Yang 9-Ju Rotating Rings  │  │  • Dual-Axis Async User Portrait Updates │
+└─────────────────────┬────────────────────┘  └────────────────────┬─────────────────────┘
+                      │ Canonical State JSON                       │ Raw Token Stream
+                      └─────────────────────┬──────────────────────┘
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                  DUAL-CHANNEL CONVERGENCE & TRANSACTIONAL PERSISTENCE                  │
+│  • Post-LLM Pipeline (_finalize.ts): JSON Repair → Zod Schema Hard Gates               │
+│  • Transactional Ledger: Atomic Hold-then-Settle State Machine (PostgreSQL CTE)        │
+│  • Relational Chat Persistence (MasterChatMessage) with Zero-Dirty-Write Guarantees   │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -29,16 +68,16 @@
 
 ## 1. Executive Summary & System Highlights
 
-Designing production-grade Stateful AI Agents requires solving problems far beyond basic prompt engineering: unbounded context growth, runaway tool-calling loops, abandoned streaming token burn, reverse-proxy timeouts, and distributed ledger race conditions.
+Building production AI systems requires solving critical infrastructure challenges: runaway tool-calling loops, context window explosion, wasted cloud GPU spend on abandoned streams, edge proxy dropouts, and distributed ledger race conditions.
 
-| Architectural Pillar | Engineering Mechanism Implemented | Quantitative / Systems Impact |
+| Architectural Pillar | Production Engineering Implementation | Systems Impact & Metrics |
 | :--- | :--- | :--- |
-| **Neuro-Symbolic Boundary** | Deterministic TS mathematical calculators (`bazi`, `ziwei`, `qimen`, `liuyao`, `meihua`) + structured JSON synthesis (`_finalize.ts`). | **0% mathematical/ephemeris hallucination**; 100% reproducible state graphs across identical inputs. |
-| **Prompt-Cache Prefix Alignment** | Strict separation of immutable prefix (`master.md` + tool/skill catalogs) from dynamic per-turn suffix (`buildSystemPrompt.ts`). | **>90% prefix cache hit rate** (Anthropic/OpenAI 5-min TTL), reducing input token costs by **~80%** and minimizing TTFT. |
-| **Three-Tier Memory Hierarchy** | Relational `MasterChatMessage` $\rightarrow$ 60K token sliding-window compaction (`compression.ts`) $\rightarrow$ Dual-axis async `UserPortrait` extraction. | **80% working-memory token reclamation** at zero LLM cost via Stage-1 tool-result stubbing; bounded $O(1)$ prompt ceiling. |
-| **Turn Engine FSM & Resilience** | 1500ms client burst debouncing, per-turn `(name, args)` hash cycle detection, 75–120s jittered idle reflection with silent `[PASS]` discard. | Eliminates recursive tool loops (`MAX_TOOL_LOOPS = 12` safety cap) and prevents awkward AI conversational interruptions. |
-| **Cascading Stream Abort** | End-to-end `AbortController` propagation: Browser $\rightarrow$ Next.js `req.signal` $\rightarrow$ Upstream LLM `fetch` abort (`stream.ts`). | Halts cloud GPU token burn within **milliseconds** of client disconnect or user preemption; enforces **Zero-Dirty-Write** DB invariant. |
-| **Transactional Credit Ledger** | **Hold-then-Settle** state machine (`lifecycle.ts`) using PostgreSQL `SELECT ... FOR UPDATE` CTEs for single-winner refunds. | **Zero double-spend or double-refund** anomalies under concurrent client aborts, network timeouts, and background sweepers. |
+| **Neuro-Symbolic Boundary** | Deterministic TS mathematical engines (`bazi`, `ziwei`, `qimen`, `liuyao`, `meihua`) + post-LLM Zod schema convergence (`_finalize.ts`). | **0% mathematical/ephemeris hallucination**; byte-identical canonical state outputs for identical coordinates. |
+| **Prompt-Cache Alignment** | Strict separation of static prefix (`master.md` + tool/skill registries) from dynamic per-turn suffix (`buildSystemPrompt.ts`). | **>90% prefix cache hit rate** (Anthropic/OpenAI 5-min TTL), reducing input token costs by **~80%** and slashing TTFT. |
+| **Hierarchical Memory** | Relational `MasterChatMessage` $\rightarrow$ 60K token sliding-window compaction (`compression.ts`) $\rightarrow$ Asynchronous `UserPortrait` extraction. | **80% working-memory token reclamation** at zero LLM cost via Stage-1 tool stubbing; bounded $O(1)$ context budget. |
+| **Turn Engine FSM & Resilience** | 1500ms client burst debouncer, hash-based tool deduplication `(name, hash(args))`, 75–120s jittered reflection with silent `[PASS]` protocol. | Eliminates cyclical tool loops (`MAX_TOOL_LOOPS = 12` hard cap) and suppresses intrusive or unprompted AI responses. |
+| **Cascading Stream Abort** | End-to-end signal propagation: Client `AbortController` $\rightarrow$ Next.js `req.signal` $\rightarrow$ Upstream LLM `fetch` abort (`stream.ts`). | Halts upstream cloud GPU token burn within **milliseconds** of user disconnect; enforces **Zero-Dirty-Write** DB guarantees. |
+| **Transactional Credit Ledger** | **Hold-then-Settle** ledger (`lifecycle.ts`) utilizing PostgreSQL `SELECT ... FOR UPDATE` CTEs for atomic single-winner refunds. | **Zero double-spend or double-refund** anomalies under concurrent client aborts, network timeouts, and background worker races. |
 
 ---
 
@@ -46,17 +85,17 @@ Designing production-grade Stateful AI Agents requires solving problems far beyo
 
 ### 2.1 The Failure Mode of Pure LLMs in Combinatorial Domains
 
-In discrete combinatorial systems (e.g., sexagenary calendar cycles, 12-palace *Zi Wei* astrolabes with 100+ stars and 4-transformation mutagens, or 3x3 *Qi Men Dun Jia* rotating Lorentzian-like grids across 1,080 *Ju* permutations), autoregressive token prediction exhibits compounding state drift:
+In high-dimensional discrete combinatorial systems (such as the sexagenary calendar cycle, 12-palace astrolabes with 100+ interacting stars and 4-transformation mutagens, or rotating concentric 3x3 grids across 1,080 permutations), autoregressive token generation suffers from severe error propagation:
 
-1. **Continuous Astronomical Math**: Converting civil time and geographic coordinates $(\lambda, \phi)$ into True Solar Time requires computing longitudinal offset plus the astronomical Equation of Time:
+1. **Continuous Non-Linear Astronomy**: Converting civil timestamp and terrestrial coordinates $(\lambda, \phi)$ into True Solar Time requires computing geographic longitudinal offset alongside the astronomical Equation of Time:
    $$\Delta t_{\text{solar}} = 4 \cdot (\lambda_{\text{local}} - \lambda_{\text{standard}}) + \text{EoT}(d)$$
-   where $\text{EoT}(d)$ is a non-linear Fourier series of Earth's orbital eccentricity and axial obliquity.
-2. **Exact Ephemeris Cutoffs**: Transitions between solar terms (*Jieqi*, e.g., *Lichun* at $315^\circ$ solar longitude) occur at exact minute/second boundaries via VSOP87 planetary theory. Off-by-one errors flip the entire downstream state tensor.
-3. **High-Branching Matrix Permutations**: Once the initial seed is derived, deterministic lookup rules project hundreds of interacting symbolic nodes. LLMs hallucinate roughly 35–60% of secondary node placements when asked to compute the graph end-to-end in latent space.
+   where $\text{EoT}(d)$ is a non-linear Fourier series modeling Earth's orbital eccentricity and axial obliquity.
+2. **Ephemeris Boundary Sensitivity**: Transitions between solar terms (*Jieqi*, e.g., *Lichun* at $315^\circ$ solar longitude) occur at discrete second boundaries calculated via VSOP87 planetary theory. An off-by-one second error flips the entire downstream four-pillar tensor.
+3. **High-Branching Matrix Permutations**: Once the seed is derived, deterministic matrix lookup rules project hundreds of dependent symbolic nodes. Pure LLMs hallucinate 35–60% of secondary node placements when asked to generate these structures entirely within latent space.
 
 ### 2.2 Symbolic Compute vs. Probabilistic Reasoning
 
-Xuanji enforces a hard architectural boundary between **Symbolic Computation** (left-brain deterministic TypeScript engines) and **Probabilistic Reasoning** (right-brain LLM semantic synthesis):
+Xuanji enforces an uncompromising boundary between **Deterministic Symbolic Computation** (TypeScript astronomical ephemeris and matrix algebra engines) and **Probabilistic Neural Reasoning** (Autoregressive LLM semantic synthesis and contextual routing):
 
 ```mermaid
 flowchart LR
@@ -95,24 +134,24 @@ flowchart LR
 
 ### 2.3 The Four Architectural Invariants
 
-Defined in [`docs/architecture/overview.md`](docs/architecture/overview.md), every subsystem in this repository is governed by four non-negotiable invariants:
+Defined in [`docs/architecture/overview.md`](docs/architecture/overview.md), every subsystem in this repository is strictly governed by four non-negotiable architectural invariants:
 
-1. **Invariant I — Deterministic Symbolic Execution**: All astronomical solar terms, true solar time adjustments, sexagenary pillars, 12-palace astrolabes, and hexagram transformations must be computed 100% by local TypeScript modules ([`src/lib/baziCalculator.ts`](src/lib/baziCalculator.ts), [`src/lib/ziweiCalculator.ts`](src/lib/ziweiCalculator.ts), [`src/lib/qimenCalculator.ts`](src/lib/qimenCalculator.ts), [`src/lib/liuyaoCalculator.ts`](src/lib/liuyaoCalculator.ts)). Identical inputs guarantee byte-identical canonical JSON outputs. LLMs are strictly forbidden from calculating charts.
-2. **Invariant II — Evidence vs. Memory Boundary**: *"Anything fetchable or calculable from the database is evidence, not memory."* Raw chart tensors, user birth profiles, and family records live in canonical relational tables and are injected or fetched on demand via tools. Conversational memory stores only non-derivable state: user intent, synthesized conclusions, and behavioral preferences.
+1. **Invariant I — Deterministic Symbolic Execution**: All astronomical solar terms, true solar time adjustments, sexagenary pillars, 12-palace astrolabes, and hexagram transformations must be computed 100% by local TypeScript modules ([`src/lib/baziCalculator.ts`](src/lib/baziCalculator.ts), [`src/lib/ziweiCalculator.ts`](src/lib/ziweiCalculator.ts), [`src/lib/qimenCalculator.ts`](src/lib/qimenCalculator.ts), [`src/lib/liuyaoCalculator.ts`](src/lib/liuyaoCalculator.ts)). Identical inputs guarantee byte-identical canonical JSON outputs. LLMs are strictly prohibited from generating charts directly.
+2. **Invariant II — Evidence vs. Memory Boundary**: *"Anything fetchable or calculable from the database is evidence, not memory."* Raw chart matrices, user birth profiles, and family records reside in canonical relational tables and are fetched on demand via tools. Conversational memory stores only non-derivable state: user intent, synthesized insights, and behavioral preferences.
 3. **Invariant III — Dual-Channel Transport Equivalence**: Blocking HTTP (`POST /api/divination`) and streaming SSE (`POST /api/divination?stream=1`) are transport adapters over a single post-LLM convergence pipeline ([`src/app/api/divination/_finalize.ts`](src/app/api/divination/_finalize.ts)). Both channels execute identical JSON repair, hard-reject gates, deterministic chart re-merging (`handler.merge`), Zod schema validation, and credit settlement.
-4. **Invariant IV — Atomic Hold-then-Settle Billing**: Credit deductions follow a strict two-phase reservation protocol ([`src/lib/readings/lifecycle.ts`](src/lib/readings/lifecycle.ts)). Credits are atomically reserved (`Reading.creditsHeld`) at initialization; finalized upon validated delivery (`markCompleted`); or refunded via a single-winner locking CTE (`refundHold`) upon timeout, parse failure, or client abort.
+4. **Invariant IV — Atomic Hold-then-Settle Billing**: Credit deductions follow a two-phase reservation protocol ([`src/lib/readings/lifecycle.ts`](src/lib/readings/lifecycle.ts)). Credits are atomically reserved (`Reading.creditsHeld`) at initialization; finalized upon validated delivery (`markCompleted`); or refunded via a single-winner locking CTE (`refundHold`) upon timeout, parse failure, or client abort.
 
 ---
 
 ## 3. Multi-Agent Orchestration & Turn Engine FSM
 
-The conversational core ("Xuanji Master") is implemented as a decoupled, transport-agnostic asynchronous generator finite state machine in [`src/lib/master/turnEngine.ts`](src/lib/master/turnEngine.ts) (`runMasterTurn`), backed by a global client state machine in [`src/components/master/MasterChatContext.tsx`](src/components/master/MasterChatContext.tsx).
+The conversational core ("Xuanji Master") is implemented as a decoupled, transport-agnostic asynchronous generator finite state machine in [`src/lib/master/turnEngine.ts`](src/lib/master/turnEngine.ts) (`runMasterTurn`), backed by client state coordination in [`src/components/master/MasterChatContext.tsx`](src/components/master/MasterChatContext.tsx).
 
 ### 3.1 Supervisor-Worker & Tool Dispatch Topology
 
-Rather than relying on brittle peer-to-peer agent handoffs that suffer from context loss and latency amplification, Xuanji employs a **Central Orchestrator + Deterministic Specialist Tool Registry** (`masterToolRegistry` in [`src/lib/master/tools/`](src/lib/master/tools)):
+Rather than relying on brittle peer-to-peer agent handoffs that introduce latency amplification and context fragmentation, Xuanji implements a **Central Orchestrator + Deterministic Specialist Tool Registry** (`masterToolRegistry` in [`src/lib/master/tools/`](src/lib/master/tools)):
 
-* **Read-Only Evidence Retrieval Tools**: `get_user_profile`, `list_family_members`, `list_recent_readings`, `get_reading_detail` (with section-level slicing via `sliceReading` to prevent context blowup).
+* **Read-Only Evidence Retrieval Tools**: `get_user_profile`, `list_family_members`, `list_recent_readings`, `get_reading_detail` (with granular section-level slicing via `sliceReading` to prevent context explosion).
 * **On-Demand Symbolic Calculation Tools**: `calculate_bazi_chart`, `calculate_ziwei_chart`, `calculate_daily_almanac`, `cast_instant_meihua`.
 * **UI Action & Handoff Emitters**: `prefill_divination_form` (emits interactive `cta_card` SSE events for complex readings) and `show_reading_card` (emits `reading_card` references).
 
@@ -168,25 +207,25 @@ stateDiagram-v2
 ### 3.3 Key Engineering Mechanisms in the Turn Engine
 
 1. **Sliding-Window Burst Debouncing (1500ms)**:
-   In mobile messaging UX, users frequently send 2–4 short consecutive messages (e.g., *"Wait"*, *"I was born in Taipei"*, *"Around 10pm"*). `MasterChatContext` intercepts rapid submissions into a 1500ms sliding buffer. If a user sends a new message while an existing LLM stream is in flight, the client immediately fires `abortController.abort()` on the active request, merges the unresponded messages with the new input, and dispatches a single batched `messages: string[]` payload.
+   In conversational interfaces, users frequently send 2–4 rapid, fragmented messages (e.g., *"Wait"*, *"I was born in Taipei"*, *"Around 10pm"*). `MasterChatContext` buffers rapid submissions within a 1500ms sliding window. If a user submits new input while an upstream LLM stream is actively generating, the client immediately aborts the active request via `AbortController`, merges the unresponded messages with the new query, and sends a single batched `messages: string[]` payload.
 2. **Per-Turn Cycle Detection & Runaway Guard**:
-   In [`src/lib/master/turnEngine.ts`](src/lib/master/turnEngine.ts#L190-L270), a per-turn `turnToolCache` hashes every tool invocation by `` `${tc.name}::${tc.arguments || '{}'}` ``. Duplicate calls within the same turn bypass execution and immediately return the cached payload. A hard ceiling (`MAX_TOOL_LOOPS = 12`) guards against oscillatory multi-tool cycles; if hit, or if the model emits only tool calls with zero prose, the engine executes a **Forced Final Synthesis** pass (`tools: undefined`), obligating the model to synthesize a natural language response.
-3. **Streamed Multi-Bubble Segmentation (`BubbleStreamer`)**:
-   To avoid walls of text, the persona uses a `[NEXT]` delimiter to break responses into natural conversational bubbles. `BubbleStreamer` ([`src/lib/master/bubbleStream.ts`](src/lib/master/bubbleStream.ts)) implements a streaming lookahead state machine that holds back partial prefix matches (e.g., `[NE`) across chunk boundaries, emitting clean `{ type: 'bubble_break' }` SSE events to the client while preserving the raw `[NEXT]` marker in database persistence so the model sees its own formatting in subsequent turns.
-4. **Jittered Idle Reflection & The `[PASS]` Silent Protocol**:
-   When a user remains idle in an expanded consultation for 75–120 seconds (randomized jitter to prevent thundering-herd spikes), the client triggers a background `{ reflection: true }` turn. The engine injects an ephemeral `[reflection_trigger]` message (never persisted to DB) and sets `holdOutput = true`, buffering all chunks in memory. If the model determines no follow-up is warranted (or during an `ambiguous_resume` check-in), it outputs `[PASS]`. `isPassReply()` intercepts the token, flushes the buffer to `/dev/null`, writes zero rows to PostgreSQL, and closes the stream silently—completely eliminating robotic AI filler or repetitive pestering.
+   In [`src/lib/master/turnEngine.ts`](src/lib/master/turnEngine.ts#L190-L270), a per-turn cache tracks tool invocations by hashing `` `${tc.name}::${tc.arguments || '{}'}` ``. Identical tool calls within a single turn bypass re-execution and return cached results. A hard boundary (`MAX_TOOL_LOOPS = 12`) prevents infinite tool cycles; if reached, or if the model emits only tool calls without prose, the engine triggers a **Forced Final Synthesis** pass (`tools: undefined`), compelling the model to synthesize a natural language response.
+3. **Lookahead Bubble Streaming (`BubbleStreamer`)**:
+   To avoid overwhelming users with monotonic walls of text, the system uses a `[NEXT]` token to split outputs into discrete conversational chat bubbles. [`src/lib/master/bubbleStream.ts`](src/lib/master/bubbleStream.ts) implements a streaming lookahead buffer that retains partial delimiter matches (e.g., `[NE`) across chunk boundaries, emitting clean `{ type: 'bubble_break' }` SSE events to the client while retaining the raw `[NEXT]` marker in persistent storage so subsequent turns preserve dialog formatting context.
+4. **Jittered Idle Reflection & The Silent `[PASS]` Protocol**:
+   When a user remains idle in an active consultation for 75–120 seconds (jittered to prevent synchronized thundering-herd load), the client initiates a background `{ reflection: true }` turn. The engine injects an ephemeral `[reflection_trigger]` message and sets `holdOutput = true`, buffering generated chunks in memory. If the model determines that no further follow-up is necessary (or during an ambiguous resume check-in), it responds with `[PASS]`. `isPassReply()` detects this sentinel, discards the buffered text, writes zero database records, and terminates the stream silently—eliminating intrusive or repetitive follow-up noise.
 
 ---
 
 ## 4. Context Economics & Prompt-Cache Optimization
 
-Operating long-horizon stateful agents on frontier models (Claude 3.7 Sonnet / GPT-4o / GPT-5.4) quickly becomes economically unviable without strict context engineering. Xuanji optimizes token economics through **Cache-Prefix Partitioning** and a **Three-Tier Memory Hierarchy**.
+Operating stateful, multi-turn AI agents on frontier reasoning models (Claude 3.7 Sonnet / GPT-4o / GPT-5.4) requires aggressive context optimization to prevent compounding latency and exponential token expenditure.
 
 ### 4.1 Anthropic / OpenAI 5-Minute Cache-Prefix Alignment
 
-LLM providers cache KV-attention states for identical prompt prefixes (typically with a 5-minute TTL, offering 75–90% discounts on cached input tokens and dramatic TTFT reductions). 
+Modern LLM providers (Anthropic Prompt Caching, OpenAI Prompt Caching, DeepSeek Context Caching) maintain KV cache state for identical prompt prefixes across a 5-minute sliding TTL. Any mutation within the prefix invalidates downstream attention blocks.
 
-A common anti-pattern in naive agent implementations is injecting dynamic timestamps, user profiles, or turn counters at the top of the system prompt—invalidating the entire KV cache on every single request.
+Naive agent implementations frequently inject dynamic timestamps, user profiles, or turn counters at the head of the system prompt—destroying the entire KV cache on every turn.
 
 In [`src/lib/master/systemPrompt/buildSystemPrompt.ts`](src/lib/master/systemPrompt/buildSystemPrompt.ts), `buildMasterSystemPrompt()` enforces strict **Progressive Disclosure & Prefix Partitioning**:
 
@@ -217,7 +256,7 @@ In [`src/lib/master/systemPrompt/buildSystemPrompt.ts`](src/lib/master/systemPro
 
 ### 4.2 Three-Tier Memory Architecture
 
-Detailed in [`docs/architecture/master-portrait-system.md`](docs/architecture/master-portrait-system.md), conversational state is decoupled across three storage and compaction tiers:
+Detailed in [`docs/architecture/master-portrait-system.md`](docs/architecture/master-portrait-system.md), conversational memory is decoupled across three specialized tiers:
 
 ```mermaid
 flowchart TD
@@ -252,38 +291,38 @@ flowchart TD
 ```
 
 1. **Tier 1 — Raw Relational Persistence (`MasterChatMessage`)**:
-   Replaces opaque JSON session blobs with granular relational rows indexed by `(userId, sessionId, turnIndex)`. Each row records pre-computed `tokenCount` estimates (`Math.ceil(chars / 4)`), enabling $O(1)$ budget inspection without loading full tokenizers into the Node.js hot path.
+   Replaces opaque JSON session blobs with granular relational rows indexed by `(userId, sessionId, turnIndex)`. Each row records pre-computed `tokenCount` estimates (`Math.ceil(chars / 4)`), enabling $O(1)$ budget inspection without loading real tokenizers into the Node.js hot path.
 2. **Tier 2 — Two-Stage Working-Memory Compaction ([`src/lib/master/compression.ts`](src/lib/master/compression.ts))**:
-   * **Stage 1 (Tool-Result Stubbing — 0 LLM Cost)**: A single *BaZi* or *Zi Wei* JSON payload can consume 3,000–6,000 tokens. When `rowToMessage()` hydrates prior turns for the LLM, historical `toolCallsJson` structures are intentionally stripped. Because the assistant's prose already cites the relevant findings—and raw charts remain re-fetchable via tools if needed—Stage 1 reclaims **~80% of context bloat at zero latency and zero LLM cost**.
-   * **Stage 2 (Incremental Narrative Summarization)**: If the system prompt plus Stage-1 messages still exceed `COMPRESSION_TOKEN_BUDGET` (`60,000` tokens), turns older than `KEEP_RECENT_TURNS` (`10`) are compressed into a concise `[對話摘要]` system block capturing only user intent, conclusions drawn, and reading IDs.
+   * **Stage 1 (Zero-Cost Tool Stubbing)**: A single calculated chart JSON payload can consume 3,000–6,000 tokens. When `rowToMessage()` hydrates previous turns for the LLM, historical `toolCallsJson` payloads are intentionally omitted. Because the assistant's prose already cites the relevant chart elements—and raw data remains re-fetchable via tools—Stage 1 reclaims **~80% of context volume at zero latency and zero LLM cost**.
+   * **Stage 2 (Incremental Narrative Summarization)**: If the system prompt and Stage-1 messages still exceed `COMPRESSION_TOKEN_BUDGET` (`60,000` tokens), turns older than `KEEP_RECENT_TURNS` (`10`) are compressed into a concise `[對話摘要]` narrative summary capturing only user intent, conclusions, and reading IDs.
 3. **Tier 3 — Long-Term Adaptive Portrait ([`src/lib/master/portraitExtractor.ts`](src/lib/master/portraitExtractor.ts))**:
-   * **Dual-Axis Trigger**: Fires asynchronously *after* the `{ type: 'done' }` SSE event is flushed to the client (adding **0ms user-perceived latency**) when either:
+   * **Dual-Axis Trigger**: Executes asynchronously *after* the `{ type: 'done' }` SSE event is flushed to the client (adding **0ms user-perceived latency**) when either:
      $$\Delta\text{turns} \ge 8 \quad \lor \quad (\Delta t \ge 24\text{h} \land \Delta\text{turns} \ge 3)$$
-   * **Bounded $O(1)$ Incremental Merge**: The extractor never reads the full conversation transcript. It receives only the current `UserPortrait` JSON (~300 tokens) and the delta rows where `turnIndex > lastTurnIndexCovered`.
-   * **Versioned Auditability & Manual Override Protection**: Every update appends an immutable snapshot to `UserPortraitHistory` (`trigger: 'auto' | 'manual' | 'admin' | 'restore'`). User-initiated privacy edits are respected and protected from unintended drift.
+   * **Bounded $O(1)$ Incremental Merge**: The extractor never reads the full conversation history. It receives only the current `UserPortrait` JSON (~300 tokens) and delta rows where `turnIndex > lastTurnIndexCovered`.
+   * **Versioned Auditability & Manual Override Protection**: Every extraction appends an immutable snapshot to `UserPortraitHistory` (`trigger: 'auto' | 'manual' | 'admin' | 'restore'`). User-initiated privacy edits are permanently protected against automated overwrite.
 
 ---
 
 ## 5. Network Protocol Topography & Upstream Cancellation
 
-### 5.1 Protocol Selection: Why SSE Over WebSockets or Pure REST
+### 5.1 Protocol Selection: Why SSE Over WebSockets or Blocking REST
 
-| Dimension | Blocking REST (`POST`) | WebSockets (`ws://` / `wss://`) | Server-Sent Events (`text/event-stream`) — **Selected** |
+| Architectural Dimension | Blocking REST (`POST`) | WebSockets (`ws://` / `wss://`) | Server-Sent Events (`text/event-stream`) — **Selected** |
 | :--- | :--- | :--- | :--- |
-| **Traffic Topology** | Request $\rightarrow$ Full Response (High TTFT) | Full-Duplex Bi-Directional | **Request $\rightarrow$ Uni-Directional Token Stream** (Matches LLM generation) |
-| **HTTP/2 & CDN Multiplexing** | Native HTTP/2 | Requires HTTP/1.1 Upgrade handshake; bypasses standard HTTP/2 stream multiplexing | **Native HTTP/2 multiplexing**; works seamlessly through Cloudflare Tunnel & standard L7 proxies |
-| **Load Balancing & State** | Stateless | **Stateful socket clusters**; requires sticky sessions, Redis pub/sub backplanes, and custom reconnect sync | **Stateless per-request lifecycle**; standard HTTP auth cookies/headers work out of the box |
-| **Zombie Connection Recovery** | N/A | Complex ping/pong & client state reconciliation | Native browser/fetch stream handling + simple `AbortController` teardown |
+| **Traffic Characteristics** | Request $\rightarrow$ Full Response (High TTFT) | Full-Duplex Bi-Directional | **Request $\rightarrow$ Uni-Directional Token Stream** (Matches LLM generation pattern) |
+| **HTTP/2 & Edge Multiplexing** | Native HTTP/2 | Requires HTTP/1.1 Upgrade handshake; bypasses standard HTTP/2 multiplexing | **Native HTTP/2 multiplexing**; operates seamlessly across Cloudflare Tunnel & L7 proxies |
+| **Connection State & Clustering** | Stateless | **Stateful socket clusters**; requires sticky sessions, Redis pub/sub backplanes, and reconnect sync | **Stateless per-request lifecycle**; standard HTTP authentication headers/cookies work natively |
+| **Interruption Teardown** | Client ignores response | Custom application-level ping/pong teardown | Native `fetch` stream handling + immediate `AbortController` signal propagation |
 
 ### 5.2 Reverse-Proxy Heartbeat Engineering ([`src/lib/sse.ts`](src/lib/sse.ts))
 
-When executing complex multi-tool chains or waiting on deep-reasoning models (`reasoning_effort: 'high'`), upstream silent intervals can exceed 30–60 seconds. Intermediate reverse proxies (Cloudflare, NGINX, AWS ALB) aggressively terminate idle HTTP connections (e.g., Cloudflare's 100s read timeout or standard 60s proxy timeouts).
+When executing complex multi-tool chains or waiting on deep-reasoning models (`reasoning_effort: 'high'`), upstream token generation can experience prolonged silent intervals (30–60+ seconds). Intermediate reverse proxies (Cloudflare, AWS ALB, NGINX) aggressively terminate idle HTTP connections (e.g., standard 60s proxy timeouts or Cloudflare's 100s read timeout).
 
-[`src/lib/sse.ts`](src/lib/sse.ts) wraps `ReadableStream` with a fault-tolerant `SSEController` that emits an SSE comment frame (`: heartbeat\n\n`) every **15 seconds** during long-running LLM or tool operations. Per the WHATWG SSE specification, leading-colon frames are ignored by client parsers while resetting L7 proxy idle timers. All `enqueue()` and `close()` operations are guarded against post-disconnect stream closure exceptions.
+[`src/lib/sse.ts`](src/lib/sse.ts) wraps `ReadableStream` with a fault-tolerant `SSEController` that emits a lightweight comment frame (`: heartbeat\n\n`) every **15 seconds** during silent execution phases. Per the WHATWG SSE specification, comment frames reset L7 proxy idle timers while remaining invisible to client JSON event parsers. All controller operations are guarded against post-disconnect write exceptions.
 
 ### 5.3 End-to-End Cascading Cancellation (`AbortController` $\rightarrow$ Upstream LLM)
 
-Without cascading cancellation, a user closing their browser tab or interrupting a response leaves the server executing up to 12 tool loops and streaming thousands of expensive output tokens into a dead socket.
+Without cascading cancellation, a user navigating away or preempting an active stream leaves the backend executing up to 12 tool loops and streaming thousands of expensive output tokens into a dead TCP socket.
 
 ```mermaid
 sequenceDiagram
@@ -317,7 +356,7 @@ sequenceDiagram
     Note over Engine,DB: Zero-Dirty-Write Guarantee: Partial Turn NEVER Persisted to DB
 ```
 
-In [`src/lib/llm/stream.ts`](src/lib/llm/stream.ts#L98-L105), the adapter binds both an internal deadline timer (`cfg.timeoutMs`) and the external HTTP request's `AbortSignal`:
+In [`src/lib/llm/stream.ts`](src/lib/llm/stream.ts#L98-L105), the adapter binds an internal execution deadline (`cfg.timeoutMs`) alongside the incoming HTTP request's `AbortSignal`:
 
 ```typescript
 const controller = new AbortController()
@@ -329,7 +368,7 @@ if (req.signal) {
 }
 ```
 
-When aborted, control jumps directly past `appendMasterChatMessage()` and `prisma.masterSession.update()` in `turnEngine.ts`, guaranteeing **Zero-Dirty-Write** semantics: aborted or half-streamed turns never pollute the relational transcript or deduct session turn budgets.
+When aborted, execution bypasses `appendMasterChatMessage()` and `prisma.masterSession.update()` in `turnEngine.ts`, enforcing **Zero-Dirty-Write** database semantics: aborted turns never pollute conversational history or decrement user turn budgets.
 
 ---
 
@@ -337,9 +376,9 @@ When aborted, control jumps directly past `appendMasterChatMessage()` and `prism
 
 ### 6.1 The Hold-then-Settle Transactional State Machine
 
-Divination readings consume *Karma* (`User.credits`). Because LLM generation can take 10–45 seconds and fail due to upstream provider outages, malformed JSON output, or client disconnects, naive "deduct-before-call" loses user funds on failure, while "deduct-after-call" allows race-condition overdrafts when a user fires 10 concurrent requests with 1 credit remaining.
+Consultation and analysis workflows consume user balance units (*Karma*, represented as `User.credits`). Because LLM generation requires 10–45 seconds and remains vulnerable to upstream outages, schema validation rejections, or network drops, naive upfront deduction causes unearned balance loss, while post-generation deduction invites race-condition overdrafts.
 
-Xuanji implements a strict **Hold-then-Settle** ledger in [`src/lib/readings/lifecycle.ts`](src/lib/readings/lifecycle.ts) and [`src/app/api/divination/_finalize.ts`](src/app/api/divination/_finalize.ts):
+Xuanji implements a two-phase **Hold-then-Settle** ledger in [`src/lib/readings/lifecycle.ts`](src/lib/readings/lifecycle.ts) and [`src/app/api/divination/_finalize.ts`](src/app/api/divination/_finalize.ts):
 
 ```mermaid
 stateDiagram-v2
@@ -381,9 +420,9 @@ stateDiagram-v2
 
 ### 6.2 Single-Winner Concurrency Guarantee (`SELECT ... FOR UPDATE` CTE)
 
-A critical race condition occurs when an HTTP route error handler (`markFailed` on timeout/abort) races against a duplicate client retry or the background stale-reading sweeper (`cleanupStalePendingReadings` scanning rows older than 15 minutes).
+A critical distributed systems race condition emerges when an active HTTP route error handler (`markFailed` triggered by timeout or abort) races concurrently against a client retry or the background sweeper job (`cleanupStalePendingReadings` scanning records pending for >15 minutes).
 
-To guarantee **exactly-once refund semantics** without external distributed locks, [`src/lib/readings/lifecycle.ts`](src/lib/readings/lifecycle.ts#L73-L93) executes an atomic PostgreSQL Common Table Expression (CTE) with row-level locking:
+To guarantee **strictly-once refund semantics** without distributed lock overhead, [`src/lib/readings/lifecycle.ts`](src/lib/readings/lifecycle.ts#L73-L93) executes an atomic PostgreSQL Common Table Expression (CTE) with row-level locking:
 
 ```sql
 WITH claimed AS (
@@ -398,47 +437,47 @@ WITH claimed AS (
 SELECT held, "userId", type FROM zeroed;
 ```
 
-Concurrent callers serialize on the `FOR UPDATE` row lock. The first transaction claims `creditsHeld`, zeroes it, and receives the pre-update `held` amount to increment `User.credits`. Any racing transaction wakes up after lock release, sees `"creditsHeld" = 0`, receives an empty result set, and safely exits as a no-op.
+Concurrent invocations serialize on the `FOR UPDATE` lock. The winning transaction claims `creditsHeld`, zeroes it atomically, and receives the pre-update held balance to credit `User.credits`. Any losing invocation unblocks to find `"creditsHeld" = 0`, receives an empty record set, and safely exits without duplicate credit assignment.
 
-### 6.3 Current Scale vs. 100k+ DAU Horizontal Scaling Horizon
+### 6.3 Current Architecture vs. 100k+ DAU Horizontal Scaling Horizon
 
-This repository is engineered pragmatically: it avoids premature microservice bloat while maintaining clean abstraction seams for horizontal scaling.
+The system is architected pragmatically: it maintains single-node operational simplicity today while preserving clean abstraction boundaries for horizontal scaling.
 
-| Subsystem | Current Architecture (Single-to-Medium Scale) | 100k+ DAU Horizontal Scaling Roadmap |
+| Architectural Layer | Current Single-Node Implementation | 100k+ DAU Distributed Scaling Path |
 | :--- | :--- | :--- |
-| **Compute & API Tier** | Containerized Next.js 14 Node.js runtime (`docker-compose.yml` + Cloudflare Tunnel ingress). | Stateless horizontal auto-scaling pods (ECS / Kubernetes) behind Cloudflare / ALB; zero sticky-session affinity required due to stateless SSE. |
-| **Database & Concurrency** | Single PostgreSQL 16 instance with Prisma connection pooling and `SELECT ... FOR UPDATE` row locks. | Primary-Replica topology via **PgBouncer**; read-heavy profile/history queries routed to Read Replicas; write ledger kept on Primary. |
-| **Caching & Rate Limiting** | In-process TTL memory caches (`AdminSetting` hot cache, `iztro` astrolabe cache, daily DB-backed turn limiter). | **Redis Cluster** for shared multi-node rate limiting (sliding-window Lua scripts), cross-pod `AdminSetting` pub/sub invalidation, and distributed session locks. |
-| **Background Workloads** | Inline post-SSE async tasks (`maybeExtractPortrait`) & periodic cron sweepers (`src/lib/jobs/`). | Decouple post-turn portrait extraction, Stage-2 narrative summarization, and stale hold sweeping into **BullMQ / Temporal** worker queues. |
+| **API & Inference Gateway** | Containerized Next.js 14 runtime (`docker-compose.yml` + Cloudflare Tunnel). | Horizontal auto-scaling container fleet (AWS ECS / EKS / Cloud Run) behind Cloudflare ALB; zero session affinity required due to stateless SSE. |
+| **Database & Concurrency** | Single PostgreSQL 16 instance with Prisma connection pooling and row-level locks. | **PgBouncer** connection pooling + Primary-Replica topology; route read-heavy profile/history queries to Read Replicas; write ledger remains on Primary. |
+| **Distributed Caching** | In-process TTL caches (`AdminSetting`, astrolabe patterns, DB turn limiters). | **Redis Cluster** for multi-node sliding-window rate limiting (Lua scripts), cross-pod settings invalidation via Pub/Sub, and distributed session coordination. |
+| **Background Workloads** | Inline post-SSE async tasks (`maybeExtractPortrait`) & periodic cron sweepers. | Decouple portrait extraction, Stage-2 narrative summarization, and stale hold cleanup into **BullMQ / Temporal** durable background worker queues. |
 
 ---
 
 ## 7. Production Engineering, Observability & Quality Gates
 
-### 7.1 Four-Stage Verification & Regression-Locking Discipline
+### 7.1 Four-Stage Quality Gates & Regression-Locking Discipline
 
-Governed by [`AGENTS.md`](AGENTS.md), every bug fix, schema evolution, or prompt boundary adjustment must be accompanied by an automated regression test before merge:
+Mandated by [`AGENTS.md`](AGENTS.md), all architectural changes, schema migrations, and prompt refactors must pass four automated quality gates before production merge:
 
-1. **Gate 1 — Strict Static Type Verification**:
-   `npx tsc --noEmit` $\rightarrow$ Must pass with **0 errors**. Strict null checks and discriminated unions (`EngineEvent`, `StreamChunk`, `FinalizeOutcome`) enforce compile-time protocol safety.
+1. **Gate 1 — Strict Static Type Checking**:
+   `npx tsc --noEmit` $\rightarrow$ Must pass with **0 errors**. Strict null checks and discriminated unions (`EngineEvent`, `StreamChunk`, `FinalizeOutcome`) ensure compile-time contract safety.
 2. **Gate 2 — Linting & Architectural Circuit Breakers**:
-   `npx eslint src` $\rightarrow$ Must pass with **0 warnings and 0 errors**. Enforces code hygiene and i18n circuit breakers (`T(lang, zhTW, en)`).
-3. **Gate 3 — Comprehensive Unit & Integration Suite (Vitest)**:
-   `npx vitest run` $\rightarrow$ 100% pass rate across deterministic calculators (`mainstreamAlignment.test.ts`), turn engine FSM (`turnEngine.test.ts`), prompt cache boundary alignment (`buildSystemPrompt.test.ts`), activation detection (`activationDetect.test.ts`), and credit lifecycle atomicity.
+   `npx eslint src` $\rightarrow$ Must pass with **0 warnings and 0 errors**. Enforces code hygiene and i18n parameter safety (`T(lang, zhTW, en)`).
+3. **Gate 3 — Unit & Integration Test Suite (Vitest)**:
+   `npx vitest run` $\rightarrow$ 100% pass rate across deterministic mathematical calculators (`mainstreamAlignment.test.ts`), turn engine FSM (`turnEngine.test.ts`), prompt cache boundaries (`buildSystemPrompt.test.ts`), activation detection (`activationDetect.test.ts`), and credit ledger concurrency (`billingRaces.test.ts`).
 4. **Gate 4 — Runtime & Build Integrity Watchdog**:
-   [`src/__tests__/smoke/buildIntegrityAndRuntimeGuard.test.ts`](src/__tests__/smoke/buildIntegrityAndRuntimeGuard.test.ts) guards critical module exports, UI dependency graphs, and Next.js build artifact integrity against cache corruption.
+   [`src/__tests__/smoke/buildIntegrityAndRuntimeGuard.test.ts`](src/__tests__/smoke/buildIntegrityAndRuntimeGuard.test.ts) validates critical module exports, UI dependency graphs, and Next.js compiler artifacts against cache corruption.
 
 ### 7.2 Telemetry, TTFT Monitoring & Structured Tracing
 
 * **Request-Scoped Correlation (`src/lib/logger.ts`)**:
-  Built on **Pino**, `createRequestLogger(endpoint)` generates a collision-resistant correlation `requestId` attached to every JSON stdout log line and threaded into the PostgreSQL `LlmLog` audit table. Operators can trace an entire multi-tool turn across container stdout and database records via:
+  Built on **Pino**, `createRequestLogger(endpoint)` injects a collision-resistant `requestId` into every JSON log line on stdout and propagates it into the PostgreSQL `LlmLog` table. Engineers can trace complete multi-tool execution chains across container logs and database rows:
   ```bash
   docker logs chinese-divination | jq 'select(.requestId=="a1b2c3d4")'
   ```
-* **Turn Latency & TTFT Telemetry (`src/lib/master/turnMonitor.ts`)**:
-  `TurnMonitor` tracks exact **Time-to-First-Token (`ttftMs`)**, per-tool execution latency histograms (`toolDurations: Record<string, number>`), and total turn duration (`totalDurationMs`).
-* **Automated UX Degradation & Timeout Triggers**:
-  If a turn exceeds `SLOW_RESPONSE_THRESHOLD_MS` (`15,000ms`) or encounters an upstream timeout/abort (`isTimeoutError`), `turnEngine` automatically captures the exception context to **Sentry** (`@sentry/nextjs`) with full `MasterTurnMetrics` tags and emits a structured `{ type: 'feedback_prompt', reason: 'slow_response' | 'timeout' }` SSE event to surface non-intrusive telemetry collection in the UI.
+* **Latency & TTFT Observability (`src/lib/master/turnMonitor.ts`)**:
+  `TurnMonitor` measures exact **Time-to-First-Token (`ttftMs`)**, per-tool execution latency histograms (`toolDurations: Record<string, number>`), and total turn duration (`totalDurationMs`).
+* **Automated Experience Degradation Triggers**:
+  If a turn exceeds `SLOW_RESPONSE_THRESHOLD_MS` (`15,000ms`) or triggers a timeout (`isTimeoutError`), `turnEngine` captures error telemetry to **Sentry** (`@sentry/nextjs`) with full `MasterTurnMetrics` diagnostic context and emits a `{ type: 'feedback_prompt', reason: 'slow_response' | 'timeout' }` SSE event to capture targeted user feedback.
 
 ---
 
@@ -446,14 +485,14 @@ Governed by [`AGENTS.md`](AGENTS.md), every bug fix, schema evolution, or prompt
 
 ### 8.1 Technical Inventory
 
-| Layer | Technology | Role in System |
+| Subsystem | Technology Stack | Architectural Responsibility |
 | :--- | :--- | :--- |
 | **Framework & Runtime** | Next.js 14 (App Router), React 18, TypeScript 5, Node.js 20 | Unified SSR/SPA client surfaces and streaming API route handlers. |
 | **Mobile Cross-Platform** | Capacitor 8 (`@capacitor/core`, `ios`, `android`) | Native mobile packaging with biometric auth, haptics, and push notifications. |
-| **Symbolic Compute Engines** | `lunar-typescript`, `iztro`, `taobi`, `tyme4ts` + Custom TS Calculators | Deterministic astronomical ephemeris (VSOP87), sexagenary calendar, and matrix engines. |
-| **LLM & AI Infrastructure** | OpenAI SDK, Anthropic SDK, OpenRouter, `jsonrepair`, `zod` | Multi-provider streaming inference, structured output repair, and schema gatekeeping. |
+| **Symbolic Engines** | `lunar-typescript`, `iztro`, `taobi`, `tyme4ts` + Custom TypeScript Engines | Deterministic astronomical ephemeris (VSOP87), calendar conversions, and matrix calculations. |
+| **LLM & Agent Infrastructure** | OpenAI SDK, Anthropic SDK, OpenRouter, `jsonrepair`, `zod` | Multi-provider streaming inference, structured output repair, and schema validation. |
 | **Database & Persistence** | PostgreSQL 16, Prisma ORM 6 (34+ strict migrations) | ACID ledger transactions, relational chat storage, and versioned user portraits. |
-| **Authentication & Billing** | NextAuth v5 (Beta), `bcryptjs`, Stripe SDK | Constant-time credential auth, funnel session tokens, and webhook credit top-ups. |
+| **Authentication & Billing** | NextAuth v5 (Beta), `bcryptjs`, Stripe SDK | Constant-time credential authentication, funnel session tokens, and webhook credit settlement. |
 | **Observability & Testing** | Pino (JSON Logger), Sentry, Vitest 4, Playwright | Request-correlated structured logging, error tracking, and regression test suites. |
 
 ### 8.2 Local Development Setup
@@ -470,17 +509,17 @@ npm install
 ```
 
 #### 2. Configure Environment Variables
-Copy the example environment file and configure your PostgreSQL connection string and LLM provider keys:
+Copy the example environment configuration and supply your database credentials and API keys:
 ```bash
 cp .env.example .env
 ```
 
-Key variables required in `.env`:
+Required core environment variables in `.env`:
 ```dotenv
-# Database (PostgreSQL)
+# Database (PostgreSQL 15+)
 DATABASE_URL="postgresql://postgres:password@localhost:5432/chinese_divination?schema=public"
 
-# Authentication (NextAuth.js)
+# Authentication (NextAuth.js v5)
 NEXTAUTH_SECRET="your-cryptographically-secure-secret"
 NEXTAUTH_URL="http://localhost:8088"
 
@@ -489,36 +528,36 @@ OPENROUTER_API_KEY="sk-or-v1-..."
 ```
 
 #### 3. Initialize Database Schema & Prisma Client
-Run the deterministic migration history (do **not** use `prisma db push` on shared databases):
+Apply the complete migration history (never run `prisma db push` on shared databases):
 ```bash
 npx prisma generate
 npx prisma migrate deploy
 ```
 
-#### 4. Start the Development Server
+#### 4. Launch Development Server
 ```bash
 npm run dev
 ```
-The server listens on `http://localhost:8088`.
+The server will bind to `http://localhost:8088`.
 
-#### 5. Execute the 4-Stage Quality Gate Suite
-Before committing any changes, verify all architectural invariants pass:
+#### 5. Run Quality Gates Suite
+Ensure all static checks and automated tests pass before committing:
 ```bash
-# Run TypeScript check, ESLint, and Vitest suite in sequence
+# Run type checking, linting, and tests in sequence:
 npm run predeploy-check
 
-# Or execute individual gates:
+# Or run individual quality gates:
 npx tsc --noEmit          # Gate 1: Static Type Check (0 errors)
-npx eslint src            # Gate 2: Linter & i18n Circuit Breaker (0 warnings)
-npx vitest run            # Gate 3: Full Unit, FSM & Smoke Test Suite
+npx eslint src            # Gate 2: Linter & i18n Circuit Breakers (0 warnings)
+npx vitest run            # Gate 3: Full Unit, FSM & Smoke Test Suite (100% pass)
 ```
 
 ---
 
 ## Architecture Documentation Index
 
-For deep-dive specifications into individual subsystems, consult the internal architecture whitepapers in [`docs/`](docs/):
+For exhaustive technical specifications on individual subsystems, consult the whitepapers under [`docs/`](docs/):
 
-* [`docs/architecture/overview.md`](docs/architecture/overview.md) — Authoritative System Architecture & 8 Symbolic Engines Whitepaper
-* [`docs/architecture/master-portrait-system.md`](docs/architecture/master-portrait-system.md) — Three-Tier Conversational Memory & User Portrait Specification
-* [`AGENTS.md`](AGENTS.md) — Engineering SOP, Quality Gates & Regression-Locking Discipline
+* [`docs/architecture/overview.md`](docs/architecture/overview.md) — Authoritative System Architecture & 8 Symbolic Engines Specification
+* [`docs/architecture/master-portrait-system.md`](docs/architecture/master-portrait-system.md) — Three-Tier Conversational Memory & User Portrait Architecture
+* [`AGENTS.md`](AGENTS.md) — AI Agent SOP, Quality Gates & Regression-Locking Discipline
