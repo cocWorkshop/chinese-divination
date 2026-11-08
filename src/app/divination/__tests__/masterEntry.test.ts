@@ -22,14 +22,16 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     expect(config.ctaButton).toBeDefined()
   })
 
-  it('should provide localized quick prompt chips', () => {
+  it('should provide 6 localized quick prompt chips with themes', () => {
     const zhPrompts = getMasterQuickPrompts('zh-TW')
-    expect(zhPrompts.length).toBeGreaterThanOrEqual(3)
+    expect(zhPrompts.length).toBe(6)
     expect(zhPrompts[0].prompt).toContain('不知')
+    expect(zhPrompts.every((p) => p.theme)).toBe(true)
 
     const enPrompts = getMasterQuickPrompts('en')
-    expect(enPrompts.length).toBeGreaterThanOrEqual(3)
+    expect(enPrompts.length).toBe(6)
     expect(enPrompts[0].prompt).toContain('oracle')
+    expect(enPrompts.every((p) => p.theme)).toBe(true)
   })
 
   it('should redirect to login if unauthenticated user clicks entry', () => {
@@ -114,11 +116,19 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     expect(pageContent).not.toContain('六派源流 · 靜心求索')
     expect(pageContent).not.toContain('六派源流 · 洞察命理契機')
 
-    // Prompt pills must be located on top of the input form
-    const pillsIdx = cardContent.indexOf('quickPrompts.map')
+    // Prompt pills must be located on top of the input form and split into 3+3 balanced rows
+    const row1Idx = cardContent.indexOf('row1.map')
+    const row2Idx = cardContent.indexOf('row2.map')
     const formIdx = cardContent.indexOf('<form')
-    expect(pillsIdx).toBeGreaterThan(0)
-    expect(formIdx).toBeGreaterThan(pillsIdx)
+    expect(row1Idx).toBeGreaterThan(0)
+    expect(row2Idx).toBeGreaterThan(row1Idx)
+    expect(formIdx).toBeGreaterThan(row2Idx)
+
+    // Center alignment must be enforced to avoid awkward left-ragged edges
+    expect(cardContent).toContain('justify-center')
+
+    // Domain-based subtle themes must be mapped
+    expect(cardContent).toContain('PROMPT_THEMES')
 
     // Must feature the clean command bar input
     expect(cardContent).toContain('<input')

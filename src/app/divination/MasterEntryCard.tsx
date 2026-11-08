@@ -9,7 +9,53 @@ import { T } from '@/lib/i18n'
 import {
   getMasterQuickPrompts,
   handleMasterEntryAction,
+  type QuickPrompt,
 } from './masterEntryConfig'
+
+const PROMPT_THEMES: Record<QuickPrompt['theme'], { bg: string; border: string; text: string; dot: string; hover: string }> = {
+  gold: {
+    bg: 'bg-[rgba(212,168,83,0.08)]',
+    border: 'border-[rgba(212,168,83,0.25)]',
+    text: 'text-[#e8c66e]',
+    dot: 'text-[rgba(212,168,83,0.9)]',
+    hover: 'hover:bg-[rgba(212,168,83,0.18)] hover:border-[rgba(212,168,83,0.5)]',
+  },
+  azure: {
+    bg: 'bg-[rgba(56,189,248,0.07)]',
+    border: 'border-[rgba(56,189,248,0.22)]',
+    text: 'text-[#7dd3fc]',
+    dot: 'text-[#38bdf8]',
+    hover: 'hover:bg-[rgba(56,189,248,0.16)] hover:border-[rgba(56,189,248,0.45)]',
+  },
+  jade: {
+    bg: 'bg-[rgba(52,211,153,0.07)]',
+    border: 'border-[rgba(52,211,153,0.22)]',
+    text: 'text-[#6ee7b7]',
+    dot: 'text-[#34d399]',
+    hover: 'hover:bg-[rgba(52,211,153,0.16)] hover:border-[rgba(52,211,153,0.45)]',
+  },
+  rose: {
+    bg: 'bg-[rgba(244,114,182,0.07)]',
+    border: 'border-[rgba(244,114,182,0.22)]',
+    text: 'text-[#f472b6]',
+    dot: 'text-[#f472b6]',
+    hover: 'hover:bg-[rgba(244,114,182,0.16)] hover:border-[rgba(244,114,182,0.45)]',
+  },
+  amber: {
+    bg: 'bg-[rgba(251,191,36,0.07)]',
+    border: 'border-[rgba(251,191,36,0.22)]',
+    text: 'text-[#fcd34d]',
+    dot: 'text-[#fbbf24]',
+    hover: 'hover:bg-[rgba(251,191,36,0.16)] hover:border-[rgba(251,191,36,0.45)]',
+  },
+  purple: {
+    bg: 'bg-[rgba(167,139,250,0.07)]',
+    border: 'border-[rgba(167,139,250,0.22)]',
+    text: 'text-[#c4b5fd]',
+    dot: 'text-[#a78bfa]',
+    hover: 'hover:bg-[rgba(167,139,250,0.16)] hover:border-[rgba(167,139,250,0.45)]',
+  },
+}
 
 export default function MasterEntryCard() {
   const { lang } = useLang()
@@ -18,6 +64,8 @@ export default function MasterEntryCard() {
   const [query, setQuery] = useState('')
 
   const quickPrompts = getMasterQuickPrompts(lang)
+  const row1 = quickPrompts.slice(0, 3)
+  const row2 = quickPrompts.slice(3, 6)
 
   const handleAction = (promptText?: string) => {
     handleMasterEntryAction({
@@ -34,6 +82,21 @@ export default function MasterEntryCard() {
     handleAction(query.trim() || undefined)
   }
 
+  const renderPromptButton = (item: QuickPrompt) => {
+    const style = PROMPT_THEMES[item.theme] || PROMPT_THEMES.gold
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => handleAction(item.prompt)}
+        className={`inline-flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1 rounded-lg transition-all duration-200 cursor-pointer font-serif border shadow-sm ${style.bg} ${style.border} ${style.text} ${style.hover}`}
+      >
+        <span className={`${style.dot} text-[10px]`}>✦</span>
+        <span>{item.label}</span>
+      </button>
+    )
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -41,7 +104,7 @@ export default function MasterEntryCard() {
       transition={{ duration: 0.4 }}
       className="mb-6 max-w-4xl mx-auto"
     >
-      <div className="card-mystic-featured p-3 sm:p-4 relative overflow-hidden group">
+      <div className="card-mystic-featured p-3 sm:p-4.5 relative overflow-hidden group">
         {/* Subtle warm glow behind */}
         <div
           className="absolute -top-20 -left-20 w-48 h-48 rounded-full blur-3xl opacity-10 pointer-events-none transition-opacity group-hover:opacity-15"
@@ -49,19 +112,14 @@ export default function MasterEntryCard() {
           aria-hidden="true"
         />
 
-        {/* Quick prompt pills row on top of the input box */}
-        <div className="relative z-10 mb-2.5 flex flex-wrap items-center gap-1.5 sm:gap-2">
-          {quickPrompts.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => handleAction(item.prompt)}
-              className="inline-flex items-center gap-1 text-[11px] sm:text-xs px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer bg-foreground/[0.03] hover:bg-gold/[0.08] border border-gold/15 hover:border-gold/35 text-foreground/70 hover:text-gold-light font-serif"
-            >
-              <span className="text-gold/60 text-[10px]">✦</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
+        {/* Quick prompt pills rows on top of the input box - strictly balanced 3+3 centered */}
+        <div className="relative z-10 mb-3 sm:mb-3.5 flex flex-col items-center gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5">
+            {row1.map(renderPromptButton)}
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2.5">
+            {row2.map(renderPromptButton)}
+          </div>
         </div>
 
         {/* Command bar input + submit button */}
