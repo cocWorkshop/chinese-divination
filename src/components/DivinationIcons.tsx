@@ -1,5 +1,5 @@
-// Consistent mystical SVG icons for all divination types
-// Navy + gold theme, modern mystical style
+// Consistent divination glyphs and mystical SVG utility icons
+// Styled after DivinationLayout Demo with traditional oriental sanctuary aesthetic
 import React from 'react'
 
 export interface IconProps {
@@ -8,188 +8,108 @@ export interface IconProps {
   color?: string
 }
 
-// 八字命理 — Four Pillars of Destiny
-export function BaZiIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || 'currentColor'
-  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
+const EMOJI_FONT = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif'
+
+function resolvePixelSize(size?: number, className: string = ''): number {
+  if (size) return size
+  const wMatch = className.match(/\bw-(\d+)\b/)
+  if (wMatch) {
+    return parseInt(wMatch[1], 10) * 4
+  }
+  const sizeMatch = className.match(/\b(?:text|w|h)-\[(\d+)px\]/)
+  if (sizeMatch) {
+    return parseInt(sizeMatch[1], 10)
+  }
+  return 24
+}
+
+interface GlyphConfig {
+  glyph: string
+  label: string
+}
+
+// Global glyph mapping matching DivinationLayout Demo
+// Note: BaZi uses the classical '命書卷軸 / 庚帖' (📜) instead of unrelated prayer beads
+const GLYPH_MAP: Record<string, GlyphConfig> = {
+  bazi: { glyph: '📜', label: '八字命理' },
+  liuyao: { glyph: '🪙', label: '六爻占卜' },
+  iching: { glyph: '☯', label: '易經占卜' },
+  ziwei: { glyph: '✨', label: '紫微斗數' },
+  qimen: { glyph: '🧭', label: '奇門遁甲' },
+  fengshui: { glyph: '🏔️', label: '風水佈局' },
+  meihua: { glyph: '🌸', label: '梅花易數' },
+  xiaoliuren: { glyph: '✋', label: '小六壬' },
+  tarot: { glyph: '🃏', label: '塔羅牌陣' },
+  other: { glyph: '📜', label: '典籍秘卷' },
+}
+
+export function renderDivinationGlyph(
+  type: string,
+  props: IconProps & { style?: React.CSSProperties }
+) {
+  const config = GLYPH_MAP[type] || { glyph: '📜', label: '正統術數' }
+  const pixel = resolvePixelSize(props.size, props.className)
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
-      {/* Four pillars */}
-      <rect x="18" y="25" width="14" height="50" rx="3" fill="none" stroke={stroke} strokeWidth="2"/>
-      <rect x="36" y="25" width="14" height="50" rx="3" fill="none" stroke={stroke} strokeWidth="2"/>
-      <rect x="54" y="25" width="14" height="50" rx="3" fill="none" stroke={stroke} strokeWidth="2" opacity="0.7"/>
-      <rect x="72" y="25" width="14" height="50" rx="3" fill="none" stroke={stroke} strokeWidth="2" opacity="0.7"/>
-      {/* Heavenly stems marks */}
-      <line x1="22" y1="38" x2="28" y2="38" stroke={stroke} strokeWidth="2"/>
-      <line x1="40" y1="35" x2="46" y2="35" stroke={stroke} strokeWidth="2"/>
-      <line x1="58" y1="40" x2="64" y2="40" stroke={stroke} strokeWidth="2" opacity="0.7"/>
-      <line x1="76" y1="36" x2="82" y2="36" stroke={stroke} strokeWidth="2" opacity="0.7"/>
-      {/* Earthly branches marks */}
-      <line x1="22" y1="58" x2="28" y2="58" stroke={stroke} strokeWidth="2"/>
-      <line x1="22" y1="63" x2="28" y2="63" stroke={stroke} strokeWidth="2"/>
-      <line x1="40" y1="58" x2="46" y2="58" stroke={stroke} strokeWidth="2"/>
-      <line x1="40" y1="63" x2="46" y2="63" stroke={stroke} strokeWidth="2"/>
-      <line x1="58" y1="58" x2="64" y2="58" stroke={stroke} strokeWidth="2" opacity="0.7"/>
-      <line x1="58" y1="63" x2="64" y2="63" stroke={stroke} strokeWidth="2" opacity="0.7"/>
-      <line x1="76" y1="58" x2="82" y2="58" stroke={stroke} strokeWidth="2" opacity="0.7"/>
-      <line x1="76" y1="63" x2="82" y2="63" stroke={stroke} strokeWidth="2" opacity="0.7"/>
-    </svg>
+    <span
+      role="img"
+      aria-label={config.label}
+      className={`inline-flex items-center justify-center select-none leading-none shrink-0 ${props.className || ''}`.trim()}
+      style={{
+        fontSize: `${pixel}px`,
+        lineHeight: 1,
+        verticalAlign: 'middle',
+        fontFamily: EMOJI_FONT,
+        ...props.style,
+      }}
+    >
+      {config.glyph}
+    </span>
   )
 }
 
-// 易經占卜 — Yin-Yang (reuse existing)
-export { default as IChingIcon } from './YinYangIcon'
-
-// 紫微斗數 — Star constellation / celestial chart
-export function ZiWeiIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || 'currentColor'
-  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
-      {/* Central star */}
-      <polygon points="50,15 56,35 78,35 60,47 67,68 50,55 33,68 40,47 22,35 44,35" fill={stroke} opacity="0.9"/>
-      {/* Orbit rings */}
-      <ellipse cx="50" cy="50" rx="38" ry="38" fill="none" stroke={stroke} strokeWidth="1" opacity="0.3"/>
-      <ellipse cx="50" cy="50" rx="28" ry="28" fill="none" stroke={stroke} strokeWidth="1" opacity="0.2"/>
-      {/* Constellation dots */}
-      <circle cx="25" cy="70" r="2.5" fill={stroke} opacity="0.6"/>
-      <circle cx="75" cy="70" r="2.5" fill={stroke} opacity="0.6"/>
-      <circle cx="20" cy="40" r="2" fill={stroke} opacity="0.4"/>
-      <circle cx="80" cy="40" r="2" fill={stroke} opacity="0.4"/>
-      <circle cx="35" cy="82" r="1.5" fill={stroke} opacity="0.3"/>
-      <circle cx="65" cy="82" r="1.5" fill={stroke} opacity="0.3"/>
-    </svg>
-  )
+// 八字命理 — 古典命書卷軸 / 乾坤庚帖 (取代無關之念珠，正統直觀)
+export function BaZiIcon(props: IconProps & { style?: React.CSSProperties }) {
+  return renderDivinationGlyph('bazi', props)
 }
 
-// 奇門遁甲 — Nine-palace grid with mystical compass feel
-export function QiMenIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || 'currentColor'
-  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
-      {/* 3x3 Grid */}
-      <rect x="20" y="20" width="60" height="60" rx="3" fill="none" stroke={stroke} strokeWidth="1.5"/>
-      <line x1="40" y1="20" x2="40" y2="80" stroke={stroke} strokeWidth="1" opacity="0.6"/>
-      <line x1="60" y1="20" x2="60" y2="80" stroke={stroke} strokeWidth="1" opacity="0.6"/>
-      <line x1="20" y1="40" x2="80" y2="40" stroke={stroke} strokeWidth="1" opacity="0.6"/>
-      <line x1="20" y1="60" x2="80" y2="60" stroke={stroke} strokeWidth="1" opacity="0.6"/>
-      {/* Center door symbol */}
-      <circle cx="50" cy="50" r="8" fill="none" stroke={stroke} strokeWidth="2"/>
-      <circle cx="50" cy="50" r="3" fill={stroke}/>
-      {/* Directional markers */}
-      <polygon points="50,12 47,18 53,18" fill={stroke} opacity="0.7"/>
-      <polygon points="50,88 47,82 53,82" fill={stroke} opacity="0.5"/>
-      <polygon points="12,50 18,47 18,53" fill={stroke} opacity="0.5"/>
-      <polygon points="88,50 82,47 82,53" fill={stroke} opacity="0.5"/>
-    </svg>
-  )
+// 易經占卜 — 周易太極陰陽兩儀
+export function IChingIcon(props: IconProps & { style?: React.CSSProperties }) {
+  return renderDivinationGlyph('iching', props)
 }
 
-// 風水佈局 — Mountain & water with compass
-export function FengShuiIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || 'currentColor'
-  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
-      {/* Mountain */}
-      <path d="M50 22 L72 65 L28 65 Z" fill="none" stroke={stroke} strokeWidth="2"/>
-      <path d="M36 45 L50 22 L64 45" fill="none" stroke={stroke} strokeWidth="1" opacity="0.4"/>
-      {/* Water waves */}
-      <path d="M18 72 Q28 66 38 72 Q48 78 58 72 Q68 66 78 72" fill="none" stroke={stroke} strokeWidth="2" opacity="0.7"/>
-      <path d="M22 80 Q32 74 42 80 Q52 86 62 80 Q72 74 82 80" fill="none" stroke={stroke} strokeWidth="1.5" opacity="0.4"/>
-      {/* Compass needle */}
-      <circle cx="50" cy="50" r="4" fill="none" stroke={stroke} strokeWidth="1" opacity="0.5"/>
-    </svg>
-  )
+// 紫微斗數 — 北極紫微星曜 / 斗數星盤
+export function ZiWeiIcon(props: IconProps & { style?: React.CSSProperties }) {
+  return renderDivinationGlyph('ziwei', props)
 }
 
-// 梅花六壬 — Plum blossom with divination lines
-export function MeiHuaIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || 'currentColor'
-  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
-      {/* Five petals of plum blossom */}
-      <circle cx="50" cy="30" r="10" fill="none" stroke={stroke} strokeWidth="1.5"/>
-      <circle cx="69" cy="42" r="10" fill="none" stroke={stroke} strokeWidth="1.5" opacity="0.8"/>
-      <circle cx="62" cy="65" r="10" fill="none" stroke={stroke} strokeWidth="1.5" opacity="0.7"/>
-      <circle cx="38" cy="65" r="10" fill="none" stroke={stroke} strokeWidth="1.5" opacity="0.7"/>
-      <circle cx="31" cy="42" r="10" fill="none" stroke={stroke} strokeWidth="1.5" opacity="0.8"/>
-      {/* Center pistil */}
-      <circle cx="50" cy="48" r="5" fill={stroke} opacity="0.8"/>
-      {/* Subtle trigram lines at bottom */}
-      <line x1="38" y1="84" x2="48" y2="84" stroke={stroke} strokeWidth="2" opacity="0.4"/>
-      <line x1="52" y1="84" x2="62" y2="84" stroke={stroke} strokeWidth="2" opacity="0.4"/>
-      <line x1="38" y1="89" x2="62" y2="89" stroke={stroke} strokeWidth="2" opacity="0.3"/>
-    </svg>
-  )
+// 奇門遁甲 — 奇門九宮羅盤
+export function QiMenIcon(props: IconProps & { style?: React.CSSProperties }) {
+  return renderDivinationGlyph('qimen', props)
 }
 
-// 六爻神課 — Three classical bronze coins with square holes & hexagram line
-export function LiuYaoIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || 'currentColor'
-  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
-      {/* Top coin */}
-      <circle cx="50" cy="35" r="16" fill="none" stroke={stroke} strokeWidth="1.75"/>
-      <rect x="45" y="30" width="10" height="10" rx="1" fill="none" stroke={stroke} strokeWidth="1.5"/>
-      {/* Bottom left coin */}
-      <circle cx="34" cy="58" r="16" fill="none" stroke={stroke} strokeWidth="1.75"/>
-      <rect x="29" y="53" width="10" height="10" rx="1" fill="none" stroke={stroke} strokeWidth="1.5"/>
-      {/* Bottom right coin */}
-      <circle cx="66" cy="58" r="16" fill="none" stroke={stroke} strokeWidth="1.75"/>
-      <rect x="61" y="53" width="10" height="10" rx="1" fill="none" stroke={stroke} strokeWidth="1.5"/>
-      {/* Trigram Yao line at base */}
-      <line x1="28" y1="84" x2="45" y2="84" stroke={stroke} strokeWidth="2.5" strokeLinecap="round" opacity="0.75"/>
-      <line x1="55" y1="84" x2="72" y2="84" stroke={stroke} strokeWidth="2.5" strokeLinecap="round" opacity="0.75"/>
-      <line x1="28" y1="90" x2="72" y2="90" stroke={stroke} strokeWidth="2.5" strokeLinecap="round" opacity="0.9"/>
-    </svg>
-  )
+// 風水佈局 — 山水巒頭形勢
+export function FengShuiIcon(props: IconProps & { style?: React.CSSProperties }) {
+  return renderDivinationGlyph('fengshui', props)
 }
 
-// 小六壬掌訣
-export function XiaoLiuRenIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || 'currentColor'
-  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
-      {/* Palm outline */}
-      <path d="M30 75 C30 85 45 90 55 90 C70 90 75 75 75 55 L75 40 C75 35 70 35 70 40 L70 50 L70 30 C70 25 65 25 65 30 L65 50 L65 22 C65 17 60 17 60 22 L60 50 L60 28 C60 23 55 23 55 28 L55 58 L45 50 C40 46 35 50 38 56 L46 66 L42 70 C36 70 30 70 30 75 Z" fill="none" stroke={stroke} strokeWidth="1.75"/>
-      {/* Six points */}
-      <circle cx="48" cy="38" r="2.5" fill={stroke}/>
-      <circle cx="57" cy="34" r="2.5" fill={stroke}/>
-      <circle cx="66" cy="42" r="2.5" fill={stroke}/>
-      <circle cx="66" cy="56" r="2.5" fill={stroke}/>
-      <circle cx="57" cy="58" r="2.5" fill={stroke}/>
-      <circle cx="48" cy="54" r="2.5" fill={stroke}/>
-    </svg>
-  )
+// 梅花易數 — 梅花綻放起卦
+export function MeiHuaIcon(props: IconProps & { style?: React.CSSProperties }) {
+  return renderDivinationGlyph('meihua', props)
 }
 
-// 塔羅牌陣
-export function TarotIcon({ size = 24, className = '', color }: IconProps) {
-  const stroke = color || 'currentColor'
-  const colorClass = color ? '' : (className.includes('text-') ? '' : 'text-gold')
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`inline-block ${colorClass} ${className}`.trim()} style={{ verticalAlign: 'middle' }}>
-      <circle cx="50" cy="50" r="48" fill="currentColor" fillOpacity="0.08" stroke={stroke} strokeWidth="1.5" strokeOpacity="0.25"/>
-      <rect x="32" y="20" width="36" height="60" rx="3" fill="none" stroke={stroke} strokeWidth="1.75"/>
-      <rect x="36" y="24" width="28" height="52" rx="2" fill="none" stroke={stroke} strokeWidth="0.75" opacity="0.6"/>
-      {/* Celestial Tarot emblem */}
-      <circle cx="50" cy="50" r="8" fill="none" stroke={stroke} strokeWidth="1.25"/>
-      <path d="M50 38 L50 62 M38 50 L62 50" stroke={stroke} strokeWidth="1" opacity="0.8"/>
-      <polygon points="50,44 54,50 50,56 46,50" fill={stroke} opacity="0.9"/>
-    </svg>
-  )
+// 六爻神課 — 古銅錢搖卦起六爻
+export function LiuYaoIcon(props: IconProps & { style?: React.CSSProperties }) {
+  return renderDivinationGlyph('liuyao', props)
+}
+
+// 小六壬掌訣 — 大安留連指掌
+export function XiaoLiuRenIcon(props: IconProps & { style?: React.CSSProperties }) {
+  return renderDivinationGlyph('xiaoliuren', props)
+}
+
+// 塔羅牌陣 — 奧秘卡牌
+export function TarotIcon(props: IconProps & { style?: React.CSSProperties }) {
+  return renderDivinationGlyph('tarot', props)
 }
 
 // 东方天机仙师 / 玄真道长图腾 (彻底替换甘道夫巫师 🧙‍♂️)
@@ -482,23 +402,13 @@ export function CopyIcon({ size = 16, className = '', color }: IconProps) {
   )
 }
 
-// Convenience map for dynamic rendering
-import YinYangIcon from './YinYangIcon'
-
-const iconMap: Record<string, React.ComponentType<IconProps>> = {
-  bazi: BaZiIcon,
-  iching: YinYangIcon,
-  liuyao: LiuYaoIcon,
-  ziwei: ZiWeiIcon,
-  qimen: QiMenIcon,
-  fengshui: FengShuiIcon,
-  meihua: MeiHuaIcon,
-  xiaoliuren: XiaoLiuRenIcon,
-  tarot: TarotIcon,
-  other: ScrollIcon,
-}
-
-export function DivinationIcon({ type, size = 24, className = '', color }: { type: string } & IconProps) {
-  const Icon = iconMap[type] || YinYangIcon
-  return <Icon size={size} className={className} color={color} />
+// Dynamic divination icon renderer matching DivinationLayout Demo
+export function DivinationIcon({
+  type,
+  size,
+  className = '',
+  color,
+  style,
+}: { type: string } & IconProps & { style?: React.CSSProperties }) {
+  return renderDivinationGlyph(type, { size, className, color, style })
 }

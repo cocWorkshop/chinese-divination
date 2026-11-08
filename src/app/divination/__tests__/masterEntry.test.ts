@@ -132,18 +132,53 @@ describe('Master Xuanji Entry Configuration and Logic (Issue #147 & Refactor C-3
     expect(cardContent).toContain('<input')
     expect(cardContent).toContain("T(lang, '請教大師', 'Ask Master')")
     expect(cardContent).not.toContain('向大師提問')
-    expect(cardContent).not.toContain('→')
-    expect(pageContent).toContain('自選起盤')
+    // User explicitly requested removing '正統術數' and '自選起盤', using a subtle divider instead
+    expect(pageContent).not.toContain('正統術數')
+    expect(pageContent).not.toContain('自選起盤')
+    expect(pageContent).toContain('bg-gradient-to-r from-transparent via-gold/15 to-transparent')
+
+    // Vertical centering when viewport height is sufficient (min-h-[calc(100vh-4rem)] + justify-center)
+    expect(pageContent).toContain('min-h-[calc(100vh-4rem)]')
+    expect(pageContent).toContain('justify-center')
 
     // Fixed dock layout: Master card pinned at bottom of viewport (fixed bottom-0 z-30)
     expect(pageContent).toContain('fixed bottom-0')
     expect(pageContent).toContain('z-30')
-    // Oracle cards: 2 columns on mobile (grid-cols-2)
+    // Oracle cards: 2 columns on mobile (grid-cols-2) and 3 on desktop (lg:grid-cols-3)
     expect(pageContent).toContain('grid-cols-2 lg:grid-cols-3')
 
     // MasterChatWidget suppresses bottom-right FAB on /divination page
     const widgetContent = fs.readFileSync(path.resolve(__dirname, '../../../components/master/MasterChatWidget.tsx'), 'utf-8')
     expect(widgetContent).toContain("pathname === '/divination'")
     expect(widgetContent).toContain('isDivinationHub ? null')
+  })
+
+  it('should globally map divination icons to DivinationLayout Demo archetypes with authentic BaZi destiny scroll', async () => {
+    const fs = await import('fs')
+    const path = await import('path')
+    const iconsContent = fs.readFileSync(path.resolve(__dirname, '../../../components/DivinationIcons.tsx'), 'utf-8')
+
+    // BaZi uses destiny scroll / chart parchment (📜) instead of Buddhist prayer beads (📿) or raw box fence
+    expect(iconsContent).toContain("bazi: { glyph: '📜', label: '八字命理' }")
+    expect(iconsContent).not.toContain('📿')
+
+    // Classical archetypes from DivinationLayout Demo
+    expect(iconsContent).toContain("liuyao: { glyph: '🪙', label: '六爻占卜' }")
+    expect(iconsContent).toContain("iching: { glyph: '☯', label: '易經占卜' }")
+    expect(iconsContent).toContain("ziwei: { glyph: '✨', label: '紫微斗數' }")
+    expect(iconsContent).toContain("qimen: { glyph: '🧭', label: '奇門遁甲' }")
+    expect(iconsContent).toContain("fengshui: { glyph: '🏔️', label: '風水佈局' }")
+    expect(iconsContent).toContain("meihua: { glyph: '🌸', label: '梅花易數' }")
+    expect(iconsContent).toContain("xiaoliuren: { glyph: '✋', label: '小六壬' }")
+    expect(iconsContent).toContain("tarot: { glyph: '🃏', label: '塔羅牌陣' }")
+
+    // Exported components exist
+    expect(iconsContent).toContain('export function BaZiIcon')
+    expect(iconsContent).toContain('export function LiuYaoIcon')
+    expect(iconsContent).toContain('export function IChingIcon')
+    expect(iconsContent).toContain('export function ZiWeiIcon')
+    expect(iconsContent).toContain('export function QiMenIcon')
+    expect(iconsContent).toContain('export function FengShuiIcon')
+    expect(iconsContent).toContain('export function DivinationIcon')
   })
 })

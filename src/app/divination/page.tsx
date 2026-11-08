@@ -56,10 +56,10 @@ export default function DivinationPage() {
   }, [])
 
   return (
-    <div className="relative flex-1 bg-background">
+    <div className="relative flex-1 bg-background flex flex-col min-h-[calc(100vh-4rem)]">
       <StarField />
-      {/* Scrollable Oracle Cards Container with bottom padding for the fixed dock */}
-      <div className="relative z-10 py-5 sm:py-8 px-3 sm:px-4 max-w-6xl mx-auto pb-32 sm:pb-36">
+      {/* Oracle Cards Container: Centered vertically when height is sufficient, with bottom padding for fixed dock */}
+      <div className="relative z-10 flex-1 flex flex-col justify-center py-4 sm:py-6 px-3 sm:px-4 max-w-4xl mx-auto w-full pb-32 sm:pb-36">
         <AnimatePresence mode="wait">
           <motion.div
             key="services-grid"
@@ -67,64 +67,58 @@ export default function DivinationPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
+            className="w-full flex flex-col justify-center"
           >
-            {/* Subtle Divider / Section Header */}
-            <div className="flex items-center gap-3 mb-4 sm:mb-6 max-w-4xl mx-auto w-full">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
-              <span className="text-[11px] sm:text-xs text-foreground/45 font-serif tracking-widest uppercase select-none text-center">
-                {T(lang, '正統術數 · 自選起盤', 'Classical Divination Systems')}
-              </span>
+            {/* Subtle Divider (Text removed per user request) */}
+            <div className="flex items-center gap-3 mb-3 sm:mb-5 w-full px-2" aria-hidden="true">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
             </div>
 
-            {/* Oracle Cards Grid: 2 columns on mobile, 3 columns on desktop */}
-            <div className="w-full grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-5">
+            {/* Oracle Cards Grid: 2 columns on mobile, 3 columns on desktop, styled after DivinationLayout Demo */}
+            <div className="w-full grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4.5">
               {visibleServices.map((svc, i) => (
                 <motion.div
                   key={svc.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 + i * 0.05 }}
+                  transition={{ delay: 0.1 + i * 0.04 }}
                 >
                   <Link
                     href={`/divination/${svc.id}`}
-                    className="oriental-sanctuary-card p-3 sm:p-6 h-full w-full text-left flex flex-col justify-between hover:shadow-2xl hover:shadow-gold/15 hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+                    className="oriental-sanctuary-card p-3 sm:p-5 h-full w-full text-left flex flex-col justify-between hover:border-gold/45 hover:shadow-lg hover:shadow-gold/10 hover:-translate-y-0.5 transition-all duration-200 group cursor-pointer relative overflow-hidden rounded-2xl"
                   >
-                    {svc.id === "bazi" && (
-                      <span className="absolute top-2.5 sm:top-3 right-2.5 sm:right-3 text-[9px] sm:text-[10px] px-2 sm:px-2.5 py-0.5 rounded-full font-serif font-medium border border-gold/30 bg-gold/15 text-gold-light tracking-wider">
-                        {T(lang, "常叩", "Popular")}
+                    {svc.id === 'bazi' && (
+                      <span className="absolute top-2.5 right-2.5 text-[9px] sm:text-[10px] px-1.5 sm:px-2.5 py-0.5 rounded-full font-serif font-medium border border-gold/30 bg-gold/15 text-gold-light tracking-wider">
+                        {T(lang, '常叩', 'Popular')}
                       </span>
                     )}
                     <div>
-                      <div className="mb-2 sm:mb-3.5 transition-transform duration-300 group-hover:scale-105 flex items-center justify-start">
-                        <span className="sm:hidden"><DivinationIcon type={svc.id} size={30} className="text-gold" /></span>
-                        <span className="hidden sm:inline-block"><DivinationIcon type={svc.id} size={42} className="text-gold" /></span>
+                      <div className="text-xl sm:text-2xl mb-1.5 transition-transform duration-200 group-hover:scale-105 flex items-center justify-start">
+                        <DivinationIcon type={svc.id} size={26} className="text-xl sm:text-2xl" />
                       </div>
-                      <h2 className="text-sm sm:text-xl font-serif mb-1 sm:mb-1.5 transition-colors group-hover:text-gold-light text-foreground/95 truncate sm:overflow-visible">
+                      <h2 className="text-sm sm:text-lg font-serif font-medium text-foreground/95 group-hover:text-gold transition-colors truncate sm:overflow-visible">
                         {T(lang, svc.twName, svc.enName)}
                       </h2>
-                      <p className="text-[11px] sm:text-sm leading-relaxed mb-3 sm:mb-4 text-foreground/60 font-light line-clamp-2 sm:line-clamp-none min-h-[2rem] sm:min-h-[2.5rem]">
+                      <p className="text-[11px] sm:text-xs text-foreground/60 font-light mt-1 line-clamp-2 leading-relaxed min-h-[2rem] sm:min-h-[2.25rem]">
                         {T(lang, svc.twDesc, svc.enDesc)}
                       </p>
                     </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-gold/10">
+                    <div className="pt-2 mt-2 border-t border-gold/10 flex items-center justify-between text-[10px] sm:text-xs">
                       {costs[svc.id] != null ? (
-                        <span className="stamp-gold text-[9px] sm:text-[10px] py-0.5 px-1.5 sm:px-2 select-none">
+                        <span className="text-amber-300/80 font-serif select-none">
                           ✧ {costs[svc.id]} {T(lang, '機緣', 'Karma')}
                         </span>
                       ) : (
                         <span />
                       )}
-                      <span className="text-gold/50 group-hover:text-gold transition-colors text-xs sm:text-sm font-sans flex items-center gap-1">
-                        <span className="text-[11px] sm:text-xs font-serif hidden group-hover:inline-block transition-opacity">
-                          {T(lang, '入局', 'Inquire')}
-                        </span>
+                      <span className="text-gold font-serif flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                        <span>{T(lang, '入局', 'Inquire')}</span>
                         <span>→</span>
                       </span>
                     </div>
 
                     {/* Subtle hover glow */}
-                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ boxShadow: 'inset 0 0 30px rgba(212,168,83,0.06)' }} />
+                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ boxShadow: 'inset 0 0 24px rgba(212,168,83,0.05)' }} />
                   </Link>
                 </motion.div>
               ))}
