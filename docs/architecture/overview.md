@@ -1,87 +1,87 @@
-# 玄機 (Xuanji) — 系統架構與預測功能實現機制
+# XuanJi — System Architecture & Prediction Implementation Mechanics
 
-> **版本**：v2.4 (2026-09 最新架構)  
-> **維護者**：核心工程團隊 (Core Architecture & Engineering Team)  
-> **地位**：系統權威架構白皮書（技術選型、數據流、子系統契約與架構不變量）
+> **Version**: v2.4 (2026-09 Architecture Baseline)  
+> **Maintainer**: Core Architecture & Engineering Team  
+> **Status**: Authoritative System Architecture Whitepaper (Tech Stack, Data Flows, Subsystem Contracts, and Architectural Invariants)
 
 ---
 
-## 一、系統概覽與架構理念
+## 1. System Overview & Core Philosophy
 
-「玄機」是一個原生構建於 AI 時代的中國傳統術數推演與現代心理諮詢平台。系統支持八大核心預測體系（八字、紫微斗數、奇門遁甲、六爻神卦、周易易經、梅花易數、風水堪輿、大六壬/綜合），並配備具備持久記憶與主動交互能力的「玄機大師」虛擬命理導師。
+"XuanJi" is an AI-native Chinese metaphysical divination and modern counseling platform. The system supports eight core prediction methodologies (BaZi, Zi Wei Dou Shu, Qi Men Dun Jia, Liu Yao, I Ching, Mei Hua Yi Shu, Feng Shui, and Da Liu Ren / Comprehensive), paired with the "XuanJi Master" persistent virtual metaphysical mentor.
 
-### 核心理念：確定性程序排盤 + 大語言模型語義解讀
+### Core Architecture: Deterministic Calculation + LLM Semantic Interpretation
 
-在術數工程化領域，傳統純 LLM 解決方案面臨致命缺陷：**大語言模型無法穩定進行複雜的天文曆法換算、節氣切分與干支飛星矩陣推演**（極易產生嚴重幻覺與假排盤）。玄機平台的立足核心在於**硬邊界分工**：
+In metaphysical software engineering, pure LLM approaches exhibit a critical flaw: **Large language models cannot reliably calculate astronomical ephemerides, solar term cutoffs, or complex Heavenly Stem / Earthly Branch and Flying Star matrices** (leading to severe hallucinations and corrupted charts). XuanJi enforces a **strict boundary separation**:
 
 ```
-[用戶輸入生辰/問題] 
+[User Birth Input / Query] 
        ↓
-[確定性排盤引擎 (Calculators)] ──(100% 程式碼數學推導)──> [標準化命盤 JSON]
-                                                                ↓
-[統一 LLM 推理層 (Dual-Channel)] ──(注入專家知識 Prompt)───> [深度語義解讀]
-                                                                ↓
-[統一驗證流水線 (_finalize.ts)]  ──(Zod 結構校驗 + 結算)──> [流式/完整結果呈現]
+[Deterministic Engines (Calculators)] ──(100% Code Mathematical Derivation)──> [Standard Chart JSON]
+                                                                                      ↓
+[Unified LLM Reasoning Layer]          ──(Dynamic Domain Prompt Context)───> [Deep Semantic Analysis]
+                                                                                      ↓
+[Unified Validation Pipeline]          ──(Zod Schema Validation + Settle)──> [Stream / Complete Result]
 ```
 
-### 系統架構不變量 (Architectural Invariants)
+### Architectural Invariants
 
-為確保系統在長期演進與高併發場景下的穩定性，架構定義了四大不可違背的全局約束：
+To guarantee platform stability during continuous evolution and under high concurrency, four global invariants are strictly enforced:
 
-1. **Invariant 1 (確定性排盤)**：所有天文節氣、真太陽時、干支四柱、十二宮曜、奇門九宮、六爻納甲排盤必須 100% 由本地 TypeScript 模組計算，輸入相同則輸出完全一致，嚴禁依賴 LLM 自行起卦或算盤。
-2. **Invariant 2 (LLM 語義邊界)**：LLM 的角色定位純粹為「解盤者」與「諮詢引導者」。LLM 必須嚴格基於結構化命盤數據進行格局提煉、因果歸納與現代化生活轉譯，嚴禁修改或臆造排盤參數。
-3. **Invariant 3 (雙通道等價性)**：HTTP 阻塞式調用與 SSE 流式傳輸是同一服務的兩種傳輸通道，兩者必須穿接相同的驗證管道（`_finalize.ts`），執行相同的硬拒絕門禁、Zod 結構校驗與賬本扣費邏輯。
-4. **Invariant 4 (計費原子性與預扣保護)**：機緣（Karma）點數扣減嚴格採用 **Hold-then-Settle（預扣-結算）** 模式。解讀發起時原子預扣並鎖定在解讀記錄上；LLM 成功完成時預扣直接轉為消費；任何異常（超時、網絡中斷、進程崩潰、內容無效）均由生命週期服務全額原路退回，確保賬本絕對一致性。
+1. **Invariant 1 (Deterministic Paipan)**: All astronomical solar terms, true solar time adjustments, four pillars Gan-Zhi, twelve palace stars, Qi Men nine-palace boards, and Liu Yao Najia alignments must be 100% computed by local TypeScript modules. Identical inputs yield identical outputs. LLMs are prohibited from casting hexagrams or computing natal charts.
+2. **Invariant 2 (LLM Semantic Boundary)**: The LLM functions strictly as an "interpreter" and "dialogue counselor". The LLM must reason exclusively over structured chart data to extract formations, synthesize causal chains, and translate insights into modern actionable guidance. Modifying or fabricating chart coordinates is forbidden.
+3. **Invariant 3 (Dual-Channel Equivalence)**: HTTP blocking calls and SSE streaming feeds represent two transport adapters for the same underlying pipeline. Both must pass through the identical validation pipeline (`_finalize.ts`), enforcing identical hard rejection criteria, Zod structural validation, and ledger settlement rules.
+4. **Invariant 4 (Billing Atomicity & Reservation Protection)**: Karma credits strictly utilize a **Hold-then-Settle** ledger lifecycle. Upon initiation, credits are atomically held and locked to the pending reading. Once the LLM completes and validates successfully, held credits transition to consumed. Any failure (timeout, network disconnection, crash, or validation failure) triggers a full atomic refund via the lifecycle service, guaranteeing zero credit loss.
 
 ---
 
-## 二、總體架構全景圖
+## 2. Global Architecture Diagram
 
 ```mermaid
 flowchart TD
-    subgraph ClientTier ["客戶端層 (Client Surfaces)"]
+    subgraph ClientTier ["Client Surfaces"]
         Web["Next.js 14 SPA / SSR"]
         Mobile["Capacitor Mobile App (iOS / Android)"]
-        Funnel["/start 獲客漏斗 (5-View 無感體驗)"]
-        Widget["玄機大師對話視窗 (Floating FAB & Expanded)"]
+        Funnel["/start Funnel (5-View Frictionless Experience)"]
+        Widget["Master Chat Widget (Floating FAB & Expanded View)"]
     end
 
-    subgraph GatewayTier ["API 網關與路由層 (Next.js App Router)"]
-        AuthRoute["/api/auth (NextAuth + Bcrypt 恒時防護)"]
-        DivRoute["/api/divination (阻塞式 & SSE 流式)"]
-        MasterRoute["/api/master (大師對話 Turn Engine)"]
-        StartRoute["/api/start (漏斗初始化與轉化)"]
-        UserRoute["/api/user & /api/profile (檔案/家人/成長任務)"]
+    subgraph GatewayTier ["API Gateway & Routes (Next.js App Router)"]
+        AuthRoute["/api/auth (NextAuth + Constant-time Bcrypt)"]
+        DivRoute["/api/divination (Blocking & SSE Streaming)"]
+        MasterRoute["/api/master (Master Chat Turn Engine)"]
+        StartRoute["/api/start (Funnel Init & Account Conversion)"]
+        UserRoute["/api/user & /api/profile (Profiles, Family, Quests)"]
     end
 
-    subgraph CoreEngine ["核心運算與流水線 (Core Pipeline & Calculators)"]
-        InputVal["_inputValidation.ts (大小/格式/語言安全門禁)"]
-        Finalize["_finalize.ts (統一收斂校驗管線)"]
-        LifeCycle["lifecycle.ts (狀態機與單贏家退款 CTE)"]
+    subgraph CoreEngine ["Core Computation & Pipeline"]
+        InputVal["_inputValidation.ts (Size, Type & Language Security Guard)"]
+        Finalize["_finalize.ts (Unified Validation Pipeline)"]
+        LifeCycle["lifecycle.ts (State Machine & Single-Winner Refund CTE)"]
         
-        subgraph Calculators ["本地排盤計算器集群"]
-            BaziCalc["baziCalculator (真太陽時 + 旺衰 + 神煞)"]
-            ZiweiCalc["ziweiCalculator (iztro 封裝 + 格局識別)"]
-            QimenCalc["qimenCalculator (taobi + 陰陽九局)"]
-            MeihuaCalc["meihuaCalculator (邵雍時間起卦)"]
-            LiuyaoCalc["liuyaoCalculator (京房納甲 + 六親六神)"]
+        subgraph Calculators ["Local Deterministic Calculators"]
+            BaziCalc["baziCalculator (True Solar Time + Strength + Shensha)"]
+            ZiweiCalc["ziweiCalculator (iztro Adapter + Pattern Detection)"]
+            QimenCalc["qimenCalculator (taobi + Yin/Yang 9 Dun)"]
+            MeihuaCalc["meihuaCalculator (Shao Yong Chronological Casting)"]
+            LiuyaoCalc["liuyaoCalculator (Jing Fang Najia + Six Relatives / Spirits)"]
         end
     end
 
-    subgraph LLMTier ["統一 LLM 抽象層 (Unified LLM Layer)"]
-        LLMManager["completeLLM / streamLLM (超時控制 & 斷線中止 req.signal)"]
-        OpenRouterChannel["OpenRouter API 通道 (主流雲端模型)"]
-        ProxyChannel["本地 Claude Proxy 通道 (開發與專用調優)"]
-        PromptSystem["divination-refs/*.md (領域知識動態注入)"]
-        SettingsCache["AdminSetting 熱緩存 (自動失活失效)"]
+    subgraph LLMTier ["Unified LLM Layer"]
+        LLMManager["completeLLM / streamLLM (Timeout & req.signal Abort)"]
+        OpenRouterChannel["OpenRouter API Channel (Production Cloud Models)"]
+        ProxyChannel["Local Claude Proxy Channel (Development & Tuning)"]
+        PromptSystem["divination-refs/*.md (Dynamic Domain Prompt Injection)"]
+        SettingsCache["AdminSetting In-Memory Cache (60s TTL)"]
     end
 
-    subgraph PersistenceTier ["持久化與基礎設施 (Persistence & Infra)"]
-        Postgres[(PostgreSQL 數據庫)]
-        PrismaORM["Prisma ORM (34+ 嚴格遷移腳本)"]
-        CreditLedger["CreditLog 賬本 (防競態預扣與消費審計)"]
-        PinoLogger["Pino JSON Logger (requestId 關聯追蹤)"]
-        JobScheduler["src/lib/jobs (日誌 PII 脫敏 & 過期清理)"]
+    subgraph PersistenceTier ["Persistence & Infrastructure"]
+        Postgres[(PostgreSQL Database)]
+        PrismaORM["Prisma ORM (34+ Versioned Migrations)"]
+        CreditLedger["CreditLog Ledger (Race-Free Hold & Audit Trail)"]
+        PinoLogger["Pino JSON Logger (requestId Distributed Tracing)"]
+        JobScheduler["src/lib/jobs (PII Redaction & Retention Sweepers)"]
     end
 
     ClientTier --> GatewayTier
@@ -101,121 +101,121 @@ flowchart TD
 
 ---
 
-## 三、八大術數體系實現機制詳解
+## 3. Eight Divination Systems Implementation
 
-### 1. 八字命理 (BaZi / 四柱推命)
-- **核心代碼**：`src/lib/baziCalculator.ts`、`src/lib/trueSolarTime.ts`
-- **依賴基礎**：`lunar-typescript` 高精度天文曆法庫 + 本地經緯度均時差查表。
-- **計算流程**：
-  1. **真太陽時校正 (Equation of Time)**：依據出生地經緯度與日序計算均時差 $\Delta t = (L - 120^\circ) \times 4\text{min} + \text{EoT}$，精確判定跨時辰邊界（早子時/夜子時嚴格切分）。
-  2. **四柱排定**：年柱以立春交節點（節氣精確時刻）為界；月柱依據節令切分；日柱天文精算；時柱依據五鼠遁推求。
-  3. **藏干與五行加權**：十二地支按本氣(0.6)、中氣(0.3)、餘氣(0.1)分權重計算五行強度分佈。
-  4. **格局與神煞主流化對標**：全面對齊《三命通會》與《子平真詮》標準（天乙貴人、月德、國印、德秀、天德合、紅艷煞等主流法則，由 `mainstreamAlignment.test.ts` 鎖定）。
-  5. **大運流年**：按陰陽年男女順逆推算精確起運虛歲與交運時間（3天折1年，精確至月日時辰）。
-- **LLM 注入**：加載 `divination-refs/bazi.md`，聚焦於喜用神調候、十神社會化心態、大運十步吉凶走向與現代事業健康指導。
+### 1. BaZi (Four Pillars of Destiny)
+- **Core Implementation**: `src/lib/baziCalculator.ts`, `src/lib/trueSolarTime.ts`
+- **Dependencies**: `lunar-typescript` / `tyme4ts` high-precision astronomical calendar + local coordinate Equation of Time lookup.
+- **Derivation Pipeline**:
+  1. **True Solar Time Correction**: Uses birth longitude and calendar day to calculate Equation of Time: $\Delta t = (L - 120^\circ) \times 4\text{min} + \text{EoT}$, strictly determining early Zi (00:00-01:00) vs late Zi (23:00-24:00) hour transitions.
+  2. **Four Pillars Casting**: Year Pillar defined by the exact astronomical Lichun (solar term) instant; Month Pillar derived from solar terms; Day Pillar computed astronomically; Hour Pillar derived via the Five Rat Sequence.
+  3. **Hidden Stems & Weighted Five Elements**: Earthly branches allocate Five Element weights across Major (0.6), Secondary (0.3), and Residual (0.1) Qi.
+  4. **Formation & Shensha Mainstream Alignment**: Fully aligned with *San Ming Tong Hui* and *Zi Ping Zhen Quan* standards (Tian Yi Nobleman, Yue De, Guo Yin, De Xiu, Tian De He, Hong Yan Sha, locked by `mainstreamAlignment.test.ts`).
+  5. **Decadal & Annual Luck**: Calculates precise luck inception age and handover timestamp based on stem polarity and gender (3 days = 1 year, down to day and hour).
+- **LLM Prompt Injection**: Loads `divination-refs/bazi.md`, focusing on favorable/unfavorable elements (Xi Yong Shen), climatic balance (Tiao Hou), social psychology, decadal trajectory, and career/health analysis.
 
-### 2. 紫微斗數 (Zi Wei Dou Shu)
-- **核心代碼**：`src/lib/ziweiCalculator.ts`、`src/lib/ziweiPatterns.ts`
-- **依賴基礎**：開源 `iztro` 庫 + 70x 性能優化緩存架構。
-- **計算流程**：
-  1. **命身宮與五行局**：依據農曆出生月時定命宮身宮，依命宮干支推納音五行局（水二局至火六局）。
-  2. **十四主星與群曜**：安放紫微、天府兩大星系，並布列六吉星、六煞星、生年四化（祿、權、科、忌）與天傷天使等雜曜。
-  3. **廟旺平陷與格局偵測**：判定各宮星曜亮度，運行 `detectPatterns()` 辨識明珠出海、紫府同宮、殺破狼、三奇嘉會等經典命性格局。
-- **LLM 注入**：加載 `divination-refs/ziwei.md`，重點解讀三方四正的星曜互涉、宮位飛化動態影響。
+### 2. Zi Wei Dou Shu (Purple Star Astrology)
+- **Core Implementation**: `src/lib/ziweiCalculator.ts`, `src/lib/ziweiPatterns.ts`
+- **Dependencies**: `iztro` library + 70x acceleration caching layer.
+- **Derivation Pipeline**:
+  1. **Life/Body Palaces & Five Elements Bureau**: Identifies Life and Body Palaces from lunar birth month and hour; computes Five Elements Bureau (Water 2 to Fire 6) from Life Palace stem-branch Nayin.
+  2. **Fourteen Primary Stars & Minor Stars**: Positions Ziwei and Tianfu star systems, auxiliary auspicious/inauspicious stars, birth Si Hua mutagens (Lu, Quan, Ke, Ji), and minor stars.
+  3. **Brightness & Pattern Detection**: Evaluates star brightness (Temple, Brilliance, Ground, Trap) and invokes `detectPatterns()` to identify classical configurations (e.g., Pearl Emerging from the Sea, Zi Wei and Tian Fu in Same Palace, Sha-Po-Lang, Three Auspicious Meetings).
+- **LLM Prompt Injection**: Loads `divination-refs/ziwei.md`, analyzing mutual interactions across the Three Parties and Four Adjacent Palaces and palace mutagen flying transformations.
 
-### 3. 奇門遁甲 (Qi Men Dun Jia)
-- **核心代碼**：`src/lib/qimenCalculator.ts`
-- **依賴基礎**：`taobi` 引擎 + VSOP87 高精度太陽黃經。
-- **計算流程**：
-  1. **陰陽遁與用局**：冬至後為陽遁，夏至後為陰遁；依據二十四節氣與日干支符頭推演上中下三元與一至九局。
-  2. **天盤九星、人盤八門、神盤八神**：值符值使動態旋轉排布，六儀三奇天地盤對疊。
-  3. **吉凶格自動判定**：青龍返首、飛鳥跌穴、玉女守門、三奇得門、六儀擊刑、奇門入墓（依據陰陽長生十二宮標準對齊）。
-- **LLM 注入**：加載 `divination-refs/qimen.md`，分析問事宮與結果宮克應、決策時機與避凶策略。
+### 3. Qi Men Dun Jia (Mysterious Gates)
+- **Core Implementation**: `src/lib/qimenCalculator.ts`
+- **Dependencies**: `taobi` engine + VSOP87 high-precision solar longitude.
+- **Derivation Pipeline**:
+  1. **Yin/Yang Dun & Ju Configuration**: Winter Solstice begins Yang Dun; Summer Solstice begins Yin Dun. Derives Upper, Middle, Lower epochs and Dun numbers 1-9 from 24 solar terms and day stem-branch heads.
+  2. **Heavenly Plate Nine Stars, Human Plate Eight Gates, Spirit Plate Eight Deities**: Rotates Zhi Fu and Zhi Shi dynamic plates and overlays Six Instruments and Three Nobles across Heaven and Earth plates.
+  3. **Pattern Recognition**: Automatically evaluates Green Dragon Turning Head, Flying Bird Falling into Cave, Jade Maiden Guarding Door, Three Nobles Obtaining Gate, Six Instruments Strike Punishment, and Noble Enters Grave.
+- **LLM Prompt Injection**: Loads `divination-refs/qimen.md`, evaluating question vs outcome palace resonance, optimal timing windows, and strategic remedies.
 
-### 4. 六爻神卦 (Liu Yao / 京房納甲)
-- **核心代碼**：`src/app/api/divination/schemas/liuyao.schema.ts`、`src/lib/llm/prompts.ts`
-- **計算流程**：
-  1. **起卦方式**：支持手動搖卦（三次銅錢正反面記號 0~3）或時間/隨機起卦。
-  2. **納甲與六親**：本卦與變卦配干支（京房八宮卦序），以本宮卦五行為我，配生我（父母）、我生（子孫）、克我（官鬼）、我克（妻財）、同我（兄弟）。
-  3. **六神與世應**：日干起青龍、朱雀、勾陳、螣蛇、白虎、玄武；定世爻（自己）與應爻（對方/問事主體）。
-- **LLM 注入**：加載 `divination-refs/liuyao.md`，以用神衰旺為核心，審查動爻生剋、月建日辰動態與應期推斷。
+### 4. Liu Yao (Six Lines / Jing Fang Najia)
+- **Core Implementation**: `src/app/api/divination/schemas/liuyao.schema.ts`, `src/lib/llm/prompts.ts`
+- **Derivation Pipeline**:
+  1. **Casting Mechanism**: Supports manual coin tosses (three coins, outcomes 0~3) or timestamp/random generation.
+  2. **Najia & Six Relatives**: Assigns stems and branches to original and transformed hexagrams (Jing Fang Eight Palace sequence). The palace Five Element serves as self, mapping Parent, Offspring, Officer/Ghost, Wealth, and Sibling.
+  3. **Six Spirits & Host/Guest Lines**: Day stem assigns Azure Dragon, Vermilion Bird, Hook Chen, Flying Serpent, White Tiger, and Black Tortoise. Designates Subject (Self) and Object (Target) lines.
+- **LLM Prompt Injection**: Loads `divination-refs/liuyao.md`, evaluating Useful God (Yong Shen) strength, active line interactions, monthly/daily energetic support, and manifestation timing (Ying Qi).
 
-### 5. 周易易經 (I Ching)
-- **核心代碼**：`src/app/api/divination/schemas/iching.schema.ts`
-- **計算流程**：64 別卦推演、上下八卦（經卦）五行對應、六爻陰陽二進制編碼與變爻軌跡計算。
-- **LLM 注入**：加載 `divination-refs/iching.md`，輸出標準卦辭、大象傳、爻辭原文及心理哲學現代啟示。
+### 5. I Ching (Book of Changes)
+- **Core Implementation**: `src/app/api/divination/schemas/iching.schema.ts`
+- **Derivation Pipeline**: Computes 64 hexagram derivations, upper/lower trigram Five Element correspondences, binary yin-yang line encoding, and changing line trajectories.
+- **LLM Prompt Injection**: Loads `divination-refs/iching.md`, rendering canonical Hexagram Judgements, Great Image Commentaries, original line verses, and modern philosophical reflections.
 
-### 6. 梅花易數 (Mei Hua Yi Shu)
-- **核心代碼**：`src/lib/meihuaCalculator.ts`
-- **計算流程**：邵雍先天起卦法（年+月+日 mod 8 得上卦，+時 mod 8 得下卦，總數 mod 6 得動爻）；生成本卦、互卦、變卦；明確區分體卦與用卦，嚴格輸出五行生剋關係（體克用、用生體、體用比和等）。
-- **LLM 注入**：加載 `divination-refs/others.md`，評估當前阻力、中期互卦徵兆與最終應期。
+### 6. Mei Hua Yi Shu (Plum Blossom Divination)
+- **Core Implementation**: `src/lib/meihuaCalculator.ts`
+- **Derivation Pipeline**: Shao Yong primordial casting method (Year + Month + Day mod 8 for Upper Trigram, + Hour mod 8 for Lower Trigram, total sum mod 6 for Moving Line); derives Natal, Mutual, and Transformed Trigrams; distinguishes Subject Trigram from Object Trigram with strict Five Element generation/restriction cycles.
+- **LLM Prompt Injection**: Loads `divination-refs/others.md`, evaluating current resistance, intermediate signs from mutual trigrams, and outcome timing.
 
-### 7. 風水堪輿 (Feng Shui)
-- **核心代碼**：`src/app/api/divination/schemas/fengshui.schema.ts`
-- **計算流程**：八宅法（東四宅/西四宅）與玄空飛星（三元九運，當前處於九運 2024-2043）；二十四山坐向排定山星與向星。
-- **LLM 注入**：加載 `divination-refs/fengshui.md`，產出各房間能量分佈、財位文昌位吉凶及物理化解調理方案。
+### 7. Feng Shui
+- **Core Implementation**: `src/app/api/divination/schemas/fengshui.schema.ts`
+- **Derivation Pipeline**: Eight Mansions (East/West Four Mansions) and Xuan Kong Flying Stars (Three Cycles & Nine Periods; Period 9: 2024-2043); evaluates 24-mountain sitting/facing alignments for Mountain and Water stars.
+- **LLM Prompt Injection**: Loads `divination-refs/fengshui.md`, generating spatial energy distributions, wealth and academic sector assessments, and physical remediation cures.
 
-### 8. 六壬 / 其他綜合 (Liu Ren / Other)
-- **核心代碼**：`src/app/api/divination/schemas/other.schema.ts`
-- **計算流程**：天地盤互涉、日辰四課、三傳發端，適用於突發事件或綜合疑難推演。
+### 8. Da Liu Ren & Comprehensive Synthesis
+- **Core Implementation**: `src/app/api/divination/schemas/other.schema.ts`
+- **Derivation Pipeline**: Heaven and Earth plate alignments, daily stem Four Lessons, Three Transmissions derivation, serving emergent multi-factor inquiries.
 
 ---
 
-## 四、機緣點數（Karma）計費與賬本架構
+## 4. Karma Credit Economy & Ledger Architecture
 
-系統於 2026-06 全面廢除古老的每日請求次數限額，改由**強一致性、可審計的「機緣（Karma）點數賬本」**掌管一切價值流動。
+The system utilizes an auditable, strongly consistent **Karma Credit Ledger** to govern all value exchange.
 
-### 1. 賬本核心實體 (`schema.prisma`)
-- `User.credits`：用戶當前可用機緣餘額（`Int @default(0)`）。
-- `Reading.creditsHeld`：解讀進行期間**原子預扣**並鎖定的機緣數額（`Int @default(0)`）。
-- `CreditLog`：不可篡改的流水審計記錄表，包含 `action`（`register_bonus`, `divination_hold`, `divination_refund`, `master_turn`, `purchase`, `share_reward` 等）、變更數額 `amount` 及餘額快照 `balanceAfter`。
+### 1. Core Schema Entities (`schema.prisma`)
+- `User.credits`: Available Karma balance (`Int @default(0)`).
+- `Reading.creditsHeld`: Held Karma balance **atomically reserved** during in-flight readings (`Int @default(0)`).
+- `CreditLog`: Immutable audit ledger recording transaction `action` (`register_bonus`, `divination_hold`, `divination_refund`, `master_turn`, `purchase`, `share_reward`), change `amount`, and post-transaction balance snapshot `balanceAfter`.
 
-### 2. 預扣-結算事務時序 (Hold-then-Settle Flow)
+### 2. Hold-then-Settle Lifecycle Sequence
 
 ```
-[用戶點擊提交] 
-      ↓
+[User Submits Form] 
+       ↓
 POST /api/divination/init
-      ↓
-[開展 Prisma 事務]
-  ├─ 檢查 User.credits >= cost (不夠則 402 INSUFFICIENT_CREDITS)
+       ↓
+[Prisma Atomic Transaction]
+  ├─ Verify User.credits >= cost (or return 402 INSUFFICIENT_CREDITS)
   ├─ User.credits -= cost
-  ├─ 創建 Reading (status: 'pending', creditsHeld: cost)
-  └─ 記錄 CreditLog (action: 'divination_hold', amount: -cost)
-      ↓
-[客戶端接收 readingId，發起流式或阻塞式推演]
-      │
-      ├───────────────────────┬───────────────────────┐
-      ▼                       ▼                       ▼
-【成功完成】              【主動取消/超時】        【後端崩潰/LLM失敗】
-  ↓                       ↓                       ↓
-_finalize.ts           req.signal 中止         lifecycle.ts markFailed
-  ↓                       ↓                       ↓
-Reading.creditsHeld=0   Reading.creditsHeld=0   Reading.creditsHeld=0
-Reading.status='done'   Reading.status='failed' Reading.status='failed'
-User.credits 不變       User.credits += cost    User.credits += cost
-                        CreditLog: refund       CreditLog: refund
+  ├─ Create Reading (status: 'pending', creditsHeld: cost)
+  └─ Record CreditLog (action: 'divination_hold', amount: -cost)
+       ↓
+[Client Receives readingId, Initiates SSE or Blocking Call]
+       │
+       ├───────────────────────┬───────────────────────┐
+       ▼                       ▼                       ▼
+[Successful Completion]   [Client Cancel / Abort]   [Server Crash / LLM Error]
+   ↓                       ↓                         ↓
+_finalize.ts            req.signal abort          lifecycle.ts markFailed
+   ↓                       ↓                         ↓
+Reading.creditsHeld=0   Reading.creditsHeld=0     Reading.creditsHeld=0
+Reading.status='done'   Reading.status='failed'   Reading.status='failed'
+User.credits unchanged  User.credits += cost      User.credits += cost
+                        CreditLog: refund         CreditLog: refund
 ```
 
-### 3. 單贏家保證 (Single-Winner Concurrency Guarantee)
-退款流程通過 SQL 原子條件更新保障冪等性：
+### 3. Single-Winner Concurrency Guarantee
+The refund pipeline guarantees idempotency through atomic conditional updates:
 ```sql
 UPDATE "Reading" 
 SET "status" = 'failed', "creditsHeld" = 0, "updatedAt" = NOW() 
 WHERE "id" = :id AND "status" = 'pending' AND "creditsHeld" > 0;
 ```
-只有搶先奪得受影響行數 (`count === 1`) 的線程才獲准執行退款加回，徹底杜絕併發調用導致的重復退款。
+Only the specific execution thread obtaining `count === 1` is authorized to process the refund credit restore, preventing double-refund race conditions.
 
 ---
 
-## 五、LLM 抽象層與流式韌性架構
+## 5. Unified LLM Layer & Streaming Resilience
 
-### 1. 雙通道適配器 (`src/lib/llm/`)
-- **OpenRouter Gateway**：主力生產通道，支持動態配置模型（如 `anthropic/claude-3-5-sonnet`, `deepseek/deepseek-r1` 等）。內建帶 Jitter 的超時重試與 60 秒配置熱快取。
-- **Claude Proxy Gateway**：本地直連代理，專供開發、除錯及專用私有化調優。
-- **抽象出口**：全站代碼禁止直接調用 SDK，統一由 `completeLLM()` 與 `streamLLM()` 提供承載。
+### 1. Dual-Channel Adapters (`src/lib/llm/`)
+- **OpenRouter Gateway**: Primary production channel supporting dynamic model dispatch (`anthropic/claude-3-5-sonnet`, `deepseek/deepseek-r1`). Features jittered retries and a 60-second in-memory config cache.
+- **Claude Proxy Gateway**: Local direct proxy tailored for local development, offline debugging, and private fine-tuning.
+- **Unified Interface**: Direct SDK instantiation is prohibited in application code. All operations flow through `completeLLM()` and `streamLLM()`.
 
-### 2. 韌性與可觀測性防線
-- **全局 RequestId**：所有請求於入口由 `createRequestLogger` 生成短標識，貫穿日誌、LLM 接口調用、數據庫存儲（`LlmLog.requestId`）與 Sentry 上報。
-- **斷線信號傳遞 (`req.signal`)**：當用戶關閉瀏覽器標籤或點擊取消時，`req.signal` 自動向下游 OpenRouter/Claude 發送 Abort 信號，瞬間中止 LLM 算力消耗。
-- **超長調用進度漸進 (Honest Progress)**：LLM 推理超時超 180 秒時，進度條啟動漸進算法（95%→99%），並動態提示「深度推理中（已耗時 N 分鐘）」；超過 300 秒暴露「取消並保留表單草稿」按鈕。
+### 2. Resilience & Observability
+- **Global RequestId**: Every request receives a short identifier via `createRequestLogger`, propagating through application logs, LLM calls, database records (`LlmLog.requestId`), and Sentry events.
+- **Client Disconnect Signal (`req.signal`)**: When a user closes their tab or aborts a request, `req.signal` propagates an abort signal downstream to OpenRouter/Claude, terminating remote compute consumption.
+- **Progressive Feedback (Honest Progress)**: When LLM reasoning exceeds 180 seconds, the client UI activates an asymptotic progress animation (advancing from 95% toward 99%) accompanied by an informative notice; after 300 seconds, an explicit "Cancel and Retain Draft" action appears.

@@ -1,143 +1,143 @@
-# 占卜流式渲染 (Streaming Divination) — 架構與協議規範
+# Streaming Divination — Architecture & Protocol Specification
 
-> **版本**：v2.2  
-> **層級**：核心交互與流式管道工程規範 (Core Streaming Pipeline Specification)  
-> **範圍**：後端 SSE 傳輸、字符級流式 JSON 狀態機、前端漸進式渲染與斷線容錯
-
----
-
-## 一、設計目標與架構邊界
-
-在傳統 AI 命理產品中，解盤面臨嚴重的等待體驗瓶頸：生成一篇 4000~8000 字的深度命盤解讀，LLM 推理延遲高達 **60~180 秒**。在移動端或廣告著陸頁，這段時間內的空白加載會導致 >65% 的用戶流失。
-
-玄機平台的流式渲染架構旨在實現：
-1. **$t=0$ 秒確定性排盤秒級直出**：在 LLM 首個 Token 到達前，排盤引擎計算的命盤結構（四柱、十神、大運、十二宮曜、九宮格）瞬間發送並完全渲染；
-2. **字符級增量打字體驗**：LLM 吐出的 JSON 文本流被實時解析為對象樹，各章節解讀（總覽、事業、婚戀、財運）以逐字打字動效在各自卡片中同步漸進湧現；
-3. **極致網絡與代理韌性**：15 秒強制 SSE 心跳保持、代理超時防禦、客戶端中止信號（`req.signal`）穿透中止上游 LLM，以及原子退款機制。
+> **Version**: v2.2  
+> **Level**: Core Streaming Pipeline Engineering Specification  
+> **Scope**: Backend SSE Transport, Character-level Streaming JSON FSM, Frontend Progressive Rendering, and Network Fault Tolerance
 
 ---
 
-## 二、端到端流式時序圖 (End-to-End Sequence)
+## 1. Design Goals & Architectural Boundaries
+
+In traditional AI divination applications, reading generation suffers from severe latency bottlenecks: generating a deep 4,000 to 8,000 word chart interpretation can take **60 to 180 seconds** of LLM inference time. On mobile devices or acquisition landing pages, a blank loading state during this duration causes >65% user bounce.
+
+XuanJi's streaming architecture provides:
+1. **$t=0$ Deterministic Chart Immediate Render**: Before the first token arrives from the remote LLM, the local calculation engine derives the natal chart structure (Four Pillars, Ten Gods, Decadal Cycles, Twelve Palaces, Nine Palaces) and delivers it instantaneously to render the chart UI immediately.
+2. **Character-level Progressive Typewriter Rendering**: The incoming JSON text stream emitted by the LLM is parsed incrementally into an object tree in real time. Each interpretation section (Overview, Career, Romance, Wealth) emerges progressively with synchronized typewriter animations across dedicated cards.
+3. **Resilient Network & Proxy Handling**: 15-second mandatory SSE keep-alive heartbeats, edge proxy timeout protection, client cancellation signal (`req.signal`) propagation to terminate remote inference, and atomic credit refund pipelines.
+
+---
+
+## 2. End-to-End Streaming Sequence
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as 用戶端 (Browser/App)
+    actor User as Client (Browser/App)
     participant Route as /api/divination (Next.js)
-    participant Calc as 本地排盤計算器
-    participant Parser as 流式 JSON 狀態機
-    participant LLM as LLM 網關 (OpenRouter)
+    participant Calc as Local Calculation Engine
+    participant Parser as Streaming JSON Parser
+    participant LLM as LLM Gateway (OpenRouter)
     participant DB as PostgreSQL (Prisma)
 
     User->>Route: POST /api/divination (Accept: text/event-stream)
-    Route->>Calc: 運行確定性排盤 (e.g. baziCalculator)
-    Calc-->>Route: 返回完整命盤 Chart JSON
+    Route->>Calc: Run Deterministic Calculation (e.g. baziCalculator)
+    Calc-->>Route: Return Complete Chart JSON
     
-    Note over Route,User: t=0 秒：排盤立即可見
+    Note over Route,User: t=0 seconds: Chart immediately visible
     Route->>User: SSE event: chart_ready { seed: ChartData }
     
-    Route->>LLM: streamLLM(prompt, schema) [帶 req.signal]
+    Route->>LLM: streamLLM(prompt, schema) [with req.signal]
     
-    loop 15s 定時器
-        Route->>User: SSE comment: : ping (防代理 60s 讀超時)
+    loop 15s Timer
+        Route->>User: SSE comment: : ping (Bypass proxy 60s read timeouts)
     end
     
-    loop Token 數據塊流
-        LLM-->>Route: chunk ("sections\":{\"overview\":\"命主...")
+    loop Token Chunk Stream
+        LLM-->>Route: chunk ("sections\":{\"overview\":\"Day Master...")
         Route->>Parser: push(chunk)
-        Parser-->>Route: emit value_chunk { path: ['sections','overview'], text: "命" }
+        Parser-->>Route: emit value_chunk { path: ['sections','overview'], text: "Day " }
         Route->>User: SSE event: value_chunk
-        Parser-->>Route: emit value_chunk { path: ['sections','overview'], text: "主" }
+        Parser-->>Route: emit value_chunk { path: ['sections','overview'], text: "Master " }
         Route->>User: SSE event: value_chunk
-        opt 欄位結束
+        opt Field Completion
             Parser-->>Route: emit value_done { path: ['sections','overview'], value: "..." }
             Route->>User: SSE event: value_done
         end
     end
     
-    LLM-->>Route: 流結束 (accumulatedRaw)
-    Route->>Route: _finalize.ts (Zod 全量校驗 + merge 計算器數據)
-    Route->>DB: 更新 Reading (status='done', creditsHeld=0)
+    LLM-->>Route: Stream End (accumulatedRaw)
+    Route->>Route: _finalize.ts (Zod Validation + Merge Calculator Data)
+    Route->>DB: Update Reading (status='done', creditsHeld=0)
     Route->>User: SSE event: done { reading: ReadingData }
-    Route->>User: 關閉 SSE 連接
+    Route->>User: Close SSE Connection
 ```
 
 ---
 
-## 三、流式 JSON 解析狀態機 (Streaming JSON Parser)
+## 3. Streaming JSON Parser State Machine
 
-- **核心源碼**：`src/app/api/divination/handlers/_streamingJsonParser.ts`
-- **設計哲學**：標準 `JSON.parse` 必須等待全文字符閉合才能解析，而 `StreamingJsonParser` 是一個**路徑感知的字符級有限狀態機 (Char-level FSM)**，能夠在 JSON 語法樹尚未構建完畢時，沿著路徑提取出正在累積的字串碎片。
+- **Core Implementation**: `src/app/api/divination/handlers/_streamingJsonParser.ts`
+- **Design Philosophy**: Standard `JSON.parse` requires a fully terminated string before parsing. `StreamingJsonParser` operates as a **path-aware character-level Finite State Machine (Char-level FSM)** that extracts accumulating string fragments along JSON paths before the syntax tree has completed.
 
-### 狀態機轉移圖
+### State Transition Diagram
 
 ```mermaid
 stateDiagram-v2
-    [*] --> PRE_DOC: 初始化
+    [*] --> PRE_DOC: Initialization
 
-    PRE_DOC --> IN_KEY: 遇到 '{' 後匹配到 '"'
-    PRE_DOC --> PRE_DOC: 跳過 Markdown 圍欄 ```json 與前導廢字符
+    PRE_DOC --> IN_KEY: Matches '"' after '{'
+    PRE_DOC --> PRE_DOC: Skip Markdown Fences ```json and Leading Noise
 
-    IN_KEY --> POST_KEY: 收集 Key 字符完畢 (遇到未轉義 '"')
-    POST_KEY --> IN_VAL: 遇到 ':' 冒號分隔符
+    IN_KEY --> POST_KEY: Key Collection Complete (Matches unescaped '"')
+    POST_KEY --> IN_VAL: Matches ':' Colon Delimiter
 
     state IN_VAL {
-        [*] --> VAL_STRING: 遇到 '"' (字串起點)
-        [*] --> VAL_PRIMITIVE: 遇到 數字 / true / false / null
-        [*] --> VAL_NESTED: 遇到 '{' 或 '[' (遞歸深入)
+        [*] --> VAL_STRING: Matches '"' (String Start)
+        [*] --> VAL_PRIMITIVE: Matches Number / true / false / null
+        [*] --> VAL_NESTED: Matches '{' or '[' (Recursive Descent)
 
-        VAL_STRING --> VAL_STRING: 字符累積 → emit('value_chunk')
-        VAL_STRING --> [*]: 遇到未轉義閉合 '"' → emit('value_done')
-        VAL_PRIMITIVE --> [*]: 遇到 ',' 或 '}' 或 ']' → emit('value_done')
+        VAL_STRING --> VAL_STRING: Accumulate Characters -> emit('value_chunk')
+        VAL_STRING --> [*]: Matches unescaped '"' -> emit('value_done')
+        VAL_PRIMITIVE --> [*]: Matches ',' or '}' or ']' -> emit('value_done')
     }
 
-    IN_VAL --> IN_KEY: 遇到 ',' 準備讀取下一個 Key
-    IN_VAL --> POST_DOC: 最外層 '}' 閉合
+    IN_VAL --> IN_KEY: Matches ',' Ready for Next Key
+    IN_VAL --> POST_DOC: Outermost '}' Closes
 
-    POST_DOC --> [*]: 忽略後續 Markdown 解釋與垃圾字符
+    POST_DOC --> [*]: Ignore Trailing Markdown and Whitespace
     
-    IN_VAL --> ERROR: 語法截斷且無法修復 → emit('error')
+    IN_VAL --> ERROR: Syntax Truncation Unrecoverable -> emit('error')
 ```
 
-### 事件與數據載荷規格
+### Event and Payload Specifications
 
-| 事件類型 | 觸發時機 | 載荷格式 (`Payload`) | 前端處理策略 |
+| Event Type | Trigger Condition | Payload Schema | Client Handling Strategy |
 |---|---|---|---|
-| `chart_ready` | 排盤計算完成，LLM 未啟動前 ($t=0$) | `{ type: 'chart_ready', seed: Object }` | 直接將計算盤面寫入根狀態，展示排盤 UI |
-| `value_chunk` | 某個字串屬性正在流入新的字符片斷 | `{ path: (string\|number)[], text: string }` | 沿 `path` 尋址，使用 RAF 節流附加到末尾 |
-| `value_done` | 一個字串/數字/布林值完整結束 | `{ path: (string\|number)[], value: any }` | 將最終值固定在指定路徑上 |
-| `done` | 後端 `_finalize.ts` 驗證與存庫完成 | `{ type: 'done', reading: Object, saved: true }` | 用服務端完全校驗的權威數據替換局部快照 |
-| `error` | 傳輸中斷、拒絕門禁觸發或底層異常 | `{ type: 'error', error: string, status?: number }` | 停止進度條，顯示重試或錯誤提示 |
+| `chart_ready` | Paipan calculation complete, before LLM starts ($t=0$) | `{ type: 'chart_ready', seed: Object }` | Writes chart data to root state, immediately rendering the chart UI. |
+| `value_chunk` | String attribute receives new incoming characters | `{ path: (string\|number)[], text: string }` | Traverses `path` and appends text with RAF throttling. |
+| `value_done` | String/Number/Boolean field finishes | `{ path: (string\|number)[], value: any }` | Sets the finalized value at the designated path. |
+| `done` | Server `_finalize.ts` validation and persistence complete | `{ type: 'done', reading: Object, saved: true }` | Replaces partial client snapshot with authoritative validated data. |
+| `error` | Connection drop, rejection gate, or runtime failure | `{ type: 'error', error: string, status?: number }` | Halts progress animations and displays error state / retry actions. |
 
 ---
 
-## 四、前端漸進式渲染與 RAF 節流
+## 4. Progressive Rendering & RAF Throttling
 
-- **核心源碼**：`src/app/divination/[type]/page.tsx`、`src/components/results/ResultRenderer.tsx`
-- **高頻重繪問題**：LLM 每個 Token 可能僅有 1~3 個字符，若每次 `value_chunk` 事件均觸發 React `setState`，每秒會產生 30~80 次 React Reconciliation，在移動設備上導致嚴重掉幀。
-- **架構方案**：
-  1. **就地尋址修改 (`mutateAtPath`)**：維護單一局部對象 `partialRef`，沿 `path` 陣列直接就地修改葉節點，杜絕每幀深度 Clone 的內存分配垃圾回收；
-  2. **requestAnimationFrame (RAF) 節流**：在 `scheduleRender` 中通過 `requestAnimationFrame` 鎖定最大 60fps 刷新頻率，將一幀內抵達的多個 Token 批處理合流。
-  3. **ResultRenderer 縱向平鋪自適應**：在 `streaming=true` 模式下，強行禁用 Tab 分頁，將各分析卡片切換為縱向平鋪流式打字佈局。
+- **Core Implementation**: `src/app/divination/[type]/page.tsx`, `src/components/results/ResultRenderer.tsx`
+- **Frequent Re-render Mitigation**: LLM chunks may contain only 1-3 characters. If each `value_chunk` event fired React `setState`, it would cause 30-80 reconciliations per second, producing noticeable frame drops on mobile devices.
+- **Architectural Solution**:
+  1. **In-place Mutation (`mutateAtPath`)**: Maintains a single partial object ref (`partialRef`). Mutates leaf nodes directly in place along `path` arrays, eliminating per-frame deep clone garbage collection.
+  2. **requestAnimationFrame (RAF) Throttling**: Batches incoming token events within a single animation frame via `requestAnimationFrame` locked to a maximum 60fps refresh rate.
+  3. **Adaptive Vertical Layout in ResultRenderer**: When `streaming=true`, tabbed navigation is disabled, switching analysis cards to an auto-scrolling vertical layout for typewriter rendering.
 
 ---
 
-## 五、異常處置與斷線韌性架構
+## 5. Fault Tolerance & Disconnection Resilience
 
-### 1. 15秒服務端主動心跳保持
-多數雲端反向代理（如 Cloudflare、Nginx、AWS ALB）在 60 秒無數據傳輸時會自動切斷 HTTP 連接。由於大型推理模型（如 DeepSeek-R1、Claude 思考模式）首字節延遲（TTFT）可能長達 30~50 秒，後端 SSE 管道啟動了 **15秒無條件心跳定時器**：
+### 1. 15-Second Server Keep-Alive Heartbeat
+Cloud reverse proxies (e.g., Cloudflare, Nginx, AWS ALB) terminate HTTP connections if no bytes are transferred for 60 seconds. Because reasoning models (e.g., DeepSeek-R1, Claude extended thinking) can exhibit time-to-first-token (TTFT) delays of 30-50 seconds, the backend SSE pipeline runs a **15-second unconditional heartbeat timer**:
 ```typescript
 const heartbeatInterval = setInterval(() => {
   safeWrite(': ping\n\n');
 }, 15_000);
 ```
 
-### 2. 客戶端中止與信號穿透 (`req.signal`)
-當用戶主動點擊「取消」或關閉分頁時，瀏覽器中斷 HTTP 連接，Next.js API 捕獲 `req.signal.aborted`，並沿以下鏈路瞬間終止：
-$$\text{Browser Abort} \xrightarrow{\text{req.signal}} \text{Route Handler} \xrightarrow{\text{AbortSignal}} \text{OpenRouter SDK} \xrightarrow{} \text{中止計費 Token 產生}$$
-同時觸發 `lifecycle.ts` 的 `refundHold()`，將預扣機緣原子歸還用戶。
+### 2. Client Cancellation Signal Propagation (`req.signal`)
+When a user clicks "Cancel" or closes their browser tab, Next.js catches `req.signal.aborted` and terminates remote compute:
+$$\text{Browser Abort} \xrightarrow{\text{req.signal}} \text{Route Handler} \xrightarrow{\text{AbortSignal}} \text{OpenRouter SDK} \xrightarrow{} \text{Cease Token Generation}$$
+Simultaneously, `lifecycle.ts` executes `refundHold()` to atomically refund held Karma credits to the user.
 
-### 3. 超長調用「誠實進度條」與草稿保留
-針對超過 180 秒的超長解卦：
-- **95%~99% 漸進算法**：進度條絕不卡死在 95%，而是按漸進對數曲線緩慢爬升至 99%，並動態顯示「深度推理中（已耗時 N 分鐘）」；
-- **300秒取消與表單恢復**：超過 5 分鐘後，提供顯式的取消按鈕，自動讀取 `localStorage` 備份的表單草稿，保證用戶退回表單時已填信息 100% 完整無失。
+### 3. Progressive Feedback & Draft Preservation
+For complex interpretations exceeding 180 seconds:
+- **Asymptotic Progress Animation (95% to 99%)**: The progress bar smoothly decelerates toward 99% using an asymptotic logarithmic curve accompanied by an informative notice.
+- **Draft Recovery After 300 Seconds**: If generation exceeds 5 minutes, an explicit cancellation button appears, restoring the backed-up form draft from `localStorage` so user input is never lost.

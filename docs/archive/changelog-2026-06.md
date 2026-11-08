@@ -1,114 +1,114 @@
-# 玄機 — 2026-06 綜合架構與 UIX 變更記錄 (Changelog)
+# Xuanji — 2026-06 Comprehensive Architecture & UIX Changelog
 
-> 本文檔整合了 2026-06-12 重構衝刺期間產生的 11 份分項變更日誌（Phase 0 ~ Phase 2 及 UIX W0 ~ W5），作為長期歷史存檔與追溯索引。
-
----
-
-## 目錄
-
-1. [Phase 0 — 代碼質量與容器基線 (I3, I10a, I12, I13, I16)](#一phase-0--代碼質量與容器基線)
-2. [Phase 1 — 可觀測性與邊界校驗 (I6, I7, I11, Sentry)](#二phase-1--可觀測性與邊界校驗)
-3. [Phase 2 — 核心架構與計費競態重構 (I5, I8, I9, I14)](#三phase-2--核心架構與計費競態重構)
-4. [UIX 專項 — 無障礙、國際化與長調用體驗優化 (W0 ~ W5)](#四uix-專項--無障礙國際化與長調用體驗優化)
+> This document consolidates 11 itemized changelogs produced during the 2026-06-12 refactoring sprint (Phase 0 ~ Phase 2 and UIX W0 ~ W5), serving as a long-term historical archive and tracking index.
 
 ---
 
-## 一、Phase 0 — 代碼質量與容器基線
+## Table of Contents
 
-### 1. 代碼風格與測試門禁 (I3)
-- **ESLint & TS 配置**：新增 `.eslintrc.json`（繼承 `next/core-web-vitals`，啟用 `@typescript-eslint`，安裝 `eslint@^8.57.0` 與 `eslint-config-next@^14.2.35`）。
-- **package.json 腳本擴展**：
+1. [Phase 0 — Code Quality & Container Baseline (I3, I10a, I12, I13, I16)](#1-phase-0--code-quality--container-baseline)
+2. [Phase 1 — Observability & Boundary Validation (I6, I7, I11, Sentry)](#2-phase-1--observability--boundary-validation)
+3. [Phase 2 — Core Architecture & Credit Race Condition Refactoring (I5, I8, I9, I14)](#3-phase-2--core-architecture--credit-race-condition-refactoring)
+4. [UIX Sprint — Accessibility, Internationalization & Long-Running Call Experience (W0 ~ W5)](#4-uix-sprint--accessibility-internationalization--long-running-call-experience)
+
+---
+
+## 1. Phase 0 — Code Quality & Container Baseline
+
+### 1. Code Style & Test Gates (I3)
+- **ESLint & TS Configuration**: Added `.eslintrc.json` (inheriting `next/core-web-vitals`, enabling `@typescript-eslint`, installing `eslint@^8.57.0` and `eslint-config-next@^14.2.35`).
+- **package.json Scripts Expansion**:
   - `npm run type-check` (`tsc --noEmit`)
-  - `npm run test` (`vitest`) / `npm run test:unit`（排除需連本地 DB 的 integration 測試）/ `npm run test:ci`（全量測試）
-  - `npm run predeploy-check` (`type-check + lint + test:ci` 三重門禁)
-  - `db:push` 增加 drift 告警。
-- **排印修正**：將 CJK 文本中的 ASCII 引號替換為標準全角引號 `“”`。
+  - `npm run test` (`vitest`) / `npm run test:unit` (excludes DB integration tests) / `npm run test:ci` (full test suite)
+  - `npm run predeploy-check` (triple gate: `type-check + lint + test:ci`)
+  - `db:push` adds schema drift warning.
+- **Typography Fixes**: Replaced ASCII quotes in CJK content with standard typographic quotes.
 
-### 2. 管理員鑑權統一 (I10a)
-- 將 `api/admin/feedback` 與 `api/admin/site-feedback` 的內聯權限檢查替換為統一的 `requireAdmin()`（`src/lib/adminAuth.ts`），至此全部 ~34 個 admin 路由收歸同一鑑權邊界。
+### 2. Admin Auth Consolidation (I10a)
+- Replaced inline permission checks in `api/admin/feedback` and `api/admin/site-feedback` with unified `requireAdmin()` (`src/lib/adminAuth.ts`), consolidating all ~34 admin routes under a single authentication boundary.
 
-### 3. 環境變數強校驗 (I12)
-- 新增 `src/lib/env.ts`（基於 Zod 的 23 個環境變數模式校驗，在 `src/lib/prisma.ts` 中副作用載入）：
-  - 生產環境缺少必填項時啟動失敗並打印缺少變數名稱（Fail-Fast）。
-  - 核心必填項：`DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `OPENROUTER_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`。
-- 重寫 `.env.example`，補齊 Stripe 金鑰與模型變數文檔。
+### 3. Strict Environment Variable Validation (I12)
+- Added `src/lib/env.ts` (Zod-based schema validation for 23 environment variables, loaded as side-effect in `src/lib/prisma.ts`):
+  - Fails fast on startup if required variables are missing in production, outputting missing variable names.
+  - Core required variables: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `OPENROUTER_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`.
+- Rewrote `.env.example`, documenting Stripe keys and model configurations.
 
-### 4. 容器運維與內存防護 (I13)
-- **Dockerfile**：移除 runtime 階段在線 `npm install`；改由 builder 階段拷貝 lockfile 鎖定的 `prisma` 與 `effect` 二進制/庫。
-- **docker-compose.yml**：新增 `mem_limit: 2g`（防內存洩漏拖垮宿主機），新增 `/api/config/nav` 健康檢查（`start_period: 90s` 覆蓋開機遷移）。
-
----
-
-## 二、Phase 1 — 可觀測性與邊界校驗
-
-### 1. 結構化日誌與請求追蹤 (I6)
-- 新增 `src/lib/logger.ts`（基於 Pino 的 stdout JSON 日誌輸出）。
-- 引入全局關聯標識 `requestId`：貫穿 Next.js API Routes → LLM 調用 → `LlmLog` 數據庫記錄（數據庫新增 `LlmLog.requestId` 索引欄位）。
-- 日誌定位：`docker logs chinese-divination | grep '"requestId":"<ID>"'`。
-
-### 2. Sentry 異常監控集成
-- 採用手動裝配方案：`src/instrumentation.ts`（服務端/Edge）+ `src/components/SentryClientInit.tsx`（客戶端），避免 Next 14 App Router 下 `withSentryConfig` 導致的 build 失敗。
-- 默認由 `SENTRY_DSN` 門禁控制，未配時自動靜默。
-
-### 3. 進程內定時任務與隱私清理 (I7)
-- 新增 `src/lib/jobs/`：輕量進程內定時器，由 `instrumentation.ts` 在開機 5 分鐘後首次觸發，隨後每日自動執行。
-- **日誌清理 Job (`logRetention`)**：超過 90 天的 `LlmLog` 自動置空 PII 欄位（`inputPreview`/`outputPreview`/`systemPrompt`），保留 Token 與耗時指標；清理 >365 天的 `AuthLog`。
-
-### 4. 輸入邊界校驗 (I11)
-- 引入 Zod 對 `/api/profile`、`/api/family-members`、`/api/readings/[id]/chat` 進行強類型與數值範圍校驗（經緯度區間、字符長度上限、非法 JSON 防禦）。
+### 4. Container Operations & Memory Safeguards (I13)
+- **Dockerfile**: Removed online runtime `npm install`; builder stage copies lockfile-pinned `prisma` and `effect` binaries and dependencies.
+- **docker-compose.yml**: Added `mem_limit: 2g` (prevents memory leaks from exhausting host memory), added `/api/config/nav` healthcheck (`start_period: 90s` accommodating boot-time migrations).
 
 ---
 
-## 三、Phase 2 — 核心架構與計費競態重構
+## 2. Phase 1 — Observability & Boundary Validation
 
-### 1. 占卜流水線收斂 (I8)
-- 新增 `src/app/api/divination/_finalize.ts`：將原本在阻塞式與流式路徑中重複的「解析 → 門禁過濾 → 合併計算器數據 → Zod 校驗 → 入庫 → 結算扣費」統一收斂為單一管道。
-- 新增 `src/lib/sse.ts`：抽象標準 SSE 封裝（心跳、安全發送、優雅關閉）。
+### 1. Structured Logging & Request Tracing (I6)
+- Added `src/lib/logger.ts` (Pino-based stdout JSON logging).
+- Introduced global correlation ID `requestId`: traces across Next.js API Routes → LLM calls → `LlmLog` database entries (with indexed database column `LlmLog.requestId`).
+- Log tracking: `docker logs chinese-divination | grep '"requestId":"<ID>"'`.
 
-### 2. 解讀生命週期與自動補償服務 (I9)
-- 新增 `src/lib/readings/lifecycle.ts`：統一封裝 `markCompleted`、`markFailed`、`refundHold` 與 `cleanupStaleReadings`。
-- 單贏家 SQL CTE 保證併發退款只發生一次；將超時 Pending 掃描從用戶 `/init` 請求路徑移至後台 Job（每 10 分鐘一次），且超時未完成時主動退款。
+### 2. Sentry Exception Monitoring Integration
+- Implemented manual integration: `src/instrumentation.ts` (Server/Edge) + `src/components/SentryClientInit.tsx` (Client), avoiding Next.js 14 App Router build failures associated with `withSentryConfig`.
+- Gated by `SENTRY_DSN`; runs silently when unconfigured.
 
-### 3. 機緣預扣機制 (I5 — 徹底修復 TOCTOU 計費競態)
-- **數據庫遷移**：`Reading` 表新增 `creditsHeld INT NOT NULL DEFAULT 0`。
-- **原子扣減**：`/api/divination/init` 在創建 pending 解讀時**原子預扣**機緣點數並記錄在 reading 上。
-- **安全保障**：成功則預扣直接轉為消費；任何環節失敗（LLM 超時、解析異常、進程崩潰、客戶端中止）均由 lifecycle 服務全額自動退款。
-- 經 `creditReservation.test.ts` 併發測試驗證：併發扣款永不為負，併發退款只付一次。
+### 3. In-Process Scheduled Jobs & Privacy Retention (I7)
+- Added `src/lib/jobs/`: Lightweight in-process timers triggered by `instrumentation.ts` 5 minutes after server start, executing daily thereafter.
+- **Log Retention Job (`logRetention`)**: Automatically blanks PII fields (`inputPreview`, `outputPreview`, `systemPrompt`) on `LlmLog` entries older than 90 days, retaining token counts and latency metrics; purges `AuthLog` entries older than 365 days.
 
-### 4. 類型化事件總線與 Hooks 清理 (I14)
-- 新增 `src/lib/events.ts`：提供強類型的 `xuanji:*` 全局事件發布/訂閱機制（dashboard、portrait、流式狀態）。
-- 修復了代碼庫中全部 `react-hooks/exhaustive-deps` 警告，實現 `npm run lint` 0 錯誤 0 警告。
+### 4. Input Boundary Validation (I11)
+- Introduced Zod schemas for `/api/profile`, `/api/family-members`, and `/api/readings/[id]/chat` to enforce strict type checking and range limits (latitude/longitude boundaries, string length caps, malformed JSON defense).
 
 ---
 
-## 四、UIX 專項 — 無障礙、國際化與長調用體驗優化
+## 3. Phase 2 — Core Architecture & Credit Race Condition Refactoring
 
-### W0 — 快速修復與基礎防護
-- **多語言錯誤頁**：`src/app/divination/error.tsx` 實現雙語本地化。
-- **Stripe 錯誤處理**：修復結算異常時前端 loading 無響應問題，增加錯誤 Toast。
-- **大師彈窗互動**：支持 `Escape` 鍵關閉展開視窗，並將焦點安全回退至 FAB。
-- **打斷冷卻倒數**：大師打斷超出 6次/60秒 時，在輸入框上方顯示實時倒計時提示條。
+### 1. Divination Pipeline Convergence (I8)
+- Added `src/app/api/divination/_finalize.ts`: Consolidated duplicate pipeline logic between blocking and streaming routes (parsing → gate filtering → calculator data merge → Zod validation → database persistence → credit settlement) into a single unified pipeline.
+- Added `src/lib/sse.ts`: Abstracted standardized SSE wrapper (heartbeats, safe transmission, graceful shutdown).
 
-### W1 — 無障礙基建 (Accessibility)
-- **動效偏好尊重**：新增 `MotionProvider.tsx`，在系統設定減少動態效果時全域壓制 CSS 動畫與 Framer Motion 過渡。
-- **鍵盤導航**：`BirthplaceInput` 重構為標準 WAI-ARIA Combobox（支持上下鍵盤選中、Enter 確認、Esc 關閉）；MemoryGateModal 實現焦點捕獲。
-- **語義化改造**：占卜類型卡片改用標準 `<Link>`；紫色/八字五行條補充純文本與角標說明，杜絕僅依賴色彩傳遞資訊。
+### 2. Reading Lifecycle & Automated Compensation Service (I9)
+- Added `src/lib/readings/lifecycle.ts`: Unified wrappers for `markCompleted`, `markFailed`, `refundHold`, and `cleanupStaleReadings`.
+- Single-winner SQL CTE guarantees concurrent refunds execute exactly once; migrated stale pending scans from user `/init` request path to a background job (runs every 10 minutes), proactively refunding timed-out runs.
 
-### W2 — i18n 輕量架構整合
-- 新增 `src/lib/i18n/index.ts`：收斂項目中散落的 34 個局部 `T()` 函數；提供標準 `formatDate`、`formatDateTime`、`formatNumber` 等 Intl 封裝。
-- 增加 `scripts/check-i18n.sh` 腳本防止重複定義。
+### 3. Karma Credit Reservation Mechanism (I5 — Fixed TOCTOU Billing Race)
+- **Database Migration**: Added `creditsHeld INT NOT NULL DEFAULT 0` to `Reading` model.
+- **Atomic Reservation**: `/api/divination/init` atomically reserves credits upon creating pending readings, binding the hold to the reading record.
+- **Safety Guarantee**: Successful runs convert reservations into consumed credits; failures at any stage (LLM timeout, parse error, crash, client abort) trigger automated full refunds via the lifecycle service.
+- Verified by `creditReservation.test.ts` concurrency tests: balance never drops below zero, duplicate refunds are strictly prevented.
 
-### W3 — 超長 LLM 調用體驗保障
-- **誠實進度條**：耗時超過 180 秒時不再卡死在 95%，而是按 95%→99% 漸進推進並顯示「深度推理中（已 N 分鐘）」。
-- **主動超時取消**：超過 300 秒後提供「取消並返回表單（已填資料會保留）」操作。
-- **表單草稿持久化**：`useDivinationForm` 實現 800ms 防抖本機草稿儲存，用戶意外關閉分頁後可完整恢復輸入內容。
-- **精確失敗原因告知**：解讀失敗時，依據錯誤特徵給出超時、限流、格式異常或網絡波動的中文解釋與應對指引。
+### 4. Typed Event Bus & Hooks Cleanup (I14)
+- Added `src/lib/events.ts`: Strongly typed `xuanji:*` global publish/subscribe bus (dashboard, portrait, streaming status).
+- Cleared all `react-hooks/exhaustive-deps` warnings across codebase, achieving 0 errors and 0 warnings on `npm run lint`.
 
-### W4 — 移動端與 Capacitor 適配
-- 展開的大師視窗頂部增加 `env(safe-area-inset-top)` 安全區保護，適配瀏海螢幕。
-- 平板寬度（768–1023px）展示緊湊型導航欄，核心入口不再隱藏至漢堡菜單中。
-- 全局觸控熱區擴展至標準 44×44px。
+---
 
-### W5 — 輸出質感與體驗閉環
-- **專業列印樣式**：新增 `@media print` 樣式，隱藏導航與背景星空，深色調轉為黑白乾淨排版，支持用戶一鍵保存/列印命盤。
-- **空狀態引導**：Dashboard 歷史記錄為空時，提供明確的下一步指引與占卜入口按鈕。
+## 4. UIX Sprint — Accessibility, Internationalization & Long-Running Call Experience
+
+### W0 — Rapid Fixes & Baseline Safeguards
+- **Multilingual Error Page**: Localized `src/app/divination/error.tsx` for bilingual support.
+- **Stripe Error Handling**: Resolved frontend unresponsiveness during checkout failures, adding error toasts.
+- **Master Modal Interaction**: Added `Escape` key handling to close expanded modal, safely restoring focus to the floating action button (FAB).
+- **Interruption Cooldown Bar**: Displays real-time countdown banner above input box when user interruption exceeds 6 times per 60 seconds.
+
+### W1 — Accessibility Infrastructure
+- **Reduced Motion Support**: Added `MotionProvider.tsx` to suppress CSS animations and Framer Motion transitions globally when system prefers reduced motion.
+- **Keyboard Navigation**: Refactored `BirthplaceInput` into a standard WAI-ARIA Combobox (Arrow keys navigation, Enter selection, Esc dismissal); implemented focus trapping in `MemoryGateModal`.
+- **Semantic Enhancement**: Divination selection cards converted to standard `<Link>` elements; five-element bars supplemented with textual and badge labels, avoiding color-only data communication.
+
+### W2 — Lightweight i18n Architecture Integration
+- Added `src/lib/i18n/index.ts`: Consolidated 34 fragmented local `T()` implementations into unified architecture; added standardized `formatDate`, `formatDateTime`, and `formatNumber` Intl utilities.
+- Added `scripts/check-i18n.sh` script to prevent duplicate translation definitions.
+
+### W3 — Long LLM Call Experience Safeguards
+- **Honest Progress Bar**: When calls exceed 180 seconds, progress bar no longer stalls at 95%, advancing progressively from 95% to 99% with label "Deep reasoning in progress (N minutes elapsed)".
+- **Proactive Cancellation**: Exceeding 300 seconds presents "Cancel and return to form (preserves entered data)".
+- **Form Draft Persistence**: `useDivinationForm` persists form input locally with 800ms debounce, allowing complete restoration after accidental tab closures.
+- **Precise Failure Explanations**: Surfaces actionable explanations categorizing failures by timeout, rate limiting, format anomalies, or network fluctuations.
+
+### W4 — Mobile & Capacitor Adaptation
+- Added `env(safe-area-inset-top)` padding to expanded master window header for notched screens.
+- Compact navigation bar for tablet viewport widths (768–1023px), keeping primary entry points accessible outside hamburger menu.
+- Global touch target areas expanded to minimum 44×44px.
+
+### W5 — Output Quality & Experience Polish
+- **Professional Print Stylesheet**: Added `@media print` styling, hiding navigation and starfield backgrounds and converting dark themes into crisp black-and-white layouts for saving and printing charts.
+- **Empty State Guidance**: Dashboard displays clear next-step guidance and divination entry points when history is empty.

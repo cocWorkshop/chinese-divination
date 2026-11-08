@@ -4,28 +4,28 @@
 
 ### BaZi Four Pillars
 - **lunar-typescript library** — Used internally by `calculateBazi()`. The library itself is the primary source for Gan-Zhi calculations.
-- **元亨利贞网** — https://www.china95.net/paipan/ (popular Chinese BaZi calculator)
-- **易灵在线排盘** — https://bazi.yiling.cn
-- **易奇八字排盘** — https://m-mfsm.kvov.com/
-- **奇门遁甲网** — https://qimen.yi958.com
+- **Yuan Heng Li Zhen** — https://www.china95.net/paipan/ (popular Chinese BaZi calculator)
+- **Yi Ling Online Paipan** — https://bazi.yiling.cn
+- **Yi Qi BaZi Paipan** — https://m-mfsm.kvov.com/
+- **Qi Men Dun Jia Network** — https://qimen.yi958.com
 
-### Famous People BaZi (verified values)
-| Person | Birth Date | Birth Time | Four Pillars | Source |
-|--------|-----------|------------|--------------|--------|
-| 毛泽东 Mao Zedong | 1893-12-26 | 辰时 | 癸巳 甲子 丁酉 甲辰 | 《毛泽东家世》(李湘文), qimen.yi958.com |
-| 邓小平 Deng Xiaoping | 1904-08-22 | 巳时 | 甲辰 壬申 戊子 丁巳 | lunar-typescript verified |
-| 孙中山 Sun Yat-sen | 1866-11-12 | 寅时 | 丙寅 己亥 辛卯 庚寅 | lunar-typescript verified |
-| 李小龙 Bruce Lee | 1940-11-27 | 辰时 | 庚辰 丁亥 甲戌 戊辰 | lunar-typescript verified |
-| 周恩来 Zhou Enlai | 1898-03-05 | 卯时 | 戊戌 甲寅 丁卯 癸卯 | lunar-typescript verified |
-| 蒋介石 Chiang Kai-shek | 1887-10-31 | 午时 | 丁亥 庚戌 己巳 庚午 | lunar-typescript verified |
-| 习近平 Xi Jinping | 1953-06-15 | 未时 | 癸巳 戊午 丁酉 丁未 | lunar-typescript verified |
-| Elvin (张伟) | 1988-09-17 | 午时 | 戊辰 辛酉 乙亥 壬午 | lunar-typescript verified |
-| 马云 Jack Ma | 1964-09-10 | 未时 | 甲辰 癸酉 壬戌 丁未 | lunar-typescript verified |
+### Famous People BaZi (Verified Reference Values)
+| Person | Birth Date | Birth Hour | Four Pillars (Stem-Branch) | Source |
+|--------|-----------|------------|----------------------------|--------|
+| Mao Zedong | 1893-12-26 | Chen (07:00-09:00) | Gui-Si Jia-Zi Ding-You Jia-Chen | Mao Zedong Family History (Li Xiangwen), qimen.yi958.com |
+| Deng Xiaoping | 1904-08-22 | Si (09:00-11:00) | Jia-Chen Ren-Shen Wu-Zi Ding-Si | lunar-typescript verified |
+| Sun Yat-sen | 1866-11-12 | Yin (03:00-05:00) | Bing-Yin Ji-Hai Xin-Mao Geng-Yin | lunar-typescript verified |
+| Bruce Lee | 1940-11-27 | Chen (07:00-09:00) | Geng-Chen Ding-Hai Jia-Xu Wu-Chen | lunar-typescript verified |
+| Zhou Enlai | 1898-03-05 | Mao (05:00-07:00) | Wu-Xu Jia-Yin Ding-Mao Gui-Mao | lunar-typescript verified |
+| Chiang Kai-shek | 1887-10-31 | Wu (11:00-13:00) | Ding-Hai Geng-Xu Ji-Si Geng-Wu | lunar-typescript verified |
+| Xi Jinping | 1953-06-15 | Wei (13:00-15:00) | Gui-Si Wu-Wu Ding-You Ding-Wei | lunar-typescript verified |
+| Elvin (Zhang Wei) | 1988-09-17 | Wu (11:00-13:00) | Wu-Chen Xin-You Yi-Hai Ren-Wu | lunar-typescript verified |
+| Jack Ma | 1964-09-10 | Wei (13:00-15:00) | Jia-Chen Gui-You Ren-Xu Ding-Wei | lunar-typescript verified |
 
 ### Solar Term Dates (2024)
-- 立春 2024: Feb 4, ~16:27 CST — Source: Hong Kong Observatory, timeanddate.com
-- 惊蛰 2024: Mar 5 — Source: lunar-typescript
-- 清明 2024: Apr 4 — Source: lunar-typescript
+- Lichun (Start of Spring) 2024: Feb 4, ~16:27 CST — Source: Hong Kong Observatory, timeanddate.com
+- Jingzhe (Awakening of Insects) 2024: Mar 5 — Source: lunar-typescript
+- Qingming (Tomb Sweeping) 2024: Apr 4 — Source: lunar-typescript
 
 ### True Solar Time References
 - Equation of Time values: NOAA Solar Calculator (https://gml.noaa.gov/grad/solcalc/)
@@ -36,22 +36,22 @@
 
 ### ZiWei References
 - **iztro library** — Used internally by `calculateZiwei()`. Primary source for ZiWei calculations.
-- **紫微斗数在线排盘** — https://ziwei.911cha.com/
-- **元亨利贞紫微排盘** — https://www.china95.net/ziwei/
+- **Zi Wei Dou Shu Online Paipan** — https://ziwei.911cha.com/
+- **Yuan Heng Li Zhen ZiWei Paipan** — https://www.china95.net/ziwei/
 
-### 四化 (Si Hua) Standard Values
-| Year Stem | 化禄 | 化权 | 化科 | 化忌 |
-|-----------|------|------|------|------|
-| 甲 | 廉贞 | 破军 | 武曲 | 太阳 |
-| 乙 | 天机 | 天梁 | 紫微 | 太阴 |
-| 丙 | 天同 | 天机 | 文昌 | 廉贞 |
-| 丁 | 太阴 | 天同 | 天机 | 巨门 |
-| 戊 | 贪狼 | 太阴 | 右弼 | 天机 |
-| 己 | 武曲 | 贪狼 | 天梁 | 文曲 |
-| 庚 | 太阳 | 武曲 | 太阴 | 天同 |
-| 辛 | 巨门 | 太阳 | 文曲 | 文昌 |
-| 壬 | 天梁 | 紫微 | 左辅 | 武曲 |
-| 癸 | 破军 | 巨门 | 太阴 | 贪狼 |
+### Four Mutagens (Si Hua) Standard Values
+| Year Stem | Hua Lu (Prosperity) | Hua Quan (Authority) | Hua Ke (Fame) | Hua Ji (Clouded) |
+|-----------|---------------------|----------------------|---------------|------------------|
+| Jia | Lianzhen | Pojun | Wuqu | Taiyang |
+| Yi | Tianji | Tianliang | Ziwei | Taiyin |
+| Bing | Tiantong | Tianji | Wenchang | Lianzhen |
+| Ding | Taiyin | Tiantong | Tianji | Jumen |
+| Wu | Tanlang | Taiyin | Youbi | Tianji |
+| Ji | Wuqu | Tanlang | Tianliang | Wenqu |
+| Geng | Taiyang | Wuqu | Taiyin | Tiantong |
+| Xin | Jumen | Taiyang | Wenqu | Wenchang |
+| Ren | Tianliang | Ziwei | Zuofu | Wuqu |
+| Gui | Pojun | Jumen | Taiyin | Tanlang |
 
 ### Equation of Time Reference Values
 | Day of Year | Approx Date | Expected EoT (min) | Source |
@@ -62,22 +62,22 @@
 | 307 | Nov 3 | +16.4 | NOAA |
 
 ### Da Yun Direction Rules
-- 阳干: 甲丙戊庚壬 (index 0,2,4,6,8)
-- 阴干: 乙丁己辛癸 (index 1,3,5,7,9)
-- 阳年男/阴年女 → 顺排 (forward)
-- 阴年男/阳年女 → 逆排 (reverse)
+- Yang Stems: Jia, Bing, Wu, Geng, Ren (index 0, 2, 4, 6, 8)
+- Yin Stems: Yi, Ding, Ji, Xin, Gui (index 1, 3, 5, 7, 9)
+- Yang Year Male / Yin Year Female -> Forward order
+- Yin Year Male / Yang Year Female -> Reverse order
 
 ### Year-to-Stem Mapping (for test cases)
-| Year | Stem | Yin/Yang |
-|------|------|----------|
-| 1893 | 癸 | 阴 |
-| 1904 | 甲 | 阳 |
-| 1940 | 庚 | 阳 |
-| 1945 | 乙 | 阴 |
-| 1953 | 癸 | 阴 |
-| 1964 | 甲 | 阳 |
-| 1988 | 戊 | 阳 |
-| 2024 | 甲 | 阳 |
+| Year | Stem | Polarity (Yin/Yang) |
+|------|------|---------------------|
+| 1893 | Gui | Yin |
+| 1904 | Jia | Yang |
+| 1940 | Geng | Yang |
+| 1945 | Yi | Yin |
+| 1953 | Gui | Yin |
+| 1964 | Jia | Yang |
+| 1988 | Wu | Yang |
+| 2024 | Jia | Yang |
 
 ## Notes
 - All BaZi four-pillar expected values were initially computed using lunar-typescript library and then cross-referenced against online calculators where possible.

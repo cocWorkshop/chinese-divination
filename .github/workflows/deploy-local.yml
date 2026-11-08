@@ -37,22 +37,20 @@ jobs:
           docker stop chinese-divination-test || true
           docker rm chinese-divination-test || true
 
-          # Load staging environment variables from host-managed env file
+          # Load staging environment variables from TEST_ENV_FILE_PATH or fallback candidates
           ENV_FILE_FLAG=""
-          if [ -f "$HOME/.env.chinese-divination-test" ]; then
-            echo "📄 Using $HOME/.env.chinese-divination-test"
-            ENV_FILE_FLAG="--env-file $HOME/.env.chinese-divination-test"
+          TARGET_ENV_FILE="${TEST_ENV_FILE_PATH:-$HOME/.env.chinese-divination-test}"
+          if [ -n "${TARGET_ENV_FILE}" ] && [ -f "${TARGET_ENV_FILE}" ]; then
+            echo "📄 Using staging environment file: ${TARGET_ENV_FILE}"
+            ENV_FILE_FLAG="--env-file ${TARGET_ENV_FILE}"
           elif [ -f .env.production ]; then
             echo "📄 Using .env.production"
             ENV_FILE_FLAG="--env-file .env.production"
-          elif [ -f "$HOME/projects/chinese-divination/.env.production" ]; then
-            echo "📄 Using $HOME/projects/chinese-divination/.env.production"
-            ENV_FILE_FLAG="--env-file $HOME/projects/chinese-divination/.env.production"
           elif [ -f .env ]; then
             echo "📄 Using .env"
             ENV_FILE_FLAG="--env-file .env"
           else
-            echo "⚠️ Warning: No .env.production or .env file found!"
+            echo "⚠️ Warning: No staging environment file found at ${TARGET_ENV_FILE}, .env.production, or .env!"
           fi
 
           echo "🚀 Running new container: chinese-divination-test..."

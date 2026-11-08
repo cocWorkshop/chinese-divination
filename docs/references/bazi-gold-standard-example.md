@@ -1,146 +1,146 @@
 # BaZi Gold Standard Interpretation — V2 Schema & Evaluation Rubric
 
-> **地位**：八字解盤黃金標竿範例與質檢規約 (Ground Truth Benchmark & Quality Rubric)  
-> **命盤參數**：公曆 1990-01-15 午時，男命，北京  
-> **四柱干支**：己巳年 丁丑月 庚辰日 壬午時  
-> **日主狀態**：庚金（陽金），中和偏旺，生於丑月寒冬  
-> **格局判定**：正官格（官印相生，丁火正官透月干、己土正印透年干）  
-> **對標 Schema**：`src/app/api/divination/schemas/bazi.schema.ts` (V2)
+> **Status**: Ground Truth Benchmark & Quality Rubric  
+> **Natal Chart Parameters**: 1990-01-15 Wu hour (11:00-13:00), Male, Beijing  
+> **Four Pillars Gan-Zhi**: Ji-Si Year, Ding-Chou Month, Geng-Chen Day, Ren-Wu Hour  
+> **Day Master State**: Geng Metal (Yang Metal), balanced-to-strong, born in the cold winter of Chou month  
+> **Formation Determination**: Direct Officer Formation (Officer and Seal mutual generation; Ding Fire Direct Officer penetrates Month stem, Ji Earth Direct Seal penetrates Year stem)  
+> **Target Schema**: `src/app/api/divination/schemas/bazi.schema.ts` (V2)
 
 ---
 
-## 一、架構級質檢規約 (Gold Standard Evaluation Rubric)
+## 1. Architectural Quality Rubric
 
-評估一次八字解盤是否達到「生產級標竿標準」，採用以下四維度打分矩陣（總分 100 分，≥90 分為標竿級，75~89 分為合格，<75 分為缺陷/重答）：
+Evaluating whether a BaZi interpretation achieves "production-grade gold standard" status uses the following four-dimension scoring matrix (Total: 100 points; $\ge 90$ points: Gold Standard, 75-89 points: Passing, $<75$ points: Defect / Re-evaluation):
 
-| 評估維度 | 權重 | 核心考察指標 | 缺陷表現 (Red Flags) |
+| Evaluation Dimension | Weight | Core Criteria | Red Flags |
 |---|---|---|---|
-| **Dim 1: 術數嚴密性 (Metaphysical Rigor)** | 35% | 所有論斷必須引用命盤客觀證據（十神透藏、五行生剋、月令分野、調候用神、刑沖破害）。 | 空泛斷語（如「你命運不錯」卻未引出庚金生丑月或丁火透干）、五行喜忌計算錯誤。 |
-| **Dim 2: 時間維度精確性 (Temporal Specificity)** | 25% | 大運推演包含具體干支、起止歲數與年份；關鍵流年具體到年份（如 2027 乙巳年）且給出因果依據。 | 無流年節點、通篇泛指「中年以後」「未來某年」、流年與大運干支混淆。 |
-| **Dim 3: 現代語義轉譯 (Modern Relevance)** | 25% | 將古籍斷語（如官印相生、食神洩秀）轉譯為現代職業、親密關係與資產配置建議，具備心理賦能價值。 | 照抄生硬古文、恐嚇性語言（如「必遭大禍」）、過時的封建仕途說教。 |
-| **Dim 4: Schema 契約合規 (Contract Compliance)** | 15% | 100% 符合 V2 JSON Schema 字段約束，文字長度充足，無未閉合或殘缺欄位。 | 缺少 `sections` 子屬性、大運數組長度不足、JSON 解析失敗。 |
+| **Dim 1: Metaphysical Rigor** | 35% | All judgments must cite objective natal chart evidence (Ten Gods revealed/hidden, Five Element interactions, month commander allocations, climatic regulators, clashes/combinations/harms/punishments). | Vacuous claims (e.g., "You have good fortune" without referencing Geng Metal in Chou month or Ding Fire in stem), inaccurate Five Element strengths. |
+| **Dim 2: Temporal Specificity** | 25% | Decadal fortune analysis provides specific Gan-Zhi, age ranges, and calendar years; key annual horizons specify exact years (e.g., 2027 Yi-Si) with causal rationale. | Absence of annual horizons, vague generalities ("later in life", "sometime in the future"), conflating annual and decadal Gan-Zhi. |
+| **Dim 3: Modern Relevance** | 25% | Translates classical maxims (e.g., Officer-Seal generation, Eating God draining brilliance) into modern career paths, relationship dynamics, and wealth management, providing psychological empowerment. | Unexplained archaic quotes, fatalistic fear-mongering ("catastrophe is certain"), outdated feudal civil-service preachiness. |
+| **Dim 4: Contract Compliance** | 15% | 100% adherence to V2 JSON Schema field constraints, adequate text length, zero unclosed or malformed attributes. | Missing `sections` child properties, incomplete decadal fortune array length, JSON parse failures. |
 
 ---
 
-## 二、標竿輸出數據 (V2 Schema Output)
+## 2. Benchmark Output Data (V2 Schema Output)
 
 ```json
 {
   "type": "bazi",
   "version": 2,
   "formation": {
-    "name": "正官格（官印相生）",
-    "analysis": "月令丑土，人元司令分野顯示中氣辛金當權。然丁火正官透月干，己土正印透年干，官印緊貼流通（丁→己→庚），構成《子平真詮》推崇的官印相生上格。格局清晰，主人品端正、有管理才能，利體制內或大型企業發展。"
+    "name": "Direct Officer Formation (Officer and Seal Mutual Generation)",
+    "analysis": "The Month Commander is Chou Earth, with Hidden Stem command showing Xin Metal in authority. Ding Fire Direct Officer penetrates the Month stem, while Ji Earth Direct Seal penetrates the Year stem, creating an immediate and unimpeded circulation (Ding -> Ji -> Geng). This constitutes a superior Officer-and-Seal configuration as praised in Zi Ping Zhen Quan. The structure signifies integrity, organizational executive talent, and strong alignment with institutional governance or major enterprise management."
   },
-  "seasonalNote": "庚金生於丑月（寒冬臘月），參照《窮通寶鑑》：「庚金生丑月，專用丁火」。月干丁火透出暖局，正是調候得力之象。若無丁火，則金寒水冷，雖有才學而難以施展。",
+  "seasonalNote": "Geng Metal is born in Chou month (deep winter). In accordance with the Qiong Tong Bao Jian: 'When Geng Metal is born in Chou month, prioritize Ding Fire.' Ding Fire penetrating the Month stem warms the natal chart effectively. Without Ding Fire, the metal remains frozen and water chilled, making personal potential difficult to realize.",
   "sections": {
-    "overview": "命主庚金日主，生於己巳年丁丑月壬午時。庚金屬陽金，性如秋天肅殺之氣，剛毅果斷，重義守信。此命格局核心在正官(丁)配正印(己)相生，三者緊貼流通，主人品正直、管理才能突出。年干己土正印代表母親教育有方，家教嚴謹。時干壬水食神洩秀，說明命主內在才華豐富，善於表達創造，中晚年更為明顯。\n\n日坐辰土（白蠟金），自坐養地，根基尚可。辰中藏戊(偏印)、乙(正財)、癸(傷官)——配偶宮藏干複雜，妻子賢內助型，不張揚但有實力。月支丑與時支午構成**丑午相害**，提示事業與家庭存在暗中拉扯，中年後需平衡。日柱自帶天德、月德雙吉神，逢凶化吉能力強。\n\n命宮甲戌（山頭火），先天對財富有追求；身宮壬申（劍鋒金），後天以才華換取成就。胎元戊辰（大林木），先天稟賦厚實。",
-    "career": "庚金日主官印相生格局，最適合有組織架構的環境發展。正官丁火代表正統權威，正印己土代表學歷資質——兩者結合指向：金融法律、企業管理、政府機關、IT硬件/基礎設施（金行業），以及教育管理、建築工程（土行業）。壬水食神在時柱，也適合技術輸出型崗位——技術顧問、高級工程師。\n\n月柱天乙貴人+國印貴人+華蓋三星同柱，17-32歲有權威長輩提攜。華蓋暗示學術研究傾向。當前癸酉大運（2024-2033）巳酉丑三合金局成，事業巔峰期。但癸水傷官透出，需注意言語得罪上級，多做少說。",
-    "marriage": "男命看財星論妻：正財乙木藏於日支辰中，妻星入配偶宮但不透天干——妻子性格內斂低調，有能力但不外顯。日支養地，夫妻感情有成長空間，初期平淡漸入佳境。丑午相害（月-時）提示事業忙碌影響家庭陪伴。\n\n婚期提示：第四步大運癸酉（2024-2033），酉為正財(辛)之祿，利婚姻。2027乙巳年（正財透出+年柱重現）感情有重大進展。2029癸卯年卯酉沖，感情或婚姻有波動。桃花在時柱（午），屬晚桃花，中年後異性緣增強。",
-    "wealth": "正財乙木藏辰中——正財型人，靠工作薪資積累，不適合投機。偏財甲木不見透出，偏財運一般。五行金為喜用，金融、IT硬件行業收入更豐厚。\n\n財運節奏：24-33歲甲戌大運偏財透出，有投資機會但花銷也大。34-43歲癸酉大運三合金局成，**財運高峰期**，尤其2027乙巳年。44-53歲壬申大運食神生財，技術或創意變現黃金期。理財以穩健配置為主，避免槓桿和期貨。",
-    "health": "庚金日主，金對應肺、大腸、呼吸系統、皮膚。丑月寒金+午時火克，注意呼吸道冬季防護。土多（2.6）有埋金之憂，脾胃過旺反克肺金，注意消化系統過熱導致皮膚問題。火旺（2.3）克金，心血管和視力需關注。\n\n高風險時段：64-73歲庚午大運午火沖擊庚金+午午自刑，心血管和呼吸系統雙重風險期。養生方向：金水相生為宜，游泳、潤肺食療、居住偏西或北方位。"
+    "overview": "The Day Master is Geng Metal, born in the Ji-Si year, Ding-Chou month, Geng-Chen day, and Ren-Wu hour. Geng Metal is Yang Metal, carrying the decisive, unyielding clarity of autumn air, characterized by courage, loyalty, and trustworthiness. The core formation centers on Direct Officer (Ding Fire) generating Direct Seal (Ji Earth), flowing smoothly into the Day Master to foster upright leadership and structured management talent. Ji Earth Direct Seal in the Year stem reflects disciplined parental upbringing and structured foundations. Ren Water Eating God in the Hour stem drains brilliance, indicating expressive agility and creative foresight that flourish in mature years.\n\nSitting on Chen Earth (Wax Metal) in the Nourishing state provides solid ground. Chen holds Wu (Indirect Seal), Yi (Direct Wealth), and Gui (Hurting Officer)—a nuanced Spouse Palace indicating a supportive, pragmatic partner whose strength is understated rather than boastful. Chou and Wu branches form a Mutual Harm (Chou-Wu Harm), indicating subtle tensions between professional obligations and personal domestic peace requiring conscious balance. The Day Pillar carries Tian De and Yue De auspicious stars, granting strong resilience to turn adversity into triumph.\n\nLife Palace is Jia-Xu (Mountaintop Fire), fostering an innate drive toward material prosperity; Body Palace is Ren-Shen (Sword-edge Metal), utilizing talent and skill to secure achievement. Fetal Origin is Wu-Chen (Great Forest Wood), providing robust inherent vitality.",
+    "career": "With an Officer-Seal Mutual Generation formation, the native thrives in structured, hierarchical organizations. Ding Fire represents legitimate authority, while Ji Earth represents credentialed expertise—combining naturally toward financial law, enterprise executive leadership, public sector governance, IT infrastructure/hardware (Metal industries), education management, and civil engineering (Earth industries). Ren Water Eating God in the Hour pillar also supports high-level technical advisory, system architecture, and specialized engineering roles.\n\nThe Month Pillar unites Tian Yi Nobleman, State Seal Nobleman, and Hua Gai, indicating mentorship from authoritative seniors between ages 17 and 32. Hua Gai highlights natural scholarly and research depth. Under the current Gui-You Decadal Fortune (2024-2033), the Si-You-Chou Three Metal Combination reaches completion, marking a peak career expansion phase. With Gui Water Hurting Officer revealed in the stem, temper speech when dealing with superiors: let measurable results speak louder than critique.",
+    "marriage": "For a male chart, Wealth stars represent the spouse: Yi Wood Direct Wealth is stored within the Day branch Chen, entering the Spouse Palace without penetrating the Heavenly Stems—indicating an observant, grounded partner who contributes quietly and effectively. Sitting in the Nourishing state suggests gradual emotional deepening: starting calmly and growing richer over time. The Chou-Wu Harm (Month to Hour) suggests that demanding career cycles can encroach upon domestic presence if not consciously managed.\n\nMarriage Timing Windows: In the 4th Decadal Fortune Gui-You (2024-2033), You serves as the Prosperity stage for the spouse element, favoring relational stability. The year 2027 (Yi-Si, Direct Wealth revealed and echoing the Year Pillar) brings pivotal emotional milestones. The year 2029 (Gui-Mao, Mao-You clash) introduces relational turbulence requiring patience. The Peach Blossom star sits in the Hour Pillar (Wu), indicating late-blooming charisma that deepens in mature years.",
+    "wealth": "Yi Wood Direct Wealth is stored in Chen Earth—characterizing an earner whose wealth accumulates steadily through professional remuneration and asset equity rather than speculative gambling. Jia Wood Indirect Wealth does not reveal, suggesting moderate speculative fortunes. Metal represents the favorable element, making earnings in finance, hardware, and structured corporate operations most lucrative.\n\nFinancial Trajectory: During the Jia-Xu Decadal Fortune (ages 24-33), Indirect Wealth revealed investment openings alongside substantial expenditure. The Gui-You Decadal Fortune (ages 34-43) completes the Three Metal Combination, initiating a primary wealth accumulation zenith, particularly amplified in 2027 (Yi-Si). The Ren-Shen Decadal Fortune (ages 44-53) utilizes Eating God generating Wealth, marking an optimal monetization era for specialized expertise and advisory consulting. Financial strategy should prioritize diversified capital preservation over excessive leverage or futures trading.",
+    "health": "The Day Master is Geng Metal, which governs lungs, large intestine, respiratory vitality, and skin. Born in Chou month (cold metal) counterbalanced by Wu hour (fire restriction), winter respiratory defenses require proactive care. Earth weighting (2.6) risks smothering metal: overly sluggish spleen/stomach digestion can reflect outwardly as dermatological sensitivities. Fire weighting (2.3) restricts metal, advising steady vigilance over cardiovascular stamina and eyesight.\n\nRisk Periods: The Geng-Wu Decadal Fortune (ages 64-73) introduces double Wu-Wu Self-Punishment and Fire clashing Metal, highlighting cardiovascular and respiratory vulnerability. Health Preservation: Emphasize Metal-Water replenishment—swimming, nourishing lung hydration through dietary balance, and living orientations favoring West or North."
   },
   "daYunAnalysis": [
     {
-      "stem": "丙", "branch": "子",
+      "stem": "Bing", "branch": "Zi",
       "startAge": 4, "endAge": 13, "startYear": 1994, "endYear": 2003,
-      "theme": "七殺丙火坐子水，殺印相生。童年學業有壓力但有進步，性格開始顯露。",
-      "interactions": "子水為庚金沐浴之地，大運地支未與原局形成明顯沖合。",
+      "theme": "Seven Killings Bing Fire sitting on Zi Water, transitioning into Killings and Seal mutual support. Childhood academic demands bring pressure alongside intellectual progress; individuality emerges.",
+      "interactions": "Zi Water serves as the Bathing state for Geng Metal; the branch introduces no disruptive natal clashes.",
       "keyYears": [
-        { "year": 1999, "ganZhi": "癸酉", "event": "傷官見祿地，學業有波折但長見識" },
-        { "year": 2002, "ganZhi": "庚午", "event": "比肩坐桃花，社交開竅" }
+        { "year": 1999, "ganZhi": "Gui-You", "event": "Hurting Officer meets Prosperity branch; minor academic adjustments yield broader world perspectives." },
+        { "year": 2002, "ganZhi": "Geng-Wu", "event": "Friend star sits on Peach Blossom; social awareness awakens." }
       ],
-      "advice": "此階段以學業為主，培養獨立思考能力。"
+      "advice": "Focus primarily on foundational study and cultivate independent analytical thinking."
     },
     {
-      "stem": "乙", "branch": "亥",
+      "stem": "Yi", "branch": "Hai",
       "startAge": 14, "endAge": 23, "startYear": 2004, "endYear": 2013,
-      "theme": "正財乙木透出+亥水為傷官祿地。青年求學期，開始有經濟意識，有才華且想賺錢。",
-      "interactions": "亥中壬水食神+甲木偏財，與原局巳火形成巳亥沖——年柱受沖，祖業或家庭環境有變動。",
+      "theme": "Direct Wealth Yi Wood reveals + Hai Water acts as Hurting Officer's vitality branch. Youthful educational advancement; growing economic consciousness and practical talent.",
+      "interactions": "Hai holds Ren Water Eating God and Jia Wood Indirect Wealth, clashing with natal Si Fire (Si-Hai Clash)—affecting the Year Pillar and prompting family or residential moves.",
       "keyYears": [
-        { "year": 2011, "ganZhi": "辛酉", "event": "劫財帝旺，巳酉丑三合金局首次成型，重大決定或轉折" },
-        { "year": 2012, "ganZhi": "庚申", "event": "比肩坐祿，能力被認可" }
+        { "year": 2011, "ganZhi": "Xin-You", "event": "Rob Wealth Imperial Prosperity; the Si-You-Chou Three Metal Combination forms for the first time, marking a major turning point." },
+        { "year": 2012, "ganZhi": "Geng-Shen", "event": "Friend sits on Prosperity; personal capabilities receive formal recognition." }
       ],
-      "advice": "利於學業深造和初入職場，巳亥沖年份注意家庭變動。"
+      "advice": "Favorable for advanced degree attainment and career initiation; remain attentive to domestic shifts during clash years."
     },
     {
-      "stem": "甲", "branch": "戌",
+      "stem": "Jia", "branch": "Xu",
       "startAge": 24, "endAge": 33, "startYear": 2014, "endYear": 2023,
-      "theme": "偏財甲木+戌為火庫。事業起步關鍵期，有投資或創業衝動，機會多但競爭也大。",
-      "interactions": "戌中藏丁(正官)+辛(劫財)+戊(偏印)，與原局辰土形成辰戌沖——日支逢沖，婚姻感情有波動。",
+      "theme": "Indirect Wealth Jia Wood + Xu Fire Treasury. Foundational career building period; strong entrepreneurial instincts bring abundant opportunities accompanied by intense competition.",
+      "interactions": "Xu stores Ding Fire, Xin Metal, and Wu Earth, clashing with natal Chen Earth (Chen-Xu Clash)—the Day Branch clash brings relational and romantic fluctuations.",
       "keyYears": [
-        { "year": 2017, "ganZhi": "乙卯", "event": "正財坐卯（財星強根），財運或婚戀突破" },
-        { "year": 2021, "ganZhi": "辛亥", "event": "劫財+傷官，競爭壓力大，可能跳槽或調整方向" }
+        { "year": 2017, "ganZhi": "Yi-Mao", "event": "Direct Wealth sits on strong Mao Wood roots; major breakthrough in personal wealth and partnerships." },
+        { "year": 2021, "ganZhi": "Xin-Hai", "event": "Rob Wealth plus Hurting Officer; competitive friction prompts career adjustments or lateral shifts." }
       ],
-      "advice": "事業積累期，避免盲目合夥或大額投機。辰戌沖年份注意感情穩定。"
+      "advice": "Solidify professional capital; avoid impulsive partnerships or unhedged financial speculation."
     },
     {
-      "stem": "癸", "branch": "酉",
+      "stem": "Gui", "branch": "You",
       "startAge": 34, "endAge": 43, "startYear": 2024, "endYear": 2033,
-      "theme": "傷官癸水+酉金帝旺。巳酉丑三合金局完成，日主力量暴增。事業和財富收獲期，但傷官透出需管住嘴。",
-      "interactions": "酉金為庚金帝旺之地，與原局巳丑形成巳酉丑三合金局——日主力量大增。酉與原局辰構成辰酉合金——進一步強化金力。",
+      "theme": "Hurting Officer Gui Water + You Metal Imperial Prosperity. The Si-You-Chou Three Metal Combination reaches full maturity, dramatically empowering the Day Master. A harvest decade for career and capital.",
+      "interactions": "You Metal provides Imperial Prosperity to Geng Metal and completes the Si-You-Chou Metal Combination; You and Chen form Chen-You Metal combination, further compounding metal vitality.",
       "keyYears": [
-        { "year": 2027, "ganZhi": "乙巳", "event": "正財+年柱重現，財運大爆發或重大人生事件" },
-        { "year": 2029, "ganZhi": "癸卯", "event": "傷官坐卯，卯酉沖，變動年，可能換工作或搬遷" }
+        { "year": 2027, "ganZhi": "Yi-Si", "event": "Direct Wealth reveals while echoing the natal Year Pillar; exceptional financial harvest or major life milestone." },
+        { "year": 2029, "ganZhi": "Gui-Mao", "event": "Hurting Officer sits on Mao, triggering Mao-You clash; dynamic shift year involving relocation or role change." }
       ],
-      "advice": "人生巔峰十年，重點把握2027-2028年機會。多做少說，用實力說話。"
+      "advice": "A pinnacle decade of life: maximize breakthroughs across 2027-2028. Maintain humble communication and let tangible results speak."
     },
     {
-      "stem": "壬", "branch": "申",
+      "stem": "Ren", "branch": "Shen",
       "startAge": 44, "endAge": 53, "startYear": 2034, "endYear": 2043,
-      "theme": "食神壬水+申金為庚金祿地。食神制殺+自坐祿地，技術變現黃金期，適合轉型顧問或知識輸出。",
-      "interactions": "申與原局巳形成巳申合水——正官星被合化，官運減弱但自由度增加。壬水食神洩秀有力。",
+      "theme": "Eating God Ren Water + Shen Metal Prosperity branch. Eating God controls Killings while Day Master sits on personal vitality; golden window for monetizing intellectual capital and advisory consulting.",
+      "interactions": "Shen and natal Si form Si-Shen combination transforming to Water—Direct Officer softens while personal autonomy expands. Ren Water Eating God drains brilliance fluently.",
       "keyYears": [
-        { "year": 2035, "ganZhi": "丁酉", "event": "正官+帝旺，可能升職或獲榮譽" },
-        { "year": 2038, "ganZhi": "甲午", "event": "偏財坐午火，投資機會但需謹慎" }
+        { "year": 2035, "ganZhi": "Ding-You", "event": "Direct Officer meets Imperial Prosperity; executive elevation or major industry honors." },
+        { "year": 2038, "ganZhi": "Jia-Wu", "event": "Indirect Wealth sits on Wu Fire; lucrative investment opportunities requiring prudent diligence." }
       ],
-      "advice": "轉型期，適合寫作、諮詢、教學等知識型副業。投資宜穩健。"
+      "advice": "Transition toward knowledge-driven ventures: writing, consulting, mentoring. Keep financial structures steady."
     },
     {
-      "stem": "辛", "branch": "未",
+      "stem": "Xin", "branch": "Wei",
       "startAge": 54, "endAge": 63, "startYear": 2044, "endYear": 2053,
-      "theme": "劫財辛金+未土。劫財透出，競爭壓力回升，防合夥破財。未中藏丁己乙，底蘊仍在。",
-      "interactions": "未與原局丑形成丑未沖——月柱逢沖，事業環境有變動。辛金劫財與日主庚金比肩爭財。",
+      "theme": "Rob Wealth Xin Metal + Wei Earth. Rob Wealth reveals, increasing competitive friction; safeguard against joint venture losses while relying on accumulated capital.",
+      "interactions": "Wei and natal Chou form Chou-Wei Clash—the Month Pillar experiences movement in professional environment. Xin Metal competes for wealth.",
       "keyYears": [
-        { "year": 2047, "ganZhi": "乙酉", "event": "正財帝旺，晚年財運仍有亮點" },
-        { "year": 2049, "ganZhi": "癸巳", "event": "傷官+年柱，回顧反思之年" }
+        { "year": 2047, "ganZhi": "Yi-You", "event": "Direct Wealth meets Imperial Prosperity; mature-phase wealth shows strong resilience." },
+        { "year": 2049, "ganZhi": "Gui-Si", "event": "Hurting Officer echoes Year Pillar; a reflective year of consolidation." }
       ],
-      "advice": "防合夥破財，獨立經營更佳。丑未沖年份注意工作環境變化。"
+      "advice": "Avoid informal financial partnerships; operate independently. Navigate organizational shifts gracefully."
     },
     {
-      "stem": "庚", "branch": "午",
+      "stem": "Geng", "branch": "Wu",
       "startAge": 64, "endAge": 73, "startYear": 2054, "endYear": 2063,
-      "theme": "比肩庚金+午火直克庚金。健康風險最高的十年，午午自刑加重風險。",
-      "interactions": "午與原局午（時支）構成午午自刑。午火七殺+正印之地直克日主。大運地支與時支重疊。",
+      "theme": "Friend Geng Metal + Wu Fire restricting Geng Metal directly. The most sensitive health decade, with Wu-Wu Self-Punishment amplifying internal heat.",
+      "interactions": "Wu combines with natal Wu in the Hour branch to form Wu-Wu Self-Punishment. Wu Fire Seven Killings directly challenges Day Master vitality.",
       "keyYears": [
-        { "year": 2056, "ganZhi": "丙子", "event": "七殺+沐浴，務必重視體檢" },
-        { "year": 2062, "ganZhi": "庚午", "event": "天克地沖，最危險年份" }
+        { "year": 2056, "ganZhi": "Bing-Zi", "event": "Seven Killings meets Bathing state; prioritize comprehensive preventive medical screenings." },
+        { "year": 2062, "ganZhi": "Geng-Wu", "event": "Heaven and Earth clash and echo; exercise greatest lifestyle prudence." }
       ],
-      "advice": "50歲後建立運動和體檢習慣。重視心血管和呼吸系統保養。"
+      "advice": "Establish consistent daily exercise and annual health checkups after age 50. Safeguard cardiovascular and respiratory health."
     },
     {
-      "stem": "己", "branch": "巳",
+      "stem": "Ji", "branch": "Si",
       "startAge": 74, "endAge": 83, "startYear": 2064, "endYear": 2073,
-      "theme": "正印己土+巳火。回到年柱己巳，人生輪迴之感。印星護身，有子女關照。晚年宜靜養修身。",
-      "interactions": "己巳與年柱完全重合——大運伏吟。巳中藏丙(七殺)+庚(比肩)，身體有反覆但有印星護持。",
+      "theme": "Direct Seal Ji Earth + Si Fire. Returning to the natal Year Pillar Ji-Si, fostering life reflection. Direct Seal protects while descendants provide care. Ideal for peaceful contemplation.",
+      "interactions": "Ji-Si directly echoes the natal Year Pillar (Fu Yin). Si holds Bing Fire and Geng Metal; physical stamina fluctuates but Seal protects.",
       "keyYears": [
-        { "year": 2067, "ganZhi": "乙丑", "event": "正財+月柱重現，家庭溫暖之年" },
-        { "year": 2071, "ganZhi": "辛酉", "event": "劫財帝旺，金局再成，精神煥發" }
+        { "year": 2067, "ganZhi": "Yi-Chou", "event": "Direct Wealth echoes Month Pillar; warm domestic gatherings." },
+        { "year": 2071, "ganZhi": "Xin-You", "event": "Rob Wealth Imperial Prosperity; Metal combination re-energizes vitality and spirit." }
       ],
-      "advice": "靜養修身，利於宗教哲學研究。華蓋在命，晚年可深入修行。"
+      "advice": "Embrace tranquility, scholarly study, or philosophical exploration. Hua Gai in the chart invites deep spiritual enrichment."
     }
   ],
-  "branchAnalysis": "原局四柱地支巳丑辰午中，月支丑與時支午構成丑午相害——事業（月柱）與家庭/子女（時柱）之間存在暗中拉扯，中年後工作繁忙可能影響家庭陪伴。好在無六沖、無三刑，原局地支整體平和。值得注意的是巳、丑已是巳酉丑三合金局的三分之二，癸酉大運（34-43歲）補全酉金時金局大成，為人生巔峰期。",
+  "branchAnalysis": "Across the four natal branches (Si, Chou, Chen, Wu), Chou in the month and Wu in the hour form a Chou-Wu Mutual Harm—creating subtle underlying friction between career demands (Month Pillar) and family/children (Hour Pillar), suggesting heavy workloads in mature years may encroach upon home presence. Positively, the chart contains zero Six Clashes and zero Three Punishments, remaining harmoniously stable. Furthermore, Si and Chou already constitute two-thirds of the Si-You-Chou Three Metal Combination, which the Gui-You Decadal Fortune (ages 34-43) completes, marking the pinnacle epoch of life.",
   "keyAdvice": [
-    "2024-2033年（癸酉大運）是人生最重要的十年：三合金局成型，事業財富巔峰。重點把握2027-2028年。傷官透出需管理人際——實力到位就好，不必鋒芒畢露。",
-    "事業路線選擇金融/法律/IT基礎設施：官印相生格局最適合有體系的環境。34歲前是轉型窗口。",
-    "婚姻需主動經營：妻星藏日支不外顯，加上丑午相害，容易因工作忽略家庭。有意識安排家庭時間。",
-    "64歲後重點關注心肺健康：庚午大運午火克金+午午自刑。50歲後開始重視心血管和呼吸系統保養。",
-    "理財以穩健為主：正財格局適合工資+穩健投資。44-53歲壬申大運食神生財，考慮寫作、諮詢、教學等副業。"
+    "2024-2033 (Gui-You Decadal Fortune) is the definitive career decade: the Three Metal Combination matures into peak productivity. Focus strategic efforts on 2027-2028. Hurting Officer revealed advises gentle interpersonal tact—let competence speak for itself.",
+    "Career Path in Finance, Law, or Enterprise Infrastructure: An Officer-Seal Mutual Generation structure thrives best in established systems. The window before age 34 is ideal for finalizing positioning.",
+    "Cultivate Relational Presence: With the spouse star resting in the Day Branch alongside Chou-Wu Harm, demanding work routines can distract from family life. Intentionally allocate dedicated quality time.",
+    "Prioritize Cardiovascular & Respiratory Wellness Beyond Age 64: The Geng-Wu cycle brings Wu-Wu Self-Punishment and Fire restricting Metal. Begin proactive cardiovascular and lung maintenance in your 50s.",
+    "Preserve Capital via Structured Vehicles: Direct Wealth structures reward consistent earnings and stable growth assets. In the Ren-Shen decade (ages 44-53), explore advisory consulting and knowledge-based avenues."
   ],
   "luckyInfo": {
-    "colors": ["白", "銀", "金"],
-    "directions": ["西", "北"]
+    "colors": ["White", "Silver", "Gold"],
+    "directions": ["West", "North"]
   }
 }
 ```

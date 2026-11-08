@@ -34,19 +34,17 @@ jobs:
           docker stop chinese-divination || true
           docker rm chinese-divination || true
 
-          # Load production environment variables from host-managed env file
+          # Load production environment variables from PROD_ENV_FILE_PATH or fallback candidates
           ENV_FILE_FLAG=""
-          if [ -f "$HOME/.env.chinese-divination-production" ]; then
-            echo "📄 Using $HOME/.env.chinese-divination-production"
-            ENV_FILE_FLAG="--env-file $HOME/.env.chinese-divination-production"
-          elif [ -f "$HOME/projects/chinese-divination/.env.production" ]; then
-            echo "📄 Using $HOME/projects/chinese-divination/.env.production"
-            ENV_FILE_FLAG="--env-file $HOME/projects/chinese-divination/.env.production"
+          TARGET_ENV_FILE="${PROD_ENV_FILE_PATH:-$HOME/.env.chinese-divination-production}"
+          if [ -n "${TARGET_ENV_FILE}" ] && [ -f "${TARGET_ENV_FILE}" ]; then
+            echo "📄 Using production environment file: ${TARGET_ENV_FILE}"
+            ENV_FILE_FLAG="--env-file ${TARGET_ENV_FILE}"
           elif [ -f .env.production ]; then
             echo "📄 Using .env.production"
             ENV_FILE_FLAG="--env-file .env.production"
           else
-            echo "❌ Error: No production env file found!"
+            echo "❌ Error: Production environment file not found at ${TARGET_ENV_FILE} or .env.production!"
             exit 1
           fi
 

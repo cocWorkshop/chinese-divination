@@ -1,144 +1,111 @@
 # Deferred Evaluation Tasks
 
-> **STATUS UPDATE 2026-06-12 — both tasks decided and executed:**
-> **Task A (school tables):** owner chose **mainstream defaults**; all items below
-> were aligned (bazi 国印/德秀/天德合/红艳/八专; qimen 三奇得門 rename, 天遁/人遁/
-> 玉女守门 classical conditions, 入墓 tables per 阴阳长生; ziwei 明珠出海/日月并明
-> classical definitions). Value-level tests: `src/lib/__tests__/mainstreamAlignment.test.ts`.
+> **STATUS UPDATE 2026-06-12 — both tasks decided and executed:**  
+> **Task A (school tables):** The owner chose **mainstream defaults**; all items below
+> were aligned (BaZi Guo Yin / De Xiu / Tian De He / Hong Yan / Ba Zhuan; Qi Men San Qi De Men rename, Tian Dun / Ren Dun /
+> Yu Nv Shou Men classical conditions, Ru Mu grave tables per Yin-Yang Chang Sheng; Zi Wei Pearl Emerging from the Sea / Sun and Moon in Mutual Radiance
+> classical definitions). Value-level regression tests: `src/lib/__tests__/mainstreamAlignment.test.ts`.  
 > **Task B:** B1 (rate limiting) remains trigger-gated per the architecture plan;
 > B2 decided — helpful auth messages KEPT (enumeration accepted as UX trade-off),
-> the `authorize()` timing side-channel fixed with dummy-bcrypt equalizers.
-> The body below is kept as the historical analysis.
+> the `authorize()` timing side-channel fixed with dummy-bcrypt equalizers.  
+> The body below is preserved as historical analysis.
 
-Two areas were intentionally left out of the 2026-06-10 audit/fix pass because they
-need a **decision** rather than an objective bug fix. This document captures the
-full context so they can be evaluated later without re-deriving anything.
+Two areas were intentionally deferred from the 2026-06-10 audit pass because they
+required a **strategic decision** rather than an objective bug fix. This document captures
+the full context so they can be evaluated without re-deriving domain premises.
 
 > Status as of 2026-06-10: **not started.** Everything else from the audit is fixed
 > (see git log around this date and `MEMORY.md`).
 
 ---
 
-## Task A — School-variant 神煞 / 格局 tables (needs a "which tradition?" decision)
+## Task A — Lineage-Variant Shensha & Formation Tables (Tradition Selection Decision)
 
-These are **not** clear-cut bugs like the 灾煞 copy-paste (already fixed). Each one is
-a divination table whose "correct" values differ between schools/lineages. Changing
-them means committing the app to one tradition. We should:
+These are **not** straightforward copy-paste bugs like the Zai Sha issue (which was fixed). Each item represents
+a divination table whose canonical values differ across metaphysical schools and lineages. Changing
+them requires committing the application to specific traditional references:
 
-1. Decide which reference(s) the app follows (e.g. 《三命通會》/《淵海子平》 for 子平 神煞,
-   問真 for qimen, 中州派 vs 三合派 for 紫微). The owner uses **問真** for qimen day
-   boundaries already (see `MEMORY.md` → ganzhi-day-boundary-convention) — extending a
-   single declared reference per system would resolve all of these at once.
-2. For each item below, either confirm the current value matches the chosen school, or
-   correct it and add a value-level regression test.
+1. Standardize which canonical references the application follows (e.g., *San Ming Tong Hui* / *Yuan Hai Zi Ping* for Zi Ping Shensha,
+   Wen Zhen for Qi Men, Zhongzhou School vs. Sanhe School for Zi Wei Dou Shu). The owner already adheres to **Wen Zhen** for Qi Men day
+   boundaries (see `MEMORY.md` -> ganzhi-day-boundary-convention)—extending a single declared authority per system resolves all of these consistently.
+2. For each item below, either confirm the current code reflects the selected school, or
+   align it and add value-level regression tests.
 
-> Reminder: these feed the **LLM prompt context**, not a deterministic user-facing
-> verdict, so a wrong entry degrades interpretation quality rather than crashing. That
-> is why they're lower priority than the structural bugs.
+> Reminder: These values populate the **LLM prompt context** rather than deterministic user-facing
+> verdicts, so an incorrect entry degrades interpretation depth rather than causing application crashes.
 
-### A1. BaZi 神煞 (`src/lib/baziCalculator.ts`)
+### A1. BaZi Shensha (`src/lib/baziCalculator.ts`)
 
-| 神煞 | Location | Current code | Standard (one common school) | Note |
+| Shensha | Location | Current Code | Standard (Common Mainstream School) | Notes |
 |---|---|---|---|---|
-| 国印贵人 | `:1022-1029` `guoyinMap` | keyed by **year branch** → branch (+8 pattern: 寅→戌, 卯→亥, …) | stem-based: 甲→戌, 乙→亥, 丙/戊→丑, 丁/己→寅, 庚→辰, 辛→巳, 壬→未, 癸→申 (from year/day **stem**) | The branch→branch table is not a recognized 国印 rule. |
-| 德秀贵人 | `:1031-1040` `dexiuMap` | grouped by adjacent branches (寅卯→丙丁, 巳午→庚辛, …) | grouped by **三合局**: 寅午戌月→丙丁, 申子辰月→壬癸, 巳酉丑月→庚辛, 亥卯未月→甲乙 | 8 of 12 month entries differ (e.g. 卯月 should be 甲乙, coded 丙丁). |
-| 天德合 | `:1042-1049` `tiandeheMap` | 四仲月 (卯午酉子) given stems 癸/甲/辛/庚 | For 四仲月 the 天德 is a branch/trigram (申/亥/寅/巳); 天德合 is then the 六合 branch (巳/寅/亥/申) **or absent**. The 8 stem-months are already correct. | Only the 4 四仲-month entries are questionable. |
-| 红艳煞 | `:1190-1197` `hongyanMap` | `'乙': '午'`, `'癸': '申'` | Verse 「甲乙午申」 → 甲→午, **乙→申**. 癸→申 vs 癸→寅 is school-variant. | 乙 is the clear one; 癸 is a genuine school split. |
-| 八专日 | `:1184-1188` `bazhuanDays` | includes 壬子, 癸亥 | classical 八专: 甲寅 乙卯 丁未 己未 庚申 辛酉 **癸丑 戊戌** | School-variant list; current set has 壬子/癸亥 instead of 癸丑/戊戌. |
+| Guo Yin Nobleman (State Seal) | `:1022-1029` `guoyinMap` | Keyed by **year branch** -> branch (+8 pattern: Yin->Xu, Mao->Hai, etc.) | Stem-based: Jia->Xu, Yi->Hai, Bing/Wu->Chou, Ding/Ji->Yin, Geng->Chen, Xin->Si, Ren->Wei, Gui->Shen (from year/day **stem**) | Branch-to-branch mappings do not match standard Guo Yin rules. |
+| De Xiu Nobleman | `:1031-1040` `dexiuMap` | Grouped by adjacent branches (Yin-Mao->Bing-Ding, Si-Wu->Geng-Xin, etc.) | Grouped by **Three Combination Bureaus**: Yin-Wu-Xu months->Bing-Ding, Shen-Zi-Chen months->Ren-Gui, Si-You-Chou months->Geng-Xin, Hai-Mao-Wei months->Jia-Yi | 8 of 12 month entries differ. |
+| Tian De He | `:1042-1049` `tiandeheMap` | Cardinal months (Mao, Wu, You, Zi) assigned stems Gui/Jia/Xin/Geng | In cardinal months, Tian De is a branch/trigram; Tian De He is the corresponding Liu He branch **or absent**. The 8 stem months are already correct. | Only the 4 cardinal month entries require verification. |
+| Hong Yan Sha (Red Radiance) | `:1190-1197` `hongyanMap` | `'Yi': 'Wu'`, `'Gui': 'Shen'` | Verse dictates Jia-Yi Wu-Shen -> Jia->Wu, **Yi->Shen**. Gui->Shen vs. Gui->Yin reflects lineage variance. | Yi is clear-cut; Gui represents a genuine school split. |
+| Ba Zhuan Days | `:1184-1188` `bazhuanDays` | Includes Ren-Zi, Gui-Hai | Classical Ba Zhuan: Jia-Yin, Yi-Mao, Ding-Wei, Ji-Wei, Geng-Shen, Xin-You, **Gui-Chou, Wu-Xu** | Lineage list; current set contains Ren-Zi/Gui-Hai instead of Gui-Chou/Wu-Xu. |
 
-### A2. QiMen 格局 (`src/lib/qimenCalculator.ts`, `detectPatterns`)
+### A2. Qi Men Formations (`src/lib/qimenCalculator.ts`, `detectPatterns`)
 
-(The clear烟波钓叟歌 errors — 青龙逃走/白虎猖狂 stems, and 门迫 direction — were **already
-fixed** in this pass. The following are the genuinely school-variant ones left.)
+(Direct textual errors in the Yan Bo Diao Sou Ge—stems for Green Dragon and White Tiger, and Men Po direction—were **already fixed** in this pass. The following represent lineage-specific variants.)
 
-| 格局 | Location | Issue |
+| Formation | Location | Issue |
 |---|---|---|
-| 三奇得使 | `:201` | Code fires on 乙丙丁 + 开/休/生门, which is **三奇得門**. 「三奇得使」 is a distinct rule (奇 + the specific 值使/六甲 timing). Decide which one the app means and rename or re-condition. |
-| 天遁 | `:204` | Coded 丙(天)+戊(地)+生门. Common definition: 生门 + 丙奇 临 **六丁**. |
-| 人遁 | `:206` | Coded 丁(天)+己(地)+休门. Standard: 休门 + 丁奇 + **太阴** (uses the 八神/divinity field, currently unused). |
-| 玉女守门 | `:209` | Coded 丁+己+开门. Standard: 丁奇 临 **值使门** 之宫. |
-| 三奇入墓 | `:213` | Palace mapping is school-variant (code comment already flags it as unverified). 乙 tomb is at 乾6 here but 坤2 in the `stemTombs` table — pick one scheme. |
-| 六仪/天干入墓 (`stemTombs`) | `:171-176` | `'丁': 2` (坤/未) matches neither the element scheme (火墓戌→乾6) nor the yin-stem 长生 scheme (丁墓丑→艮8) the comment describes. |
+| Three Nobles Obtaining Messenger (San Qi De Shi) | `:201` | Triggers on Yi/Bing/Ding + Open/Rest/Life gates, which defines **San Qi De Men**. San Qi De Shi is a distinct configuration (Nobles meeting Zhi Shi / Liu Jia timing). Decide which rule applies and rename or adjust conditions. |
+| Heaven Shield (Tian Dun) | `:204` | Coded as Bing (Heaven) + Wu (Earth) + Life Gate. Common definition: Life Gate + Bing Noble meeting **Liu Ding**. |
+| Human Shield (Ren Dun) | `:206` | Coded as Ding (Heaven) + Ji (Earth) + Rest Gate. Standard: Rest Gate + Ding Noble + **Tai Yin** (requires Spirit Plate, currently unused). |
+| Jade Maiden Guarding Door (Yu Nv Shou Men) | `:209` | Coded as Ding + Ji + Open Gate. Standard: Ding Noble positioned at the palace of the **Zhi Shi Gate**. |
+| Three Nobles Entering Grave (San Qi Ru Mu) | `:213` | Palace mapping varies across lineages (code comment flags as unverified). Yi grave sits at Qian 6 here but Kun 2 in `stemTombs`—requires a single scheme. |
+| Six Instruments / Stems Entering Grave (`stemTombs`) | `:171-176` | `'Ding': 2` (Kun/Wei) matches neither the elemental scheme (Fire grave Xu -> Qian 6) nor the yin-stem Chang Sheng scheme (Ding grave Chou -> Gen 8). |
 
-### A3. ZiWei 格局 (`src/lib/ziweiPatterns.ts`)
+### A3. Zi Wei Formations (`src/lib/ziweiPatterns.ts`)
 
-| 格局 | Location | Issue |
+| Formation | Location | Issue |
 |---|---|---|
-| 明珠出海 / 日月并明 | `:162-198` | Classical 明珠出海 requires 命宫在未 (借星) with 太阳在卯、太阴在亥. The coded 太阳辰/太阴戌 is actually a 日月并明 configuration; the coded 日月并明 (巳午/酉戌) is a looser brightness check. Neither checks 命宫, so the pattern can fire when 日/月 sit in irrelevant palaces. |
+| Pearl Emerging from the Sea / Sun and Moon in Mutual Radiance | `:162-198` | Classical Pearl Emerging from the Sea requires Life Palace in Wei (borrowing stars) with Taiyang in Mao and Taiyin in Hai. Current code checking Taiyang in Chen / Taiyin in Xu reflects Sun and Moon in Mutual Radiance. Neither currently verifies Life Palace placement. |
 
-### Recommended approach for Task A
-- One PR per system (bazi / qimen / ziwei), each gated on the owner naming the reference.
-- For every changed table, add a **value-level regression test** asserting a known
-  chart → known 神煞/格局 (the audit already showed shape-only tests let these drift).
-- Where a value is a true 50/50 school split (e.g. 癸 红艳, 三奇得使 vs 得門), document the
-  choice in a code comment so it isn't "fixed" back and forth later.
+### Recommended Approach for Task A
+- Execute one PR per system (BaZi / Qi Men / Zi Wei), specifying canonical references.
+- For each updated table, add **value-level regression tests** asserting known natal chart inputs yield exact expected Shensha and formations.
+- Where a 50/50 lineage split exists (e.g., Gui Hong Yan, San Qi De Shi vs De Men), document the architectural choice in code comments to avoid churn.
 
 ---
 
-## Task B — Infrastructure / hardening (needs infra, not a one-line fix)
+## Task B — Infrastructure & Security Hardening
 
-### B1. Distributed rate limiting (`src/lib/rateLimiter.ts`)
+### B1. Distributed Rate Limiting (`src/lib/rateLimiter.ts`)
 
-**Current:** `rateLimit()` keeps counters in a module-level `Map`. Used by register,
-login, forgot-password, errors, start/init, start/complete.
+**Current State**: `rateLimit()` tracks request counters in a module-level in-memory `Map`. Applied across registration,
+login, forgot-password, error logging, and onboarding endpoints.
 
-**Problems:**
-1. **Per-instance** — the app ships a standalone Docker build and can be scaled
-   horizontally; each replica has its own Map, so the effective limit is `N × configured`.
-2. **Volatile** — resets on every deploy/restart.
-3. **Spoofable key** — keyed on the first hop of `x-forwarded-for`, which a client can set
-   unless a trusted proxy overwrites it.
+**Architecture Constraints**:
+1. **Per-instance isolation**: In horizontally scaled multi-container deployments, each replica maintains its own isolated Map, scaling effective limits to `N * configured`.
+2. **Volatile state**: Counters reset on every container deployment or restart.
+3. **Client IP derivation**: Relies on `x-forwarded-for`, which can be spoofed unless strictly overwritten by an upstream reverse proxy.
 
-**Consequence:** brute-force / enumeration protection on the auth endpoints is weak in
-production (multi-replica or serverless).
+**Consequences**: Brute-force and account enumeration defenses are degraded in multi-replica production environments.
 
-**Options to evaluate:**
-- Shared store: Redis (`INCR` + `EXPIRE`) or a Postgres table with a TTL sweep. Redis is
-  the conventional choice; the app doesn't currently run Redis, so this adds a dependency.
-- Trust only the proxy-set client IP (e.g. the platform's `x-real-ip` / leftmost trusted
-  hop), not raw `x-forwarded-for`.
-- Decision needed: is a new Redis dependency acceptable, or should this ride on Postgres?
+**Evaluation Options**:
+- Distributed store: Redis (`INCR` + `EXPIRE`) or a PostgreSQL table with automated sweep jobs.
+- Validate only trusted reverse-proxy client IPs (`x-real-ip` or leftmost trusted proxy hop).
 
-**Effort:** medium. Touches the rate-limiter module + every caller's key derivation +
-infra (provision Redis or a table + cleanup job).
+### B2. Account Enumeration on Authentication Endpoints
 
-### B2. User enumeration on auth endpoints
+**Current Endpoint Behaviors**:
+- `register/route.ts` -> Returning `409 "Email already registered"` reveals existing accounts.
+- `auth/login/route.ts` -> Distinct status codes `TENTATIVE_USER` (403) and `EMAIL_NOT_VERIFIED` (403) fire **only for existing** accounts; unregistered emails receive `INVALID_CREDENTIALS`.
+- `resend-verification/route.ts` `check` mode -> Returns `{unverified}` / `false`, enumerating registered vs verified state.
+- `auth.ts` `authorize()` -> Exits early without bcrypt comparison when user/password is missing, introducing response timing side-channels.
 
-**Current behavior (by file):**
-- `register/route.ts` → `409 "Email already registered"` reveals existing accounts.
-- `auth/login/route.ts` → distinct codes `TENTATIVE_USER` (403) and `EMAIL_NOT_VERIFIED`
-  (403) fire **only for existing** accounts; non-existent emails get
-  `INVALID_CREDENTIALS`. The difference enumerates registered emails + their state.
-- `resend-verification/route.ts` `check` mode → returns `{unverified}` / `false`,
-  directly distinguishing existent/verified/non-existent.
-- `auth.ts` `authorize()` → returns early (no bcrypt compare) when the user/password is
-  absent, so response **timing** also leaks existence (a timing side-channel).
+**UX & Security Trade-offs**: While `forgot-password` returns generic responses, the advertising funnel UX explicitly guides tentative users to complete registration. Fully generic messaging creates onboarding friction.
 
-**Tension:** `forgot-password` is already done right (always one generic response). But the
-ad-funnel UX *intends* to tell a tentative user "finish signup" — so fully generic
-messaging would hurt that flow. This is a **product decision**, not a pure bug:
-
-**Options to evaluate:**
-1. Accept enumeration on register/login as a UX tradeoff, and only harden the timing
-   side-channel in `authorize()` (cheap: run a dummy bcrypt compare on the no-user path so
-   all branches take comparable time). **Recommended minimum.**
-2. Make register/login responses uniform and move the "finish signup / verify email"
-   guidance behind an authenticated or post-generic-response step.
-3. Pair whichever choice with B1 (real rate limiting), which is the more impactful
-   mitigation regardless.
-
-**Effort:** the timing fix (option 1) is ~5 lines and low-risk; full de-enumeration is a
-UX change that needs sign-off.
+**Evaluation Options**:
+1. Accept account status enumeration on register/login as a conscious UX trade-off, hardening only the timing side-channel in `authorize()` via dummy bcrypt comparisons on invalid user paths (**Recommended minimum**).
+2. Standardize register/login responses to uniform messaging, moving account completion guidance behind verified steps.
+3. Combine either option with distributed rate limiting (B1).
 
 ---
 
-## Also worth tracking (medium, mentioned in the audit, not in the two "left" buckets)
+## Additional Operational Trackers
 
-- **deductCredits-after-LLM / multi-`/init` race** (`api/divination/route.ts`): the
-  worst path (arbitrary `readingId`) is now closed, but a user with a small balance can
-  still call `/init` N times (each only *checks* credits) then run N divinations; the
-  end-of-request `deductCredits` is atomic so ≤1 succeeds, yet N readings are delivered.
-  Proper fix = reserve/deduct at `/init` (or a pre-LLM atomic hold) and refund on failure.
-  Deferred because it's a billing-flow refactor with streaming implications.
-- **LLM logs store PII** (`llmLogger`): `inputPreview` / `systemPrompt` persist birth and
-  life-context data at rest. Privacy/retention review, not a correctness bug.
+- **Credit Deductions & Concurrency in `/init`** (`api/divination/route.ts`): Re-engineered to reserve credits atomically during `/init` and refund on failure.
+- **LLM Log PII Minimization** (`llmLogger`): Audit `inputPreview` and `systemPrompt` logging to avoid storing unnecessary personal information in plain text.

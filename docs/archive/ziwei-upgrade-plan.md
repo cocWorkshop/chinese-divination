@@ -1,256 +1,255 @@
-# 紫微斗数解盘内容升级计划（优化版）
+# Zi Wei Dou Shu Reading Content Upgrade Plan (Optimized)
 
-## 现状诊断
+## Current Status Diagnosis
 
-### 当前输出（基于实际生产数据）
-- **模型**: claude-3-5-haiku，max_tokens=8192
-- **输出质量**: 宫位分析80-120字，有四化解读和三方四正提及
-- **sections**: 4个（overview/career/marriage/wealth），各200-400字
-- **总输出**: ~6000字 raw JSON
+### Existing Output (Based on Production Data)
+- **Model**: claude-3-5-haiku, max_tokens=8192
+- **Output Quality**: Palace analyses 80–120 words, mentions Four Mutagens (Si Hua) and Three Harmonies and Four Directs (San Fang Si Zheng)
+- **Sections**: 4 sections (overview/career/marriage/wealth), 200–400 words each
+- **Total Output**: ~6,000 words raw JSON
 
-### 核心问题
-1. **无时间维度** — 没有大运逐步分析和流年预测（这是用户最关心的"准不准"）
-2. **无格局判定** — 杀破狼、紫府同宫等格局在 analysis 中被提及但没有结构化输出
-3. **六亲断语模糊** — "父母慈爱"太泛，缺少"父亲可能从事XX行业"这类具体可验证断语
-4. **缺乏关键年龄节点** — 没有"28岁有变动""35岁事业转折"这类最"服气"的预测
-5. **personality 缺失** — 命宫看外在、福德宫看内在的对比分析没有独立展示
-6. **health 缺失** — 疾厄宫分析藏在宫位里，用户不容易找到
+### Core Deficiencies
+1. **Lack of Temporal Dimension**: Missing step-by-step decadal fortune (DaYun) analysis and annual fortune predictions (the core criteria users judge accuracy by).
+2. **Missing Pattern Classification**: Classic formations (Sha-Po-Lang, Zi-Fu, etc.) are referenced in prose but lack structured data classification.
+3. **Vague Interpersonal Statements**: Generalizations like "loving parents" lack concrete, verifiable deductions such as "father likely works in public administration or education."
+4. **Absence of Critical Age Milestones**: Missing concrete predictions like "major career pivot around age 35" or "relocation at age 28."
+5. **Missing Personality Dimension**: Lacks independent comparative analysis between outer demeanor (Life Palace) and inner psychological landscape (Fortune/Virtue Palace).
+6. **Hidden Health Dimension**: Health Palace (Ji E) analysis is buried within general palace lists rather than highlighted.
 
-### 可用数据（已由程序计算，可传给 LLM）
-- ✅ 十二宫完整星曜（主星/辅星/杂曜 + 亮度 + 四化）
-- ✅ 大运数据（每宫的 decadal.range 即大运年龄段）
-- ✅ 四柱八字（chineseDate 字段）
-- ✅ 五行局、命主、身主
-- ❌ 流年四化（需要额外计算或由 LLM 推导）
-- ❌ 三方四正关联（LLM 自行推导）
+### Available Computed Engine Data (Ready for LLM Input)
+- ✅ Twelve Palaces full star configurations (Major, Auxiliary, Minor stars + brightness levels + Four Mutagens)
+- ✅ Decadal ranges for each palace (`decadal.range` age span)
+- ✅ Four Pillars / BaZi data (`chineseDate` field)
+- ✅ Five Elements Bureau, Life Master, Body Master
+- ❌ Annual Mutagens (requires runtime derivation or LLM deduction)
+- ❌ San Fang Si Zheng cross-palace associations (derived by LLM)
 
 ---
 
-## Phase 1: Prompt 深度优化（不改前端）
+## Phase 1: Prompt Deep Optimization (No Frontend Changes)
 
-### 1.1 传更多结构化数据给 LLM
+### 1.1 Feeding Richer Structured Data to LLM
 
-当前 prompt 传了 palaceSummary（压缩版），但丢失了关键信息。升级为：
+Current prompts pass a compressed `palaceSummary` that omits critical astrological anchors. Upgraded payload:
 
 ```typescript
-// 当前传给 LLM 的 palaceSummary
+// Legacy palaceSummary passed to LLM
 palaceSummary = ziweiChart.palaces.map(p => ({
   name: p.name,
-  stars: [...主星+辅星+杂曜（含亮度+四化）],
+  stars: [...majorStars, ...auxiliaryStars, ...minorStars (brightness + mutagens)],
   isBodyPalace: p.isBodyPalace,
 }))
 
-// 升级：加入大运信息 + 地支
+// Upgraded payload: add heavenlyStem, earthlyBranch, decadal, changsheng12
 palaceSummary = ziweiChart.palaces.map(p => ({
   name: p.name,
-  heavenlyStem: p.heavenlyStem,  // 宫干（用于飞化分析）
+  heavenlyStem: p.heavenlyStem,  // Palace stem (essential for flying star mutagen analysis)
   earthlyBranch: p.earthlyBranch,
   stars: [...],
   isBodyPalace: p.isBodyPalace,
-  decadal: p.decadal.range,  // [起始年龄, 结束年龄]
-  changsheng12: p.changsheng12,  // 长生十二神
+  decadal: p.decadal.range,      // [startAge, endAge]
+  changsheng12: p.changsheng12,  // Twelve Life Energy Phases
 }))
 ```
 
-**关键**: 宫干（heavenlyStem）是飞化分析的基础。没有宫干，LLM 无法做宫位飞化（比如"夫妻宫庚干，太阳化禄飞入田宅宫"）。目前没传这个数据。
+**Key insight**: Palace Heavenly Stems (`heavenlyStem`) are the foundation of Flying Star Mutagen analysis. Without palace stems, the LLM cannot deduce cross-palace star flying interactions (e.g., "Geng stem in Spouse Palace transforms Tai Yang into Hua Lu, flying into Property Palace").
 
-### 1.2 重写 prompt（核心改动）
+### 1.2 Prompt Overhaul (Core Revision)
 
-**设计原则**：
-- 不要列字数要求（LLM 会为凑字数灌水），改为列**必须覆盖的分析点**
-- 用"分析清单"而非"字数下限"驱动输出质量
-- 给 LLM 明确的**推理链**（先看什么→再看什么→最后综合）
-- 强调**具体可验证断语**而非性格描述
+**Design Principles**:
+- Avoid word count quotas (which prompt filler text); specify **mandatory analytical criteria**.
+- Drive output quality through a rigorous checklist rather than length constraints.
+- Provide a clear **chain of reasoning** (Pattern Determination → Mutagen Tracking → Decadal Fortune → Interpersonal → Synthesis).
+- Emphasize **verifiable specific deductions** over broad character traits.
 
 ```
-## 解盘身份
-你是一位执业三十年的紫微斗数命理师，师承中州派，擅长断具体事件和六亲关系。
-你的风格是：先给结论，再解释原因；敢于给出具体断语，不说模棱两可的废话。
+## Divination Persona
+You are a senior Zi Wei Dou Shu master with 30 years of clinical practice, lineage rooted in the Zhongzhou School, specialized in concrete event timing and familial deductions.
+Your style: lead with definitive conclusions followed by causal reasoning; deliver sharp, falsifiable predictions without evasive ambiguities.
 
-## 分析方法论（按此顺序思考）
+## Analytical Methodology (Execute in Sequence)
 
-### 第一步：定格局
-1. 识别命盘所属格局类型（杀破狼格/机月同梁格/紫府格/日月格/其他）
-2. 判断格局高低：看命宫主星亮度、有无六吉星辅佐、有无煞星破格
-3. 结论：此命格局属上/中上/中/中下/下
+### Step 1: Establish Chart Formation (Patterns)
+1. Identify primary astrological formation (Sha-Po-Lang / Ji-Yue-Tong-Liang / Zi-Fu / Ri-Yue / other).
+2. Evaluate pattern quality: assess Life Palace main star brightness, presence of Six Auspicious stars, and disruption by Malefic stars.
+3. Conclude pattern grade: Superior / Upper-Middle / Average / Lower-Middle / Inferior.
 
-### 第二步：看四化飞星
-1. 本命四化（年干决定）：哪四颗星化禄/权/科/忌，分别落在哪个宫位
-2. 化禄落宫 = 一生最顺的领域
-3. 化忌落宫 = 一生最需注意的领域
-4. 双化（如化禄+化权同宫）= 该宫极强
-5. 如果四化涉及三方四正会照 → 格局升降
+### Step 2: Track Four Star Mutagens (Si Hua)
+1. Natal Mutagens (governed by Year Stem): which four stars transform into Hua Lu / Hua Quan / Hua Ke / Hua Ji, and their palace placements.
+2. Hua Lu palace = domain of smoothest lifetime flow.
+3. Hua Ji palace = domain requiring highest caution and life lessons.
+4. Dual Mutagens (e.g., Lu + Quan in same palace) = exceptionally concentrated energy.
+5. Mutual resonance across Three Harmonies and Four Directs (San Fang Si Zheng) elevating or suppressing pattern quality.
 
-### 第三步：看大运走势
-用命盘中的 decadal 数据，逐个大运分析：
-- 该大运宫位里有什么星？亮度如何？
-- 大运四化（大运天干的四化）飞入哪些宫？
-- 与本命四化叠加效果如何？
-- **必须给出每个大运的关键事件预测**
+### Step 3: Decadal Fortune (DaYun) Trajectory
+Using decadal range data in chart, evaluate successive ten-year cycles:
+- Core stars and brightness in current decadal palace.
+- Flying Mutagens driven by decadal stem.
+- Interaction with natal mutagens.
+- Mandatory: Deliver concrete milestone predictions for each decadal cycle.
 
-### 第四步：看六亲
-- 父母宫 → 推断父亲/母亲特征（职业类型、性格、与命主关系）
-- 夫妻宫 → 推断配偶特征（年龄差、职业、外貌特点、性格）
-- 子女宫 → 推断子女数量、性别倾向、与子女关系
+### Step 4: Interpersonal Affinities (Six Relatives)
+- Parents Palace → Infer parental attributes (vocation type, temperament, relationship dynamic).
+- Spouse Palace → Infer partner traits (age gap, vocation, physical appearance, personality).
+- Children Palace → Infer fertility affinity, gender tendencies, parent-child dynamics.
 
-### 第五步：综合断语
-基于以上分析，给出3-5个**最硬核的具体预测**（这些是让用户"服气"的关键）：
-- "XX岁前后有一次重大变动（换工作/搬迁/婚变）"
-- "配偶可能从事XX类行业，年龄可能比命主大/小X岁"
-- "一生中XX大运（XX-XX岁）是最关键的十年"
-- "注意XX岁前后的健康/意外风险"
+### Step 5: Synthesized Hardcore Predictions
+Deliver 3-5 concrete, verifiable predictions:
+- "Pivotal career relocation or transition around age XX."
+- "Spouse likely works in [industry domain], approximately X years older/younger."
+- "Decadal cycle between ages XX-XX represents the critical wealth-building decade."
+- "Heightened health or physical vulnerability requiring vigilance around age XX."
 
-## JSON 输出格式
+## JSON Output Format
 
-sections 字段要求：
-- **overview**: 命盘总论 — 格局判定 + 命宫主星组合 + 身宫意义 + 五行局 + 一句话定性
-- **personality**: 外在vs内在 — 命宫(别人眼中的你) + 福德宫(内心真实的你) 对比
-- **career**: 事业分析 — 官禄宫主星 + 三方四正格局 + 适合行业(具体到子行业) + 当前大运对事业的影响
-- **marriage**: 婚姻分析 — 配偶具体特征推断(职业/性格/年龄/外貌) + 婚姻模式 + 最佳婚期 + 桃花星分析
-- **wealth**: 财运分析 — 正财偏财格局 + 最佳理财方式 + 财运高峰/低谷年龄段 + 田宅宫联合分析
-- **health**: 健康分析 — 疾厄宫主星对应的身体系统 + 煞星加重的风险 + 需要注意的年龄段 + 养生建议
-- **family**: 六亲分析 — 父亲/母亲特征推断 + 兄弟姐妹关系 + 子女缘
-- **dayun**: 大运精批 — 逐个大运分析（用命盘中 decadal 数据），每步大运标注起止年龄+所在宫位+该大运的核心主题和关键事件预测。用"▶"标记当前正在走的大运。
+sections schema:
+- overview: Chart Synthesis — Formation evaluation + Life Palace star combination + Body Palace significance + Five Elements Bureau + Definitive summary.
+- personality: Exterior vs Interior — Life Palace (public persona) contrasted with Fortune/Virtue Palace (inner self).
+- career: Professional Trajectory — Career Palace stars + San Fang Si Zheng formation + concrete industry alignments + current decadal influence.
+- marriage: Relationship & Marriage — Partner attributes (vocation/temperament/age/appearance) + relationship dynamics + optimal timing + peach blossom star impact.
+- wealth: Financial Outlook — Direct vs indirect wealth potential + wealth preservation strategies + peak/trough financial cycles + Property Palace synthesis.
+- health: Vitality & Health — Health Palace primary stars mapped to physiological systems + malefic star risks + vulnerable age intervals + preventative lifestyle advice.
+- family: Lineage & Kinship — Parental characteristics + sibling dynamics + child relationships.
+- dayun: Decadal Fortune Breakdown — Sequential decadal analysis referencing chart decadal age spans, highlighting current active cycle with "▶".
 
-新增字段：
-- **patterns**: 格局数组 [{ name, level, description }]
-- **keyPredictions**: 3-5个最具体的预测断语（硬核预测，可验证）
-  [{ age: "28岁", event: "重大工作变动", basis: "大运走迁移宫+流年太岁冲命宫" }]
+Additional fields:
+- patterns: Array of formations [{ name, level, description }]
+- keyPredictions: 3-5 verifiable milestone predictions
+  [{ age: "Age 28", event: "Major vocational transition", basis: "Decadal shift to Travel Palace + Annual Tai Sui clashing with Life Palace" }]
 
-### 关于 palaces 宫位分析
-每个宫位的 analysis 必须包含：
-1. 主星组合的核心含义（一句话）
-2. 辅星/煞星的修正作用
-3. 该宫与三方四正的关联（至少提一个）
-4. 对该宫所管事项的具体影响
+### Palace Analysis Requirements
+Each palace analysis must contain:
+1. Core thematic meaning of primary star combination.
+2. Modifying influence of auxiliary and malefic stars.
+3. Cross-palace resonance with San Fang Si Zheng.
+4. Specific real-world manifestations for that domain.
 
-### 禁止事项
-- 不要重复排盘数据（程序已提供，你只负责解读）
-- 不要说"建议结合实际情况"这类废话
-- 不要每段都以"总之"开头
-- 不要用巴纳姆式描述（"你有时外向有时内向"）
-- 每个断语必须基于具体星曜组合，不能泛泛而谈
+### Negative Constraints
+- Do not echo raw calculation values without interpretation.
+- Never use evasive clichés like "consult your actual personal situation."
+- Avoid Barnum statements ("you are sometimes outgoing and sometimes introspective").
+- Ground every deduction in concrete star combinations.
 ```
 
-### 1.3 JSON schema 更新
+### 1.3 JSON Schema Update
 
 ```typescript
 ziwei: {
   type: 'ziwei',
-  mainStars: [{ name: '紫微', palace: '命宫', element: '土' }],
-  patterns: [{ name: '格局名', level: '上格|中格|下格', description: '格局说明' }],
+  mainStars: [{ name: 'Zi Wei', palace: 'Life Palace', element: 'Earth' }],
+  patterns: [{ name: 'Pattern Name', level: 'Superior | Average | Inferior', description: 'Description' }],
   palaces: {
-    '命宫': { stars: ['星名'], analysis: '分析' },
-    // ... 12宫
+    'Life Palace': { stars: ['Stars'], analysis: 'Palace analysis' },
+    // ... 12 Palaces
   },
   sections: {
-    overview: '命盘总论',
-    personality: '性格深析(命宫vs福德宫)',
-    career: '事业分析',
-    marriage: '婚姻分析',
-    wealth: '财运分析',
-    health: '健康分析',
-    family: '六亲分析',
-    dayun: '大运精批',
+    overview: 'Chart Overview',
+    personality: 'Deep Personality (Life vs Fortune Palace)',
+    career: 'Career Trajectory',
+    marriage: 'Spouse & Relationships',
+    wealth: 'Financial Fortune',
+    health: 'Health & Vitality',
+    family: 'Kinship & Family',
+    dayun: 'Decadal Cycles Breakdown',
   },
   keyPredictions: [
-    { age: '28岁', event: '事件描述', basis: '命理依据' }
+    { age: 'Age 28', event: 'Event description', basis: 'Astrological rationale' }
   ],
-  keyAdvice: ['建议一', '建议二'],
+  keyAdvice: ['Advice 1', 'Advice 2'],
   luckyInfo: { numbers: [], colors: [], directions: [] },
   suggestedQuestions: ['...'],
 },
 ```
 
-### 1.4 max_tokens 调整
+### 1.4 Token Budget Adjustment
 
-当前 8192 tokens 对于升级后的输出可能不够（从4个 sections 增加到8个 + patterns + keyPredictions）。
+The default 8,192 token limit is insufficient for expanded output (increasing from 4 to 8 sections + patterns + keyPredictions).
 
-建议：对 ziwei 类型单独设置 max_tokens = 12000（或根据 admin setting 配置）。
+Recommendation: Set `max_tokens = 12000` specifically for `ziwei` divination runs.
 
-### 1.5 ziwei.md 参考文档增补
+### 1.5 Reference Documentation Additions (`ziwei.md`)
 
-新增以下章节：
+Incorporate the following quick-reference rubrics:
 
-**十四主星六亲断语速查**
+**Fourteen Main Stars in Parents Palace**
 ```
-太阳在父母宫：
-- 庙旺：父亲有社会地位，可能从事公职/管理/教育
-- 落陷：父亲辛苦操劳，或与父亲缘薄
-- 化忌：父亲一生波折多，健康或事业有损
+Tai Yang in Parents Palace:
+- Bright (Miao/Wang): Father possesses social standing, management/public service roles.
+- Dim (Xian): Father experiences physical toil or distant relationship.
+- Hua Ji: Father faces obstacles, health challenges, or career disruptions.
 
-太阴在父母宫：
-- 庙旺：母亲温柔贤惠，家庭氛围好
-- 落陷：母亲操心多，或与母亲关系有距离
-```
-
-**夫妻宫配偶特征推断规则**
-```
-紫微在夫妻宫：配偶有气质/有地位，年龄可能偏大
-天府在夫妻宫：配偶稳重保守，善理财，家境可能较好
-贪狼在夫妻宫：配偶外貌出众/多才多艺，但感情复杂
-七杀在夫妻宫：配偶个性刚强/独立，婚前波折多
-破军在夫妻宫：婚姻多变动，可能再婚
-廉贞在夫妻宫：配偶有才华但个性强，感情易有纠纷
-天机在夫妻宫：配偶聪明但多变，可能从事脑力工作
-太阳在夫妻宫：丈夫有能力有担当（女命最佳）
-太阴在夫妻宫：妻子温柔美丽（男命最佳）
+Tai Yin in Parents Palace:
+- Bright (Miao/Wang): Mother gentle and supportive, harmonious family atmosphere.
+- Dim (Xian): Mother carries heavy domestic worries, potential emotional distance.
 ```
 
-**大运分析模板**
+**Spouse Palace Characterization Rules**
 ```
-X-X岁大运走[宫名]：
-- 宫内主星：[星名](亮度)
-- 大运天干[X]的四化：[化禄→XX宫, 化忌→XX宫]
-- 此大运核心主题：[事业/感情/健康/财运]
-- 关键事件预测：[具体描述]
-```
-
-**疾厄宫主星对应身体部位**
-```
-紫微：脾胃、免疫系统
-天机：肝胆、神经系统
-太阳：心脏、血压、眼睛
-武曲：肺、呼吸系统、骨骼
-天同：膀胱、肾、内分泌
-廉贞：心脑血管、血液
-天府：脾胃、消化系统
-太阴：肾、眼睛（尤其视力）
-贪狼：肝、生殖系统
-巨门：口腔、咽喉、肠胃
-天相：面部、皮肤
-天梁：脾胃、慢性病
-七杀：肺、大肠、意外伤
-破军：泌尿系统、手术
+Zi Wei in Spouse Palace: Partner possesses dignity/status; often slightly older.
+Tian Fu in Spouse Palace: Partner stable, conservative, financially adept.
+Tan Lang in Spouse Palace: Partner charismatic/artistic; romantic life complex.
+Qi Sha in Spouse Palace: Partner decisive and fiercely independent.
+Po Jun in Spouse Palace: Partnership experiences major transformations.
+Lian Zhen in Spouse Palace: Partner talented but strong-willed; sensitive dynamics.
+Tian Ji in Spouse Palace: Partner agile-minded, intellectual, cerebral vocations.
+Tai Yang in Spouse Palace: Capable, responsible partner (especially auspicious for female charts).
+Tai Yin in Spouse Palace: Gentle, elegant partner (especially auspicious for male charts).
 ```
 
-### 1.6 实施清单
+**Decadal Fortune Template**
+```
+Ages X-X Decadal Cycle traversing [Palace Name]:
+- Primary Stars: [Star Name] (Brightness)
+- Flying Mutagens from Decadal Stem: [Hua Lu -> Palace A, Hua Ji -> Palace B]
+- Central Theme: [Career / Relationships / Health / Wealth]
+- Key Milestone Predictions: [Concrete Description]
+```
 
-| 序号 | 改动 | 文件 |
-|------|------|------|
-| 1 | palaceSummary 加入 heavenlyStem / earthlyBranch / decadal / changsheng12 | divination/route.ts ~line 497 |
-| 2 | 计算当前年龄和当前大运，传给 prompt | divination/route.ts |
-| 3 | 更新 ziwei JSON schema template | divination/route.ts ~line 146 |
-| 4 | 重写 ziwei prompt（解盘要求部分） | divination/route.ts ~line 534 |
-| 5 | 更新 result validation（sections key 扩展） | divination/route.ts ~line 1199 |
-| 6 | ziwei.md 增加断语参考章节 | divination-refs/ziwei.md |
-| 7 | 前端 sectionTabs 扩展（最小改动） | ZiweiResult.tsx ~line 108 |
-| 8 | types 更新 | types/divination.ts |
-| 9 | ziwei 类型 max_tokens 可独立配置 | divination/route.ts |
+**Health Palace Stars Mapped to Physiological Systems**
+```
+Zi Wei: Spleen, stomach, immune system
+Tian Ji: Liver, gallbladder, nervous system
+Tai Yang: Heart, cardiovascular circulation, vision
+Wu Qu: Lungs, respiratory tract, skeletal structure
+Tian Tong: Kidneys, urinary tract, endocrine system
+Lian Zhen: Cardiovascular system, blood circulation
+Tian Fu: Spleen, gastrointestinal digestion
+Tai Yin: Kidneys, eyes and vision
+Tan Lang: Liver, reproductive system
+Ju Men: Throat, mouth, digestive tract
+Tian Xiang: Dermatological conditions, facial features
+Tian Liang: Spleen, chronic ailments
+Qi Sha: Lungs, colon, physical traumas
+Po Jun: Urogenital system, surgical procedures
+```
+
+### 1.6 Implementation Checklist
+
+| # | Change Item | Target Location |
+|---|---|---|
+| 1 | Enrich `palaceSummary` with `heavenlyStem`, `earthlyBranch`, `decadal`, `changsheng12` | `divination/route.ts` |
+| 2 | Calculate current age and active decadal cycle for prompt injection | `divination/route.ts` |
+| 3 | Update Zi Wei JSON schema template | `divination/route.ts` |
+| 4 | Rewrite Zi Wei prompt requirements | `divination/route.ts` |
+| 5 | Update result validation schema (expanded section keys) | `divination/route.ts` |
+| 6 | Enrich `ziwei.md` reference documentation | `divination-refs/ziwei.md` |
+| 7 | Expand frontend `sectionTabs` | `ZiweiResult.tsx` |
+| 8 | Update TypeScript type definitions | `types/divination.ts` |
+| 9 | Configure independent `max_tokens` for Zi Wei | `divination/route.ts` |
 
 ---
 
-## Phase 2: 前端展示适配
+## Phase 2: Frontend Presentation Enhancements
 
-（Phase 1 做完后再细化）
+(To be finalized following Phase 1 completion)
 
-- sectionTabs 分组：基本盘 / 深度分析
-- 格局标签卡片
-- 大运时间轴（高亮当前大运）
-- keyPredictions 独立展示区
+- Tab grouping: Foundation vs In-depth Analysis
+- Formation badges and pattern tags
+- Interactive Decadal Timeline (highlighting active cycle)
+- Dedicated display cards for `keyPredictions`
 
-## Phase 3: 程序端计算增强
+## Phase 3: Algorithmic Precomputations
 
-- 格局自动检测（减少 LLM 推理负担）
-- 流年四化计算
-- 三方四正自动关联数据
+- Automated pattern detection (reducing LLM inferential burden)
+- Annual Flying Mutagens computation engine
+- Automated San Fang Si Zheng association metadata

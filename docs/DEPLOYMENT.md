@@ -1,122 +1,122 @@
-# Deployment Guide — 玄機AI
+# Deployment Guide — XuanJi AI
 
-系統運維與生產部署操作手冊。最後更新：2026-09-12。
+System operations and production deployment runbook. Last updated: 2026-09-12.
 
 ---
 
-## 1. 部署前質量門禁 (Pre-deploy Quality Gate)
+## 1. Pre-deploy Quality Gates
 
-在發布任何新鏡像前，必須在本機執行門禁檢查：
+Before publishing or deploying any new Docker image, execute quality gate checks locally:
 
 ```bash
-npm run predeploy-check      # = type-check + lint + ALL tests (包含 integration 測試，需本機 dev DB)
+npm run predeploy-check      # = type-check + lint + ALL tests (includes integration tests; requires local dev DB)
 ```
 
-若本地無法連接 dev 數據庫，可執行無庫單元測試門禁：
+If a local dev database is not connected, run the database-free quality gate:
 ```bash
 npm run type-check && npm run lint && npm run test:unit
 ```
-**僅在退出碼為 0（全綠）時才允許部署。**
+**Deployments are only permitted when the exit code is 0 (all green).**
 
 ---
 
-## 2. 生產環境變數配置 (`.env.production`)
+## 2. Production Environment Configuration (`.env.production`)
 
-生產伺服器必須配置以下環境變數（若缺少任一必填項，應用程式將在啟動時 **Fail-Fast** 拒絕啟動，並在日誌中輸出缺少的變數名）：
+The production server requires the following environment variables. If any mandatory variable is missing, the application **fails fast** on boot, exiting immediately and logging the missing variable names:
 
-### 核心必填項
-| 變數名 | 說明 |
+### Mandatory Core Variables
+| Variable | Description |
 |---|---|
-| `DATABASE_URL` | PostgreSQL 連接字串 (如 `postgresql://postgres:<pw>@localhost:5432/divination_db`) |
-| `NEXTAUTH_SECRET` | NextAuth 會話加密私鑰 |
-| `NEXTAUTH_URL` | 站點完整網址，必須為 `https://chinese-divination.com`（郵件驗證連結基於此生成） |
-| `OPENROUTER_API_KEY` | OpenRouter LLM 接口金鑰 |
-| `STRIPE_SECRET_KEY` | Stripe 支付私鑰 |
-| `STRIPE_WEBHOOK_SECRET`| Stripe Webhook 簽名驗證金鑰 |
-| `RESEND_API_KEY` | 郵件發送服務金鑰 |
+| `DATABASE_URL` | PostgreSQL connection string (e.g., `postgresql://postgres:<pw>@localhost:5432/divination_db`) |
+| `NEXTAUTH_SECRET` | NextAuth session encryption secret key |
+| `NEXTAUTH_URL` | Canonical site base URL, e.g. `https://chinese-divination.com` (used for email verification links) |
+| `OPENROUTER_API_KEY` | OpenRouter LLM gateway API key |
+| `STRIPE_SECRET_KEY` | Stripe payments secret key |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signature verification secret |
+| `RESEND_API_KEY` | Resend email dispatch service API key |
 
-### 常見可選配置
-詳見 `.env.example`，重點參數：
-- `LOG_PURGE_DRY_RUN=1` — 每日日誌清理任務僅報告不實際刪除（部署後首日建議開啟觀察，隨後移除）。
-- `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` — 異常監控上報（詳見第 5 節）。
-- `LOG_LEVEL` — 日誌級別，默認 `info`，可選 `debug`。
+### Optional Operational Variables
+Refer to `.env.example` for comprehensive parameter listings:
+- `LOG_PURGE_DRY_RUN=1` — Daily log retention job runs in dry-run mode without deleting rows (recommended during initial 24h deployment, then disable).
+- `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` — Sentry error monitoring reporting (see Section 5).
+- `LOG_LEVEL` — Logging verbosity level (`info` by default, `debug` optional).
 
 ---
 
-## 3. 標準部署流程 (Normal Deploy)
+## 3. Standard Deployment Workflow
 
-數據庫已在 2026-06 統一完成基準調和，容器開機腳本 [`start.js`](../start.js) 會在啟動時自動安全執行 `npx prisma migrate deploy`。
+The database schema baseline was unified and reconciled in 2026-06. The container entrypoint script [`start.js`](../start.js) automatically executes `npx prisma migrate deploy` safely during container boot.
 
-日常部署流程如下：
+Standard production release procedure:
 
 ```bash
-# 1. 本地驗證並推送代碼
+# 1. Validate quality gates locally and push to trigger automated CI/CD
 npm run predeploy-check
-git push                     # 觸發 docker-publish.yml 構建並推送鏡像
+git push                     # Triggers docker-publish.yml build and image publish
 
-# 2. 登入生產伺服器拉取並重啟
+# 2. On production host, pull fresh image and restart containers
 docker compose pull && docker compose up -d
 
-# 3. 檢查容器狀態與健康度
-docker ps                                  # 容器狀態應達到 "healthy"
-docker logs chinese-divination --tail 50   # 檢查 JSON 日誌，確認看到 "job scheduler armed" 與開機正常
+# 3. Verify container status and health checks
+docker ps                                  # Status must indicate "healthy"
+docker logs chinese-divination --tail 50   # Inspect JSON logs; confirm "job scheduler armed" and clean startup
 ```
 
-### 回滾策略 (Rollback)
-若新鏡像發生問題，可直接在生產伺服器拉取上一版本標籤並重啟：
+### Rollback Strategy
+If an issue occurs with a newly deployed image, pull the prior release tag directly on the production host and restart:
 ```bash
 docker compose pull <previous_tag> && docker compose up -d
 ```
-所有數據庫 Schema 變更均遵循向後兼容（Additive-only）原則，舊代碼可安全運行於新 Schema。
+All database schema migrations follow an additive-only backward-compatibility policy, ensuring previous application versions operate safely against updated database schemas.
 
 ---
 
-## 4. 日誌查詢與可觀測性 (Observability)
+## 4. Log Observability & Diagnostics
 
-所有日誌均以結構化 JSON 輸出至 stdout。每個請求均攜帶唯一的 `requestId`，並自動記錄至數據庫 `LlmLog.requestId`：
+All logs are written to stdout formatted as structured JSON. Every request carries a unique `requestId`, automatically correlated in `LlmLog.requestId`:
 
 ```bash
-# 追蹤某個請求的完整生命週期
+# Trace entire lifecycle of a specific request
 docker logs chinese-divination | grep '"requestId":"a1b2c3d4"'
 
-# 查詢解讀完成效能數據
+# Query completed divination readings and latency metrics
 docker logs chinese-divination | grep '"msg":"reading completed"'
 
-# 查詢後台定時任務（日誌保留、過期解讀清理）執行狀態
+# Query background cron jobs (log retention, expired reading sweepers)
 docker logs chinese-divination | grep '"job":'
 
-# 本地格式化查看
+# Human-readable formatting in terminal
 docker logs chinese-divination | npx pino-pretty
 ```
 
 ---
 
-## 5. Sentry 異常監控
+## 5. Sentry Error Monitoring
 
-代碼庫已內置 Sentry（服務端 `instrumentation.ts` + 客戶端 `SentryClientInit.tsx`），預設在未配置 DSN 時完全靜默零開銷。
+The codebase includes integrated Sentry monitoring (server-side `instrumentation.ts` + client-side `SentryClientInit.tsx`), operating with zero runtime overhead when no DSN is configured.
 
-若要啟用：
-1. 登入 sentry.io 創建 Next.js 專案並獲取 DSN。
-2. 在伺服器 `.env.production` 中配置：
+To enable Sentry:
+1. Log into sentry.io, create a Next.js project, and copy the DSN.
+2. In `.env.production` on the server, configure:
    ```env
    SENTRY_DSN="https://...@sentry.io/..."
    NEXT_PUBLIC_SENTRY_DSN="https://...@sentry.io/..."
    ```
-3. 由於 `NEXT_PUBLIC_` 變數需在構建期打包，需重新構建/發布鏡像後部署。
+3. Because `NEXT_PUBLIC_` variables are bundled during client compilation, rebuild and redeploy the Docker image.
 
 ---
 
-## 6. 數據庫維護與歷史調和手冊
+## 6. Database Maintenance & Migration Runbook
 
-- **嚴禁 `prisma db push`**：開發與生產環境一律使用 `npx prisma migrate dev` / `npx prisma migrate deploy`，嚴禁使用 `db push` 破壞遷移歷史。
-- **歷史漂移處理手冊**：若不幸遭遇遷移狀態異常或歷史漂移，請參閱歷史調和手冊：
-  [`docs/archive/prisma-migrations-recovery-202606.md`](archive/prisma-migrations-recovery-202606.md)。
+- **Never use `prisma db push` in production**: Both development and production environments strictly use `npx prisma migrate dev` / `npx prisma migrate deploy` to maintain auditable schema version history.
+- **Drift Resolution Runbook**: If migration anomalies or drift occur, consult the historical drift runbook:
+  [`docs/archive/prisma-migrations-recovery-202606.md`](archive/prisma-migrations-recovery-202606.md).
 
 ---
 
-## 7. CI 自動化門禁（可選配置）
+## 7. CI Automation Quality Gate (Optional Configuration)
 
-若未來希望將第 1 節的手動質量門禁完全移至 GitHub Actions，可新增 `.github/workflows/ci.yml`：
+To run automated checks via GitHub Actions, configure `.github/workflows/ci.yml`:
 
 ```yaml
 name: CI
@@ -145,4 +145,4 @@ jobs:
       - run: npm run test:unit
 ```
 
-並在 `docker-publish.yml` 中設定依賴此 check 成功後再發布鏡像。
+Configure `docker-publish.yml` to require `CI` job success prior to building and publishing the Docker image.

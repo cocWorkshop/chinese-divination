@@ -1,119 +1,113 @@
-# 玄機大師 — 激活時對話續接機制設計
+# Master Xuanji — Activation Dialogue Resume Mechanism Design
 
-**Status:** Design / 待實作
-**Date:** 2026-04-27
-**Owner:** Wei Zhang
-**Scope:** `MasterChatContext.tsx` (client), `/api/master/route.ts` + 新 `/api/master/cta-status` endpoint, `divination-refs/master.md`
-
----
-
-## 1. 問題定義
-
-當用戶**激活對話視窗**（collapsed → expanded，或刷新頁面後展開）時，目前的行為：
-
-- **已有**：若距離上次 assistant 回覆 >2h 且未在 cooldown 內 → fire `triggerCheckin()`，server 端 `buildCheckinAppendix` 提供 gap / 節氣 / 最近 reading 三條錨點供 master 自選
-- **不處理**：
-  1. **CTA 待完成**：master 上次發了 CTA card 後對話中斷；用戶可能已在另個瀏覽器／另個分頁／widget 收起期間完成了排盤，但 widget 不知道
-  2. **用戶離線中斷**：上一條訊息是 user 而 assistant 從未回覆（連線斷掉、用戶切走分頁、其他外因）— 此時 `last.role !== 'assistant'` 會被現有邏輯直接 bail，不會主動接話
-  3. **對話已自然收尾**：master 上一句是「保重」「祝您...」，用戶回了「謝謝」 — 此時不該主動再開口
-
-用戶要的三種行為：
-- **Mode 1**（CTA 待完成）→ 主動查 reading 是否已存在 → 已完成則繼續推進，未完成則徵求用戶意見
-- **Mode 2**（一般中斷）→ 以骨灰級玄學大師身份主動搭話
-- **Mode 3**（已收尾）→ 沉默
+**Status:** Design / Implemented  
+**Date:** 2026-04-27  
+**Owner:** Wei Zhang  
+**Scope:** `MasterChatContext.tsx` (client), `/api/master/route.ts` + `/api/master/cta-status` endpoint, `divination-refs/master.md`  
 
 ---
 
-## 2. 設計總覽
+## 1. Problem Definition
 
-**兩階段分類器**：先用 deterministic fast-path 處理 Mode 1（CTA 待完成）；剩下的交給 master LLM 自己判斷 Mode 2/3。
+When a user **activates the chat window** (collapsed → expanded, or expanded after page refresh), the current behavior:
+
+- **Existing**: If distance since last assistant reply > 2h and not within cooldown → fire `triggerCheckin()`; server-side `buildCheckinAppendix` provides gap / solar terms / recent reading anchors for master selection.
+- **Unhandled cases**:
+  1. **CTA pending completion**: Master previously emitted a CTA card and the conversation paused; the user may have completed divination in another tab/browser or while the widget was collapsed, but the widget has no awareness.
+  2. **User offline interruption**: Last message was from user and assistant never replied (network dropped, user navigated away, external factors) — currently `last.role !== 'assistant'` bails early and never resumes.
+  3. **Conversation naturally closed**: Master concluded with "Take care", user replied "Thank you" — Master should not proactively speak again.
+
+Required behaviors:
+- **Mode 1** (CTA pending) → Query whether reading exists → if completed, advance analysis; if incomplete, inquire whether to proceed.
+- **Mode 2** (General interruption) → Proactively engage as Master Xuanji.
+- **Mode 3** (Closed) → Remain silent.
+
+---
+
+## 2. Design Overview
+
+**Two-Stage Classifier**: Deterministic fast-path handles Mode 1 (CTA pending); the remaining states are delegated to Master LLM for Mode 2/3 triage.
 
 ```
-widget 展開
+Widget expanded
   ↓
-preconditions：authenticated / historyLoaded / messages.length>0 /
-              not streaming / cooldown 已過
+Preconditions: authenticated / historyLoaded / messages.length > 0 /
+               not streaming / cooldown elapsed
   ↓
-─────── Stage 1：Deterministic fast-path ───────
-  scan messages for 最新的 assistant cta_card
-  ├─ 找到 CTA → query /api/master/cta-status
+─────── Stage 1: Deterministic fast-path ───────
+  Scan messages for latest assistant cta_card
+  ├─ CTA found → query /api/master/cta-status
   │     ├─ completed=true  → swap card → reading_card,
   │     │                    inject "[reading complete]" → runTurn
-  │     │                    （和現有的 readingComplete handler 同形）
+  │     │                    (mirrors existing readingComplete handler)
   │     └─ completed=false →
-  │           CTA <30 min 前 → 不打擾（用戶可能還在排盤頁）
-  │           CTA >30 min 前 → runTurn({ activation: 'cta_pending_aged' })
-  │                            master 詢問是否繼續
-  └─ 沒找到 CTA → 進入 Stage 2
-─────── Stage 2：Structural triage + LLM 自判 ───────
-  最後一條訊息分類：
-    ├─ role=user，無 assistant 回覆 → runTurn({ activation: 'unanswered_user' })
-    │                                  hint: "你欠用戶一個回覆，主動接住"
-    ├─ role=assistant，匹配收尾正則 → 沉默
-    │   匹配條件（任一）：
-    │     - 含「保重 / 再見 / 祝您 / 多保重 / 慢走」(zh)
-    │     - 含「take care / good luck / talk later / catch you」(en)
-    │     - 上一條 user 是收尾性短語且本條 assistant 也是收尾
-    └─ role=assistant，其他 → runTurn({ activation: 'ambiguous_resume' })
-                              交由 master 自判（同 reflection 規則：
-                              找不到值得說的就一句短結尾）
+  │           CTA < 30 min ago → do not disturb (user may still be on divination page)
+  │           CTA > 30 min ago → runTurn({ activation: 'cta_pending_aged' })
+  │                              master asks whether to proceed
+  └─ No CTA found → proceed to Stage 2
+─────── Stage 2: Structural triage + LLM self-triage ───────
+  Last message classification:
+    ├─ role=user, no assistant reply → runTurn({ activation: 'unanswered_user' })
+    │                                  hint: "You owe user a reply; pick up directly"
+    ├─ role=assistant, matches closing regex → silent
+    │   Match criteria (any):
+    │     - Contains farewell phrases (take care, bye, best wishes, etc.)
+    │     - Previous user message was closing phrase and current assistant is closing
+    └─ role=assistant, other → runTurn({ activation: 'ambiguous_resume' })
+                               delegated to master self-triage (reflection rules:
+                               if nothing noteworthy, output a short closing line)
 ```
 
-**關鍵設計選擇**：
+**Key Design Choices**:
 
-1. **沉默不靠「empty response」**。Master 沿用 reflection 的設計慣例：找不到值得說的，就**一句短結尾**（「嗯，您回來了。」「I'll be here.」）。這比實作 client/server 雙端的「empty 抑制」乾淨太多，使用者體驗也沒差。
-
-2. **不取代現有 `triggerCheckin`，是擴充它**。現有的 useEffect 已在 widget 展開時運作；我們把判斷邏輯換成上面的兩階段，並把 `runTurn` payload 從 `{ checkin: true }` 擴成 `{ checkin: 'gap' | 'cta_pending_aged' | 'unanswered_user' | 'ambiguous_resume' }`，server 端依 hint 套用不同的 system prompt appendix。
-
-3. **複用現有 cooldown 機制**：`proactiveLastFiredRef` + `PROACTIVE_COOLDOWN_MS = 5min`，避免摺疊／展開反覆觸發。
-
-4. **時間窗門檻**：
-   - <5 min：不觸發任何 stage（同 session 摺疊／展開騷擾）
-   - 5 min – 14 days：正常走兩階段
-   - >14 days：fallback 到「久違」歡迎，仍走 Stage 2 但 hint 變 `long_gap_resume`（master.md 規則中提示用「久違」開場）
-   - 改動要點：把現有的 `PROACTIVE_GAP_MS = 2h` 收緊為 `5 min`（有 CTA 時）、保持 `2h`（無 CTA 時）— 因為 CTA 等待是高 intent，5 分鐘就值得追問
-
-5. **不寫資料庫**：所有狀態判斷都基於現有 GET `/api/master` response + 新加一個輕量 cta-status 查詢。
+1. **Silence does not rely on "empty response"**: Master follows reflection conventions: if nothing noteworthy to add, emit **a single short closer** ("Ah, you have returned.", "I will be here."). This avoids dual-sided empty suppression logic while maintaining seamless UX.
+2. **Extends rather than replaces `triggerCheckin`**: Replaces the evaluation logic in the expand-effect with two-stage triage, expanding `runTurn` payload from `{ checkin: true }` to `{ checkin: 'gap' | 'cta_pending_aged' | 'unanswered_user' | 'ambiguous_resume' }`. The server applies different system prompt appendices accordingly.
+3. **Reuses existing cooldown**: `proactiveLastFiredRef` + `PROACTIVE_COOLDOWN_MS = 5min` prevents collapse/expand thrashing.
+4. **Time window thresholds**:
+   - `< 5 min`: Do not trigger any stage (same-session expand/collapse nuisance).
+   - `5 min – 14 days`: Execute two-stage triage.
+   - `> 14 days`: Fallback to "long absence" welcome, running Stage 2 with `long_gap_resume` hint.
+   - Note: Existing `PROACTIVE_GAP_MS = 2h` tightened to `5 min` when CTA exists, maintaining `2h` when no CTA exists.
+5. **Stateless / No DB writes**: All decisions rely on existing GET `/api/master` response plus one lightweight `cta-status` query.
 
 ---
 
-## 3. 詳細設計
+## 3. Detailed Design
 
-### 3.1 Stage 1 — CTA fast-path
+### 3.1 Stage 1 — CTA Fast-Path
 
-**目標**：偵測「CTA 卡發出後，用戶在 widget 外完成（或未完成）排盤」並做適當動作。
+**Objective**: Detect cases where user completed (or did not complete) divination outside the widget after a CTA was issued, and act accordingly.
 
-#### 3.1.1 找最新 CTA
+#### 3.1.1 Finding Latest CTA
 
-Walk `messages` from end → start，找第一個 `kind === 'cta_card'` 的 assistant 訊息。記錄：
-- `ctaTimestamp` — 用 message.timestamp
+Walk `messages` from end → start, locating first `kind === 'cta_card'` assistant message. Extract:
+- `ctaTimestamp` — message timestamp
 - `ctaType` — `ctaPayload.divinationType`
-- `ctaTarget` — 從 `ctaPayload.ctaContext.target` 推：包含「自己」/「yourself」 → `self`；否則 `family`（不嘗試 reverse-lookup family member id，太脆弱）
+- `ctaTarget` — inferred from `ctaPayload.ctaContext.target`: containing "self" / "yourself" → `self`; otherwise `family`.
 
-若 walk 過程中先遇到一個 reading_card（假設來自 `xuanji:readingComplete` 的 swap 或 master 主動 `show_reading_card`），且該 reading_card 的 type 跟之後找到的 cta_card type 一致 → 視為**已被處理過**，skip Stage 1，進 Stage 2。
+If a `reading_card` is encountered prior to the CTA card during the reverse walk, and matches the CTA divination type → treat as **already handled**, skip Stage 1, proceed to Stage 2.
 
-#### 3.1.2 新 endpoint：`GET /api/master/cta-status`
+#### 3.1.2 Endpoint: `GET /api/master/cta-status`
 
-**Why a new endpoint**：現有 GET `/api/master` 回的 `lastReading` 是「全用戶最近一張」，不能判斷「在 ctaTimestamp 之後是否有對應 type 的 reading」（用戶可能在 CTA 發出前已有別張 reading）。
+**Why a new endpoint**: Existing GET `/api/master` returns `lastReading` across the entire account, which cannot determine whether a reading matching `type` was created *after* `ctaTimestamp`.
 
-**Request**：
+**Request**:
 ```
 GET /api/master/cta-status?type=bazi&since=2026-04-27T08:30:00Z&target=self
-                                                                  ?target=family（先不傳 familyMemberId — phase 1 不細化）
 ```
 
-**Response**：
+**Response**:
 ```typescript
 // self CTA
 { completed: true, readingId: 'abc123', completedAt: '2026-04-27T09:15:00Z' }
 { completed: false }
 
-// family CTA — phase 1 用 fuzzy match：在 since 後存在的任何 family-target reading
+// family CTA — phase 1 uses fuzzy match: any family reading created after since
 { completed: true, readingId: 'xyz789' }
 { completed: false }
 ```
 
-**Server logic**：
+**Server Logic**:
 ```typescript
 prisma.reading.findFirst({
   where: {
@@ -123,18 +117,18 @@ prisma.reading.findFirst({
     deletedAt: null,
     createdAt: { gte: new Date(since) },
   },
-  orderBy: { createdAt: 'asc' },  // 取最早一張 — 最可能是 CTA 引導出來的那張
+  orderBy: { createdAt: 'asc' }, // Earliest matching reading after CTA
   select: { id: true, createdAt: true },
 })
 ```
 
-#### 3.1.3 三條分支
+#### 3.1.3 Three Branches
 
 ```typescript
 const ageMs = Date.now() - new Date(ctaTimestamp).getTime()
 
 if (ctaStatus.completed) {
-  // 同現有 readingComplete handler 邏輯：swap card + 注入 synthetic
+  // Mirror readingComplete handler: swap card + inject synthetic instruction
   setMessages(prev => prev.map(m =>
     m === ctaCardMsg
       ? { ...m, kind: 'reading_card', ctaPayload: undefined,
@@ -142,29 +136,31 @@ if (ctaStatus.completed) {
       : m
   ))
   void runTurn({
-    messages: [`[占卜完成] ${type} 命盤已完成 (id: ${readingId})。請繼續分析。`]
+    messages: [`[Divination Completed] ${type} chart completed (id: ${readingId}). Please continue analysis.`]
   })
 } else if (ageMs < 30 * 60 * 1000) {
-  // 30 分鐘內，用戶大概還在排盤頁 — 不打擾
+  // Within 30 minutes, user likely still on divination page — do not disturb
   return
 } else {
-  // 30 分鐘以上未完成 — 主動詢問
+  // > 30 minutes incomplete — proactively inquire
   void runTurn({ checkin: 'cta_pending_aged' })
 }
 ```
 
-### 3.2 Stage 2 — 結構分類 + LLM 自判
+---
 
-**目標**：沒有待辦 CTA 時，根據最後一條訊息決定 silent / resume，且把 hint 傳給 server，讓 master 用對應的 prompt appendix。
+### 3.2 Stage 2 — Structural Triage + LLM Self-Triage
 
-#### 3.2.1 收尾偵測（純客端，cheap heuristic）
+**Objective**: When no pending CTA exists, determine silent / resume based on the final message, passing the appropriate hint to the server.
+
+#### 3.2.1 Closing Detection (Client Heuristic)
 
 ```typescript
-const CLOSING_PATTERNS_ZH = /保重|再[見见]|祝[您你].*(順利|平安|健康|好運|好运)|多保重|慢走|有事再[來来]|改天[再再][聊聊]/
+// Chinese closing patterns: matches phrases like 'take care', 'farewell', 'good luck', etc.
+const CLOSING_PATTERNS_ZH = /(?:\u4fdd\u91cd|\u518d[\u898b\u89c1]|\u795d[\u60a8\u4f60].*(?:\u9806\u5229|\u5e73\u5b89|\u5065\u5eb7|\u597d\u904b|\u597d\u8fd0)|\u591a\u4fdd\u91cd|\u6162\u8d70|\u6709\u4e8b\u518d[\u4f86\u6765]|\u6539\u5929[\u518d\u518d][\u804a\u804a])/
 const CLOSING_PATTERNS_EN = /\btake care\b|\bgood luck\b|\btalk (?:to you )?later\b|\bcatch you\b|\bsee you\b|\bbye\b|\bfare ?well\b/i
 
 function isClosed(messages: MasterMsg[], lang: 'zh-TW' | 'en'): boolean {
-  // 找最後一條 assistant 文字訊息
   const lastAssistant = [...messages].reverse().find(m =>
     m.role === 'assistant' && (m.kind === 'text' || !m.kind) && m.content.trim()
   )
@@ -172,40 +168,43 @@ function isClosed(messages: MasterMsg[], lang: 'zh-TW' | 'en'): boolean {
   const pattern = lang === 'en' ? CLOSING_PATTERNS_EN : CLOSING_PATTERNS_ZH
   if (!pattern.test(lastAssistant.content)) return false
 
-  // 加強：上一條 user 也應為收尾性 / 致謝 — 否則 master 的「保重」可能只是某段話的尾巴
+  // User preceding message must also be closing or acknowledgment
   const lastUser = [...messages].reverse().find(m =>
     m.role === 'user' && m.kind === 'text'
   )
   if (!lastUser) return true
-  const userClosingZh = /^(好[，。 ]?(謝謝|谢谢|了)|謝謝|谢谢|了解|明白|收到|沒了|没了|就這樣|就这样|拜拜|再見|再见)/
+  // Chinese user closing patterns: matches 'thank you', 'understood', 'that is all', 'bye', etc.
+  const userClosingZh = /^(?:\u597d[\uff0c\u3002 ]?(?:\u8b1d\u8b1d|\u8c22\u8c22|\u4e86)|\u8b1d\u8b1d|\u8c22\u8c22|\u4e86\u89e3|\u660e\u767d|\u6536\u5230|\u6c92\u4e86|\u6ca1\u4e86|\u5c31\u9019\u6a23|\u5c31\u8fd9\u6837|\u62dc\u62dc|\u518d\u898b|\u518d\u89c1)/
   const userClosingEn = /^(thanks?|thank you|got it|sounds good|that(’|')s all|bye|see ?ya|cheers)\.?\s*$/i
   return lang === 'en' ? userClosingEn.test(lastUser.content.trim())
                        : userClosingZh.test(lastUser.content.trim())
 }
 ```
 
-收尾偵測規則寫得**保守**：必須 master 收尾語 + user 收尾／致謝兩者皆中才判定 closed。寧可 false negative（多開 LLM call）也不要 false positive（該主動時保持沉默）。
+Closing detection rules are intentionally **conservative**: both assistant and user closing phrases must match to conclude closure. False negatives (an extra LLM call) are preferred over false positives (unwanted silence when dialogue was expected).
 
-#### 3.2.2 三條分支
+#### 3.2.2 Three Branches
 
 ```typescript
 const last = messages[messages.length - 1]
 
 if (last.role === 'user') {
-  // assistant 從未回覆 — 不管時間多久，都應該接住
+  // Assistant never replied — pick up regardless of elapsed time
   void runTurn({ checkin: 'unanswered_user' })
 } else if (isClosed(messages, lang)) {
-  // 已收尾，沉默
+  // Closed dialogue, remain silent
   return
 } else {
-  // 一般 ambiguous — 交給 master 自判
+  // Ambiguous — delegate to master LLM
   void runTurn({ checkin: 'ambiguous_resume' })
 }
 ```
 
-### 3.3 Server-side：擴充 checkin appendix
+---
 
-把 `body.checkin === true` 換成 `body.checkin: string | true`（向後相容），server 端依 hint 切換 appendix：
+### 3.3 Server-Side: Extended Checkin Appendix
+
+Replace `body.checkin === true` with `body.checkin: string | true` (backwards-compatible):
 
 ```typescript
 type CheckinHint = 'gap' | 'cta_pending_aged' | 'unanswered_user' | 'ambiguous_resume' | 'long_gap_resume'
@@ -216,77 +215,75 @@ function buildCheckinAppendix(
 ): Promise<string>
 ```
 
-**新分支**：
-
 #### `cta_pending_aged`
 
 ```
-## 主動詢問 — CTA 待完成
+## Proactive Inquiry — CTA Pending Completion
 
-用戶曾在對話中收到一張 [type] 的占卜引導卡片，但已過 [age] 仍未完成。
-這次他重新打開對話 — 表示願意繼續，但可能在猶豫。
+The user was previously shown a [type] divination CTA card in conversation, but [age] has elapsed without completion.
+Now opening the conversation indicates willingness to continue, but possible hesitation.
 
-**該做的**：
-1. 用一句話確認他**是否還想做那盤**（不要假設答案）。
-2. 如果他猶豫，提供另一條路：「先講您的問題，我看能不能直接從現有資料給出方向。」
-3. 不要重複介紹這個占卜系統能做什麼 — 那已經在原 CTA 對話裡說過。
+Guidelines:
+1. Confirm in a single sentence whether they still wish to cast that chart (do not assume).
+2. If they hesitate, offer an alternative: "Feel free to state your question directly; I can offer guidance from existing data."
+3. Do not re-explain what the divination system does — that was covered in the initial CTA.
 
-**禁止**：再次主動 emit 同一張 CTA 卡。讓用戶自己選擇是繼續、改方向、或先聊。
+Prohibition: Never re-emit the same CTA card proactively. Let the user choose to continue, pivot, or converse.
 ```
 
 #### `unanswered_user`
 
 ```
-## 主動接住 — 你欠用戶一個回覆
+## Proactive Catch-Up — Unanswered User Query
 
-最後一條訊息是用戶發出的，**你從未回覆**。可能因為：連線中斷／用戶切走頁面／這個會話被打斷後從未恢復。
+The last message was sent by the user, and you never replied. Cause: connection dropped, user navigated away, or session interrupted.
 
-**該做的**：
-1. 把那條訊息當作剛剛收到，正常回應。不需要解釋為什麼晚回。
-2. 不要以「不好意思讓您等」之類的話開場 — 用戶不需要 customer service 致歉，需要實質內容。
-3. 直接給出回應；如有需要可在開頭加一句「您剛才問的 X — 」幫助對位。
+Guidelines:
+1. Treat the message as freshly received and respond normally. No explanation or apology for delay needed.
+2. Do not open with customer-service apologies like "Sorry for keeping you waiting" — users require substantive metaphysical insight.
+3. Deliver the response directly; if needed, open with a short framing reference to ground the topic.
 
-**禁止**：說「您之前問的問題我來回答」這種冗詞。直接答。
+Prohibition: Avoid filler like "Let me now answer your earlier question". Answer directly.
 ```
 
 #### `ambiguous_resume`
 
 ```
-## 主動續話 — 找一個值得補的點
+## Proactive Resume — Identify a Worthwhile Follow-Up
 
-用戶剛重新打開對話。看一下最近 3-5 輪：
+The user just reopened the chat. Review the last 3-5 turns:
 
-1. 有沒有開了話頭沒收尾的線？有 → 接它，1-2 個短氣泡，問結果或補一句。
-2. 有沒有用戶問了 X 但你答了 X 旁邊的東西？有 → 補正面那一句。
-3. 都沒有 → 一句短結尾就好（「嗯，您回來了。有事再說。」）— **不要硬擠話題**。
+1. Was a thread opened without conclusion? If so, follow up with 1-2 concise bubbles asking for outcomes or adding a remark.
+2. Did the user ask X while you answered tangential topics? If so, address X directly.
+3. If neither applies, a brief welcoming acknowledgement suffices ("Ah, you have returned. Whenever you are ready.") — do not force a topic.
 
-規則同 reflection：找不到值得說的，沉默式短句即可。empty 比 filler 強。
+Rule mirrors reflection: if nothing genuine to say, a quiet short sentence is preferred over filler.
 ```
 
-#### `long_gap_resume`（>14 天）
+#### `long_gap_resume` (> 14 days)
 
 ```
-## 主動開場 — 久違
+## Proactive Opening — Long Absence
 
-距離上次對話已 [days] 天。氣息不一樣了。
+[days] days have elapsed since the last dialogue. Energy and circumstances have shifted.
 
-**該做的**：
-1. 不要從上次的話題接 — 那已經太遠。
-2. 找一個今天的錨點：節氣 [jieQi]、流年 [yearGanZhi]、或他最近一張命盤。
-3. 一句短打招呼 + 一個聚焦問題即可。
+Guidelines:
+1. Do not resume old topics — they are too distant.
+2. Anchor in current context: solar term [jieQi], annual pillar [yearGanZhi], or their most recent chart.
+3. Keep to a short greeting plus one focused question.
 
-**禁止**：「歡迎回來！」這種客服腔。也不要列舉之前說過什麼。
+Prohibition: Avoid customer-service greetings like "Welcome back!". Do not enumerate past conversations.
 ```
 
-`gap`（現有）→ 保留作為 default fallback，向後相容。
+`gap` remains the default fallback for backward compatibility.
 
-### 3.4 Client wiring 變更
+---
 
-替換 `MasterChatContext.tsx` 中現有的 expand-effect（lines 343-358）為新的 dispatcher：
+### 3.4 Client Wiring Changes
+
+Replace existing expand-effect in `MasterChatContext.tsx` with dispatcher:
 
 ```typescript
-// 舊：if (now - lastTs < PROACTIVE_GAP_MS) return; void triggerCheckin()
-// 新：
 const checkinDispatcher = useCallback(async () => {
   if (sendingRef.current) return
   if (Date.now() - proactiveLastFiredRef.current < PROACTIVE_COOLDOWN_MS) return
@@ -298,12 +295,12 @@ const checkinDispatcher = useCallback(async () => {
   if (!Number.isFinite(lastTs)) return
   const ageMs = Date.now() - lastTs
 
-  // <5 min：絕不觸發
+  // < 5 min: Never fire
   if (ageMs < 5 * 60 * 1000) return
 
   proactiveLastFiredRef.current = Date.now()
 
-  // Stage 1：CTA fast-path
+  // Stage 1: CTA fast-path
   const cta = findLatestPendingCTA(messages)
   if (cta) {
     const ctaAgeMs = Date.now() - new Date(cta.timestamp).getTime()
@@ -316,16 +313,16 @@ const checkinDispatcher = useCallback(async () => {
     if (ctaAgeMs >= 30 * 60 * 1000) {
       void runTurn({ checkin: 'cta_pending_aged' })
     }
-    return  // <30min 未完成 → 不打擾
+    return // < 30 min incomplete -> do not disturb
   }
 
-  // Stage 2：結構分類
+  // Stage 2: Structural triage
   if (last.role === 'user') {
     void runTurn({ checkin: 'unanswered_user' })
     return
   }
   if (last.role === 'assistant' && isClosed(messages, lang)) {
-    return  // 沉默
+    return // Silent
   }
   if (ageMs > 14 * 24 * 60 * 60 * 1000) {
     void runTurn({ checkin: 'long_gap_resume' })
@@ -341,11 +338,11 @@ useEffect(() => {
 }, [shape, enabled, historyLoaded])
 ```
 
-`runTurn` 的 type signature 從 `{ checkin: true }` 擴成 `{ checkin: true | CheckinHint }`，server `body.checkin` 解析時保留 boolean 等同於 `'gap'`。
+---
 
-### 3.5 master.md 新增段落
+### 3.5 Section Added to `master.md`
 
-在現有 "Reflection" section 之後加一節：
+Appended after the "Reflection" section:
 
 ```markdown
 ## Activation — when [activation_*] hints arrive
@@ -361,36 +358,36 @@ When the runtime injects a `[activation_*]` synthetic instruction (cta_pending_a
 
 ---
 
-## 4. 不做的事 / Out of scope
+## 4. Out of Scope
 
-- ✗ 不做 truly empty assistant response（master 沒話講就發短結尾）
-- ✗ 不做 family-CTA 的精細 readingId 對位（phase 1 用 fuzzy match：since 後第一張同 type+target reading）
-- ✗ 不引入 push notification 從 widget 外主動找用戶
-- ✗ 不在 server 加新的 LLM call 做分類（fast-path 純 SQL；ambiguous 直接交 master 在主 turn 裡判斷）
+- Truly empty assistant response (Master emits a short closer if no topic).
+- Fine-grained `readingId` matching for family CTAs (Phase 1 fuzzy matches first reading of same type/target created after CTA timestamp).
+- Web push notifications outside the widget.
+- Extra server LLM calls for classification (fast-path is pure SQL; ambiguous states handled inside main turn).
 
 ---
 
-## 5. 風險與監控
+## 5. Risks and Monitoring
 
-| 風險 | 監控方式 |
+| Risk | Mitigation / Monitoring |
 |---|---|
-| `isClosed` 正則漏判 → 該沉默卻說話 | 看樣本：master 在已收尾對話中重複觸發 `ambiguous_resume` 的比例 |
-| `cta_pending_aged` 太常觸發 → 用戶覺得被催 | 30 min 是初始值；可在 `MasterChatContext` 把它變 const 方便調 |
-| `unanswered_user` 把舊訊息當「剛收到」回 → 答案脫節 | master.md 規則告誡「不要致歉」但要「對位用戶問題」；觀察 |
-| 多裝置場景（手機 widget 收起、PC 完成排盤）同步延遲 | 現有的 `xuanji:readingsChanged` 事件 + GET cache: 'no-store' 已處理；activation check 會在 historyLoaded 後跑，拿到的是新資料 |
-| Cooldown 5 min 在多分頁切換時是否合理 | 觀察是否頻繁觸發；可調至 10 min |
+| `isClosed` false negative (speaks when should be silent) | Track ratio of `ambiguous_resume` triggers in concluded sessions |
+| `cta_pending_aged` fires too often (feels pushy) | 30 min is initial threshold; kept configurable in `MasterChatContext` |
+| `unanswered_user` answers outdated queries out of context | System prompt explicitly guides grounded framing without apologetic filler |
+| Multi-device sync latency (PC completes while phone widget closed) | Handled by `xuanji:readingsChanged` and `cache: 'no-store'`; checks run post-`historyLoaded` |
+| 5-minute cooldown across multi-tab switching | Monitor trigger frequencies; adjust to 10 min if needed |
 
 ---
 
-## 6. 實作順序
+## 6. Implementation Sequence
 
-1. ✅ master.md 新增 "Activation" 段落
-2. ✅ 新 endpoint `/api/master/cta-status/route.ts`
-3. ✅ `route.ts` 改造：`buildCheckinAppendix(hint)` + body 解析
-4. ✅ `MasterChatContext.tsx` 改造：替換 expand-effect 為 `checkinDispatcher`，加 `findLatestPendingCTA` / `isClosed` / `fetchCtaStatus` helpers
-5. ✅ Vitest：給 `isClosed` 寫純函數測試（中英各 ~5 case）
-6. ✅ typecheck + 跑 systemPrompt 測試（master.md 改了會影響）
+1. Add "Activation" section to `master.md`.
+2. Implement `/api/master/cta-status/route.ts` endpoint.
+3. Refactor `route.ts`: update `buildCheckinAppendix(hint)` and parse request body.
+4. Refactor `MasterChatContext.tsx`: replace expand-effect with `checkinDispatcher`, add `findLatestPendingCTA` / `isClosed` / `fetchCtaStatus` helpers.
+5. Unit tests: pure function tests for `isClosed` in Vitest.
+6. Typecheck and verify `buildSystemPrompt` test suite.
 
 ---
 
-**新 session 啟動建議第一句話**：「我要看 master 激活續接機制的設計／實作 → `docs/planning/activation-resume-design-2026-04-27.md`，client 在 `MasterChatContext.tsx` 的 `checkinDispatcher`，server 在 `/api/master/route.ts` 的 `buildCheckinAppendix(hint)`。」
+**Kickoff Prompt Reference**: "To inspect the Master activation resume design/implementation: see `docs/archive/activation-resume-design-2026-04-27.md`, client dispatcher in `MasterChatContext.tsx`, server logic in `/api/master/route.ts` (`buildCheckinAppendix(hint)`)."

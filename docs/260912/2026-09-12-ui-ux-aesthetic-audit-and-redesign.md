@@ -1,385 +1,313 @@
-# 玄機 XuanJi · 全站 UI/UX 審美審計與功能模塊重塑方案
-## 告別「AI味」，回歸「簡約、直覺、大氣、現代神秘」
+# XuanJi — Full-Site UI/UX Aesthetic Audit & Module Redesign Blueprint
+## Eliminating "AI Tropes" to Embrace "Minimalist, Intuitive, Grand, and Modern Mystical"
 
-**版本:** v2.0.0 (Design & Aesthetic Focus)  
-**日期:** 2026-09-12  
-**角色定位:** 資深產品經理 (Senior PM) + 首席體驗/視覺設計師 (Lead Product Designer)  
-**審計依據:** 現有生產程式碼庫實測 + 用戶對 `/divination` 頁首「AI味太重」的明確指導反饋  
-**執行準則:** **只生成設計規格與審計文檔，不直接修改工程代碼**
-
----
-
-## 目錄
-
-- [一、 核心審美綱領：何為「簡約、直覺、大氣、現代神秘」？](#一-核心審美綱領何為簡約直覺大氣現代神秘)
-  - [1.1 警惕「AI味」：七大視覺與交互致命特徵診斷](#11-警惕ai味七大視覺與交互致命特徵診斷)
-  - [1.2 東方玄學美學新定調：現代神秘主義 (Modern Oriental Mysticism)](#12-東方玄學美學新定調現代神秘主義-modern-oriental-mysticism)
-- [二、 重點專項：`/divination` 頁首「大師入口」去 AI 味徹底重塑](#二-重點專項divination-頁首大師入口去-ai-味徹底重塑)
-  - [2.1 當前 `MasterEntryCard.tsx` 的「AI味」病理剖析](#21-當前-masterentrycardtsx-的ai味病理剖析)
-  - [2.2 全新設計方案：【天機玄覽 · 歲時氣象】(Celestial Sanctuary)](#22-全新設計方案天機玄覽--歲時氣象celestial-sanctuary)
-  - [2.3 像素級視覺規格與交互狀態對比](#23-像素級視覺規格與交互狀態對比)
-- [三、 全站 11 大功能模塊美術與交互逐項審計與重構清單](#三-全站-11-大功能模塊美術與交互逐項審計與重構清單)
-  - [【模塊 1】全域導航與品牌頂欄 (Global Navigation & Header Chrome)](#模塊-1全域導航與品牌頂欄-global-navigation--header-chrome)
-  - [【模塊 2】產品官方首頁 (`src/app/page.tsx`)](#模塊-2產品官方首頁-srcapppagetsx)
-  - [【模塊 3】術數排盤門戶選擇頁 (`src/app/divination/page.tsx`)](#模塊-3術數排盤門戶選擇頁-srcappdivinationpagetsx)
-  - [【模塊 4】起卦與生辰表單體系 (Forms: 八字/紫微/六爻/梅花/奇門/風水)](#模塊-4起卦與生辰表單體系-forms-八字紫微六爻梅花奇門風水)
-  - [【模塊 5】解盤過渡與等待儀式感 (`MysticalLoader.tsx`)](#模塊-5解盤過渡與等待儀式感-mysticalloadertsx)
-  - [【模塊 6】命盤結果與詳批報告渲染器 (`ResultRenderer` & V2 深度報告)](#模塊-6命盤結果與詳批報告渲染器-resultrenderer--v2-深度報告)
-  - [【模塊 7】玄機大師對話系統 (`MasterChatWidget` / `ExpandedView`)](#模塊-7玄機大師對話系統-masterchatwidget--expandedview)
-  - [【模塊 8】個人命盤檔案與家庭羅盤 (`Profile` / `FamilyDrawer` / `UserPortrait`)](#模塊-8個人命盤檔案與家庭羅盤-profile--familydrawer--userportrait)
-  - [【模塊 9】機緣經濟、功德商店與每日福利 (`Subscribe` / `Karma` / `Gifts`)](#模塊-9機緣經濟功德商店與每日福利-subscribe--karma--gifts)
-  - [【模塊 10】公開分享頁與命運籤卡海報 (`/r/[token]` & Poster Generator)](#模塊-10公開分享頁與命運籤卡海報-rtoken--poster-generator)
-  - [【模塊 11】藏經閣 / 知識庫 (`Wiki`)](#模塊-11藏經閣--知識庫-wiki)
-- [四、 現代東方玄學設計系統 2.0 (Design System Tokens)](#四-現代東方玄學設計系統-20-design-system-tokens)
-- [五、 工程落地分期推進路徑 (Implementation Phasing)](#五-工程落地分期推進路徑-implementation-phasing)
+**Version**: v2.0.0 (Design & Aesthetic Focus)  
+**Date**: 2026-09-12  
+**Role**: Senior PM & Lead Product Designer  
+**Audit Context**: Live production codebase audit + explicit user guidance critiquing excessive "AI aesthetics" on `/divination`  
+**Execution Guideline**: Comprehensive specification and audit document without premature code modification
 
 ---
 
-## 一、 核心審美綱領：何為「簡約、直覺、大氣、現代神秘」？
+## Table of Contents
 
-玄學產品不同於通用 SaaS 軟體。用戶尋求推演命運，內心深處帶著**敬畏、探索、求解與精神慰藉**。任何廉價的「科技浮誇感」都會瞬間打破這種神聖感，讓用戶覺得這只是一個「套殼的大模型聊天機器人」。
+- [1. Core Aesthetic Principles: Defining "Minimalist, Intuitive, Grand, and Modern Mystical"](#1-core-aesthetic-principles-defining-minimalist-intuitive-grand-and-modern-mystical)
+  - [1.1 Diagnosing "AI Tropes": Seven Fatal Visual and Interaction Patterns](#11-diagnosing-ai-tropes-seven-fatal-visual-and-interaction-patterns)
+  - [1.2 Modern Oriental Mysticism: Aesthetic Foundations](#12-modern-oriental-mysticism-aesthetic-foundations)
+- [2. Primary Focus: Redesigning the `/divination` Master Entry Card](#2-primary-focus-redesigning-the-divination-master-entry-card)
+  - [2.1 Pathological Audit of Legacy `MasterEntryCard.tsx`](#21-pathological-audit-of-legacy-masterentrycardtsx)
+  - [2.2 New Architectural Design: Celestial Sanctuary](#22-new-architectural-design-celestial-sanctuary)
+  - [2.3 Pixel-Level Visual Specifications & State Comparison](#23-pixel-level-visual-specifications--state-comparison)
+- [3. Full-Site Audit & Redesign Across 11 Core Functional Modules](#3-full-site-audit--redesign-across-11-core-functional-modules)
+  - [Module 1: Global Navigation & Header Chrome](#module-1-global-navigation--header-chrome)
+  - [Module 2: Product Homepage (`src/app/page.tsx`)](#module-2-product-homepage-srcapppagetsx)
+  - [Module 3: Divination Gateway Portal (`src/app/divination/page.tsx`)](#module-3-divination-gateway-portal-srcappdivinationpagetsx)
+  - [Module 4: Input Forms & Casting Interfaces](#module-4-input-forms--casting-interfaces)
+  - [Module 5: Interpretation Loading State (`MysticalLoader.tsx`)](#module-5-interpretation-loading-state-mysticalloadertsx)
+  - [Module 6: Chart Results & In-Depth Report Rendering](#module-6-chart-results--in-depth-report-rendering)
+  - [Module 7: XuanJi Master Chat Interface (`MasterChatWidget` / `ExpandedView`)](#module-7-xuanji-master-chat-interface-masterchatwidget--expandedview)
+  - [Module 8: User Profile & Family Compass (`Profile` / `FamilyDrawer` / `UserPortrait`)](#module-8-user-profile--family-compass-profile--familydrawer--userportrait)
+  - [Module 9: Karma Economy & Daily Allowances (`Subscribe` / `Karma` / `Gifts`)](#module-9-karma-economy--daily-allowances-subscribe--karma--gifts)
+  - [Module 10: Public Share Pages & Destiny Poster Generator (`/r/[token]` & Poster Generator)](#module-10-public-share-pages--destiny-poster-generator-rtoken--poster-generator)
+  - [Module 11: Classical Knowledge Library (`Wiki`)](#module-11-classical-knowledge-library-wiki)
+- [4. Modern Oriental Mysticism Design System 2.0 (Design System Tokens)](#4-modern-oriental-mysticism-design-system-20-design-system-tokens)
+- [5. Implementation Phasing](#5-implementation-phasing)
+- [6. Conclusion](#6-conclusion)
 
-### 1.1 警惕「AI味」：七大視覺與交互致命特徵診斷
+---
 
-什麼是用戶敏銳指出的「特別的 AI 味」？我們在當前程式碼中精準提煉出以下七大反面特徵，必須**全站徹底剔除**：
+## 1. Core Aesthetic Principles: Defining "Minimalist, Intuitive, Grand, and Modern Mystical"
+
+Metaphysical products differ fundamentally from conventional SaaS applications. Users seeking destiny analysis arrive with **reverence, curiosity, introspection, and spiritual inquiry**. Superficial tech tropes instantly shatter this contemplative atmosphere, cheapening the platform into an unconvincing wrapper around a generic chatbot.
+
+### 1.1 Diagnosing "AI Tropes": Seven Fatal Visual and Interaction Patterns
+
+What constitutes the "AI tropes" identified by users? Seven distinct anti-patterns must be **eliminated across the platform**:
 
 ```
-                   ❌ 典型的「AI味」廉價科技感 (Strictly Forbidden)
+                       Prohibited AI Tropes
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ 1. 浮誇的雜色光暈：背後堆砌紫色(#9370db)與黃色(#d4af37)的 Radial Gradient 模糊光斑  │
-│ 2. 廉價在線綠/黃點：頭像旁邊帶有 animate-ping 閃爍的綠點/黃點（客服在線感）        │
-│ 3. 機器人頭像與符號：使用 🤖 魔法棒 ✨ 聊天氣泡 💬 等爛俗 SaaS 圖標                  │
-│ 4. 生硬的 AI 身分標籤：卡片上醒目標註「AI 命理總顧問」、「智慧助理」、「AI 排盤」   │
-│ 5. 客服式對話按鈕：「向大師請教 →」、「開始對話」、「Ask AI」按鈕設計得像 Intercom   │
-│ 6. 敷衍的提問氣泡堆疊：卡片底部硬塞「不知道選哪個？」、「近期運勢」等冷冰冰的 Prompt  │
-│ 7. 進度百分比算命：解盤等待時顯示「進度 65%」、「正在計算」，將天機推演降格為進程條│
+│ 1. Gaudy multicolor blur blobs (radial gradients in purple #9370db & gold)  │
+│ 2. Cheap blinking status dots (animate-ping presence indicators)            │
+│ 3. Stereotypical robot and magic wand emojis (🤖 ✨ 💬)                     │
+│ 4. Stiff AI labels ("AI Chief Consultant", "Smart Assistant", "AI Paipan")  │
+│ 5. Customer support CTA buttons styled like Intercom live-chat widgets      │
+│ 6. Cluttered suggested prompt chips littering entry cards                   │
+│ 7. Commercial progress bars ("Loading 65%"), reducing divination to a task  │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.2 東方玄學美學新定調：現代神秘主義 (Modern Oriental Mysticism)
+### 1.2 Modern Oriental Mysticism: Aesthetic Foundations
 
-玄機的設計風格必須如同**「靜謐星空下的宋代山水書齋」**，兼具蘋果級的高級工業質感與東方古典哲學的深邃：
+The design language embodies **"a Song Dynasty scholar's study under a tranquil starry sky"**, harmonizing industrial precision with classical philosophy:
 
-- **簡約 (Minimalist / 留白)**：克制用色，大膽留白。不堆砌多餘修飾，讓核心文字與卦象自然呼吸。
-- **直覺 (Intuitive / 自然)**：用戶一眼就知道這是什麼、該往哪裡點。無需思考，動線如同推門步入庭院般順暢。
-- **大氣 (Grand / 沉靜)**：尊貴的黃金比例格局、沈穩扎實的排版、如同碑拓典籍般的莊嚴感，杜絕小家子氣的卡片拼湊。
-- **現代神秘 (Modern Mystical / 靈性)**：幽邃的玄青墨夜（`#080c17`）、纖細的燙金髮絲線（`0.5px - 1px hairline`）、含蓄內斂的星芒微光、硃砂御印的點睛之筆。
-
----
-
-## 二、 重點專項：`/divination` 頁首「大師入口」去 AI 味徹底重塑
-
-### 2.1 當前 `MasterEntryCard.tsx` 的「AI味」病理剖析
-
-檢查 `src/app/divination/MasterEntryCard.tsx` 現狀代碼：
-1. **背景光斑過載**：
-   - 代碼第 50-57 行使用了兩顆巨大的模糊光球：一個金色，一個**紫色 `#9370db`**！這種「紫金迷幻光」是標準的國外 AI 玩具網站模板，完全破壞了中式玄學的沉靜感。
-2. **在線閃爍點 (Ping Dot)**：
-   - 代碼第 81-85 行使用了 `animate-ping bg-amber-400`。這讓大師頭像看起來像一個隨時待命的「網頁在線客服/外賣騎手在線狀態」，毫無世外高人的氣場。
-3. **標籤與文案如同 SaaS 廣告**：
-   - 標籤寫著「AI 命理總顧問」、「全方位指引 · 跨盤合參」，文案如同軟體功能說明書。
-4. **底部 Prompt 氣泡**：
-   - 底部用小按鈕排布 `[🧭 不知道該選哪個？] [✨ 近期綜合運勢指引] [☯ 跨盤合參解讀]`，完全是 ChatGPT 官方引導問題的生搬硬套。
+- **Minimalist (Generous Space)**: Disciplined palette, unhurried white space. Zero decorative noise; allowing typography and trigrams to breathe.
+- **Intuitive (Natural Flow)**: Unmistakable purpose and navigation. Interacting feels as effortless as stepping across a courtyard threshold.
+- **Grand (Stone-Rubbing Gravitas)**: Golden ratio proportions, balanced typographic rhythm, and archival dignity, avoiding cramped card collages.
+- **Modern Mystical (Subtle Presence)**: Deep obsidian night (`#080c17`), hairline gold borders (`0.5px - 1px hairline`), understated celestial motion, and vermillion seal accents.
 
 ---
 
-### 2.2 全新設計方案：【天機玄覽 · 歲時氣象】(Celestial Sanctuary)
+## 2. Primary Focus: Redesigning the `/divination` Master Entry Card
 
-我們要將這個入口從「一個嘈雜的 AI 聊天小組件」重塑為**「一座莊嚴寧靜的玄學殿堂中堂（Sanctuary）」**。
+### 2.1 Pathological Audit of Legacy `MasterEntryCard.tsx`
 
-#### 設計理念：
-不叫「AI 大師」，不搞「聊天廣告」。它應被包裝為**當日的天地氣象與玄機箴言**。用戶來到這裡，首先感受到的是**靜心**。大師不是一個被動等待輸入的 Bot，而是以一位**深研天地的宗師**形象，每日與天地時令同頻，靜候有緣人叩問。
+Review of `src/app/divination/MasterEntryCard.tsx`:
+1. **Excessive Background Glow**: Lines 50-57 rendered massive blur spheres in gold and **purple `#9370db`**, borrowing generic Western AI template styling that conflicts with Eastern contemplation.
+2. **Support Agent Presence Dot**: Lines 81-85 deployed `animate-ping bg-amber-400`, framing the master as an available customer support agent.
+3. **SaaS Promotional Copy**: Badges declared "AI Chief Metaphysical Consultant" and "Full Guidance / Chart Cross-Reference", reading like software marketing.
+4. **Suggested Prompt Chips**: Cramped buttons (`[🧭 Don't know which to pick?] [✨ Recent general guidance]`) directly mimicked default ChatGPT prompt chips.
 
-#### 佈局線框架構 (ASCII Wireframe)：
+---
+
+### 2.2 New Architectural Design: Celestial Sanctuary
+
+Reimagines the entry point from a noisy chat widget into a **contemplative sanctuary hall**.
+
+#### Philosophy:
+Eliminates "AI Master" labels and chat buttons. The sanctuary presents **daily astronomical rhythms and seasonal reflections**. The master is framed not as a passive conversational bot, but as an **astrological scholar attuned to seasonal cycles**, quietly awaiting sincere inquiries.
+
+#### Layout Wireframe:
 
 ```
 +-----------------------------------------------------------------------------------------------+
-|                                      【 天 機 玄 覽 】                                         |
+|                                    [ CELESTIAL SANCTUARY ]                                    |
 |                                                                                               |
-|      歲次丙午 · 白露節氣 · 金水相涵                        [ 乾坤道合 · 靜心守正 ]              |
+|      Year of Bing-Wu · Bailu Solar Term · Metal & Water in Harmony       [ Align with Truth ] |
 |                                                                                               |
-|      「 天 地 無 全 功 ， 萬 物 無 全 用 。 靜 觀 命 盤 變 遷 ， 順 時 而 動 ， 凶 亦 能 化 。 」      |
+|      "Heaven leaves no work complete; all things find their balance. Observe destiny's tide,  |
+|       moving with the season to turn adversity into strength."                                |
 |                                                                                               |
 |      -----------------------------------------------------------------------------------      |
 |                                                                                               |
-|      [ 📜 縱覽生辰命盤與歷史卦象，跨法參詳 ]                       [ 登 堂 請 益 · 叩 問 玄 機 → ]  |
+|      [ Review natal charts and historical readings ]            [ Enter the Sanctuary -> ]    |
 |                                                                                               |
 +-----------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-### 2.3 像素級視覺規格與交互狀態對比
+### 2.3 Pixel-Level Visual Specifications & State Comparison
 
-| 元素維度 | 原方案（AI 浮誇味 ❌） | 新方案：天機玄覽（簡約大氣現代神秘 ✅） |
+| Dimension | Legacy Implementation (AI Trope) | New Specification: Celestial Sanctuary |
 |---|---|---|
-| **整體容器尺寸** | 圓角 16px，擁擠內邊距 `p-5` | 圓角 `20px`，大氣開闊的內邊距 `py-6 px-8` |
-| **容器背景** | 雜色紫色光斑 + 強烈徑向漸變 | **極簡墨玉夜色**：`linear-gradient(180deg, rgba(13, 21, 38, 0.7) 0%, rgba(8, 12, 23, 0.9) 100%)`，輔以極致克制的 0.03 不透明度暗星雲紋理 |
-| **邊框線條** | 亮黃色粗邊框 `borderColor: rgba(212, 175, 55, 0.3)` | **燙金髮絲線**：`1px solid rgba(212, 168, 83, 0.16)`，頂部帶有極微弱的流金高光 `inset 0 1px 0 rgba(212, 168, 83, 0.25)` |
-| **氣氛光效** | 紫色/金色大光球亂閃 | **無彩色光斑**。僅保留中央極淡的暖金月暈呼吸（半徑 300px，不透明度僅 0.06） |
-| **頭像與狀態** | 圓形太極 + 呼吸閃爍黃點 (`animate-ping`) | **撤銷客服式頭像與閃動圓點**。替換為優雅的東方歲時篆印或抽象天象儀符號，靜穆莊重 |
-| **箴言語錄字體** | 普通無襯線字體，文案像客服功能清單 | **古典宋體 (`Noto Serif SC`)**：字號 16px，行高 1.9，字距 `tracking-widest`（0.12em），文字顏色為晨曦暖白 `rgba(255,255,255,0.85)` |
-| **操作 CTA 按鈕** | 亮黃色漸變按鈕 + 💬 圖標（客服感） | **古剎沈金邊框鈕**：深色內襯，金絲滾邊 `border: 1px solid rgba(212, 168, 83, 0.4)`，金字 `color: #d4a853`，文案為「登堂請益 · 叩問玄機」，懸停時金光流轉微亮 |
-| **快捷標籤處理** | 突兀的 Prompt 按鈕卡片橫排在底 | **取消標籤式提問**。改為將其融入對話抽屜喚醒後的內置建議中，不在首頁破壞清淨視覺 |
+| **Container Dimensions** | 16px radius, tight `p-5` padding | 20px radius, expansive `py-6 px-8` padding |
+| **Container Background** | Radial gradient with purple blur | **Obsidian Night**: `linear-gradient(180deg, rgba(13, 21, 38, 0.7) 0%, rgba(8, 12, 23, 0.9) 100%)` with 0.03 opacity dark celestial texture |
+| **Borders** | Bold yellow `rgba(212, 175, 55, 0.3)` | **Hairline Gold**: `1px solid rgba(212, 168, 83, 0.16)` with subtle highlight `inset 0 1px 0 rgba(212, 168, 83, 0.25)` |
+| **Lighting** | Purple and gold flashing blur spheres | **Zero Colored Blobs**. Centered warm gold lunar aura (300px radius, 0.06 opacity) |
+| **Avatar & Presence** | Circular icon with `animate-ping` dot | **Replaced with classical seasonal seal mark or armillary sphere motif** |
+| **Typography** | Generic sans-serif, functional copy | **Classical Serif (`Noto Serif TC`)**: 16px, line-height 1.9, tracking-widest (`0.12em`), soft warm white `rgba(255,255,255,0.85)` |
+| **Action CTA Button** | Yellow gradient button with chat icon | **Ancient Temple Gold Border**: Dark interior, gold filigree `border: 1px solid rgba(212, 168, 83, 0.4)`, gold text `#d4a853`, "Enter the Sanctuary" |
+| **Prompt Chips** | Hardcoded buttons across card bottom | **Removed from card**. Moved into chat drawer upon activation |
 
-#### 交互細節：
-- **預設靜止態**：卡片如同玄關屏風，靜止而沉穩，只有時辰卦辭隨著農曆時節靜靜微調。
-- **滑鼠懸停 (Hover)**：邊框金線的流金微亮（不透明度由 0.16 提升至 0.35），無大幅度位移抖動，呈現古玉般內斂光澤。
-- **點擊行為**：點擊「登堂請益」按鈕，全屏環境音（若有）微沉，大師諮詢台以**東方經卷展開動效**（而非生硬的聊天彈窗）平滑呈現。
-
----
-
-## 三、 全站 11 大功能模塊美術與交互逐項審計與重構清單
-
-為了確保全站徹底統一於「簡約、直覺、大氣、現代神秘」，以下對全站所有 11 個模塊逐一進行**美術視覺審計**與**交互動線審計**，並給出精準升級方案。
+#### Interaction States:
+- **Resting State**: Stable and balanced like a scholar's screen, seasonal verses updating quietly with the lunar calendar.
+- **Hover State**: Gold border subtly brightens (opacity from 0.16 to 0.35) without jarring displacement, reflecting the luster of polished jade.
+- **Click Behavior**: Clicking "Enter the Sanctuary" smoothly transitions the consultation desk into view via an **unfolding scroll animation** rather than an abrupt popup.
 
 ---
 
-### 【模塊 1】全域導航與品牌頂欄 (Global Navigation & Header Chrome)
+## 3. Full-Site Audit & Redesign Across 11 Core Functional Modules
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 目前 Navbar 的背景毛玻璃在滾動時邊界感生硬；
-  - 機緣顯示、語系切換、用戶頭像堆在右側，間距不均勻；
-  - 缺乏統一的東方幾何美學語言，通知鈴鐺與安裝按鈕顯得像現代商務辦公軟件。
-- **交互缺陷**：
-  - 移動端漢堡選單展開時，過渡生硬，背景遮罩過深，沒有靈氣。
+### Module 1: Global Navigation & Header Chrome
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **背景**：頂欄採用無邊界漸變消隱 `linear-gradient(to bottom, rgba(8, 12, 23, 0.92) 0%, rgba(8, 12, 23, 0) 100%)`，完全取消僵硬的下邊框線，讓夜空背景自然流淌。
-  - **品牌 Logo**：保留「玄機」二字，字體採用優化間距的古籍宋體，字間距 `0.2em`，字色為微光赤金（`#d4a853`），去除過分濃重的高斯模糊發光，改為極細緻的 0.5px 文字輪廓陰影。
-- **交互設計重塑**：
-  - 右側機緣顯示改為極簡金印靈石樣式：`「 ✧ 12 」`，點擊以水滴紋擴散動效滑出「機緣閣」。
+#### Current Audit
+- Navigation backdrop blur produces harsh borders upon scroll.
+- Karma indicators, language toggles, and user avatars are clustered with uneven spacing.
+- Notification bells and install actions resemble modern enterprise productivity software.
+
+#### Redesign Specification
+- **Header Background**: Boundary-free fade `linear-gradient(to bottom, rgba(8, 12, 23, 0.92) 0%, rgba(8, 12, 23, 0) 100%)`, removing rigid bottom borders.
+- **Brand Typography**: "XuanJi" rendered in classical serif with generous letter-spacing (`0.2em`) and radiant gold color (`#d4a853`), removing heavy blur glows in favor of a crisp 0.5px drop shadow.
+- **Karma Balance**: Displayed as an elegant gold seal mark: `「 ✧ 12 」`.
 
 ---
 
-### 【模塊 2】產品官方首頁 (`src/app/page.tsx`)
+### Module 2: Product Homepage (`src/app/page.tsx`)
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 存在 🧙‍♂️（巫師/老頭）emoji，帶有嚴重的西方奇幻/遊戲感，與東方玄學格格不入；
-  - 服務列表在首頁直接堆砌 6-7 個大卡片，文字說明冗長，整體界面像一個平庸的服務器後台導航頁。
-- **交互缺陷**：
-  - **重大體驗斷點**：已登入用戶一訪問首頁，立即被代碼強制 `router.replace('/divination')` 踢走，老用戶完全沒有首頁品牌歸屬感。
+#### Current Audit
+- Western wizard emojis (🧙‍♂️) clash with Eastern metaphysical traditions.
+- Service list presents 6-7 large cards with text, resembling an administrative dashboard.
+- **Critical Flow Flaw**: Logged-in users visiting `/` are immediately redirected via `router.replace('/divination')`, preventing returning users from experiencing homepage brand touchpoints.
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **全面清除西方 Emoji**：將所有 🧙‍♂️、🔮、✨、🪙 等 Emoji 全部替換為專屬設計的**東方幾何線條圖標**（如八卦爻線、太極天圓地方、二十八星宿星軌、紫微垣星圖）。
-  - **雙場景大器佈局**：
-    - 首頁 Hero 之下，不再平鋪 7 個格子，而是並列兩扇**「玄門之扉」**：
-      - **左門【知命 · 本命大運】**（八字/紫微）——深邃星圖暗紋，象徵命運大圖景；
-      - **右門【斷疑 · 當下一決】**（六爻/梅花）——周易卦象暗紋，象徵決策之玄機。
-- **交互設計重塑**：
-  - **取消強制重定向**：登入用戶訪問首頁時，頂部以行楷宋體溫潤顯示：`「道友 [姓名]，天地依舊，別來無恙。」`，並在卡片上顯示其最近一次排盤的卦名，一鍵直達。
+#### Redesign Specification
+- **Eliminate Western Emojis**: Replace 🧙‍♂️, 🔮, ✨, 🪙 with custom **Eastern geometric line icons** (trigram lines, armillary spheres, stellar orbits, star charts).
+- **Dual-Portal Architecture**:
+  - Replace the 7-grid array with two primary **Sanctuary Gateways**:
+    - **Gateway 1: Self-Discovery (BaZi & Zi Wei)**: Deep star chart textures representing the macro trajectory of life.
+    - **Gateway 2: Specific Inquiry (Liu Yao & Mei Hua)**: Hexagram motifs representing timely tactical guidance.
+- **Welcome Returning Users**: Remove forced redirects. Logged-in users receive a warm greeting in classical serif (`"Welcome back, [Name]. The heavens remain steady."`) with a shortcut to their latest reading.
 
 ---
 
-### 【模塊 3】術數排盤門戶選擇頁 (`src/app/divination/page.tsx`)
+### Module 3: Divination Gateway Portal (`src/app/divination/page.tsx`)
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 現有代碼給每種術數設定了不同顏色的背景（八字/紫微是金、六爻/易經是藍、奇門/梅花是紫、風水是綠）。**這種紅橙黃綠的雜色大拼盤，在暗色背景下產生了強烈的「遊樂園感/霓虹燈感」，嚴重摧毀了沉靜神聖的氣氛！**
-- **交互缺陷**：
-  - 每個卡片上的「點數標籤（✨ 5 點）」格式生硬，商業充值感撲面而來。
+#### Current Audit
+- Each divination system uses a distinct background color (gold, blue, purple, green). This multicolor mosaic against a dark canvas creates an arcade-like visual distraction, undermining solemnity.
+- Pricing badges ("✨ 5 credits") present aggressive commercial framing.
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **統一色調，拒絕雜色拼盤**：徹底移除 `categoryColors` 中的藍、紫、綠色背景！
-  - 全站卡片一律回歸統一的**玄墨漆器質感**：`rgba(13, 21, 38, 0.65)` + `border: 1px solid rgba(212, 168, 83, 0.12)`。
-  - 僅在卡片圖標的微光細節與圖騰暗紋上區分術數特徵（如六爻以古銅色微光點綴、風水以墨玉青氣點綴，整體保持深邃大氣的和諧）。
-- **交互設計重塑**：
-  - 點數消耗標籤由刺眼的彩色泡泡改為卡片右下角的隱約金印字體：`「 需機緣 伍點 」`，既具備古典契約感，又傳遞明確代價。
+#### Redesign Specification
+- **Harmonious Palette**: Eliminate disparate colored backgrounds in `categoryColors`.
+- All cards standardize on an **Obsidian Lacquer Texture**: `rgba(13, 21, 38, 0.65)` + `border: 1px solid rgba(212, 168, 83, 0.12)`.
+- System differentiation is expressed through subtle icon motifs rather than saturated backgrounds.
+- Credit costs transition from colored tags to an understated gold seal inscription in the corner: `「 Requires 5 Karma 」`.
 
 ---
 
-### 【模塊 4】起卦與生辰表單體系 (Forms: 八字/紫微/六爻/梅花/奇門/風水)
+### Module 4: Input Forms & Casting Interfaces
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 輸入框與下拉選單是標準的現代 HTML 表單外觀，黑色背景配白字，顯得如同填寫海關申報單或稅務報表，完全沒有推演命理的「儀式感」；
-  - 六爻起卦與梅花取數界面過於簡陋，只是幾個數字輸入框或點擊按鈕。
-- **交互缺陷**：
-  - 「真太陽時」與經緯度校準選項折疊太深，用戶不理解為什麼要選出生地；
-  - 缺少「一鍵調取本人/家人檔案」的直覺感。
+#### Current Audit
+- Inputs and select menus use default HTML styling, resembling a bureaucratic customs declaration rather than a reflective divination experience.
+- Liu Yao and Mei Hua casting views rely on plain numerical fields and buttons.
+- True Solar Time and coordinate settings are buried without clear context.
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **表單容器宣紙漆案化**：輸入框背景採用 `rgba(255, 255, 255, 0.03)`，邊框為靜態 `1px solid rgba(212, 168, 83, 0.18)`，聚焦（Focus）時不是外圈藍色光，而是**燙金微光內收 + 底部金線流轉**。
-  - **生辰排布羅盤化**：年、月、日、時採用傳統的「四柱天干地支選擇羅盤」或者優雅的滾輪對齊，而非枯燥的瀏覽器原生 DatePicker。
-- **交互設計重塑**：
-  - **六爻搖卦交互昇華**：點擊「搖卦」時，提供三枚仿古銅錢在黑玉盤中旋轉落下的物理微動態（音效為沉實的青銅敲擊聲），六次搖動由下至上生成六爻，讓用戶親身感受周易動靜之機。
+#### Redesign Specification
+- **Scholarly Form Containers**: Inputs use translucent backgrounds (`rgba(255, 255, 255, 0.03)`) and hairline gold borders (`rgba(212, 168, 83, 0.18)`). Focus states emit an inward gold glow rather than generic blue rings.
+- **Dial Selection for Four Pillars**: Year, month, day, and hour inputs use circular Stem-Branch selectors or elegant scroll wheels rather than default date pickers.
+- **Liu Yao Coin Casting Dynamics**: Coin casting features three ancient bronze coins rotating and settling into a dark jade dish with acoustic bronze sound effects, generating lines from base to crown.
 
 ---
 
-### 【模塊 5】解盤過渡與等待儀式感 (`MysticalLoader.tsx`)
+### Module 5: Interpretation Loading State (`MysticalLoader.tsx`)
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 當前加載界面使用旋轉的太極圖標配文字輪播，中間赫然出現軟體進度條：`pct: 5, 15, 30, 50, 65, 80, 95%`！
-  - **現代科學進度條是玄學神秘感的第一大殺手**——古人問天，何來「天機已加載 65%」？
-- **交互缺陷**：
-  - 估計時間不準時，進度條卡在 95% 乾等，極易引發用戶焦慮。
+#### Current Audit
+- Displays rotating icons alongside a mechanical percentage bar: `pct: 5, 15, 30, 50, 65, 80, 95%`.
+- Numeric progress bars destroy metaphysical mystery—classical divination does not "load to 65%".
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **徹底移除數值百分比進度條**！
-  - 替換為**「二十八星宿天象儀運轉」或「水墨太極相生微動態」**：中央星曜自旋，金色星軌緩慢交匯，粒子如水墨般向外微散。
-- **交互與文案儀式感**：
-  - 將技術進度翻譯為三階心靈過渡語（每 8 秒淡入淡出一次，以宋體浮現）：
-    - *初階：『乾坤定序，排定四柱干支...』*
-    - *中階：『星曜入宮，吉凶神煞引聚...』*
-    - *終階：『天機凝聚，詳批卦辭將現...』*
-  - 不給生硬數字，只給天象變化的自然沉浸，等待過程不再焦慮，反而充滿期盼。
+#### Redesign Specification
+- **Eliminate Numeric Percentage Bars**.
+- Replace with **an armillary sphere in celestial rotation or an ink-wash Taiji animation**: Central stars rotate as orbital lines converge, emitting soft ambient particles.
+- Technical latency transitions into a three-stage contemplative narrative (fading smoothly every 8 seconds):
+  - *Stage 1: "The cosmos aligns; casting the Four Pillars of Destiny..."*
+  - *Stage 2: "Planetary coordinates settle; assembling palace alignments..."*
+  - *Stage 3: "Celestial patterns resolve; revealing the hexagram text..."*
 
 ---
 
-### 【模塊 6】命盤結果與詳批報告渲染器 (`ResultRenderer` & V2 深度報告)
+### Module 6: Chart Results & In-Depth Report Rendering
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 在解盤流式輸出（Streaming）時，使用了 `FlameBorderStyle.tsx`（火焰邊框與跳動火星點 `flame-spark`）。**這看起來像極了傳奇網頁遊戲或電競武器特效，與東方傳統命理格格不入！**
-  - 解讀報告通篇是密密麻麻的純白長文字，排版層級單一，如同閱覽 Markdown 論文，長時間閱讀極度疲勞。
-- **交互缺陷**：
-  - 缺乏核心斷語速覽，用戶需要滾動幾屏才能找到「這卦到底是好是壞」。
+#### Current Audit
+- Streaming interpretations use `FlameBorderStyle.tsx` with leaping fire particles, resembling gaming weapon effects rather than scholarly texts.
+- Reports present dense walls of white text with minimal typographic hierarchy.
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **廢除廉價火焰粒子**：將 `FlameBorderStyle` 替換為**「流金微瀾邊框（Golden Ripple）」**——一縷柔和如絲綢的金光在卡片邊界緩緩勻速遊走，宛如經書翻開時的靈氣流轉。
-  - **古典經卷版面格式**：
-    - **頂部首屏【天命樞機】摘要卡**：大字提煉三大核心詞（如：`【正官得令】`、`【逢凶化吉】`、`【歲君生旺】`），附帶一枚硃砂印章；
-    - **正文開闊排版**：正文行高擴大至 `1.9`，段落間距加大，關鍵斷語採用左側金絲邊框引用格式（`font-verse-callout`）。
-- **交互設計重塑**：
-  - 提供章節錨點索引（大綱導航釘在右側或頂部），用戶可一鍵跳轉「事業運」、「婚戀宮」、「大運流年」。
+#### Redesign Specification
+- **Replace Flame Particles with Golden Ripple**: Soft gold silk light flows smoothly along card perimeters, evoking turning parchment pages.
+- **Classical Archival Layout**:
+  - **Summary Seal Card**: Prominently highlights three core themes (e.g., `[Direct Officer in Authority]`, `[Turning Adversity to Fortune]`, `[Year Commander Prosperity]`) accompanied by a vermillion seal.
+  - **Generous Text Layout**: Body line height expanded to `1.9` with increased paragraph spacing; key judgments highlighted in gold filigree quote blocks (`font-verse-callout`).
+  - Chapter navigation indices allow one-click jumping between Career, Marriage, and Decadal Fortune.
 
 ---
 
-### 【模塊 7】玄機大師對話系統 (`MasterChatWidget` / `ExpandedView`)
+### Module 7: XuanJi Master Chat Interface (`MasterChatWidget` / `ExpandedView`)
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 展開後的對話界面（`ExpandedView.tsx`）是標準的微信/iMessage 氣泡佈局：左邊一個框、右邊一個框，圓角氣泡配發送鍵，科技味太濃，毫無問道尋仙的氛圍。
-- **交互缺陷**：
-  - 用戶不知道大師具備長期記憶，也不知道大師看得到自己的命盤；
-  - 缺乏引導，用戶只會問「在嗎？」或「算算命」。
+#### Current Audit
+- `ExpandedView.tsx` uses standard messaging bubble layouts (left bubble, right bubble, send button) with heavy messaging software tropes.
+- Users are unaware that the master retains cross-session memory and can read their active charts.
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **摒棄對稱聊天氣泡，轉向「經卷對弈問道體（Dialogue Scroll）」**：
-    - 不再是圓滾滾的塑膠氣泡，而是類似古典信牘/對話錄的版面；
-    - 大師回答採用溫和淡金字體，開頭帶有專屬印記，斷句分明，典雅肅穆。
-- **交互設計重塑**：
-  - **命盤共讀指示器**：頂部清爽顯示：`「大師案前：正展開您的【甲子日柱八字盤】」`，讓用戶直觀感受到大師是看著他的命盤在解讀，建立深層信任。
+#### Redesign Specification
+- **Dialogue Scroll Layout**: Replaces rounded bubbles with an archival manuscript format. Responses render in warm gold typography with a dedicated master seal emblem.
+- **Chart Context Indicator**: Displays at the top: `「Before the Master: Reviewing your [Jia-Zi Day Master Chart]」`, establishing transparent contextual grounding.
 
 ---
 
-### 【模塊 8】個人命盤檔案與家庭羅盤 (`Profile` / `FamilyDrawer` / `UserPortrait`)
+### Module 8: User Profile & Family Compass (`Profile` / `FamilyDrawer` / `UserPortrait`)
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 個人中心純粹是常規的表單輸入列表；
-  - 珍貴的「用戶畫像 UserPortrait」與「家庭成員 FamilyDrawer」以枯燥的清單條目呈現，像數據庫的管理介面。
-- **交互缺陷**：
-  - 建立家庭成員檔案後，無法直觀看到「全家命盤五行互補關係」。
+#### Current Audit
+- Profile displays conventional form inputs; valuable UserPortrait and FamilyDrawer records are arranged as plain database tables.
+- Lacks relational views illustrating Five Element balances across family members.
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **重構為【本命星盤與家族九宮羅盤】**：
-    - 將自己放在中央太極位，家庭成員依長幼尊卑排布於八卦九宮（乾父、坤母、震長男等）；
-    - 點擊家庭成員，羅盤旋轉切換，視覺體驗極具東方宗族傳統與神秘秩序感。
-- **交互設計重塑**：
-  - 在任何排盤頁，點擊姓名旁邊的「切換命主」圖標，直接拉起家族羅盤，0.5 秒完成對象切換。
+#### Redesign Specification
+- **Family Nine-Palace Compass**: Places the user in the central Taiji position, with family members arranged across the eight trigram directions (Qian for father, Kun for mother, Zhen for eldest son).
+- One-click subject switching on reading views opens the family compass to switch charts instantly.
 
 ---
 
-### 【模塊 9】機緣經濟、功德商店與每日福利 (`Subscribe` / `Karma` / `Gifts`)
+### Module 9: Karma Economy & Daily Allowances (`Subscribe` / `Karma` / `Gifts`)
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 充值購買頁面（`Karma Shop`）直接擺出三個 SaaS 式卡片（Basic, Pro, Unlimited），滿屏的「點數、價格、$ 美元」，商業銅臭味太濃，破壞了整體格調。
-- **交互缺陷**：
-  - 缺少任務體系，免費機緣自動靜默到賬，用戶感知度極低。
+#### Current Audit
+- Karma Shop presents generic SaaS tiers (Basic, Pro, Unlimited) with dollar amounts, introducing commercial clutter.
+- Daily allowances deposit silently without user recognition.
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **去電商化，包裝為「結緣功德 · 護持研經」**：
-    - 卡片採用東方漆盒雕花風格，不叫「30點套裝」，稱之為「三巡之籤」、「十方合參」；
-    - 標註「感謝道友護持玄機算力運轉」，在合規的同時提升用戶的文化認同感與付費心理價值。
-- **交互設計重塑**：
-  - 每日簽到採用「晨鐘祈福」或「每日抽靈籤」，用戶親自點擊，籤落神明，領取機緣，形成強烈的每日回訪習慣。
+#### Redesign Specification
+- **Scholarly Presentation**: Packages styled as engraved lacquer boxes ("Three Consultations Pass", "Ten-Direction Synthesis") acknowledging support for computing infrastructure.
+- **Ceremonial Daily Check-in**: Users participate in a daily drawing or morning bell ritual to claim allowances, reinforcing recurring engagement.
 
 ---
 
-### 【模塊 10】公開分享頁與命運籤卡海報 (`/r/[token]` & Poster Generator)
+### Module 10: Public Share Pages & Destiny Poster Generator (`/r/[token]` & Poster Generator)
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 當前 `/r/[token]` 是整個解盤報告的粗暴 Web 複製版，文字堆積如山；
-  - 社交平台用戶根本沒有耐心在手機上看一個陌生人幾千字的命理報告。
-- **交互缺陷**：
-  - 分享按鈕只會複製 URL，無法在小紅書或微信朋友圈直接發圖。
+#### Current Audit
+- `/r/[token]` is a raw full-page copy of the reading report, overwhelming mobile readers with text.
+- Sharing actions only copy URLs without producing visual social media artifacts.
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **核心打造：3:4 / 9:16 東方美學「玄機神籤海報」**：
-    - 深夜墨藍底色 + 雲紋四方鎖角 + 硃砂天機印章；
-    - 提煉當前排盤最犀利的一句詩詞斷語（如：*『甲木生霜露，春雷動九天』*）；
-    - 右下角精緻燙金帶參 QR Code，典雅精緻，堪比高級藝術海報。
-- **交互設計重塑**：
-  - 結果頁一鍵點擊「生成籤卡」，1 秒內完成離屏渲染，手機端支持長按保存或呼起系統原生地圖分享。
+#### Redesign Specification
+- **3:4 & 9:16 Destiny Poster Generator**: Deep obsidian blue background + cloud corner filigree + vermillion seal + poetic takeaway (e.g., *"Jia Wood born in winter frost; spring thunder shakes the nine heavens"*).
+- Includes an understated gold QR code embedding referral attribution.
+- One-click poster generation renders off-screen within 1 second, supporting native mobile share sheets.
 
 ---
 
-### 【模塊 11】藏經閣 / 知識庫 (`Wiki`)
+### Module 11: Classical Knowledge Library (`Wiki`)
 
-#### 1. 現狀審計
-- **美術缺陷**：
-  - 當前 Wiki 界面就是一個極其簡陋的 WordPress 式博客列表；
-  - 空白無文章，分類標籤毫無排版韻味。
-- **交互缺陷**：
-  - 文章讀完即走，完全沒有回流到排盤的漏斗轉化機制。
+#### Current Audit
+- Basic blog listing with zero articles, lacking conversion pathways into divination calculators.
 
-#### 2. 升級與優化方案
-- **美術設計重塑**：
-  - **命名與意境重塑為【玄機藏經閣】**：
-    - 版面如同宣紙古籍，採用傳統豎排導航與橫排閱讀相結合的典籍排版；
-    - 封面配圖採用古典水墨白描插畫風格。
-- **交互設計重塑**：
-  - **文內內嵌「命理即時算盤」**：例如在閱讀《如何看懂自己的紫微命宮主星》時，文末直接內嵌命宮排盤小工具，用戶輸入時辰當場印證文章內容，一鍵轉化為排盤用戶。
+#### Redesign Specification
+- **XuanJi Classical Archive**: Styled as a traditional manuscript collection with dual vertical navigation and horizontal reading views.
+- **Embedded Interactive Calculators**: Reading an article (e.g., *Understanding Your Zi Wei Life Palace Stars*) includes an embedded mini-calculator at the footer to compute the relevant placement on the spot.
 
 ---
 
-## 四、 現代東方玄學設計系統 2.0 (Design System Tokens)
-
-為了徹底清除「AI 味」，確立全站統一的美術標準，制定如下全域 Token 準則：
+## 4. Modern Oriental Mysticism Design System 2.0 (Design System Tokens)
 
 ```css
 /* ==========================================================================
-   玄機 XuanJi Modern Oriental Mysticism Design Tokens 2.0
+   XuanJi Modern Oriental Mysticism Design Tokens 2.0
    ========================================================================== */
 
 :root {
-  /* 1. 墨夜基底（深邃沉靜，嚴禁使用純黑 #000000 或泛紫漸變） */
-  --bg-abyss: #080c17;          /* 太極虛空底色 */
-  --bg-surface: #0d1526;        /* 主卡片表面色 */
-  --bg-elevated: #111d35;       /* 浮動層與彈窗背景 */
+  /* 1. Obsidian Night Base (Never use pure #000000 or purple gradients) */
+  --bg-abyss: #080c17;          /* Primordial void base */
+  --bg-surface: #0d1526;        /* Primary card surface */
+  --bg-elevated: #111d35;       /* Elevated dialogs and popovers */
 
-  /* 2. 東方雅金（溫潤內斂，嚴禁高飽和亮黃與彩虹漸變） */
-  --gold-pure: #d4a853;         /* 主色：晨曦赤金 */
-  --gold-glow: #e8c278;         /* 懸停高光：流金 */
-  --gold-ancient: #9a722e;      /* 古剎沈金：低調次級文字與邊界 */
-  --gold-hairline: rgba(212, 168, 83, 0.16); /* 燙金髮絲線：高貴的極細邊框 */
+  /* 2. Classical Gold (Warm, restrained; avoid neon yellow or rainbow gradients) */
+  --gold-pure: #d4a853;         /* Primary: Morning radiant gold */
+  --gold-glow: #e8c278;         /* Hover state: Flowing gold */
+  --gold-ancient: #9a722e;      /* Deep temple gold: Understated borders */
+  --gold-hairline: rgba(212, 168, 83, 0.16); /* Hairline gold: 0.5px-1px borders */
 
-  /* 3. 神妙點睛色（克制使用，點綴吉凶印證） */
-  --vermillion-seal: #c0392b;   /* 硃砂御印：印章、關鍵化解、犯太歲提示 */
-  --jade-tranquil: #2d8a6e;     /* 靈泉青玉：平安、吉利、守正狀態 */
+  /* 3. Symbolic Accent Tones (Used with restraint) */
+  --vermillion-seal: #c0392b;   /* Imperial cinnabar: Seals and critical remedies */
+  --jade-tranquil: #2d8a6e;     /* Spring jade: Auspicious and aligned states */
 
-  /* 4. 消除 AI 科技感字體排版 */
-  --font-serif-classical: 'Noto Serif SC', 'Noto Serif TC', 'Songti SC', SimSun, serif;
+  /* 4. Classical Typography */
+  --font-serif-classical: 'Noto Serif TC', 'Noto Serif SC', 'Songti SC', serif;
   --font-sans-modern: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* 經典東方大氣卡片規範（徹底取代雜色光暈卡片） */
+/* Classical Oriental Sanctuary Card Specification */
 .oriental-sanctuary-card {
   background: linear-gradient(180deg, rgba(13, 21, 38, 0.75) 0%, rgba(8, 12, 23, 0.95) 100%);
   border: 1px solid var(--gold-hairline);
@@ -398,41 +326,25 @@
 
 ---
 
-## 五、 工程落地分期推進路徑 (Implementation Phasing)
+## 5. Implementation Phasing
 
-為確保研發團隊在代碼實施時目標清晰、有條不紊，所有優化升級按以下三個優先級階段展開：
+### Phase 1: Eradicating AI Tropes & Visual Purification (P0)
+1. **Refactor `MasterEntryCard.tsx`**: Remove purple/yellow blur spheres, remove `animate-ping` presence dot, eliminate AI consultant labels, and implement the Celestial Sanctuary layout.
+2. **Harmonize Portal Palette**: Eliminate multicolored backgrounds (`categoryColors`) across `divination/page.tsx` in favor of consistent obsidian lacquer. Replace Western fantasy emojis.
+3. **Resolve Logged-in Homepage Redirect**: Replace forced redirects on `/` with a welcoming dashboard shortcut.
 
-### 第一階段：祛除「AI味」與視覺淨化（P0 · 當務之急）
-1. **重構 `MasterEntryCard.tsx`**：
-   - 移除紫色/黃色模糊光球（第 50-57 行）；
-   - 移除 `animate-ping` 在線綠/黃點（第 81-85 行）；
-   - 移除 `role: 'AI 命理總顧問'` 與底部 3 個 prompt 氣泡；
-   - 替換為規格二所定義的「天機玄覽 · 歲時氣象」極簡開闊版面。
-2. **清除全站色彩雜亂問題**：
-   - 清理 `divination/page.tsx` 中各卡片的彩虹雜色背景（`categoryColors`），回歸統一的玄青墨夜質感；
-   - 移除首頁與報告中的西方奇幻 Emoji（🧙‍♂️ 等）。
-3. **修復已登入用戶被踢出首頁的體驗 Bug**：
-   - 修改 `src/app/page.tsx` 第 58 行的強制轉跳，實現溫潤的老友回歸問候界面。
+### Phase 2: Ceremonial Transitions & Social Posters (P1)
+1. **Redesign Loading Experience**: Overhaul `MysticalLoader.tsx`, removing numerical percentage bars and fire particles in favor of celestial transitions.
+2. **Launch Destiny Poster Generator**: Implement `SharePosterModal.tsx` on result pages for 1080x1440 and 1080x1920 social cards.
+3. **Dialogue Scroll Conversion**: Redesign Master chat bubbles into archival manuscripts with chart context indicators.
 
-### 第二階段：儀式感昇華與社交海報落地（P1 · 體驗突破）
-1. **重塑加載與等待體驗**：
-   - 重構 `MysticalLoader.tsx`，徹底剔除數值百分比進度條與電競火焰特效，替換為星象交匯與水墨運轉儀式。
-2. **上線 1080x1440 東方命運籤卡生成器**：
-   - 在排盤結果頁落地 `SharePosterModal.tsx`，生成帶有古典雲紋、硃砂印章與金句的優質分享圖。
-3. **對話界面經卷化**：
-   - 重塑大師對話的氣泡樣式，實現案前「命盤共讀」指示與對弈問道版面。
-
-### 第三階段：商業閉環與全家族體系（P2 · 長效沉澱）
-1. **2027 歲次丙午流年專案上線**：
-   - 推出前兩章免費試讀 + 後續章節漸進式毛玻璃解鎖的流年錦囊。
-2. **重塑家族九宮羅盤**：
-   - 將「家庭成員管理」全面升級為東方宗族命理羅盤。
-3. **藏經閣 (Wiki) 即時速算小盤聯動**：
-   - 完成首批 15 篇高品質 SEO 經典文章發布，並在文章中無縫嵌入命理排盤小組件。
+### Phase 3: Commercial Loops & Relational Tools (P2)
+1. **2027 Annual Fortune Report**: Launch freemium previews with progressive chapter unlocking.
+2. **Family Nine-Palace Compass**: Upgrade family member management into an interactive relational compass.
+3. **Wiki Embedded Calculators**: Publish initial 15 SEO articles with embedded calculation widgets.
 
 ---
 
-## 六、 結語
+## 6. Conclusion
 
-**「玄者，深邃莫測；機者，事之樞紐。」**  
-摒棄粗劣的現代 AI 標籤，不代表我們拋棄先進的計算模型；恰恰相反，是用**最莊嚴克制的東方審美包裹最深邃的現代智慧**。通過本次全站審計與重構規格，玄機將徹底蛻變為一款耐看、好用、有尊嚴、具備長久生命力的高級東方命理典範產品。
+Discarding AI marketing cliches does not mean abandoning cutting-edge computing; rather, it means **encapsulating computational intelligence within dignified, restrained aesthetics**. Through this audit and redesign specification, XuanJi establishes an authentic, enduring product standard for modern Eastern metaphysics.

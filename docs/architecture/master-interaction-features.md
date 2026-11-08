@@ -1,151 +1,151 @@
-# 玄機大師 — 互動體驗機制與狀態機規範 (Master Interaction Features)
+# XuanJi Master — Interaction Experience & State Machine Specifications
 
-> **版本**：v2.1  
-> **層級**：對話交互系統工程架構手冊 (Conversational Interaction Architecture)  
-> **範圍**：打斷與追問、CTA 卡片生命週期與反轉、閒置智能反思、激活續接機制
-
----
-
-## 一、設計理念與真人感交互目標
-
-「玄機大師」並非傳統被動式「一問一答」的客服 Chatbot，其定位為一位**沈穩、有洞察力、且具備真實人際交互節奏的現代術數命理宗師**。
-
-在人際交流中，真人對話具有非對稱性與動態特徵：
-- **用戶會連發短消息**（Burst Send）：打完「在嗎」緊接著打「想問下今年事業」；
-- **用戶會隨時插話打斷**（Interruption）：在大師長篇分析時，用戶可能發現重點偏移並立即追問；
-- **對話會沉澱與反思**（Reflection）：聊完一段落後，大師可能在 1~2 分鐘後「突然想到」另一個關聯的命盤細節；
-- **場景具備記憶與續接**（Activation Resume）：隔天展開視窗時，大師能依據昨天的進展自然開啟話題。
-
-為支撐上述體驗，系統構建了**統一的狀態驅動交互引擎 (Master Turn Engine)**。
+> **Version**: v2.1  
+> **Level**: Conversational Interaction Architecture Manual  
+> **Scope**: Interruption & Follow-up, CTA Card Lifecycle & Reversal, Idle Reflection, Activation Resume
 
 ---
 
-## 二、大師交互全局狀態機 (Global Interaction FSM)
+## 1. Design Philosophy & Human-like Conversational Goals
+
+"XuanJi Master" is not a passive question-and-answer customer support chatbot. It is engineered as a **calm, perceptive, modern metaphysical mentor with authentic conversational rhythm**.
+
+Authentic human consultations exhibit non-asymmetric and dynamic characteristics:
+- **Burst Messaging**: Users frequently send rapid fragments (e.g., typing "Are you there?" immediately followed by "Wanted to ask about my career this year").
+- **Real-time Interruption**: While the master provides detailed analysis, users may notice a nuance to correct and interrupt mid-sentence.
+- **Reflection**: After a conversational topic winds down, the master may experience a sudden realization 1-2 minutes later about a related natal chart detail.
+- **Activation Resume**: When re-opening the consultation widget hours or days later, the master naturally resumes context based on prior discussions.
+
+To support these interactions, the system employs a **state-driven conversational engine (Master Turn Engine)**.
+
+---
+
+## 2. Master Global Interaction Finite State Machine (FSM)
 
 ```mermaid
 stateDiagram-v2
-    [*] --> IDLE: 載入歷史對話
+    [*] --> IDLE: Load Chat History
 
-    IDLE --> BURST_BUFFERING: 用戶輸入 (sendMessage)
-    BURST_BUFFERING --> BURST_BUFFERING: 1500ms 內連續鍵入 (重置計時器)
-    BURST_BUFFERING --> RUNNING_TURN: 防抖時間到 → flushPendingSends()
+    IDLE --> BURST_BUFFERING: User Input (sendMessage)
+    BURST_BUFFERING --> BURST_BUFFERING: Rapid Input Within 1500ms (Reset Timer)
+    BURST_BUFFERING --> RUNNING_TURN: Debounce Timeout -> flushPendingSends()
 
     state RUNNING_TURN {
         [*] --> FETCHING: POST /api/master (stream)
-        FETCHING --> STREAMING: 接收到首個 SSE 事件
-        STREAMING --> STREAMING: 逐字/逐氣泡更新 MessageBubble
-        STREAMING --> TURN_COMPLETED: 接收到 [DONE]
+        FETCHING --> STREAMING: Receive Initial SSE Event
+        STREAMING --> STREAMING: Stream Token / Bubble Updates to MessageBubble
+        STREAMING --> TURN_COMPLETED: Receive [DONE] Event
     }
 
-    RUNNING_TURN --> INTERRUPTED: 運行期間用戶再次輸入
-    INTERRUPTED --> RUNNING_TURN: abortRef.abort() → 加注 *(被打斷)* → 重啟 runTurn
+    RUNNING_TURN --> INTERRUPTED: User Inputs Message Mid-Generation
+    INTERRUPTED --> RUNNING_TURN: abortRef.abort() -> Append *(interrupted)* -> Restart runTurn
 
-    TURN_COMPLETED --> PENDING_CTA: 大師發送了 CTA 卡片 (引導排盤)
-    TURN_COMPLETED --> REFLECTION_SCHEDULING: 滿足反思門禁條件
-    TURN_COMPLETED --> IDLE: 普通收尾
+    TURN_COMPLETED --> PENDING_CTA: Master Dispatches CTA Card (Paipan Guide)
+    TURN_COMPLETED --> REFLECTION_SCHEDULING: Reflection Gating Conditions Satisfied
+    TURN_COMPLETED --> IDLE: Standard Wrap-Up
 
-    PENDING_CTA --> RUNNING_TURN: 用戶完成排盤 (readingComplete) 或 點擊取消 (cancelPendingReading)
+    PENDING_CTA --> RUNNING_TURN: User Completes Reading (readingComplete) OR Cancels (cancelPendingReading)
 
-    REFLECTION_SCHEDULING --> EMITTING_REFLECTION: 75~120s 隨機抖動且無新輸入
-    REFLECTION_SCHEDULING --> IDLE: 用戶主動輸入打斷定時器
-    EMITTING_REFLECTION --> IDLE: 吐出「對了…」補充氣泡
+    REFLECTION_SCHEDULING --> EMITTING_REFLECTION: 75-120s Jitter Elapsed with No New Input
+    REFLECTION_SCHEDULING --> IDLE: User Types New Input (Disarms Timer)
+    EMITTING_REFLECTION --> IDLE: Dispatches Thoughtful Follow-up Bubble
 
-    IDLE --> ACTIVATION_RESUME: 用戶收合長久後重新展開視窗
-    ACTIVATION_RESUME --> RUNNING_TURN: 發起自動問候或進度盤問
+    IDLE --> ACTIVATION_RESUME: User Expands Widget After Dormancy
+    ACTIVATION_RESUME --> RUNNING_TURN: Proactive Greeting or Follow-up Inquiry
 ```
 
 ---
 
-## 三、四大核心交互機制詳解
+## 3. Four Core Interaction Mechanisms
 
-### 1. 打斷與追問 (Interruption / Follow-up)
+### 1. Interruption & Follow-up
 
-#### 業務場景
-- **場景 A (LLM 輸出中插話)**：大師講到一半，用戶突然說「等等，我問的是我女朋友的事」；
-- **場景 B (請求在空中補話)**：剛發送問題，用戶立馬補發「對了，我是農曆生日」。
+#### Business Scenarios
+- **Scenario A (Interruption Mid-Generation)**: While the master is responding, the user interrupts: "Wait, I was asking about my partner's situation."
+- **Scenario B (Rapid Follow-up In-Flight)**: Immediately after submitting a question, the user adds: "By the way, that birth date was lunar calendar."
 
-#### 數據流與並發控制時序
+#### Data Flow & Concurrency Sequence
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as 用戶
+    actor User as User
     participant UI as MasterChatContext (React)
     participant Engine as /api/master (Next.js)
-    participant LLM as LLM 網關
+    participant LLM as LLM Gateway
 
-    User->>UI: 發送第 1 條消息
-    UI->>UI: 啟動 BURST_DEBOUNCE_MS (1500ms)
-    User->>UI: 800ms 後發送第 2 條補充
-    UI->>UI: 重置 1500ms 定時器
-    Note over UI: 1500ms 無操作 → 觸發發送
-    UI->>Engine: POST /api/master (包含合併消息)
-    Engine->>LLM: streamLLM 開始吐字
+    User->>UI: Dispatches Message 1
+    UI->>UI: Arm BURST_DEBOUNCE_MS (1500ms)
+    User->>UI: Dispatches Message 2 after 800ms
+    UI->>UI: Resets 1500ms Timer
+    Note over UI: 1500ms idle -> Flush batch
+    UI->>Engine: POST /api/master (Merged Payload)
+    Engine->>LLM: streamLLM Starts Output Generation
     
-    User->>UI: 突然輸入新消息 (打斷！)
-    UI->>UI: 頻控檢查 (60s 滑動窗口最多 6 次打斷)
-    UI->>UI: 標記當前 Assistant 氣泡加注 *…(被打斷)*
+    User->>UI: Enters New Message (Interruption Triggered)
+    UI->>UI: Rate Limit Check (Max 6 interruptions per 60s sliding window)
+    UI->>UI: Mark Active Assistant Bubble with *(interrupted)*
     UI->>UI: abortRef.current.abort()
-    UI->>Engine: 斷開 HTTP 連接 (req.signal 觸發)
-    Engine-->>LLM: 瞬間中斷上游 LLM 調用
-    UI->>UI: await turnDoneRef.current (等待舊任務清理完畢)
-    UI->>Engine: 重新 POST /api/master (攜帶打斷上下文重啟)
+    UI->>Engine: Aborts HTTP Connection (req.signal fired)
+    Engine-->>LLM: Immediately Terminates Remote LLM Generation
+    UI->>UI: await turnDoneRef.current (Wait for Stale Task Teardown)
+    UI->>Engine: Re-trigger POST /api/master with Interruption Context
 ```
 
-#### 數據庫一致性保證
-- **無髒數據寫入**：用戶消息在 Stream **啟動前**即刻寫入 `MasterChatMessage`；Assistant 消息僅在 Stream **完全成功閉合時**才寫入數據庫。打斷發生在中間時，數據庫只有用戶輸入而無半截 Assistant 記錄，下一次請求將兩條連續 User 消息作為上下文一併提交，模型自然視為「用戶補充更正」。
-- **扣費策略**：每次 `runTurn` 均在服務端扣除 1 機緣點數。打斷重啟會消耗新額度，作為天然的防惡意刷屏機制。
+#### Database Consistency & Storage Invariants
+- **Zero Dirty State Persistence**: User messages are committed to `MasterChatMessage` **before** streaming initiates. Assistant responses are written **only upon stream completion**. If an interruption occurs mid-stream, the database contains user prompts without incomplete assistant records. The subsequent turn sends both user messages in sequence, allowing the model to naturally interpret the second message as a user correction or refinement.
+- **Credit Billing**: Every `runTurn` consumes 1 Karma credit on the server. Interrupted restarts initiate a fresh turn, serving as a natural rate-limiting safeguard against malicious spamming.
 
 ---
 
-### 2. CTA 卡片生命週期與反轉 (CTA Lifecycle & Reversal)
+## 2. CTA Card Lifecycle & Reversal
 
-#### 業務場景
-當大師建議用戶進行深度排盤（如「點擊下方卡片排八字」），對話進入 `pendingReading` 狀態。用戶若中途反悔關閉表單，大師底欄將提供顯式的「放棄」操作。
+#### Business Scenario
+When the master recommends computing a dedicated chart (e.g., "Click the card below to calculate your BaZi"), the conversation enters the `pendingReading` state. If the user decides not to proceed and dismisses the form, the master widget bottom bar exposes an explicit "Dismiss" action.
 
-#### 狀態反轉流
-1. 用戶點擊底欄 `[✕]` 按鈕，彈出確認對話框；
-2. 確認取消後，調用 `cancelPendingReading()`：
-   - 清除本地 `pendingReading` 鎖；
-   - 插入一條虛擬系統通知：「已取消本次排盤引導」；
-   - 自動合成觸發調用：`runTurn({ silentPrompt: '[用戶取消了本次排盤，請以溫和包容的語氣接話]' })`；
-3. 大師接收該指令後，自動轉向其他話題或安撫情緒，對話無縫繼續。
-
----
-
-### 3. 閒置智能反思 (Idle Reflection — 「對了…」氣泡)
-
-#### 業務目標
-在大師結束回答後，模擬真人命理師「看盤入神、靈光乍現」的思考過程，在 75~120 秒後主動追發一條短氣泡（1~2 句話）。
-
-#### 內容感知門控 (Content-Aware Gating)
-並非所有對話都能觸發反思。為防打擾，必須同時滿足四大嚴格門禁：
-1. **話題相關性**：最後一輪對話必須涉及具體命盤（八字、紫微、大運等），純寒暄與問候不反思；
-2. **非收尾狀態**：對話結尾不能包含「祝您順遂」、「保重」等告別標籤；
-3. **無待決事項**：無進行中的 CTA 卡片；
-4. **隨機抖動**：在 75,000ms ~ 120,000ms 區間隨機選取觸發時刻（Jittered Delay），若期間用戶有任何新打字動作，反思定時器立即自我銷毀。
+#### State Reversal Flow
+1. User clicks the `[X]` button on the bottom bar, displaying a confirmation prompt.
+2. Upon confirmation, `cancelPendingReading()` executes:
+   - Clears the local `pendingReading` lock;
+   - Injects a synthetic system notice: "Reading recommendation dismissed";
+   - Triggers an automated conversational update: `runTurn({ silentPrompt: '[User dismissed the chart calculation prompt. Please acknowledge gently and continue naturally.]' })`;
+3. The master processes this instruction to smoothly redirect the dialogue or reassure the user.
 
 ---
 
-### 4. 激活續接機制 (Activation Resume)
+## 3. Idle Reflection (Spontaneous Realization Bubble)
 
-當用戶隔夜或數小時後重新展開已折疊的對話浮窗時，系統啟動**兩階段分流決策**：
+#### Business Objective
+Simulates an expert practitioner reviewing a natal chart in quiet contemplative study, proactively sharing an additional realization or nuance 75-120 seconds after completing a consultation turn.
+
+#### Content-Aware Gating
+To avoid unwanted disruptions, four strict preconditions must all be satisfied:
+1. **Domain Relevance**: The preceding turn must discuss concrete astrological entities (BaZi, Zi Wei, decadal cycles, etc.); generic small talk does not trigger reflection.
+2. **Non-terminal State**: The conversation must not have concluded with farewell markers (e.g., "Wishing you peace", "Take care").
+3. **No Pending Actions**: No unresolved CTA cards in progress.
+4. **Jittered Timing**: A delay is randomly selected within 75,000ms to 120,000ms. Any user keystroke during this window immediately disarms and terminates the timer.
+
+---
+
+## 4. Activation Resume
+
+When a user returns and re-expands a collapsed consultation widget after several hours or overnight, the system activates a **two-stage resume heuristic**:
 
 ```
-用戶展開對話浮窗 (expand widget)
-      ↓
-檢查冷卻時間 (>2 小時且歷史消息 > 0)
-      ↓
-┌───────────────────────────────────────────────┐
-│ Stage 1: 結構化確定性快徑 (Fast-Path)          │
-│ 檢查最後一條 assistant 是否為待完成的 CTA 卡片   │
-│   ├─ 是且已在其他分頁完成 → 觸發 readingComplete  │
-│   └─ 是但超期未完成 → 提示是否需要協助          │
-└───────────────────────────────────────────────┘
-      ↓ 未命中 CTA
-┌───────────────────────────────────────────────┐
-│ Stage 2: 語義情境自適應搭話 (LLM Adaptive)      │
-│   ├─ 上次用戶說了話但遇網絡中斷無回覆 → 主動補答│
-│   ├─ 逢重大節氣更替 (立春/冬至) → 結合節令問候 │
-│   └─ 對話已自然收尾 → 保持沈默，靜候用戶提問   │
-└───────────────────────────────────────────────┘
+User Expands Chat Widget
+       ↓
+Check Inactivity Threshold (>2 hours elapsed with historical messages)
+       ↓
+┌─────────────────────────────────────────────────────────────┐
+│ Stage 1: Deterministic Fast-Path                            │
+│ Check if last assistant message contains an unresolved CTA: │
+│   ├─ Completed in another browser tab -> Fire readingComplete│
+│   └─ Pending past expiry -> Inquire if user requires help   │
+└─────────────────────────────────────────────────────────────┘
+       ↓ No Pending CTA
+┌─────────────────────────────────────────────────────────────┐
+│ Stage 2: Adaptive Contextual Engagement (LLM Driven)        │
+│   ├─ Prior user message interrupted by network -> Resend    │
+│   ├─ Major solar term transition (e.g. Lichun) -> Seasonal  │
+│   └─ Prior conversation concluded naturally -> Remain silent│
+└─────────────────────────────────────────────────────────────┘
 ```

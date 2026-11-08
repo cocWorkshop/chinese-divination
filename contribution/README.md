@@ -1,53 +1,53 @@
-# 数据库备份与恢复指南 (Database Backup & Restore Guide)
+# Database Backup & Restore Guide
 
-本项目提供了一套**纯 Node.js 实现、零外部系统依赖、全跨平台（Windows / macOS / Linux）**的 PostgreSQL 数据库一键备份与恢复工具。
+This project provides a **pure Node.js, zero-external-dependency, fully cross-platform (Windows / macOS / Linux)** one-click backup and restore toolset for PostgreSQL databases.
 
-无需在宿主机安装 PostgreSQL 客户端（`pg_dump` / `psql` / `pg_restore`），也不强制要求运行 Docker，只要安装了项目依赖即可开箱即用。
+No host-level PostgreSQL client installation (`pg_dump` / `psql` / `pg_restore`) or running Docker container is required. It works out-of-the-box once project npm dependencies are installed.
 
 ---
 
-## 快速上手 (Quick Start)
+## Quick Start
 
-在项目根目录下通过 `npm` 指令即可执行：
+Execute the following commands from the project root via `npm`:
 
-### 1. 备份数据库 (Backup)
+### 1. Database Backup
 
-将当前开发数据库导出为经过 Gzip 高度压缩的数据包（保存于 `db_backup/` 目录下）：
+Exports the active database into a gzip-compressed JSON archive saved under the `db_backup/` directory:
 
 ```bash
 npm run db:backup
 ```
 
-* 默认连接数据库：`postgresql://postgres:postgres@10.0.0.237:5432/divination_dev`
-* 生成文件命名规则：`db_backup/backup_<数据库名>_<YYYYMMDD_HHMMSS>.json.gz`
+* Default target database: `postgresql://postgres:postgres@10.0.0.237:5432/divination_dev`
+* Generated artifact naming convention: `db_backup/backup_<database_name>_<YYYYMMDD_HHMMSS>.json.gz`
 
-### 2. 恢复数据库 (Restore)
+### 2. Database Restore
 
-将备份文件一键还原至目标数据库。脚本会自动选取 `db_backup/` 目录下**最新的一份备份文件**进行还原：
+Restores a backup archive into the target database. The restore runner automatically identifies and restores the **most recent backup file** inside `db_backup/`:
 
 ```bash
-# 方式 1：标准恢复（带交互确认提示，防止误操作）
+# Method 1: Standard interactive restore (prompts confirmation to prevent accidental overwrites)
 npm run db:restore
 
-# 方式 2：静默一键恢复（跳过确认，适合脚本/自动化环境）
+# Method 2: Silent non-interactive restore (skips confirmation prompt, ideal for CI/scripts)
 npm run db:restore -- --force
 ```
 
-恢复完成后，即可直接启动开发服务：
+Once restoration completes, launch the local development server:
 ```bash
 npm run dev
 ```
 
 ---
 
-## 目录结构说明
+## Directory Structure
 
 ```text
 chinese-divination/
 ├── db_backup/
-│   ├── backup.mjs        # 跨平台备份主脚本 (Node.js ESM)
-│   ├── restore.mjs       # 跨平台恢复主脚本 (Node.js ESM)
-│   └── backup_*.json.gz  # 导出的备份文件 (已在 .gitignore 中自动忽略)
+│   ├── backup.mjs        # Cross-platform backup runner (Node.js ESM)
+│   ├── restore.mjs       # Cross-platform restore runner (Node.js ESM)
+│   └── backup_*.json.gz  # Exported gzip backups (automatically ignored in .gitignore)
 └── contribution/
-    └── README.md         # 本文档
+    └── README.md         # This document
 ```

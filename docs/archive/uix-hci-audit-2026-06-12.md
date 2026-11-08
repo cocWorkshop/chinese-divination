@@ -31,9 +31,9 @@ This document proposes **31 items in 6 workstreams (A–F)**, phased so each wor
 | A2 ✅ | No Escape-to-close on the expanded Master view; the only keyboard handler is Enter-to-send on the textarea. No focus trap in the overlay; no focus return to FAB on collapse. | [ExpandedView.tsx:108](../../src/components/master/widget/ExpandedView.tsx#L108) is the sole `onKeyDown` in `src/components/master/` |
 | A3 ✅ | aria-label coverage: 16 instances across 10 files for ~54 components. Header buttons in the expanded view (Memory / New chat) and CollapsedBar actions rely on `title` only. | grep `aria-label` in src |
 | A4 | BirthplaceInput autocomplete is mouse-only: no ArrowUp/Down/Enter/Escape, results are `<li>` without combobox roles. | [BirthplaceInput.tsx](../../src/components/BirthplaceInput.tsx) dropdown ~lines 160–197 |
-| A5 | Color-only encodings: five-element colors in the BaZi pillar chart and 四化 star colors in the ZiWei grid have no text fallback or legend — invisible to color-blind users. | [BaziResult.tsx](../../src/components/results/BaziResult.tsx), [ZiweiResult.tsx](../../src/components/results/ZiweiResult.tsx) |
+| A5 | Color-only encodings: five-element colors in the BaZi pillar chart and Si Hua star colors in the ZiWei grid have no text fallback or legend — invisible to color-blind users. | [BaziResult.tsx](../../src/components/results/BaziResult.tsx), [ZiweiResult.tsx](../../src/components/results/ZiweiResult.tsx) |
 | A6 | Form inputs rely on placeholders as labels in several forms; no programmatic `<label htmlFor>` association in divination forms. | `src/app/divination/[type]/forms/*.tsx` |
-| A7 | Streaming/tool state is visual-only: typing dots and the pulsing "查閱檔案中…" label have no `role="status"`/`aria-live`, so screen readers never hear that the Master is working. (Transcript itself does have `aria-live="polite"` — keep.) | [MessageBubble.tsx](../../src/components/master/widget/MessageBubble.tsx) ~210; [ExpandedView.tsx:212](../../src/components/master/widget/ExpandedView.tsx#L212) |
+| A7 | Streaming/tool state is visual-only: typing dots and the pulsing "Consulting records..." label have no `role="status"`/`aria-live`, so screen readers never hear that the Master is working. (Transcript itself does have `aria-live="polite"` — keep.) | [MessageBubble.tsx](../../src/components/master/widget/MessageBubble.tsx) ~210; [ExpandedView.tsx:212](../../src/components/master/widget/ExpandedView.tsx#L212) |
 | A8 | Light-mode contrast untested; gold-on-light and text on translucent glass-cards likely fail WCAG AA in places. | [globals.css](../../src/app/globals.css) light-mode overrides |
 | A9 | Remaining clickable non-button elements (prior audit 9.1 was only partially done). | codebase-wide sweep needed |
 
@@ -41,7 +41,7 @@ This document proposes **31 items in 6 workstreams (A–F)**, phased so each wor
 
 | # | Finding | Evidence |
 |---|---|---|
-| B1 ✅ | `src/app/divination/error.tsx` is Chinese-only — an English user whose reading errors sees 占卜服務暫時不可用 with no translation. | [error.tsx:21-23](../../src/app/divination/error.tsx#L21) |
+| B1 ✅ | `src/app/divination/error.tsx` is Chinese-only — an English user whose reading errors sees "Divination service temporarily unavailable" with no translation. | [error.tsx:21-23](../../src/app/divination/error.tsx#L21) |
 | B2 ✅ | 290 inline language ternaries (190 `lang === 'en'`, 102 `isEn`) and a per-file `T()` helper; no central dictionary, no key reuse, no way to audit coverage. | grep counts, 2026-06-12 |
 | B3 | No `Intl.DateTimeFormat`/`NumberFormat` usage; dates and numbers render raw. Email templates hardcode English date phrasing ("This link expires in 24 hours"). | [email.ts](../../src/lib/email.ts) ~101 |
 | B4 | Language switch re-renders the whole tree with no transition; risk of hydration mismatch on first paint if `lang` is briefly undefined. | [LanguageContext.tsx](../../src/components/LanguageContext.tsx) |
@@ -50,7 +50,7 @@ This document proposes **31 items in 6 workstreams (A–F)**, phased so each wor
 
 | # | Finding | Evidence |
 |---|---|---|
-| C1 | The staged progress bar parks at 95% / "即將完成" from 180s onward, but calls can run to 600s — up to 7 minutes of a frozen bar. Single static warning at 180s, no escalation, no elapsed-aware reassurance, no cancel-and-retry affordance. | [MysticalLoader.tsx](../../src/components/MysticalLoader.tsx) stage table; GeneratingState |
+| C1 | The staged progress bar parks at 95% / "Almost complete" from 180s onward, but calls can run to 600s — up to 7 minutes of a frozen bar. Single static warning at 180s, no escalation, no elapsed-aware reassurance, no cancel-and-retry affordance. | [MysticalLoader.tsx](../../src/components/MysticalLoader.tsx) stage table; GeneratingState |
 | C2 | Failed readings show a generic error card with retry but **no failure cause** (timeout vs. rate limit vs. validation), so repeated failures are undiagnosable for the user. | [reading/[id]/page.tsx](../../src/app/reading/[id]/page.tsx) failed branch |
 | C3 | Form drafts are lost on tab close / navigation; only the post-hoc retry path (RETRY_CARRY_KEYS query params) restores inputs. No localStorage draft. | `src/app/divination/[type]/forms/` |
 | C4 | If the user closes the tab mid-generation, recovery depends on them finding the pending reading in /dashboard; nothing proactively tells them "your reading continued and completed." (Master activation-resume partially covers this — only for CTA-originated readings.) | dashboard polling; [MasterChatContext.tsx](../../src/components/master/MasterChatContext.tsx) runActivationDispatch |
@@ -85,7 +85,7 @@ This document proposes **31 items in 6 workstreams (A–F)**, phased so each wor
 | F3 | Every SSE `content` chunk triggers `setMessages` — long replies cause render churn on low-end Android devices. Batch via rAF/throttle. | MasterChatContext reader loop |
 | F4 | Master history loads unpaginated on every mount (`cache: 'no-store'`) — slow for heavy users. | [MasterChatContext.tsx:339](../../src/components/master/MasterChatContext.tsx#L339) |
 | F5 | No in-app notification center — toast-only via NotificationPopup; bell exists but no persistent list/read-state UI surface. Notification `type` (info/warning/promo) isn't visually differentiated. | [NotificationPopup.tsx](../../src/components/NotificationPopup.tsx), [NotificationBell.tsx](../../src/components/NotificationBell.tsx) |
-| F6 | Share is discoverable only from the navbar and result page; dashboard cards have share but结果页 export (PDF/image/print stylesheet) is missing — high-value for a product whose output users want to keep/forward. | [ShareResultButton.tsx](../../src/components/ShareResultButton.tsx) |
+| F6 | Share is discoverable only from the navbar and result page; dashboard cards have share but result page export (PDF/image/print stylesheet) is missing — high-value for a product whose output users want to keep/forward. | [ShareResultButton.tsx](../../src/components/ShareResultButton.tsx) |
 | F7 | Marketing emails lack an unsubscribe link (compliance + trust). | [email.ts](../../src/lib/email.ts) footer |
 | F8 | Empty states are minimal: zero-reading dashboard, zero family members, zero credit history have text but no contextual CTA. | dashboard, profile tabs |
 | F9 | No documented design tokens/spacing scale; styles are ad-hoc Tailwind. Fine today, but every theme above will touch shared patterns — extract as you go (focus ring, button, drawer), not as a big-bang. | src/components |
@@ -120,7 +120,7 @@ Phased like the architecture-improvement-plan: each workstream is independently 
 1. **Motion:** add a `useReducedMotion()` hook (or framer-motion's built-in) and gate all infinite/decorative animations (loader, FAB glow, pulses, StarField already done). (A1)
 2. **Keyboard:** combobox pattern for BirthplaceInput (roles + arrow/Enter/Escape); focus trap in expanded Master view and modals (MemoryGate, delete confirms). (A2/A4)
 3. **Semantics:** sweep remaining clickable divs → `<button>`; `<label htmlFor>` on all divination-form inputs; `role="status"` on typing dots + tool-status label. (A6/A7/A9)
-4. **Color:** element-name text (木火土金水) beside color blocks in BaZi chart; text/icon fallback for 四化 colors in ZiWei. (A5)
+4. **Color:** element-name text (Wood/Fire/Earth/Metal/Water) beside color blocks in BaZi chart; text/icon fallback for Si Hua colors in ZiWei. (A5)
 5. **Contrast:** run axe/Lighthouse on dark + light mode; fix failures in globals.css tokens. (A8)
 
 **Verify:** axe DevTools clean on /divination/bazi form + result + Master expanded (both themes); full keyboard-only journey: login → form → submit → result → chat; OS-level reduce-motion shows static loader.
@@ -136,11 +136,11 @@ Phased like the architecture-improvement-plan: each workstream is independently 
 
 ### W3 — Long-call resilience (1–2 sessions; touches the core product moment)
 
-1. **Honest progress past 180s:** replace the parked 95% bar with an elapsed-aware state ("已進行 4:32 — 深度推理中，最長可能需要 10 分鐘"), refresh reassurance every 60s, and add **Cancel & retry** after 300s. (C1)
+1. **Honest progress past 180s:** replace the parked 95% bar with an elapsed-aware state ("Elapsed 4:32 — Deep reasoning in progress, may take up to 10 minutes"), refresh reassurance every 60s, and add **Cancel & retry** after 300s. (C1)
 2. **Failure causes:** map server failure categories (timeout / provider error / validation hard-reject) to user-facing reason + tailored advice on the failed-reading card; credits-not-deducted note already exists — keep. (C2)
 3. **Draft persistence:** localStorage draft per divination type (debounced save, restore banner on return, clear on successful submit). (C3)
 4. **Completion handoff:** on reading completion while user is elsewhere, raise the existing NotificationPopup + dashboard badge (in-app first; Capacitor push lands in W4). (C4)
-5. **Birthplace dead-end:** on 0 results, offer popular-city fallback + free-text "use as-is with default coordinates" path with an honesty note about精度. (C5)
+5. **Birthplace dead-end:** on 0 results, offer popular-city fallback + free-text "use as-is with default coordinates" path with an honesty note about accuracy. (C5)
 
 **Verify:** throttle the LLM endpoint to force a 5-min generation and walk the timeline; kill a reading server-side and check the reason renders; fill a form, close the tab, return — draft restores; submit clears it.
 
@@ -186,4 +186,4 @@ Phased like the architecture-improvement-plan: each workstream is independently 
 
 ---
 
-新 session 啟動建議第一句話：「請閱讀 docs/planning/uix-hci-audit-2026-06-12.md，從 W0 quick wins 開始實作（五項皆已在代碼中驗證），完成後跑 §3 的 verification rig。」
+Recommended opening prompt for new sessions: "Please read docs/archive/uix-hci-audit-2026-06-12.md, start implementation from W0 quick wins (all five verified in code), and run the §3 verification rig upon completion."

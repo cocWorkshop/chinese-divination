@@ -1,48 +1,48 @@
-# 大運排盤與交運時間算法工程規格書 (DaYun Algorithmic Specification)
+# Decadal Fortune (DaYun) Algorithmic Engineering Specification
 
-> **版本**：v2.0 (系統工程標準規範)  
-> **維護者**：術數算法與核心架構組  
-> **代碼對標**：[`src/lib/baziCalculator.ts`](file:///c:/Users/DaZWe/Developer/chinese-divination-dev/src/lib/baziCalculator.ts) 及 [`src/lib/__tests__/baziCrossValidation.test.ts`](file:///c:/Users/DaZWe/Developer/chinese-divination-dev/src/lib/__tests__/baziCrossValidation.test.ts)
+> **Version**: v2.0 (Engineering Baseline Specification)  
+> **Maintainer**: Metaphysical Algorithms & Core Architecture Group  
+> **Code Alignment**: [`src/lib/baziCalculator.ts`](file:///c:/Users/DaZWe/Developer/chinese-divination-dev/src/lib/baziCalculator.ts) and [`src/lib/__tests__/baziCrossValidation.test.ts`](file:///c:/Users/DaZWe/Developer/chinese-divination-dev/src/lib/__tests__/baziCrossValidation.test.ts)
 
 ---
 
-## 一、算法理論基礎與天文曆法定義
+## 1. Algorithmic Theoretical Foundations & Astronomical Calendar Definitions
 
-大運是八字命理學中表徵個體生命週期運勢起伏的十進制時間序列（每步大運管十年）。其數學排布本質是**月柱干支依據性別與年干陰陽進行的順逆循環進位**，起運交運時間則取決於**出生時間點與節氣交界點之間的時間跨度折算**。
+In BaZi destiny analysis, Decadal Fortune (Da Yun) represents the decimal time-series trajectory governing individual life phases in 10-year increments. Mathematically, it derives from the **cyclical forward or reverse progression of the Month Pillar's Heavenly Stem and Earthly Branch based on gender and Year Stem polarity**, with start and handover times determined by **the astronomical time span between birth and the adjacent solar term boundary**.
 
-### 1. 核心定序法則
-- **基準軸心**：以生辰八字中的**月柱 (Month Pillar)** 干支為基點向後或向前遞推；
-- **順逆判定矩陣**：
+### 1. Directional Ordering Rules
+- **Base Axis**: Uses the natal **Month Pillar** Heavenly Stem and Earthly Branch as the baseline starting point, incrementing forward or decrementing backward;
+- **Directional Determination Matrix**:
   $$\text{Direction} = \begin{cases} 
-  \text{Forward (順行)}, & (\text{YearStem} \in \{\text{甲,丙,戊,庚,壬}\} \land \text{Gender} = \text{Male}) \lor (\text{YearStem} \in \{\text{乙,丁,己,辛,癸}\} \land \text{Gender} = \text{Female}) \\
-  \text{Backward (逆行)}, & (\text{YearStem} \in \{\text{乙,丁,己,辛,癸}\} \land \text{Gender} = \text{Male}) \lor (\text{YearStem} \in \{\text{甲,丙,戊,庚,壬}\} \land \text{Gender} = \text{Female})
+  \text{Forward}, & (\text{YearStem} \in \{\text{Jia, Bing, Wu, Geng, Ren}\} \land \text{Gender} = \text{Male}) \lor (\text{YearStem} \in \{\text{Yi, Ding, Ji, Xin, Gui}\} \land \text{Gender} = \text{Female}) \\
+  \text{Backward}, & (\text{YearStem} \in \{\text{Yi, Ding, Ji, Xin, Gui}\} \land \text{Gender} = \text{Male}) \lor (\text{YearStem} \in \{\text{Jia, Bing, Wu, Geng, Ren}\} \land \text{Gender} = \text{Female})
   \end{cases}$$
 
-### 2. 節氣交節標準（只論節，不論氣）
-起運計算嚴格僅以二十四節氣中的 **12 個「節令 (Jie)」** 為時間標尺，12 個「中氣 (Qi)」不參與起運邊界計算：
-- **十二節令標尺**：立春 (寅月)、驚蟄 (卯月)、清明 (辰月)、立夏 (巳月)、芒種 (午月)、小暑 (未月)、立秋 (申月)、白露 (酉月)、寒露 (戌月)、立冬 (亥月)、大雪 (子月)、小寒 (丑月)。
+### 2. Solar Term Boundaries (Major Solar Terms / Jie Only)
+Start calculations strictly use the **12 Major Solar Terms (Jie)** as astronomical markers; the 12 Minor Terms (Qi) do not participate in cycle initiation boundaries:
+- **12 Major Solar Term Markers**: Lichun (Yin month), Jingzhe (Mao month), Qingming (Chen month), Lixia (Si month), Mangzhong (Wu month), Xiaoshu (Wei month), Liqiu (Shen month), Bailu (You month), Hanlu (Xu month), Lidong (Hai month), Daxue (Zi month), Xiaohan (Chou month).
 
 ---
 
-## 二、起運時間折算數學模型
+## 2. Decadal Fortune Calculation Mathematical Model
 
-### 1. 時間跨度 $\Delta T$ 定義
-設出生時刻為 $T_{\text{birth}}$（精確至毫秒的真太陽時時間戳）：
-- **順行**：$\Delta T = T_{\text{next\_jie}} - T_{\text{birth}}$（從出生時刻計算至出生後的**下一個節令**時刻）；
-- **逆行**：$\Delta T = T_{\text{birth}} - T_{\text{prev\_jie}}$（從出生時刻倒推至出生前的**上一個節令**時刻）。
+### 1. Astronomical Time Span $\Delta T$ Definition
+Let birth time be $T_{\text{birth}}$ (millisecond-precision True Solar Time timestamp):
+- **Forward Progression**: $\Delta T = T_{\text{next\_jie}} - T_{\text{birth}}$ (calculated from birth to the **subsequent Major Solar Term** instant);
+- **Backward Progression**: $\Delta T = T_{\text{birth}} - T_{\text{prev\_jie}}$ (calculated backward from birth to the **preceding Major Solar Term** instant).
 
-### 2. 傳統折算率常數表
-傳統命理依據「一年 360 天、一節一氣 30 天」的理想模型對應人壽三萬六千日，折算率如下：
+### 2. Traditional Conversion Constants
+Traditional metaphysics uses an idealized model of "360 days in a year, 30 days per solar term", corresponding to 36,000 days of human life:
 
-| 天文時間跨度 ($\Delta T$) | 對應大運起運時間 | 換算比例 |
+| Astronomical Span ($\Delta T$) | Equivalent Decadal Age | Conversion Ratio |
 |---|---|---|
-| **3 天 (72 小時)** | **1 歲 (1 年)** | $1 \text{ 天} = 4 \text{ 個月}$ |
-| **1 天 (24 小時)** | **4 個月 (120 天)** | $1 \text{ 小時} = 5 \text{ 天}$ |
-| **1 時辰 (2 小時)** | **10 天** | $12 \text{ 分鐘} = 1 \text{ 天}$ |
-| **1 小時 (60 分鐘)** | **5 天** | $1 \text{ 分鐘} = 2 \text{ 小時}$ |
+| **3 Days (72 Hours)** | **1 Year (Age)** | $1 \text{ Day} = 4 \text{ Months}$ |
+| **1 Day (24 Hours)** | **4 Months (120 Days)** | $1 \text{ Hour} = 5 \text{ Days}$ |
+| **1 Shichen (2 Hours)** | **10 Days** | $12 \text{ Minutes} = 1 \text{ Day}$ |
+| **1 Hour (60 Minutes)** | **5 Days** | $1 \text{ Minute} = 2 \text{ Hours}$ |
 
-### 3. 精確分解數學公式
-設時間差總分鐘數為 $M = \lfloor \Delta T / 60000 \rfloor$：
+### 3. Precise Mathematical Formulas
+Let total elapsed minutes be $M = \lfloor \Delta T / 60000 \rfloor$:
 $$\begin{aligned}
 \text{TotalDays} &= M / 1440 \\
 \text{StartAgeYears} &= \lfloor \text{TotalDays} / 3 \rfloor \\
@@ -54,16 +54,16 @@ $$\begin{aligned}
 
 ---
 
-## 三、工程演算法偽代碼 (Pseudocode)
+## 3. Engineering Pseudocode
 
 ```typescript
 interface DaYunStep {
   stepIndex: number;      // 1 ~ 10
-  stem: string;           // 大運天干
-  branch: string;         // 大運地支
-  startAge: number;       // 起運虛歲 (實歲 = startAge - 1)
-  startYear: number;      // 起運公曆年份
-  endYear: number;        // 結束公曆年份
+  stem: string;           // Da Yun Heavenly Stem
+  branch: string;         // Da Yun Earthly Branch
+  startAge: number;       // Nominal start age (Sui, actual age = startAge - 1)
+  startYear: number;      // Gregorian start calendar year
+  endYear: number;        // Gregorian end calendar year
 }
 
 function calculateDaYun(
@@ -73,24 +73,24 @@ function calculateDaYun(
   monthStem: string, 
   monthBranch: string
 ): { startAge: number; steps: DaYunStep[] } {
-  // 1. 判定順逆
-  const isYangYear = ['甲','丙','戊','庚','壬'].includes(yearStem);
+  // 1. Determine direction
+  const isYangYear = ['Jia', 'Bing', 'Wu', 'Geng', 'Ren'].includes(yearStem);
   const isForward = (isYangYear && gender === 'male') || (!isYangYear && gender === 'female');
 
-  // 2. 獲取相鄰節令時刻 (高精度 VSOP87D / 天文演算法)
+  // 2. Fetch adjacent Major Solar Term timestamps (High precision VSOP87D / astronomy algorithm)
   const prevJie = getPrevJieTermSolar(birthDate);
   const nextJie = getNextJieTermSolar(birthDate);
   
-  // 3. 計算時間跨度 (毫秒)
+  // 3. Compute time delta (milliseconds)
   const deltaMs = isForward 
     ? nextJie.getTime() - birthDate.getTime() 
     : birthDate.getTime() - prevJie.getTime();
 
-  // 4. 精確折算為起運年歲
+  // 4. Precision conversion to start age
   const totalDays = deltaMs / (1000 * 60 * 60 * 24);
-  const startAgeYears = Math.max(1, Math.round(totalDays / 3)); // 傳統四捨五入或截斷整年
+  const startAgeYears = Math.max(1, Math.round(totalDays / 3)); // Traditional rounding
 
-  // 5. 排定 10 步大運干支
+  // 5. Compute 10 decadal steps
   const steps: DaYunStep[] = [];
   let curStemIdx = HEAVENLY_STEMS.indexOf(monthStem);
   let curBranchIdx = EARTHLY_BRANCHES.indexOf(monthBranch);
@@ -121,29 +121,29 @@ function calculateDaYun(
 
 ---
 
-## 四、邊界場景與極端情況處理規範
+## 4. Boundary Scenarios & Edge Cases
 
-### 1. 早子時與晚子時（夜子時）邊界
-- **定義**：23:00 ~ 24:00 為晚子時（夜子時），00:00 ~ 01:00 為早子時；
-- **日柱界定**：平台嚴格遵循主流標準——**23:00 即換日柱干支**；
-- **節氣交節時間差計算**：計算 $\Delta T$ 時，使用經過經緯度真太陽時校正後的物理精確時間戳，避免因跨日導致時間差出現 $\pm 24$ 小時的階躍誤差。
+### 1. Early Zi (00:00-01:00) vs Late Zi (23:00-24:00) Boundaries
+- **Definition**: 23:00-24:00 is Late Zi hour (Ye Zi), 00:00-01:00 is Early Zi hour (Zao Zi);
+- **Day Pillar Invariant**: The platform adheres to the mainstream consensus standard: **the Day Pillar stem and branch transitions at 23:00**;
+- **Solar Term Delta**: When calculating $\Delta T$, timestamps are calculated in physical True Solar Time coordinates, preventing $\pm 24$-hour boundary offset errors.
 
-### 2. 出生時刻與交節時刻重合（$\Delta T < 1\text{ 小時}$）
-- 當用戶出生在節令交接地點的數分鐘之內時，計算得出的起運時間可能趨近於 0 歲（出生即起運）；
-- **工程下限保證**：系統底層強制 `startAge = Math.max(1, calculatedAge)`，確保第一步大運起運年齡不小於 1 虛歲，防止大運卡片渲染年齡段重疊。
+### 2. Birth Moment Coinciding with Solar Term Handover ($\Delta T < 1\text{ Hour}$)
+- When a user is born within minutes of a solar term boundary, the calculated initiation time approaches 0 years old (initiating immediately at birth);
+- **Lower Bound Guarantee**: The engine enforces `startAge = Math.max(1, calculatedAge)` to ensure the first decadal pillar starts at nominal age $\ge 1$, preventing negative or overlapping age segments in the UI.
 
-### 3. 真太陽時校正對大運方向的極限翻轉
-- 某些案例公曆出生時間在立春交節前 5 分鐘，但經當地偏東經度校正後，真太陽時越過立春點；
-- **排盤規範**：以**校正後的真太陽時**為唯一判斷依據。若真太陽時跨過節令，則年柱更換、月柱更換，交節倒推點與下一個節令點亦隨之重置。
+### 3. True Solar Time Inversion Across Solar Term Cutoffs
+- If a birth occurs 5 minutes before Lichun in local clock time, but True Solar Time adjustment advances it past the Lichun threshold:
+- **Standard**: **Corrected True Solar Time** is the authoritative criterion. Crossing the solar term boundary shifts Year and Month pillars accordingly, resetting solar term calculation anchors.
 
 ---
 
-## 五、基準測試對標向量 (Test Vectors)
+## 5. Verification Test Vectors
 
-以下基準案例被納入系統 CI 回歸測試套件（`src/lib/__tests__/baziCrossValidation.test.ts`）：
+The following baseline test cases are locked into CI regression suites (`src/lib/__tests__/baziCrossValidation.test.ts`):
 
-| 測試用例 | 出生時間 (公曆) | 性別 | 判定結果 | 起運年齡 (虛歲) | 第一步大運 |
+| Test Case | Birth Time (Gregorian) | Gender | Direction | Start Age (Nominal) | First Da Yun Pillar |
 |---|---|---|---|---|---|
-| **Case 1: 陽男順行** | 1994-02-26 04:15 (甲戌年丁卯月) | 男 | 順行 (至驚蟄) | 3 歲 | 戊辰 (1996起) |
-| **Case 2: 陰女順行** | 2013-07-13 16:17 (癸巳年己未月) | 女 | 順行 (至立秋) | 8 歲 | 庚申 (2021起) |
-| **Case 3: 陰男逆行** | 1989-04-07 04:00 (己巳年戊辰月) | 男 | 逆行 (至清明) | 1 歲 | 丁卯 (1989起) |
+| **Case 1: Yang Male Forward** | 1994-02-26 04:15 (Jia-Xu Year Ding-Mao Month) | Male | Forward (to Jingzhe) | 3 | Wu-Chen (Starts 1996) |
+| **Case 2: Yin Female Forward** | 2013-07-13 16:17 (Gui-Si Year Ji-Wei Month) | Female | Forward (to Liqiu) | 8 | Geng-Shen (Starts 2021) |
+| **Case 3: Yin Male Backward** | 1989-04-07 04:00 (Ji-Si Year Wu-Chen Month) | Male | Backward (to Qingming) | 1 | Ding-Mao (Starts 1989) |

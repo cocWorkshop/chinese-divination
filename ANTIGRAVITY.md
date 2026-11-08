@@ -6,20 +6,20 @@ Orientation and architectural guide for **Google Antigravity** and **OpenCode** 
 
 ## Project Overview
 
-**玄機AI XuanJi** — Full-stack Neuro-Symbolic AI platform for traditional Chinese metaphysical and calendrical systems. Supports 7 deterministic calculation engines plus modular fallbacks:
-- **BaZi (八字)** — Four Pillars of Destiny (V2 engine powered by `tyme4ts`)
-- **Zi Wei Dou Shu (紫微斗數)** — Purple Star Astrology (powered by `iztro`)
-- **I Ching (易經)** — Book of Changes (`taobi`)
-- **Liu Yao (六爻)** — Six Lines Hexagram Divination
-- **Qi Men Dun Jia (奇門遁甲)** — Mysterious Gates Escaping Technique
-- **Feng Shui (風水)** — Nine Palaces Flying Stars (玄空九星)
-- **Mei Hua (梅花易數)** — Plum Blossom Divination (Time-based & Birth-based)
+**XuanJi AI** — Full-stack Neuro-Symbolic AI platform for traditional Chinese metaphysical and calendrical systems. Supports 7 deterministic calculation engines plus modular fallbacks:
+- **BaZi** — Four Pillars of Destiny (V2 engine powered by `tyme4ts`)
+- **Zi Wei Dou Shu** — Purple Star Astrology (powered by `iztro`)
+- **I Ching** — Book of Changes (`taobi`)
+- **Liu Yao** — Six Lines Hexagram Divination
+- **Qi Men Dun Jia** — Mysterious Gates Escaping Technique
+- **Feng Shui** — Nine Palaces Flying Stars (Xuan Kong Flying Stars)
+- **Mei Hua** — Plum Blossom Divination (Time-based & Birth-based)
 - **Other / Fallback** — Generic birth profile & event inquiries
 
 Key capabilities:
 - **Deterministic Calculators**: Chart calculation and astronomical algorithms are 100% deterministic TypeScript (`src/lib/*Calculator.ts`).
 - **AI Interpretations**: Structured interpretations generated via OpenRouter (`openai` SDK) or local Claude proxy (`@anthropic-ai/sdk`), guided by prompt references in `divination-refs/*.md`.
-- **Xuanji Master (玄機大師)**: Persistent, proactive multi-agent orchestrator with long-term memory, incremental user portrait extraction, and token-budgeted working-memory compression (`src/lib/master/`).
+- **Xuanji Master**: Persistent, proactive multi-agent orchestrator with long-term memory, incremental user portrait extraction, and token-budgeted working-memory compression (`src/lib/master/`).
 - **Credit & Payment System**: Unified credit economy (Karma points), Hold-then-Settle atomic ledger, Stripe checkout/subscriptions, daily bonus grants, and gift links.
 - **Onboarding Ad Funnel**: 5-step interactive funnel (`/start`) converting tentative visitors into registered users with trial credits.
 - **Bilingual**: English and Traditional Chinese (`zh-TW`) via `src/components/LanguageContext.tsx` and `src/lib/i18n/`.

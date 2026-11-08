@@ -1,29 +1,29 @@
 # Zi Wei Dou Shu Gold Standard Output — V2 Schema & Evaluation Rubric
 
-> **地位**：紫微斗數解盤黃金標竿範例與質檢規約 (Ground Truth Benchmark & Quality Rubric)  
-> **命盤參數**：公曆 1990-01-15 午時，男命  
-> **局數命身**：土五局 | 命主：武曲 | 身主：天機 | 命宮在未（命身同宮）  
-> **命宮主星**：命無正曜，借對宮丑位太陽（不得地）、太陰（廟）  
-> **生年四化**：武曲化祿(僕役宮) 貪狼化權(疾厄宮) 天梁化科(夫妻宮) 文曲化忌(田宅宮)  
-> **格局特徵**：機月同梁格、命無正曜格、府相朝垣會照、僕役宮引動因果鏈  
-> **對標 Schema**：`src/app/api/divination/schemas/ziwei.schema.ts` (V2)
+> **Status**: Ground Truth Benchmark & Quality Rubric  
+> **Natal Parameters**: 1990-01-15 Wu hour (11:00-13:00), Male  
+> **Bureau & Governing Stars**: Earth 5 Bureau | Life Master: Wuqu | Body Master: Tianji | Life Palace in Wei (Life and Body co-located)  
+> **Life Palace Primary Stars**: Empty Life Palace (no primary stars), borrowing opposite Chou palace Taiyang (Dim) and Taiyin (Temple)  
+> **Birth Si Hua Mutagens**: Wuqu Hua Lu (Servant Palace), Tanlang Hua Quan (Health Palace), Tianliang Hua Ke (Spouse Palace), Wenqu Hua Ji (Property Palace)  
+> **Formation Characteristics**: Ji-Yue-Tong-Liang formation, Empty Life Palace formation, Fu-Xiang flanking assembly, Servant Palace causal chain  
+> **Target Schema**: `src/app/api/divination/schemas/ziwei.schema.ts` (V2)
 
 ---
 
-## 一、架構級質檢規約 (Gold Standard Evaluation Rubric)
+## 1. Architectural Quality Rubric
 
-評估一次紫微斗數解盤是否達到「生產級標竿標準」，採用以下四維度打分矩陣（總分 100 分，≥90 分為標竿級，75~89 分為合格，<75 分為缺陷/重答）：
+Evaluating whether a Zi Wei Dou Shu interpretation achieves "production-grade gold standard" status uses the following four-dimension scoring matrix (Total: 100 points; $\ge 90$ points: Gold Standard, 75-89 points: Passing, $<75$ points: Defect / Re-evaluation):
 
-| 評估維度 | 權重 | 核心考察指標 | 缺陷表現 (Red Flags) |
+| Evaluation Dimension | Weight | Core Criteria | Red Flags |
 |---|---|---|---|
-| **Dim 1: 星曜四化因果鏈 (Star Mutagens & Causal Chains)** | 35% | 必須基於三方四正（命財官遷）星曜亮度互涉，具體推演「生年四化」與「宮干飛化因果鏈」（如宮干自化、化忌沖照）。 | 孤立割裂解讀單個宮位、無視星曜廟旺平陷、將四化當做口號缺乏推演鏈。 |
-| **Dim 2: 心理動力學映射 (Psychological Shadow & Depth)** | 25% | 深度剖析「命宮（外在行為）vs 福德宮（內在心靈）」的心理落差，洞察討好型人格、焦慮隱患與精神支柱。 | 臉譜化性格標籤（如「你性格開朗」）、缺乏內心動機剖析、缺乏深層同理。 |
-| **Dim 3: 時間序列精確性 (Temporal Specificity)** | 25% | 十年大限必須結合大限宮干四化（如大限辛干巨陽曲昌），關鍵年齡標記明確成因依據。 | 無大限四化疊加、年齡跨度模糊、流年斷語缺乏星曜依據。 |
-| **Dim 4: Schema 契約合規 (Contract Compliance)** | 15% | 嚴格滿足 V2 JSON Schema，包含 `formation`、12宮分析、大限分析數組、核心建議與吉方。 | 缺少 `sections.personality`、JSON 嵌套層級混亂。 |
+| **Dim 1: Star Mutagens & Causal Chains** | 35% | Derives causal relationships from star brightness across the Three Parties and Four Adjacent Palaces, linking birth Si Hua with palace flying transformations (e.g. self-transformation, Hua Ji clashing opposite palaces). | Isolated analysis of single palaces, ignoring star brightness/trap states, superficial Si Hua lists without dynamic progression. |
+| **Dim 2: Psychological Shadow & Depth** | 25% | Probes psychological dynamics between Life Palace (external persona) vs. Happiness Palace (inner emotional core), revealing people-pleasing tendencies, anxiety drivers, and spiritual anchors. | Caricatured personality stereotypes ("you are cheerful"), lack of internal motivation analysis, absence of deep empathy. |
+| **Dim 3: Temporal Specificity** | 25% | Decadal cycles (Da Xian) incorporate decadal stem Si Hua mutagens, anchoring key milestones to explicit causal factors. | Omitting decadal Si Hua overlays, vague age ranges, annual predictions lacking star rationale. |
+| **Dim 4: Contract Compliance** | 15% | 100% adherence to V2 JSON Schema field constraints, including `formation`, 12-palace analysis, decadal analysis array, core recommendations, and auspicious coordinates. | Missing `sections.personality`, malformed JSON nesting. |
 
 ---
 
-## 二、標竿輸出數據 (V2 Schema Output)
+## 2. Benchmark Output Data (V2 Schema Output)
 
 ```json
 {
@@ -31,89 +31,89 @@
   "version": 2,
 
   "formation": {
-    "name": "命無正曜·機月同梁",
-    "level": "中格",
-    "analysis": "命宮在未無十四主星，借對宮丑位太陽（不得地）、太陰（廟）——陰強陽弱的借星結構。三方四正天機旺+巨門廟+天同廟構成機月同梁格局，適合文職研究型發展。左右輔弼分居財帛、官祿夾輔命宮，天魁天鉞分布有力，有效提升了命無正曜的格局層次。命身同宮（均在未），先後天一致，性格表裡如一。綜合評級：中格偏上——格局基礎為下格（命無正曜），但輔弼夾命、機月同梁會照、魁鉞護持三重加持，實際表現可達中格水平。"
+    "name": "Empty Life Palace with Ji-Yue-Tong-Liang Influence",
+    "level": "Medium Tier",
+    "analysis": "The Life Palace in Wei contains none of the 14 Primary Stars, borrowing from the opposite Chou palace Taiyang (Dim) and Taiyin (Temple)—a borrowed star architecture where Yin dominates Yang. Across the Three Parties and Four Adjacent Palaces, Tianji (Prosperous), Jumen (Temple), and Tiantong (Temple) assemble into the Ji-Yue-Tong-Liang structure, favorable for administrative and analytical research careers. Zuofu and Youbi assist from Wealth and Career palaces, while Tiankui and Tianyue provide noble support, elevating the baseline grade. Life and Body palaces are co-located in Wei, aligning inner intent with outer action. Overall Rating: Upper-Medium Tier—though baseline Empty Life Palaces start lower, triple auxiliary star support elevates practical real-world execution to solid medium-tier standing."
   },
 
   "sections": {
-    "overview": "命主土五局，命宮在未，命身同宮。命宮無十四主星，借對宮太陽（不得地）太陰（廟）——太陰廟旺為主導力量，太陽不得地為輔，形成「陰勝陽」的借星格局。這意味著命主天生感受力強於行動力，觀察力強於表現力，內在世界遠比外在展示的更加豐富。\n\n命宮僅擎羊（廟旺）一星坐守，這是一把雙刃劍：擎羊入命帶來不服輸的競爭意識和關鍵時刻的果斷，但也增添衝動和與人摩擦的傾向。配合借入的太陰廟旺，形成「外柔內剛」的獨特氣質——平時溫和內斂，一旦觸及底線則態度鮮明。\n\n己年四化揭示一生核心主題：武曲化祿入僕役宮——**人脈即財脈**，一生最大的資產不是技能而是人際關係；貪狼化權入疾厄宮——精力充沛但需節制；天梁化科入夫妻宮——配偶有學識但婚姻煞重（地空地劫陀羅三煞聚會）；文曲化忌入田宅宮——房產文書是一生最大的風險點。\n\n四化形成的因果鏈：僕役宮化祿（交友得財）→ 僕役宮宮干丙使廉貞化忌飛入父母宮 → 意味著「因人脈賺錢但可能損害與長輩的關係」。這條飛化鏈提醒命主在拓展人脈時要顧及家庭感受。\n\n回顧驗證：約15-24歲（大限走兄弟宮七殺旺+禄存），命主應已展現出強烈的獨立意識和賺錢衝動——如果這段時期確有離家求學或經濟獨立的經歷，則命盤的準確度得到確認。",
+    "overview": "The native belongs to the Earth 5 Bureau with Life and Body palaces co-located in Wei. The Life Palace lacks Primary Stars, borrowing Taiyang (Dim) and Taiyin (Temple) from the opposite palace. Taiyin's temple brilliance predominates, creating a structure where receptivity exceeds assertiveness: observational sensitivity outstrips outward display, and the inner mental landscape is far richer than what is shown externally.\n\nThe Life Palace hosts Qingyang (Temple brilliance) alone—a double-edged sword. Qingyang introduces fierce competitive resilience and decisive courage in critical junctures, alongside latent impulsiveness and friction with peers. Blended with borrowed Taiyin, it creates an 'iron hand in a velvet glove' demeanor: calm and accommodating in ordinary moments, yet unyielding when core boundaries are crossed.\n\nBirth year Si Hua reveals the native's lifelong macro themes: Wuqu Hua Lu in the Servant Palace indicates that **social capital is financial capital**—the greatest asset lies in human networks rather than isolated technical skills; Tanlang Hua Quan in the Health Palace reflects abundant physical drive requiring disciplined temperance; Tianliang Hua Ke in the Spouse Palace indicates an educated partner within a turbulent marital palace (meeting Dikong, Dijie, and Tuoluo); Wenqu Hua Ji in the Property Palace flags real estate contracts and titles as primary risk areas.\n\nCausal Flying Mutagen Chain: Servant Palace Hua Lu (wealth via networks) -> Servant Palace Bing stem flies Lianzhen Hua Ji into Parents Palace -> indicating that 'monetizing social networks may generate tension with seniors or familial expectations'. This chain cautions the native to maintain familial transparency while pursuing entrepreneurial ventures.\n\nRetrospective Verification: Between ages 15-24 (Decadal Fortune through Siblings Palace with Qisha and Lucun), the native exhibited a strong awakening of self-reliance and financial independence—confirming chart orientation if early departure from home or independent livelihood occurred during this window.",
 
-    "personality": "**外在（命宮）：** 命無正曜借太陽太陰，性格最大的特點是「適應性極強」——在不同的人面前、不同的環境中，展現截然不同的面向。這不是虛偽，而是太陰的感知力使命主自然地調頻到對方的頻率。太陰廟旺為主導：溫和細膩、善解人意、直覺敏銳，尤其擅長捕捉他人未說出口的需求。擎羊同宮增添了一股不服輸的韌勁——看似好脾氣，但在競爭環境中會展現出令人意外的狠勁。\n\n**內在（福德宮）：** 福德宮在酉亦無正曜，僅火星(得)一顆——這是全盤的隱患。福德宮代表內心世界，無正曜意味著精神世界缺乏穩定的錨點。火星帶來思緒的躁動：容易焦慮、難以放鬆、睡眠品質可能不佳。外在的適應力越強（命宮太陰），內在的消耗就越大（福德空蕩）。建議：發展冥想、宗教或哲學興趣，為精神世界建立支撐結構。\n\n**命宮 vs 福德宮的落差：** 這是此盤最值得關注的心理動態——外在給人溫和從容的印象（太陰借入命宮），內心實際充滿不安和自我懷疑（福德無主星+火星）。長期下來可能導致「討好型人格」或過度壓抑自我需求。覺察這個落差本身就是最好的調適起點。",
+    "personality": "External Persona (Life Palace): Borrowing Taiyang and Taiyin into an empty palace grants extraordinary situational adaptability—displaying distinct facets across different audiences. This is not disingenuousness, but rather Taiyin's empathetic resonance tuning naturally to others' emotional frequencies. Taiyin in temple brilliance fosters gentle tact, emotional intuition, and keen observation. Qingyang co-located injects internal grit: outwardly courteous, yet intensely capable of surprising tenacity when competition demands.\n\nInner Emotional Core (Happiness Palace): Happiness Palace in You is also devoid of Primary Stars, hosting Huoxing (Beneficial stage) alone—the primary psychological vulnerability of the chart. The Happiness Palace represents spiritual equilibrium; lacking a primary star indicates an anchorless inner core. Huoxing induces restless mental agitation: chronic anxious loops, difficulty resting, and sensitive sleep quality. The stronger the outward adaptation (Taiyin in Life), the steeper the inner emotional depletion (Empty Happiness Palace). Guidance: Cultivate contemplative, philosophical, or meditative routines to anchor the internal world.\n\nLife Palace vs. Happiness Palace Disparity: This contrast represents the defining psychological dynamic—outwardly conveying serene composure (borrowed Taiyin), yet inwardly harboring self-doubt and restless vigilance (Empty Happiness Palace with Huoxing). Over time, this may foster people-pleasing tendencies or excessive suppression of personal needs. Recognizing this contrast is the essential first step toward sustainable emotional balance.",
 
-    "career": "**官祿宮（亥）：** 天同(廟)+右弼+天馬。天同廟旺是官祿宮中最「安逸」的主星——最適合穩定有保障的機構（國企、外企、事業單位），最忌獨自創業。天同的本質是「享受過程」而非「追求結果」，所以在KPI壓力極大的環境中會感到窒息。右弼代表工作中有副手或得力助理。天馬代表工作帶走動性質——出差、外派、跨城市。\n\n**財帛宮（卯）：** 天機(旺)+巨門(廟)+左輔。**這是全盤事業的最大亮點。** 天機巨門同宮是最經典的「分析師」組合——能言善辯、邏輯精準、善於在複雜信息中找到規律。天機旺代表思維敏捷，巨門廟代表口才出眾，左輔代表有團隊或工具輔助。具體適合的職業方向：管理諮詢、數據分析、財務分析、媒體策劃、法律諮詢、教育培訓、技術顧問。\n\n**機月同梁格局的職業指引：** 傳統上此格局主「公門中人」——在有規章制度的組織中發展最佳。現代解讀延伸為：任何有系統化流程的專業領域。天馬在官祿暗示不會一輩子待在同一個城市工作。\n\n**武曲化祿在僕役宮的事業啟示：** 財星化祿不在財帛宮而在交友宮——收入來源不是靠埋頭苦幹，而是靠人脈引薦和合作分潤。建議主動經營行業社交：加入專業協會、定期參加行業論壇、維護校友關係網。\n\n**事業節奏：** 15-24歲禄存助力初始積累 → 25-34歲夫妻宮大限事業受感情干擾 → 35-44歲紫微大限是事業爆發期（帝星坐鎮）→ 45-54歲天機巨門大限是專業價值變現期。",
+    "career": "Career Palace (Hai): Tiantong (Temple) + Youbi + Tianma. Tiantong in temple brilliance represents harmonious operational grace—thriving best in structured, secure institutions (multinational corporations, public institutions, established enterprises), and advising against solitary early-stage startups. Tiantong values process fulfillment over ruthless outcome pressure, experiencing severe fatigue under cutthroat KPI regimens. Youbi indicates capable assistants. Tianma introduces mobile dynamics: business travel, regional relocations, or cross-city engagements.\n\nWealth Palace (Mao): Tianji (Prosperous) + Jumen (Temple) + Zuofu. This is the intellectual crown jewel of the entire chart. Tianji and Jumen together form the classic 'Master Analyst' pairing—eloquent, logically rigorous, and gifted at extracting structural patterns from ambiguous data. Tianji provides intellectual speed, Jumen provides compelling articulation, and Zuofu supplies collaborative leverage. Optimal career alignments: management consulting, quantitative data analysis, financial analysis, strategic communications, legal counsel, and technical architecture.\n\nJi-Yue-Tong-Liang Career Guidance: Traditionally aligned with organizational administrative governance, modern applications emphasize specialized professional fields governed by systematic standards. Tianma in the Career Palace indicates the native will not remain static in a single city across their lifetime.\n\nWuqu Hua Lu in Servant Palace Implication: Wealth star Hua Lu resides in the network palace rather than Wealth Palace—indicating earnings derive from collaborative joint ventures, executive recommendations, and revenue sharing rather than isolated grind. Actively cultivate professional community networks: join industry associations, attend technical symposiums, and maintain alumni ties.\n\nCareer Rhythm: Ages 15-24 Lucun initiates foundational reserves -> Ages 25-34 Spouse Palace cycle encounters emotional distractions -> Ages 35-44 Ziwei cycle brings career expansion under executive authority -> Ages 45-54 Tianji-Jumen cycle realizes full intellectual monetization.",
 
-    "marriage": "⚠️ **夫妻宮（巳）是全盤最需關注的宮位——天梁(陷)+化科+地空+地劫+陀羅，煞星密度為十二宮之最。**\n\n**配偶特徵推斷：** 天梁化科——配偶有學識素養，可能從事教育、醫療、社工、諮詢等「蔭人」型職業。天梁性質偏年長穩重，配偶心理年齡比實際年齡成熟，在關係中扮演「導師」或「照顧者」角色。化科帶來文雅氣質和社會聲譽——配偶在其領域有一定的名聲或專業認可。\n\n**婚姻挑戰：** 地空地劫同入夫妻宮——感情中最怕「突然消失」：對方突然冷淡、毫無預兆的分手、或關係中的突發空白期。陀羅入夫妻宮——一旦進入關係就難以乾脆了斷，分合拉鋸是常態。天梁落陷——天梁本為蔭星（保護之星），落陷意味著保護力量失效，在婚姻中「想照顧對方但力不從心」或「被保護的反而受傷」。\n\n**飛化分析（夫妻宮宮干己）：** 己干使武曲化祿飛入僕役宮——婚後配偶幫助命主拓展人脈；使文曲化忌飛入田宅宮——但婚後在房產文書上容易出問題（合同糾紛、產權爭議）。\n\n**婚期判斷：** 25-34歲大限走夫妻宮本位，按理是婚姻發動期，但煞星太重，此期間的感情多為歷練而非終身伴侶。建議35歲後（紫微大限）地位穩固再做婚姻大事——紫微天相大限帶來的帝星氣場，能吸引到更匹配的對象。具體適婚流年：大限走紫微後，流年紅鸞/天喜入夫妻或命宮，且該年大限四化不沖夫妻宮時。\n\n**給命主的婚姻忠告：** (1) 不要因為年齡焦慮在28-30歲匆忙結婚——這正是夫妻宮大限煞星最活躍的時段 (2) 尋找比你大或同齡但心智成熟的伴侶（天梁性質）(3) 婚前務必了解對方的財務觀和家庭背景（地空地劫+文曲化忌的提醒）",
+    "marriage": "Spouse Palace (Si) is the most challenging sector in the chart—hosting Tianliang (Trap) + Hua Ke + Dikong + Dijie + Tuoluo, concentrating the highest malefic star density across the twelve palaces.\n\nSpouse Attributes: Tianliang Hua Ke indicates an educated, ethical partner likely engaged in supportive vocations (education, medicine, counseling, social enterprise). Tianliang carries an older, mature presence: psychologically older than chronological age, acting as a mentor or protector. Hua Ke bestows cultural refinement and professional respect.\n\nMarital Complexities: Dikong and Dijie in the Spouse Palace introduce sudden emotional detachment: partners drifting distant without warning or unanticipated disruptions in connection. Tuoluo creates prolonged hesitation and lingering entanglements. Tianliang in trap state diminishes protective efficacy: good intentions to care for the other may result in mutual strain.\n\nFlying Mutagen Analysis (Spouse Palace Ji Stem): Ji stem flies Wuqu Hua Lu into Servant Palace—post-marriage, the spouse assists in expanding the native's social network; Ji flies Wenqu Hua Ji into Property Palace—highlighting property and contractual vulnerabilities emerging around marital real estate.\n\nTiming Assessment: Ages 25-34 passes through the Spouse Palace, theoretically activating marriage, yet concentrated malefic stars suggest relationships during this phase serve as refining experiences rather than lifelong unions. Deferring lifelong marital commitments until after age 35 (the Ziwei cycle) offers vastly superior stability—Ziwei Tianxiang attracts mature, grounded partners. Auspicious marriage years: during the Ziwei cycle when Hongluan/Tianxi enter Life or Spouse palaces without conflicting decadal mutagens.\n\nMarital Guidance: (1) Avoid marrying impulsively in late 20s out of age anxiety—this corresponds to peak malefic star volatility; (2) Prioritize an emotionally mature, seasoned partner (Tianliang qualities); (3) Thoroughly clarify financial values and contractual clarity prior to marriage (Dikong, Dijie, and Wenqu Hua Ji cautions).",
 
-    "wealth": "**財帛宮（卯）天機(旺)+巨門(廟)+左輔——以智慧和口才賺錢，正財為主。**\n\n天機旺代表善於財務規劃和發現機會，巨門廟代表靠分析判斷和溝通表達創造價值。這不是「做生意」的財帛宮，而是「賣腦力」的財帛宮——最忌入不需要思考的行業。左輔在財帛代表理財有助手或善用工具（基金經理、投顧系統）。\n\n**三個影響財富的宮位交叉分析：**\n- 財帛宮（賺錢能力）：天機巨門——分析賺錢，口才賺錢 ✓\n- 福德宮（財富來源/花錢心態）：無正曜+火星——花錢衝動，沒有計劃性消費的自制力 ⚠️\n- 田宅宮（財富積累/不動產）：破軍旺+文曲化忌——房產動盪，文書風險極高 ⚠️\n\n**綜合判斷：** 賺錢能力很強（財帛天機巨門），但存錢能力偏弱（福德空蕩+火星衝動消費），房產投資高風險（田宅文曲化忌+破軍）。一生的財務策略應該是：**高頻賺、穩健存、遠離房產投機**。\n\n**武曲化祿在僕役宮：** 財星的祿不在自己的財帛宮而在交友宮，這是一個關鍵信息——命主不是獨自發財的命，而是**通過合作、人脈介紹、朋友引薦**而獲利。具體表現：別人介紹的項目比自己找的更賺錢；合伙比獨資更適合；人脈廣度直接決定收入上限。\n\n**財運時間線：**\n- 15-24歲：禄存在兄弟宮，初始積累期，靠個人努力\n- 25-34歲：大限走夫妻宮（煞重），財運受感情拖累，可能為感情花大錢\n- 35-44歲：紫微大限，地位提升帶動收入提升，開始有管理層薪資\n- **45-54歲：財帛大限，天機巨門發力，人生財運巔峰。** 太陰化祿（丁干大限四化）加持，偏財運也開啟\n- 55歲後：漸趨穩定，不再追求財富增長",
+    "wealth": "Wealth Palace (Mao) hosts Tianji (Prosperous) + Jumen (Temple) + Zuofu—earning through intellect, analytical deduction, and communication; primary earned income predominates.\n\nTianji's analytical agility identifies financial openings, while Jumen's articulation monetizes insight. This is not an impulsive merchant's wealth palace, but a cerebral professional's treasury. Zuofu provides institutional tools and advisory asset management support.\n\nThree-Palace Cross Assessment:\n- Wealth Palace (Earning Ability): Tianji and Jumen—analytic intelligence and persuasive communication.\n- Happiness Palace (Spending Mindset): Empty with Huoxing—impulsive spending tendencies and fluctuating self-regulation.\n- Property Palace (Accumulation / Real Estate): Pojun (Prosperous) + Wenqu Hua Ji—real estate volatility and high contractual exposure.\n\nStrategic Outlook: Strong earning power paired with modest spontaneous savings discipline and high real estate risk. Lifetime financial philosophy: **maximize high-frequency professional earnings, establish automated savings, and avoid leveraged property speculation**.\n\nWuqu Hua Lu in Servant Palace: Wealth star Hua Lu rests in the social network palace, signaling earnings achieved via collaborative partnerships, client referrals, and strategic alliances. Projects introduced through trusted peers yield far superior returns compared to isolated solo efforts.\n\nWealth Timeline:\n- Ages 15-24: Lucun in Siblings Palace initiates early savings through individual dedication.\n- Ages 25-34: Spouse cycle burdens capital through personal and relational expenses.\n- Ages 35-44: Ziwei cycle elevates organizational stature and executive remuneration.\n- Ages 45-54: Wealth Palace cycle activates Tianji and Jumen into lifetime financial zenith. Taiyin Hua Lu (via Ding stem decadal mutagen) activates supplementary investment success.\n- Beyond 55: Consolidates peacefully without pursuing speculative expansion.",
 
-    "health": "**疾厄宮（寅）貪狼(平)+化權：精力旺盛但慾望控制是終身課題。**\n\n貪狼主肝膽系統和泌尿生殖系統。化權放大了貪狼的慾望屬性——不僅是性慾，也包括食慾、物質慾、工作慾。「平」亮度意味著力量中等，不至於失控但需要有意識地管理。\n\n**星曜健康對應：**\n- 貪狼化權（疾厄本宮）→ 肝臟、膽囊、泌尿系統。需注意：脂肪肝（飲酒+熬夜）、前列腺問題（中年後）\n- 太陰廟（借入命宮）→ 眼睛、內分泌系統。長期用眼過度可能導致視力問題\n- 擎羊（命宮）→ 頭部、牙齒。容易有頭痛或牙科問題\n- 火星（福德宮）→ 心血管系統、睡眠。焦慮導致的失眠是長期隱患\n\n**大限健康風險期：**\n- 55-64歲（大限走疾厄宮本位）：貪狼化權力量最集中，此十年是健康的關鍵考驗期。大限丙干四化使廉貞化忌飛入父母宮——同時關注父母健康\n- 65-74歲（大限走遷移宮）：太陽不得地+太陰廟——視力和內分泌需要關注\n\n**養生建議：** (1) 30歲前建立運動習慣——貪狼化權的人一旦開始運動會非常投入 (2) 控制飲酒量——肝臟是首要保護對象 (3) 45歲後每年全面體檢 (4) 培養冥想或瑜伽習慣——對治福德宮火星帶來的焦慮",
+    "health": "Health Palace (Yin) hosts Tanlang (Neutral) + Hua Quan: robust physical vitality where disciplined moderation is a lifelong prerequisite.\n\nTanlang governs hepatic, gallbladder, and urogenital systems. Hua Quan amplifies appetites—work stamina, sensory intake, and dietary indulgence. Neutral brightness indicates medium strength that remains healthy when managed intentionally.\n\nStar-Health Correspondences:\n- Tanlang Hua Quan (Health Palace) -> Liver, gallbladder, urogenital tract. Guard against fatty liver (late nights and alcohol) and mature-age prostate sensitivities.\n- Taiyin Temple (Borrowed into Life) -> Vision and endocrine systems. Screen for eye strain.\n- Qingyang (Life Palace) -> Head and dental vulnerabilities. Tendency toward tension headaches.\n- Huoxing (Happiness Palace) -> Cardiovascular rhythms and sleep hygiene. Anxious mental loops present chronic sleep disturbance risks.\n\nDecadal Health Watchpoints:\n- Ages 55-64 (Health Palace cycle): Tanlang Hua Quan concentrates fully; a defining health milestone. Decadal Bing stem flies Lianzhen Hua Ji into Parents Palace—concurrently monitor parental health.\n- Ages 65-74 (Travel Palace cycle): Taiyang (Dim) meets Taiyin (Temple)—prioritize vision and endocrine regulation.\n\nPreventive Regimen: (1) Establish athletic routines before age 30; (2) Moderate alcohol intake to safeguard liver vitality; (3) Maintain annual comprehensive screenings after age 45; (4) Practice daily meditation to alleviate Happiness Palace Huoxing anxiety.",
 
-    "family": "**父母宮（申）：廉貞(廟)+天鉞**\n父母能力出眾且性格要強——廉貞廟旺代表父母在各自領域有魄力和執行力。天鉞為陰貴人星，母親的助力可能更為明顯。廉貞的性格特質是「愛恨分明」，所以父母對命主的教育方式偏嚴格，但背後的愛很深。宮干壬使天梁化祿飛入夫妻宮——父母在婚姻問題上會給予實質幫助（介紹對象或經濟支持婚房）。\n\n**兄弟宮（午）：七殺(旺)+禄存**\n兄弟姐妹個性獨立、行事果決——七殺旺代表強勢性格，不會依賴命主也不希望被依賴。禄存代表兄弟中有人經濟條件不錯，可能在財務上互相幫助。但七殺的本質是「各自為政」——兄弟關係親密但保持距離，互不干涉彼此的選擇。\n\n**子女宮（辰）：紫微(得)+天相(得)+文昌(得)+鈴星(陷)**\n子女有貴氣和才華——紫微天相同宮是帝星配相星的組合，子女氣質高貴、有領導潛質。文昌得地利學業，讀書成績佳。但鈴星落陷帶來性格急躁和叛逆傾向——特別是青春期可能與父母衝突激烈。35-44歲大限走子女宮，是最適合生育的時段，此期間出生的子女得紫微大限加持，資質更佳。"
+    "family": "Parents Palace (Shen): Lianzhen (Temple) + Tianyue.\nParents possess formidable executive capability and decisive personalities. Lianzhen reflects drive and administrative discipline; Tianyue acts as an auxiliary benefactor star, indicating substantial maternal support. Lianzhen's clear-cut boundaries translate into strict parental expectations backed by profound underlying devotion. Ren stem flies Tianliang Hua Lu into Spouse Palace—parents provide tangible material and logistical assistance regarding marriage arrangements.\n\nSiblings Palace (Wu): Qisha (Prosperous) + Lucun.\nSiblings display fierce autonomy and resolute action—Qisha indicates independent personalities who neither lean on the native nor welcome micromanagement. Lucun indicates sibling financial competence with mutual emergency liquidity support. Qisha maintains natural boundaries: warm regard alongside mutual non-interference in life choices.\n\nChildren Palace (Chen): Ziwei (Beneficial) + Tianxiang (Beneficial) + Wenchang (Beneficial) + Lingxing (Trap).\nChildren demonstrate noble presence and natural intellectual poise—Ziwei and Tianxiang unite sovereign and executive qualities, fostering natural leadership aptitude. Wenchang supports distinguished academic achievement. Lingxing in trap state suggests quick-tempered impatience during adolescence. Ages 35-44 (passing through Children Palace) represents the ideal window for childbearing, blessing offspring with Ziwei's sovereign auspiciousness."
   },
 
   "daYunAnalysis": [
     {
       "ageRange": "5-14",
-      "heavenlyStem": "辛",
-      "earthlyBranch": "未",
-      "theme": "初運走命宮本位。命無正曜+擎羊廟旺，童年性格多變、好勝心強。在學校環境中的競爭意識從此時養成。命身同宮意味著此階段的經歷深刻塑造一生性格。",
-      "siHuaOverlay": "大限辛干四化：巨門化祿（財帛宮）、太陽化權（遷移宮）、文曲化科（田宅宮）、文昌化忌（子女宮）。巨門化祿入財帛——學業表現與口才表達從小就有天賦。文昌化忌入子女宮——需注意考試時的粗心大意。",
+      "heavenlyStem": "Xin",
+      "earthlyBranch": "Wei",
+      "theme": "Initial decadal fortune traverses Life Palace. Empty palace with Qingyang in temple brilliance shapes early competitive drive and quick adaptability in school environments. Co-located Life and Body palaces cement foundational traits.",
+      "siHuaOverlay": "Decadal Xin stem mutagens: Jumen Hua Lu (Wealth Palace), Taiyang Hua Quan (Travel Palace), Wenqu Hua Ke (Property Palace), Wenchang Hua Ji (Children Palace). Jumen Hua Lu in Wealth activates early verbal and analytical gifts. Wenchang Hua Ji in Children advises attentiveness against exam oversight.",
       "keyEvents": [
-        { "age": "8-10", "event": "可能經歷家庭搬遷或轉學，環境變動促使適應能力養成", "basis": "太陽化權入遷移宮，環境變動主題突出" },
-        { "age": "12-14", "event": "學業競爭中的重要轉折——可能是升學考試的成敗", "basis": "擎羊入命大限末期，文昌化忌提示考試風險" }
+        { "age": "8-10", "event": "Family relocation or school transfer cultivates versatile environmental resilience.", "basis": "Taiyang Hua Quan in Travel Palace highlights geographic mobility." },
+        { "age": "12-14", "event": "Pivotal academic transition establishing scholarly tracking.", "basis": "Concluding phase of Qingyang cycle; Wenchang Hua Ji highlights testing diligence." }
       ],
-      "advice": "此階段重點培養閱讀習慣和表達能力——巨門化祿在財帛意味著口才是未來最大的財富工具。"
+      "advice": "Cultivate expressive clarity and reading breadth—Jumen Hua Lu in Wealth marks communication as a lifelong economic asset."
     },
     {
       "ageRange": "15-24",
-      "heavenlyStem": "庚",
-      "earthlyBranch": "午",
-      "theme": "大限走兄弟宮，七殺(旺)+禄存。青年期獨立意識強烈覺醒，「我要靠自己」的信念形成。禄存帶來初始積累機會——可能通過打工、兼職或獎學金開始經濟獨立。七殺旺的大限讓人行事果決但略顯衝動。",
-      "siHuaOverlay": "大限庚干四化：太陽化祿（遷移宮）、武曲化權（僕役宮）、太陰化科（遷移宮）、天同化忌（官祿宮）。太陽化祿+太陰化科同入遷移——外出發展非常有利，離開家鄉的決定是正確的。天同化忌入官祿——學業或初入職場的壓力大，安逸被打破。",
+      "heavenlyStem": "Geng",
+      "earthlyBranch": "Wu",
+      "theme": "Decadal fortune traverses Siblings Palace with Qisha (Prosperous) and Lucun. Youthful awakening of self-reliance and financial independence ('I will forge my own path'). Lucun initiates initial savings via part-time employment, scholarships, or early ventures.",
+      "siHuaOverlay": "Decadal Geng stem mutagens: Taiyang Hua Lu (Travel Palace), Wuqu Hua Quan (Servant Palace), Taiyin Hua Ke (Travel Palace), Tiantong Hua Ji (Career Palace). Taiyang Hua Lu and Taiyin Hua Ke unite in Travel—relocating from home proves profoundly beneficial. Tiantong Hua Ji in Career disrupts complacency with early workplace rigor.",
       "keyEvents": [
-        { "age": "18", "event": "離家求學或開始經濟獨立——這是七殺+禄存大限的典型發動", "basis": "七殺旺主獨立，禄存主財務起步，太陽化祿入遷移主離鄉有利" },
-        { "age": "22-23", "event": "第一份正式工作或重要職業選擇", "basis": "禄存大限末期積累轉化，武曲化權入僕役主人脈中展現實力" }
+        { "age": "18", "event": "Departing home for higher education or economic self-sufficiency.", "basis": "Qisha prompts independence, Lucun begins financial footing, Taiyang Hua Lu in Travel favors relocation." },
+        { "age": "22-23", "event": "First professional appointment or foundational career choice.", "basis": "Concluding phase of Lucun cycle converts into formal workplace capability." }
       ],
-      "advice": "把握20歲左右外出發展的機會。天同化忌在官祿提醒此時期工作不會太舒適，但正是累積經驗的黃金期。"
+      "advice": "Seize relocation and educational opportunities around age 20. Tiantong Hua Ji in Career confirms early professional phases require grit to build enduring experience."
     },
     {
       "ageRange": "25-34",
-      "heavenlyStem": "己",
-      "earthlyBranch": "巳",
-      "theme": "大限走夫妻宮，天梁(陷)+化科+陀羅+地空+地劫。這是全盤挑戰最大的十年。感情經歷深刻洗禮，可能經歷重大挫折或分合拉鋸。天梁化科帶來社會名譽的提升，但內心煎熬只有自己知道。",
-      "siHuaOverlay": "大限己干四化：武曲化祿（僕役宮）、貪狼化權（疾厄宮）、天梁化科（夫妻宮）、文曲化忌（田宅宮）。武曲化祿在僕役——此時期人脈迅速擴展，事業上有朋友相助。文曲化忌在田宅——注意租房合同、房產買賣等文書問題，慎防受騙。",
+      "heavenlyStem": "Ji",
+      "earthlyBranch": "Si",
+      "theme": "Decadal fortune traverses Spouse Palace with Tianliang (Trap) + Hua Ke + Tuoluo + Dikong + Dijie. The most turbulent decade of the chart. Romantic relationships undergo significant testing. Tianliang Hua Ke enhances public repute, while internal emotional resilience is deeply tested.",
+      "siHuaOverlay": "Decadal Ji stem mutagens: Wuqu Hua Lu (Servant Palace), Tanlang Hua Quan (Health Palace), Tianliang Hua Ke (Spouse Palace), Wenqu Hua Ji (Property Palace). Wuqu Hua Lu in Servant rapidly broadens professional networks with peer support. Wenqu Hua Ji in Property cautions against rental and real estate lease disputes.",
       "keyEvents": [
-        { "age": "26-28", "event": "重大感情波折或婚姻抉擇——煞星集中爆發期", "basis": "夫妻宮本位大限+陀羅空劫引動" },
-        { "age": "30-32", "event": "事業上通過朋友介紹迎來轉機；同時注意房產合約糾紛", "basis": "武曲化祿入僕役+文曲化忌入田宅的雙重效應" }
+        { "age": "26-28", "event": "Major relational transitions or marital crossroads amid concentrated malefic star activation.", "basis": "Spouse Palace baseline transit activates Tuoluo and Dikong/Dijie." },
+        { "age": "30-32", "event": "Career breakthroughs facilitated by professional allies; diligence required on real estate contracts.", "basis": "Dual manifestation of Wuqu Hua Lu in Servant and Wenqu Hua Ji in Property." }
       ],
-      "advice": "感情上不要強求結果，把這十年當作心性的歷練。涉及房產買賣或大額合同務必請專業律師審核。"
+      "advice": "Do not force relational outcomes; view this decade as character refinement. Ensure real estate or commercial agreements receive rigorous legal review."
     },
     {
       "ageRange": "35-44",
-      "heavenlyStem": "戊",
-      "earthlyBranch": "辰",
-      "theme": "大限走子女宮，紫微(得)+天相(得)+文昌(得)+鈴星(陷)。人生由守轉攻的關鍵轉折期。帝星紫微坐鎮大限，社會地位顯著提升，開始進入管理層或在行業內建立權威。貴人運強勁，做事事半功倍。",
-      "siHuaOverlay": "大限戊干四化：貪狼化祿（疾厄宮）、太陰化權（遷移宮借入命宮）、右弼化科（官祿宮）、天機化忌（財帛宮）。右弼化科入官祿——事業上有貴人提拔，獲得重要職位。天機化忌入財帛——賺錢方式面臨轉型陣痛，投資需要格外謹慎，防止因過度自信而踩坑。",
+      "heavenlyStem": "Wu",
+      "earthlyBranch": "Chen",
+      "theme": "Decadal fortune traverses Children Palace with Ziwei (Beneficial) + Tianxiang (Beneficial) + Wenchang (Beneficial) + Lingxing (Trap). A defining strategic turning point transitioning from defense to leadership. Sovereign star Ziwei commands the decade, elevating executive authority and industry recognition.",
+      "siHuaOverlay": "Decadal Wu stem mutagens: Tanlang Hua Lu (Health Palace), Taiyin Hua Quan (Travel borrowed to Life), Youbi Hua Ke (Career Palace), Tianji Hua Ji (Wealth Palace). Youbi Hua Ke in Career brings executive sponsorship and promotions. Tianji Hua Ji in Wealth signals commercial transitions requiring prudent investment caution.",
       "keyEvents": [
-        { "age": "35-37", "event": "職業生涯的重大躍升——晉升管理崗或獨立主導重大項目", "basis": "紫微天相帝相會合，右弼化科入官祿" },
-        { "age": "39-41", "event": "財務策略調整，可能遭遇一次小規模投資失利但迅速修正", "basis": "天機化忌入財帛的警示效應" }
+        { "age": "35-37", "event": "Major executive promotion or leadership of critical enterprise initiatives.", "basis": "Ziwei and Tianxiang assemble with Youbi Hua Ke in Career." },
+        { "age": "39-41", "event": "Strategic financial reallocation; minor speculative correction prompts swift structural alignment.", "basis": "Cautionary influence of Tianji Hua Ji in Wealth." }
       ],
-      "advice": "這是建立個人品牌的黃金期。專注於事業主線，遠離高風險投機。若有生育計劃，此時期子女資質極佳。"
+      "advice": "A golden epoch for personal authority. Prioritize core organizational objectives and avoid speculative leverage. Ideal timing for childbearing, blessing descendants with exceptional traits."
     }
   ],
 
   "keyAdvice": [
-    "人脈是終身最大的資產：武曲化祿在僕役宮明確提示，個人單打獨鬥上限有限，多參與行業社交、合作分潤才是致富密碼。",
-    "婚姻宜晚不宜早：夫妻宮煞星雲集，34歲前感情多波折，35歲紫微大限後再定終身最為穩妥。",
-    "職場定位為高級分析師/顧問：機月同梁格局+財帛天機巨門，最擅長邏輯分析與語言表達，遠離無需思考的機械崗位。",
-    "遠離房產投機：田宅宮破軍+文曲化忌，不動產投資風險極高，簽署合約務必仔細審核細節條款。",
-    "重視精神減壓：福德宮火星引發內在焦慮，培養冥想、哲學閱讀習慣，建立內在穩定的精神錨點。"
+    "Human Networks Are Your Greatest Asset: Wuqu Hua Lu in the Servant Palace demonstrates that collaborative syndicates and executive alliances far outperform solitary striving.",
+    "Marriage Rewards Later Maturity: With dense malefic stars in the Spouse Palace, relationships before age 34 encounter turbulence; committing during the age 35+ Ziwei cycle offers superior stability.",
+    "Target Senior Analytical & Advisory Roles: The Ji-Yue-Tong-Liang formation paired with Wealth Palace Tianji and Jumen excels at complex analysis and persuasive advocacy; avoid monotonous operational roles.",
+    "Exercise Prudence in Real Estate: With Property Palace Pojun and Wenqu Hua Ji, real estate speculation carries heightened risk; scrutinize contractual terms diligently.",
+    "Establish Spiritual Anchors: Happiness Palace Huoxing prompts internal restlessness; cultivate daily meditative and philosophical routines to anchor peace of mind."
   ],
 
   "luckyInfo": {
-    "colors": ["白", "黃", "金"],
-    "directions": ["西", "西南"]
+    "colors": ["White", "Yellow", "Gold"],
+    "directions": ["West", "Southwest"]
   }
 }
 ```

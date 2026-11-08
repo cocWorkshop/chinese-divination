@@ -1,289 +1,271 @@
-# 玄機 XuanJi 产品分析报告
+# XuanJi Product Analysis Report
 
-**日期:** 2026-09-11
-**数据来源:** 生产库只读实测（divination_db, 2026-09-11）+ 公开市场资料（来源与置信度见文末）
-**范围:** 产品现状 / 市场 / 竞品 / 技术趋势 / **发展方向** / **推广策略** / 风险 / 90天计划
-
----
-
-## 0. 一页结论（TL;DR）
-
-1. **产品力过剩，增长力为零。** 327 个注册用户、历史付费用户 4 人、近 30 天新增 8 人。产品功能完成度很高（8 门术数 + 积分 + 支付 + 后台 + Wiki），但继续堆功能的边际价值 ≈ 0。**当前唯一瓶颈是分发（获客+回访），不是产品。**
-2. **市场是真的，且在加速。** 全球玄学类 App 数十亿美元级市场、双位数增长；巨头已入场（2026-07 Midjourney 收购 Co-Star）；东玄出海已被验证（FateTell 首月营收 $1 万+，Moonly 累计 $2000 万）。
-3. **方向：从"全能工具"收敛为"海外华人的 AI 命理顾问"。** 以八字+紫微为锚（实测使用量最高），六爻/梅花为"问事"入口；从一次性排盘转向「档案 + 回访 + 流年」的持续关系——这是所有头部竞品共同走通的路（工具→解释→陪伴）。
-4. **推广：内容驱动冷启动，不投钱。** 最讽刺的发现：**Wiki 功能 4 月就上线了，文章数 = 0**——最有价值的 SEO 资产一直空转。第一优先级是把它填上；第二是短视频/图文内容 + 华人社群渗透。现有分享卡/礼品链接/推荐基建都是现成的，缺的只是往里灌流量。
+**Date**: 2026-09-11  
+**Data Sources**: Production read-only database metrics (`divination_db`, 2026-09-11) + Public market research (citations and confidence ratings listed in Section 11)  
+**Scope**: Product State / Market Overview / Competitive Landscape / Technology Trajectory / **Strategic Direction** / **Acquisition Strategy** / Risk Assessment / 90-Day Execution Plan
 
 ---
 
-## 1. 产品现状盘点（生产库实测）
+## 0. Executive Summary (TL;DR)
 
-### 1.1 功能全景
+1. **Surplus Engineering, Deficit Distribution**: 327 registered users, 4 lifetime paying customers, 8 new registrations in the trailing 30 days. Feature completion is high (8 divination engines + Karma ledger + Stripe billing + Admin console + Wiki architecture), but incremental feature additions yield near-zero marginal value. **The sole growth bottleneck is distribution (acquisition + retention), not product capability.**
+2. **Accelerating Global Market**: Multi-billion-dollar global metaphysical software market growing at double digits; industry consolidation is underway (Midjourney acquisition of Co-Star in 2026-07); Eastern metaphysics international expansion is validated (FateTell achieving $10k+ month-one revenue; Moonly generating $20M+ lifetime).
+3. **Strategic Pivot: From General Tool to AI Metaphysical Counselor for Global Chinese Communities**: Anchored on BaZi and Zi Wei Dou Shu (highest real usage), with Liu Yao and Mei Hua serving as specific query channels; transitioning from one-time calculations to enduring relationships built on personal profiles, cyclical follow-ups, and annual forecasts.
+4. **Organic Content-Driven Cold Start**: Most glaring missed opportunity: **The Wiki feature was deployed in April with zero published articles**—the highest-value SEO asset has sat idle. Priority 1 is populating this repository; Priority 2 is organic social content and community engagement. Existing share cards, gift links, and referral mechanisms are ready for incoming traffic.
 
-| 模块 | 内容 | 状态 |
+---
+
+## 1. Product State & Operating Metrics (Production Database Audit)
+
+### 1.1 Feature Landscape
+
+| Subsystem | Scope | Status |
 |---|---|---|
-| 术数引擎 | 八字、六爻、紫微、梅花易数、奇门遁甲、风水、易经、其他 | ✅ 全部上线 |
-| 紫微深度 | 8-section 解读、23 种格局程序化检测、keyPredictions、大运时间线 | ✅ 完成度高 |
-| 大师对话 | LLM 多轮对话 | ✅ 上线（17 个会话） |
-| 积分体系 | CreditLog 审计、每日赠送、礼品链接（预算/限领）、機緣簿 | ✅ 完整 |
-| 支付 | Stripe（test/live 双环境） | ✅ 正常 |
-| Wiki 知识库 | 后台 CRUD + 公开页 + 7 分类 | ⚠️ **功能完成，文章数 0** |
-| 用户体系 | 注册/邮箱验证/家庭成员档案/UserPortrait 用户画像 | ✅ 完整 |
-| 运营后台 | 用户/订单/补偿/错误/漏斗页/通知/欢迎语 | ✅ 完整 |
-| 移动端 | Capacitor 脚手架（加载远程 URL + Push 配置） | ⚠️ 有壳未上架 |
-| 基建 | Docker 双环境（prod 8094 / test 8088）、watchtower、每日备份、Sentry、CI | ✅ 健全 |
+| Divination Engines | BaZi, Liu Yao, Zi Wei Dou Shu, Mei Hua, Qi Men Dun Jia, Feng Shui, I Ching, Other | Operational |
+| Deep Zi Wei Analysis | 8-section interpretations, 23 algorithmic pattern detectors, keyPredictions, decadal timeline | High Completion |
+| Master Chat | Multi-turn conversational LLM | Operational (17 lifetime sessions) |
+| Credit Economy | CreditLog ledger, daily grants, gift links with caps, Karma ledger | Complete |
+| Payments | Stripe (Test & Live dual environments) | Operational |
+| Wiki Knowledge Base | Admin CRUD + public portal + 7 taxonomy categories | **Feature Complete, 0 Articles** |
+| User Profile | Registration, email verification, family member tree, UserPortrait | Complete |
+| Admin Console | Users, orders, compensations, errors, funnel, notices, welcome rules | Complete |
+| Mobile | Capacitor application wrapper (remote URL load + push config) | Shell built, unlisted |
+| Infrastructure | Docker dual-stack (prod 8094 / test 8088), Watchtower, daily backups, Sentry, CI | Robust |
 
-### 1.2 核心数据（2026-09-11 实测）
+### 1.2 Core Metrics (Audited 2026-09-11)
 
-**用户增长（注册/月）**
-
+**User Registration Cohorts (Monthly)**:
 ```
-2026-03: 174   ← 发布期高峰
+2026-03: 174   <- Initial launch spike
 2026-04:  27
-2026-05: 112   ← 第二波（推测：礼品链接/分享带来）
+2026-05: 112   <- Second wave (driven by gift links / viral shares)
 2026-06:   3
 2026-07:   3
 2026-08:   4
-2026-09:   4(至11日)
-─────────────
-累计:   327    近30天新增: 8
+2026-09:   4   (through Sept 11)
+-------------
+Total:   327   Trailing 30-Day New Users: 8
 ```
 
-**使用量（排盘次数，累计 1,804 次）**
+**Divination Volume (1,804 Lifetime Calculations)**:
 
-| 类型 | 次数 | 占比 | 备注 |
+| Divination System | Count | Share | Notes |
 |---|---|---|---|
-| 八字 | 621 | 34% | 第一入口 |
-| 六爻 | 466 | 26% | "问事"场景强 |
-| 紫微 | 263 | 15% | 深度解读主打 |
-| 梅花 | 193 | 11% | |
-| 奇门 | 142 | 8% | |
-| 风水 | 41 | 2% | 低 |
-| 易经 | 38 | 2% | 低 |
+| BaZi | 621 | 34% | Primary entry point |
+| Liu Yao | 466 | 26% | Strong for specific decision queries |
+| Zi Wei Dou Shu | 263 | 15% | Core deep reading offering |
+| Mei Hua | 193 | 11% | Rapid horary queries |
+| Qi Men Dun Jia | 142 | 8% | Strategic planning |
+| Feng Shui | 41 | 2% | Low volume |
+| I Ching | 38 | 2% | Low volume |
 
-月度排盘量：4月 228 → 5月 392（峰值）→ 6月 218 → 7月 125 → 8月 161 → 9月(至11日) 52。
-**解读：** 新增断了，但存量小群体仍在稳定使用（8月仍有 161 次排盘）——产品留存体验不差，差的是新血。
+Monthly calculations: April 228 -> May 392 (peak) -> June 218 -> July 125 -> August 161 -> Sept (to 11th) 52.  
+**Insight**: New user acquisition stalled, but an active cohort continues regular usage (August recorded 161 calculations)—retention experience is stable, but top-of-funnel acquisition is dry.
 
-**变现**
+**Monetization Metrics**:
+- Lifetime Paying Users: **4 customers** (8 transactions, +440 credits purchased).
+- Daily free allowances granted 3,633 credits vs 440 purchased credits -> **Economy is ~90% subsidized by free grants**.
+- Master Chat: 17 lifetime sessions—premium interactive feature remains underutilized.
+- User Feedback: 65 reading feedback submissions (demonstrating user willingness to engage).
 
-- 历史付费用户：**4 人**（8 笔购买，+440 积分）
-- 免费每日赠送发放 3,633 积分 vs 付费购买 440 积分 → **经济模型约 90% 靠免费补贴**
-- 大师对话：累计仅 17 个会话——高价值功能几乎无人用
-- 反馈：65 条排盘反馈（有互动意愿）
+**LLM Volume & Costs**: 500-1,000 requests/month (June peak: 964 calls). Monthly infrastructure LLM spend is modest (tens of dollars). Cost is not an immediate constraint at current scale.
 
-**LLM 用量/成本**：500–1,000 次/月调用（峰值 6月 964 次）。按 claude-opus 级别估算成本大约每月几十美元量级（粗估，置信度低）。当前规模下成本不是问题。
+### 1.3 Health Assessment Summary
 
-### 1.3 健康度小结
-
-- **代码/工程质量：高。** 25 个数据模型、审计日志、双环境 CI、测试、备份——这是一套超过当前业务规模 10 倍的基建。
-- **增长/运营：接近零。** 无付费投流、Wiki 空置、无 funnel 埋点（仅 web vitals）、无邮件/push 回访触达、3-4 人的自然流量。
-- **结论： supply 端（产品）为 10 分，demand 端（获客/触达/变现）为 1 分。**
-
----
-
-## 2. 市场分析
-
-### 2.1 全球市场
-
-- 占星/玄学类 App 市场：第三方机构预测 **2026 年约 $63 亿 → 2035 年 $466 亿（CAGR ~25%）**（Business Research Insights，经白鲸出海引用）。⚠️ 机构间数字差异大（$5B–7B 区间），**看量级和方向即可，勿引用精确值**。
-- 需求面：Pew 调查约 **30% 美国成年人**过去一年接触过占星/塔罗/算命，年轻人与女性参与度最高（Pew，经二手引用，中置信度）。
-- 里程碑信号：**2026年7月 Midjourney 收购 Co-Star**（Co-Star 月活 ~420–430 万）——AI 巨头开始把玄学当"情绪消费入口"收购。赛道的用户价值被定价确认。
-- 玄学需求的本质（近年共识）：不是"预测准确率"，而是**不确定性时代的情绪回应 + 自我探索 + 社交货币**（运势截图分享 ≈ MBTI 化的标签消费）。
-
-### 2.2 中国市场
-
-- 艾媒咨询（经文学城转引）：**2024 年中国 AI 玄学（含 AI 算命）市场约 ¥120 亿，年增 43.7%**（中低置信度，二手引用）。
-- 网传"2025 年 ¥1200 亿"说法（多个 CSDN/自媒体转引）：**数字可疑，不采信**——不同文章对同一机构给出 10 倍差距的数字。
-- 中国市场结构性风险：占卜算命在大陆属于**灰色/受限领域**（封建迷信相关监管 + 平台限流），小程序/App/内容平台均有下架先例。**不作为主战场，只作为潜在流量观察区。**
-
-### 2.3 华人玄学出海赛道（玄机所在的真正赛道）
-
-- **FateTell**（八字/周易，对话式 AI，"命之书/运之书"内容体系）：2024 底出海，**首月营收 $1 万+**——东玄 AI 出海商业模型被验证。
-- **Moonly**（吠陀占星+月相+冥想的生活方式化产品）：**1000 万+ 下载、累计 $2000 万营收**，并推出拟人化陪伴占星师 Luna——展示"从预测工具到日常精神生活"的天花板。
-- **MirrorAI**：自称全球命理咨询市场 $1800 亿（**自报数据，低置信度，仅作方向参考**）。
-- 竞争密度：东玄（八字/紫微/六爻）的 AI 出海玩家仍远少于西玄（占星/塔罗），**细分窗口存在，但 FateTell 已经卡了身位**。
-
-### 2.4 市场判断
-
-- 赛道 β 是正的：需求真实、付费意愿被反复验证、AI 把服务成本打到接近零。
-- 玄机的目标市场不应是"中国大陆"，而是**繁体中文圈的海外华人**（台湾/香港/东南亚/北美）——这与产品现状（繁体 UI、Stripe 支付、海外托管）天然匹配。
-- 竞争的本质已从"术数体系多不多"变成"**谁与用户建立持续关系**"。一次性排盘工具会被通用 LLM 直接碾过；有档案、有回访、有信任的产品才有定价权。
+- **Engineering Quality**: High. 25 data models, immutable audit logs, dual-environment CI, comprehensive testing, automated backups—infrastructure ready for 10x current scale.
+- **Growth & Acquisition**: Near zero. Zero paid marketing, zero Wiki articles, zero funnel event instrumentation, zero lifecycle re-engagement loops, 3-4 monthly organic signups.
+- **Conclusion**: **Supply side (product engineering) rated 10/10; Demand side (acquisition, lifecycle, monetization) rated 1/10.**
 
 ---
 
-## 3. 竞品格局
+## 2. Market Landscape
 
-### 3.1 西方阵营（学习对象）
+### 2.1 Global Metaphysical Market
 
-| 产品 | 定位 | 可借鉴点 |
+- Astrology and Metaphysics Apps: Market research projects **2026 market size of ~$6.3B growing to $46.6B by 2035 (CAGR ~25%)** (Business Research Insights, cited via BrandArk).
+- Demand Profile: Pew Research indicates ~**30% of US adults** have engaged with astrology, tarot, or fortune-telling in the past year, led by younger demographics and female audiences.
+- Industry Milestone: **Midjourney acquired Co-Star in July 2026** (Co-Star MAU ~4.2M-4.3M)—validating that AI frontier labs view metaphysical consultation as a gateway to emotional and conversational engagement.
+- Core Value Proposition: Consumer demand centers not on deterministic predictions, but on **emotional grounding, self-discovery, and social identity markers during times of uncertainty**.
+
+### 2.2 Chinese Domestic Market Dynamics
+
+- Metaphysical and fortune-telling services face strict regulatory boundaries in mainland China (classified as superstition, subject to store takedowns and algorithmic restrictions).
+- **Strategic Decision**: Mainland China is not a primary target market. It serves solely as an observation zone.
+
+### 2.3 Eastern Metaphysics International Market (Target Arena)
+
+- **FateTell** (BaZi / I Ching conversational AI with structured "Book of Destiny"): Launched overseas in late 2024, achieving **$10k+ month-one revenue**—validating the business model for Western/overseas Eastern metaphysics.
+- **Moonly** (Vedic astrology + lunar rhythms + mindfulness): **10M+ downloads, $20M+ lifetime revenue**, featuring virtual AI astrologer Luna—demonstrating the revenue potential of lifestyle integration.
+- Competitive Landscape: Players in Eastern metaphysics (BaZi, Zi Wei, Liu Yao) remain far sparser than Western astrology/tarot apps. **A clear niche exists, though early movers like FateTell have established beachheads.**
+
+### 2.4 Strategic Positioning
+
+- Market dynamics are favorable: Demand is authentic, willingness to pay is demonstrated, and AI reduces marginal inference costs to near zero.
+- XuanJi's target audience is **overseas Chinese in Traditional Chinese ecosystems** (Taiwan, Hong Kong, Southeast Asia, North America)—aligning naturally with Traditional Chinese UI, Stripe billing, and offshore hosting.
+- The competitive axis has evolved from breadth of divination methods to **the depth of continuous user relationships**. Static chart calculators will be commoditized by general-purpose LLMs; platforms with persistent profiles, proactive lifecycle check-ins, and trusted advice command pricing power.
+
+---
+
+## 3. Competitive Analysis
+
+### 3.1 Western Astrology Benchmarks
+
+| Product | Positioning | Takeaways |
 |---|---|---|
-| Co-Star | 占星 + 社交（好友互看/关系分析），4.2M+ MAU | 社交裂变机制：把"看自己"变成"看关系" |
-| The Pattern | 去神秘化，人格/关系/人生阶段分析 | **降低玄学门槛的话术体系**——不讲吉凶，讲自我认知 |
-| Nebula / Sanctuary | AI 生成 + 真人占星师混合 | 分层变现：AI 走量，真人服务收高价 |
-| Moonly | 占星 → 生活方式（月相/冥想/陪伴） | 订阅制 + 陪伴型 AI 的长期付费 |
+| Co-Star | Astrology + Social (Synastry, compatibility), 4.2M+ MAU | Social virality: Expanding personal charts into relational dynamics |
+| The Pattern | Psychological framing, life stages, personal growth | **Demystified terminology**: Framing insights through self-awareness rather than superstition |
+| Nebula / Sanctuary | Hybrid AI + Professional Astrologers | Tiered monetization: AI automated volume funneling into high-ticket human consultations |
+| Moonly | Astrology -> Daily Lifestyle (Moon phases, meditation) | Recurring subscriptions + companion AI for long-term retention |
 
-### 3.2 东玄直接竞品
+### 3.2 Eastern Metaphysics Competitors
 
-| 产品 | 体系 | 状态 |
+| Product | Methodologies | Status |
 |---|---|---|
-| FateTell | 八字/周易/数字命理 | 出海先行者，首月 $10k，内容体系化（命之书） |
-| MirrorAI | 命理综合 | 有融资动作（自报数据多） |
-| 中国本土 App（测测/准了/高人等） | 星座/命理社区 | **本次检索未获可靠经营数据（搜索源空结果），未能核实，不做断言**；它们主攻大陆市场、强社区，与玄机出海定位重叠度低 |
+| FateTell | BaZi, I Ching, Numerology | Cross-border pioneer, $10k+ month one, structured editorial reports |
+| MirrorAI | Metaphysical Synthesis | Capitalized early mover |
+| Domestic Chinese Apps | Horoscopes, community platforms | Community-driven mainland focus; limited overlap with overseas web strategy |
 
-### 3.3 最大的"隐形竞品"：通用大模型
+### 3.3 The Primary Alternative: General-Purpose Frontier LLMs
 
-用户现在会直接问 ChatGPT/DeepSeek "帮我看看这个八字"。这是最危险的替代品：免费、无处不在、话术流畅。
+Users increasingly query ChatGPT or DeepSeek directly for chart readings. This represents the primary substitute: free, accessible, and fluent.
 
-**玄机的可防守差异（按防守强度排序）：**
-1. **排盘正确性与确定性**：iztro + 程序化格局检测 + 260 个测试——通用 LLM 排盘会算错干支/宫位，这是硬技术差异，且用户可验证。
-2. **结构化深度**：8-section、16k token 的体系化报告 vs 聊天框里的一团字。报告的"质感/仪式感"本身就是付费理由。
-3. **长期档案**：家庭成员、UserPortrait、历史排盘——"AI 记得你"，通用 LLM 做不到跨会话免费记住。
-4. **回访产品化**：流年/流日/节气节点推送——把"想起来才算"变成"到点就有人提醒你"。
-5. Wiki 内容与 SEO 资产（待填）。
+**XuanJi's Defensible Moats (in order of strength)**:
+1. **Deterministic Calculation Integrity**: Local TypeScript engines + pattern detection + comprehensive test suites. General LLMs frequently hallucinate Gan-Zhi stems, branches, and palace star alignments.
+2. **Structured Architectural Depth**: Comprehensive 8-section, 16k-token reports vs unformatted conversational chat. Report structure and visual gravitas drive willingness to pay.
+3. **Long-Term User Profiles**: Family member records, UserPortrait memory, reading archives—persistent memory across sessions.
+4. **Proactive Lifecycle Engagement**: Annual, decadal, and seasonal solar term notifications converting episodic interest into recurring engagement.
+5. Wiki content repository and organic SEO authority.
 
 ---
 
-## 4. 技术趋势与玄机的真实护城河
+## 4. Technology Evolution & XuanJi's Moat
 
-**趋势主线（业内已收敛的共识）：**
-
+**Industry Evolutionary Arc**:
 ```
-v1 工具（排盘出结果） → v2 解释（AI 结合语境个性化解读） → v3 陪伴（长期记忆 + 持续关系）
+v1 Utility (Calculate chart coordinates) -> v2 Interpretation (Personalized semantic analysis) -> v3 Companion (Persistent memory & continuous relationship)
 ```
 
-- LLM 把 v1、v2 的生产成本打到趋零 → **这两层不再是护城河，是入场券**。
-- v3 的技术要素：长期记忆（用户档案）、主动触达（push/email）、人格一致性（固定的"大师"人设）、多模态（面相手相照片——后续可选项）。
-- **对应到玄机：** v1、v2 已经做完且质量高于多数竞品；缺的是 v3 的全部要素（档案有了但没激活，触达渠道没建，大师人设不稳定——17 个会话说明用户没形成对话习惯）。
-- 技术栈判断：Next.js + Prisma + 自托管完全够用，**不需要为了"技术发展"重写任何东西**；要补的是"记忆/触达"这两个产品级组件，不是底层技术。
+- LLMs have reduced the engineering cost of v1 and v2 to near zero—**these layers are table stakes rather than enduring moats**.
+- v3 requirements: Long-term memory (user profiles), proactive outreach (email/push), persona consistency (authoritative master persona).
+- **Application to XuanJi**: v1 and v2 are deployed at high quality; v3 represents the strategic frontier (profile infrastructure exists but lacks automated lifecycle hooks; Master chat requires stable engagement patterns).
+- Architecture Assessment: Next.js + Prisma + self-hosted infrastructure is fully adequate. **No foundational rewrites are necessary**; focus engineering on memory and lifecycle outreach components.
 
 ---
 
-## 5. SWOT
+## 5. SWOT Analysis
 
-| | 有利 | 不利 |
+| Dimension | Favorable | Unfavorable |
 |---|---|---|
-| **内部** | **S:** 排盘准确+程序化格局（可验证的硬差异）；8 门术数全覆盖；完整积分/支付/后台；工程质量高；单人开发成本低 | **W:** 零获客渠道；Wiki 空置；无回访触达；变现路径未验证（4 个付费用户）；大师对话未起量；单人时间有限（有全职工作） |
-| **外部** | **O:** 赛道双位数增长+巨头入场确认价值；东玄出海竞争密度低于西玄；繁中海外华人市场无强势 AI 玩家卡位；FateTell 验证了付费模型 | **T:** 通用 LLM 免费替代；FateTell 等先发者建立品牌；大陆监管若误碰（推广渠道/用户来源）；home server 单点故障风险；单人维护可持续性 |
+| **Internal** | **Strengths (S)**: Algorithmic accuracy, deterministic pattern detection; 8 divination systems; complete ledger/billing infrastructure; high code quality; low operational overhead. | **Weaknesses (W)**: Zero active acquisition channels; unpopulated Wiki; zero lifecycle re-engagement; unvalidated monetization (4 customers); low Master chat usage; solo developer capacity constraints. |
+| **External** | **Opportunities (O)**: Double-digit market growth and venture validation; low competitive density in Eastern metaphysics compared to Western astrology; unserved Traditional Chinese overseas market; validated willingness to pay. | **Threats (T)**: General-purpose LLMs serving free alternatives; fast-moving early competitors; regulatory risks in domestic Chinese markets; single-host hardware failure risks. |
 
 ---
 
-## 6. 核心诊断：三个断裂
+## 6. Core Diagnostics: The Three Disconnects
 
-1. **获客断裂**：3 月的 174 人和 5 月的 112 人是发布脉冲 + 分享脉冲，之后没有任何渠道在持续供给流量。**不是用户来了不走，是新用户根本没来。**
-2. **回访断裂**：命理是天然低频场景（排一次盘管很久），免费额度只能吸引"当下有事"的人。没有邮件/push/内容触达 → 用户离开视线后永不回来。grant_daily 1,211 次说明来过很多人，但触达手段为零。
-3. **变现断裂**：4 个付费用户不是"用户不愿意付"，而是：① 样本太小无统计意义；② 免费补贴太慷慨（每日赠送 vs 付费 = 8:1），付费点（更多深度解读/大师对话）没有被自然卡点。
+1. **Acquisition Disconnect**: User spikes in March (174) and May (112) coincided with launch announcements and word-of-mouth sharing; zero persistent traffic channels exist today. **The issue is not poor retention, but zero incoming pipeline.**
+2. **Lifecycle Disconnect**: Metaphysical consultation is inherently episodic. Without proactive email, push, or seasonal reminders, users do not return after initial curiosity is satisfied. Over 1,200 daily allowances were claimed, but re-engagement channels remain zero.
+3. **Monetization Disconnect**: 4 paying users indicates sample size insufficiency and overly generous free allowances (free grants outweighed purchases 8:1) rather than lack of user willingness to pay.
 
-**一句话诊断：这是一个"自带精装修的房子，但还没修路"。当前所有资源应该从"再装修"转向"修路"。**
-
----
-
-## 7. 发展方向建议（必含项 ①）
-
-### 7.1 定位收敛（先做减法）
-
-**从"8 门术数全能排盘工具" → "海外华人的 AI 命理顾问"。**
-
-- 数据支持：八字+六爻+紫微 = 75% 的使用量。风水/易经合计 4%——**停止增加新术数，砍掉对冷门功能的继续投入**。
-- 主打场景：八字/紫微 = "认识自己"（人生大图景），六爻/梅花 = "具体决策"（问事）。两类场景对应两类高频痛点，文案与首页按此重组。
-- 大师对话的定位应是"档案之上的追问"——读完报告后对细节追问，而不是独立的聊天玩具。
-
-### 7.2 路线图
-
-**P0（未来 6 周，验证核心假设）**
-1. **把 Wiki 填上 15–20 篇内容**（SEO 资产激活，详见推广部分）。
-2. **流年报告产品化**：以"2027 流年"为付费锚点产品（生成前免费展示目录，付费解锁全文）——这是 FateTell"命之书"模式的直接对应物，也是把"一次性排盘"变"年度订阅"的桥梁。
-3. **接入一个轻量分析**（如 Umami/PostHog self-host）：没有漏斗数据，后面所有推广都是盲打。
-4. 首页/落地页按"两类场景"重写，加"仅供参考·传统文化体验"免责声明。
-
-**P1（6–12 周，建立回访）**
-5. **回访通道**：邮件每周/每节气运势摘要 + 关键节点提醒（换大运、流年交替）。UserPortrait 数据已在库里，缺的只是调度与模板。
-6. **付费卡点调整**：免费额度从"每日自动送"改为"任务获取（分享/回访）"，把补贴变成增长机制。
-7. Android 壳上架 Google Play（Capacitor 壳已存在，工作量小）——新增量入口 + 支付信任背书。
-
-**P2（3–6 个月，加深护城河）**
-8. **大师长期记忆**：会话绑定 UserPortrait，记住过去问过什么、排过什么盘——对齐 v3 陪伴趋势。
-9. 古籍断语库 RAG（渊海子平/紫微斗数全书等）→ 解读的可信度和差异化上限提升。
-10. 英文版评估：赛道更大但竞争更密，建议在繁中版验证 PMF（付费转化 >5%）后再开，避免双线作战。
-
-### 7.3 明确不做的
-
-- 不加新术数；不做社交/社区（单人文档不了审核成本）；不进大陆应用商店；不碰面相照片（隐私敏感+合规复杂，除非英文版验证后再议）。
+**Summary**: The platform resembles a fully furnished temple built in a desert without an access road. Engineering resources must pivot from interior decorating to road construction.
 
 ---
 
-## 8. 推广策略（必含项 ②）
+## 7. Strategic Recommendations
 
-### 8.1 总原则
+### 7.1 Scope Consolidation
 
-- **内容即获客**：玄学是内容平台的天然流量品类，0 预算也能启动；投放（Google/IG）现阶段ROI 必然差，等 PMF 信号后再说。
-- **地理合规切割**：内容与投放只面向海外（繁中圈），不主动触达大陆用户（兼顾监管风险与用户匹配度）。
-- **话术定位**：少讲"预测吉凶"（平台限流高发区），多讲"东方哲学/自我探索/传统文化数字化"——The Pattern 的去神秘化路线是现成模板。
+**Pivot: From "8-in-1 Divination Engine" to "The AI Metaphysical Counselor for Global Chinese Communities".**
 
-### 8.2 渠道矩阵（按优先级）
+- Data-driven prioritization: BaZi + Liu Yao + Zi Wei Dou Shu represent 75% of usage; Feng Shui and I Ching represent 4%. **Freeze development on low-traffic methods; double down on core anchors.**
+- Core user scenarios: BaZi / Zi Wei = "Self-Discovery" (macro life trajectory); Liu Yao / Mei Hua = "Specific Inquiries" (tactical decisions). Reorganize landing pages and messaging around these two scenarios.
+- Reposition Master Chat: Position as in-depth follow-up on generated readings rather than a generic conversational sandbox.
 
-| 优先级 | 渠道 | 打法 | 成本 | 预期 |
+### 7.2 Product Roadmap
+
+**Phase 0 (Weeks 1-6: Core Hypotheses Validation)**
+1. **Publish 15-20 Wiki articles** to activate SEO authority.
+2. **Productize Annual Fortune Reports**: MVP for 2027 Annual Fortune (free table of contents preview, paid chapter unlocking) as a seasonal monetization anchor.
+3. **Deploy Lightweight Analytics** (Umami / PostHog) to instrument conversion funnels.
+4. Rewrite homepage around the two primary user scenarios with standard cultural entertainment disclaimers.
+
+**Phase 1 (Weeks 6-12: Lifecycle & Retention)**
+5. **Automated Lifecycle Pipelines**: Weekly/seasonal horoscope digests and solar term reminders via email.
+6. **Task-Based Credit Economy**: Shift daily allowances from automatic handouts to engagement missions (profile completion, sharing).
+7. Publish Android application to Google Play Store to establish mobile distribution and payment trust.
+
+**Phase 2 (Months 3-6: Moat Deepening)**
+8. **Master Long-Term Memory**: Deepen integration between Master chat sessions and UserPortrait records.
+9. Classical Metaphysical RAG: Curate classical texts (*Yuan Hai Zi Ping*, *Zi Wei Dou Shu Quan Shu*) to elevate interpretation depth.
+10. Evaluate English localization once Traditional Chinese PMF (paid conversion >5%) is proven.
+
+### 7.3 Out of Scope
+- No new divination methodologies.
+- No public social community features (excessive moderation overhead).
+- No domestic mainland app store releases.
+- No facial recognition or photo-based physiognomy.
+
+---
+
+## 8. User Acquisition Strategy
+
+### 8.1 Guiding Principles
+- **Content as Distribution**: Metaphysics naturally drives organic interest; avoid paid ad spend until conversion funnels are proven.
+- **Geographic Focus**: Restrict outreach to overseas Traditional Chinese communities.
+- **Thoughtful Framing**: Minimize superstition-heavy claims; emphasize Eastern philosophy, self-reflection, and modern digital humanities.
+
+### 8.2 Channel Matrix
+
+| Priority | Channel | Strategy | Cost | Expected Impact |
 |---|---|---|---|---|
-| ★★★ | **SEO/Wiki** | 15–20 篇文章对齐交易型关键词：八字排盘/紫微斗数免费排盘/紫微斗数 online/bazi calculator/chinese zodiac compatibility 等；繁中为主+英文各 3–5 篇 | 0（自建后台现成） | 2–3 个月起稳定供量，长尾复利 |
-| ★★★ | **小红书** | 人设号（如"程序员做了一台 AI 命理机"）每周 3–4 篇：排盘截图+解读故事+产品开发日记；注意占卜营销限流，走知识/开发故事角度 | 0 | 冷启动最现实的第一波种子用户 |
-| ★★☆ | TikTok/Reels/Shorts | faceless 内容：八字科普、名人盘分析（注意肖像/合规话术）、"AI 给我算的 YYYY 流年"系列 | 0 | 面向北美华人+西人对东玄好奇双人群 |
-| ★★☆ | 华人社群 | 多伦多/北美华人论坛、WeChat 群、Reddit（r/iching、r/Taoism、r/ChineseLanguage 相关帖自然参与） | 0 | 精准、转化高、量小 |
-| ★☆☆ | Product Hunt / HackerNews | "I built an AI fortune-teller with deterministic chart engine" 的技术叙事（Elvin 编译器背景是好故事） | 0 | 一次性脉冲 + backlink |
-| ★☆☆ | Google Play 上架 | ASO（chinese astrology / bazi 关键词） | 0 | 长尾分发 |
+| High | **SEO / Wiki** | 15-20 articles targeting transactional queries (BaZi paipan, free Zi Wei Dou Shu, BaZi calculator, compatibility) | $0 | Sustainable long-tail organic traffic within 2-3 months |
+| High | **Social Media** | Developer journal framing ("Software engineer built an AI metaphysics engine"): 3-4 posts/week featuring reading extracts, architectural notes, and development logs | $0 | Fast initial seed user acquisition |
+| Medium | Video Platforms | Video walkthroughs of chart structures, anonymous historical charts, and seasonal forecasts | $0 | Expands reach across North American and overseas audiences |
+| Medium | Niche Communities | Authentic engagement in overseas community forums and Reddit (r/iching, r/ChineseLanguage) sharing case studies | $0 | Highly qualified, targeted users |
+| Low | Tech Launch Platforms | Product Hunt / Hacker News technical writeup highlighting deterministic calculations | $0 | One-off traffic spike + authoritative backlink |
+| Low | Google Play Store | App Store Optimization (ASO) for Chinese astrology keywords | $0 | Passive long-tail distribution |
 
-### 8.3 增长机制（基建已有，缺运营）
-
-1. **分享解读卡**：排盘结果生成精美分享卡（带链接/二维码）→ 分享得积分。把 3 月/5 月验证过的"分享脉冲"变成常设机制。
-2. **礼品链接**（已建好）：给社群 KOC/版主发放专属礼品链接，既是拉新工具也是渠道归因工具。
-3. **任务化积分**：每日自动赠送 → 改为"回访/分享/完善档案可得"，把补贴预算变成留存预算。
-4. **邮件回流**：注册后 48h 未排盘 → 引导邮件；排盘后 7 天 → 流年报告 upsell 邮件。
-
-### 8.4 冷启动 6 周节奏
-
-- 周 1–2：埋点上线；Wiki 写 8 篇；小红书号开号 3 篇。
-- 周 3–4：Wiki 至 15 篇；短视频试水 3 条；礼品链接发 2 个华人社群。
-- 周 5–6：复盘各渠道注册归因（埋点数据）；流年报告上线配合内容推；确定下季度主渠道。
-
-**北极星指标：周新增注册数。辅助：注册→首次排盘转化率、7 日回访率、付费转化率。**
+### 8.3 Growth Loops
+1. **Shareable Result Cards**: Generate dynamic visual cards for readings with QR codes and referral attribution.
+2. **Gift Links**: Distribute customized gift links to community moderators with tracked registration attribution.
+3. **Mission-Driven Credits**: Reward profile completion and sharing with Karma credits.
+4. **Lifecycle Re-engagement**: Automated email reminders at 48 hours and 7 days post-registration.
 
 ---
 
-## 9. 风险与合规
+## 9. Risk & Compliance Matrix
 
-| 风险 | 评估 | 对策 |
+| Risk | Impact | Mitigation Strategy |
 |---|---|---|
-| 大陆监管（封建迷信相关） | 方向性风险确定（具体条文本次未逐条核实） | 不在大陆推广/投放；海外托管已是现状；定位"传统文化"叙事 |
-| 平台限流（小红书/抖音对占卜营销） | 一般认知，具体规则未核实 | 知识向内容、不卖货式话术、多平台分散 |
-| 出生数据隐私 | 高敏感个人信息 | 已有同意流程（/api/consent）；补充明确的数据保留/删除政策；英文版需 GDPR 级别对待 |
-| Home server 单点故障 | 公开付费产品跑在家庭服务器上 | 已有每日备份 ✅；中期考虑迁 $5–10/月 VPS（收入跑通后） |
-| AI 输出误导 | 声誉风险 | 显著免责声明（仅供文化参考，不构成医疗/投资/法律建议） |
-| 单人可持续性 | 最大结构性风险 | 时间预算制：每周固定 5–8h，优先级按本文 P0 顺序 |
+| Mainland Regulatory Constraints | High | Restrict promotion to overseas markets; maintain offshore hosting; position as cultural humanities. |
+| Platform Content Policies | Medium | Emphasize philosophical self-discovery over fatalistic predictions; diversify content channels. |
+| Birth Data Privacy | High | Enforce consent prompts (`/api/consent`); establish clear data deletion and retention policies; prepare GDPR compliance for future localization. |
+| Single-Host Infrastructure Risk | Medium | Maintain daily automated offsite backups; plan transition to dedicated cloud VPS upon revenue validation. |
+| Unintended Advice Liability | Medium | Prominent disclaimers across footers and reading cards clarifying content is for cultural reflection only. |
+| Solo Maintainer Burnout | High | Timebox weekly commitments (5-8 hours) prioritizing Phase 0 milestones exclusively. |
 
 ---
 
-## 10. 90 天行动计划
+## 10. 90-Day Execution Plan
 
-| 阶段 | 动作 | 可验证产出 |
+| Timeline | Initiatives | Verifiable Milestones |
 |---|---|---|
-| D1–14 | 埋点（PostHog/Umami）；Wiki 8 篇；小红书开号 | 漏斗数据可见；内容开始积累 |
-| D15–30 | Wiki 15 篇；流年报告 MVP；分享卡上线 | 付费锚点产品就绪 |
-| D31–45 | 流年报告上线+定价试验（单次 vs 订阅）；社群礼品链接投放 | 首批 20+ 付费样本 |
-| D46–60 | 渠道复盘（归因数据）；砍掉无效渠道；邮件回访上线 | 确定主渠道 |
-| D61–90 | 主渠道加大内容密度；Google Play 上架；评估英文版可行性 | 注册 800–1500（保守目标），付费用户 25–50 |
+| Days 1-14 | Setup analytics (PostHog/Umami); publish 8 Wiki articles; establish social media channels | Funnel metrics visible; baseline SEO content active |
+| Days 15-30 | Publish remaining 7 Wiki articles; build Annual Fortune MVP; launch shareable reading cards | Monetization anchor ready for deployment |
+| Days 31-45 | Launch Annual Fortune product; initiate pricing tests (one-time vs pass); seed gift links | Initial cohort of 20+ paying customers |
+| Days 46-60 | Review attribution metrics; deprecate low-converting channels; deploy lifecycle re-engagement emails | Primary growth channel validated |
+| Days 61-90 | Accelerate primary content channel; list Android wrapper on Google Play; evaluate English localization | Conservative goal: 800-1,500 registered users, 25-50 paying customers |
 
-**成功判据（90 天后）**：周新增注册 > 30（当前 <1）；付费用户从 4 → 30+；至少 1 个渠道被验证可持续供量。**若 90 天后付费转化 <2% 且无渠道起量 → 收缩为"无增长的个人作品"，停止投入增长资源。**（诚实止损线）
+**Success Criteria (at 90 Days)**: New registrations exceeding 30/week; paying customers expanding from 4 to 30+; at least one sustainable acquisition channel proven. **If paid conversion remains below 2% after 90 days, freeze expansion efforts and maintain platform as a low-overhead personal artifact.**
 
 ---
 
-## 11. 数据来源与置信度
+## 11. Data Sources & Confidence Ratings
 
-| 数据 | 来源 | 置信度 |
+| Data Point | Source | Confidence |
 |---|---|---|
-| 用户/排盘/积分/付费全部数字 | 生产库只读查询（2026-09-11） | 高（一手实测） |
-| Midjourney 收购 Co-Star、Co-Star MAU、FateTell/Moonly 数据 | 白鲸出海 BrandArk（baijing.cn/article/56395） | 中（行业媒体二手） |
-| 全球市场 $6.3B→$46.6B | Business Research Insights（经上文转引） | 低（报告机构，仅看量级） |
-| 中国 2024 ¥120 亿/+43.7% | 艾媒咨询（经文学城转引） | 中低 |
-| "2025 ¥1200 亿" | 多个自媒体转引 | **不采信**（数字互相矛盾） |
-| 全球命理市场 $180B | MirrorAI 自报 | 低（营销数据） |
-| 美国 30% 成年人接触占星 | Pew（经转引） | 中 |
-| 中国本土竞品经营数据、平台限流细则、监管条文 | 检索未获可靠结果 | **缺口，未核实** |
-
-*报告由 little 👾 生成于 2026-09-11，所有产品数据可在生产库复核。*
+| User, calculation, credit, and purchase figures | Production database queries (`divination_db`, 2026-09-11) | High (Primary data) |
+| Midjourney Co-Star acquisition, Co-Star MAU, FateTell/Moonly metrics | Industry reporting (BrandArk) | Medium (Secondary reporting) |
+| Global market estimates ($6.3B to $46.6B) | Business Research Insights | Low (Market projections) |
+| Mainland China market figures | iiMedia Research citations | Low-Medium (Secondary citation) |
+| US astrology engagement percentages (~30%) | Pew Research Center citations | Medium |

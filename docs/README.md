@@ -1,39 +1,41 @@
-# 玄機 — 工程與產品文檔總覽
+# XuanJi — Engineering & Product Documentation Index
 
-本目錄收錄「玄機」AI 中國傳統術數預測系統的工程架構、領域知識標準、進行中規劃與歷史歸檔文檔。
+This directory contains the engineering architecture, domain knowledge standards, active planning, and historical archives for the "XuanJi" AI Chinese Divination system.
 
 ---
 
-## 目錄結構概覽
+## Directory Overview
 
 ```
 docs/
-├── README.md                 ← 【文檔總索引】（本文檔）
-├── DEPLOYMENT.md             ← 【運維手冊】生產環境配置、質量門禁、Docker 部署與日誌排查
+├── README.md                 <- [Doc Index] (This document)
+├── DEPLOYMENT.md             <- [Ops Manual] Production environment, quality gates, Docker deployment, and observability
 │
-├── 260912/                   ← 【當前重點專項】2026-09 產品分析、Sprint 計畫與東方美學重構
+├── 260912/                   <- [Active Sprint] 2026-09 Product analysis, sprint planning, and Oriental aesthetic redesign
 │   ├── 2026-09-11-product-analysis.md
 │   ├── 2026-09-11-sprint-plan.md
 │   ├── 2026-09-12-product-design-enhancement-plan.md
 │   └── 2026-09-12-ui-ux-aesthetic-audit-and-redesign.md
 │
-├── architecture/             ← 【系統架構】長期維護的已上線核心功能與子系統架構設計
+├── architecture/             <- [System Architecture] Core production subsystems and architectural specifications
 │   ├── overview.md
 │   ├── master-interaction-features.md
 │   ├── master-portrait-system.md
 │   ├── start-funnel.md
 │   └── streaming-divination.md
 │
-├── references/               ← 【領域參考】排盤標竿範例、演算法則、大師微信實戰話術
+├── references/               <- [Domain References] Gold standard benchmarks, algorithms, and Master consultation dialogues
 │   ├── bazi-gold-standard-example.md
 │   ├── ziwei-gold-standard-example.md
 │   ├── dayun-reference.md
 │   └── master-chat-scenarios.md
 │
-├── planning/                 ← 【進行中規劃】當前架構審計、性能優化與延後項追蹤
-│   └── audit-2026-09-round2.md
+├── planning/                 <- [Active Planning] System audits, performance optimizations, and deferred task tracking
+│   ├── audit-2026-09-round2.md
+│   ├── audit-2026-10.md
+│   └── ui-restyle-2026-10.md
 │
-└── archive/                  ← 【歷史歸檔】已完全上線、已過期或已整合的歷史記錄
+└── archive/                  <- [Historical Archives] Fully implemented, superseded, or contextual decision records
     ├── changelog-2026-06.md
     ├── prisma-migrations-recovery-202606.md
     ├── deferred-evaluation-tasks-202606.md
@@ -44,78 +46,80 @@ docs/
     └── ziwei-upgrade-plan.md
 ```
 
-> **注意**：根目錄下的 `divination-refs/` 為**運行時動態載入的 LLM 提示詞模版**，屬於核心業務資產，請參閱下方專項說明。
+> **Note**: The root-level `divination-refs/` directory contains **runtime dynamic LLM system prompt templates** representing active business logic assets (see section below).
 
 ---
 
-## 1. 系統架構 (`architecture/`)
+## 1. System Architecture (`architecture/`)
 
-適合新成員與系統維護者查閱。每一份文檔均對應線上穩定運行的核心機制：
+Primary reference for team onboarding and system maintainers. Each document corresponds to an active, stable production subsystem:
 
-| 文檔 | 核心涵蓋內容 |
+| Document | Core Topics Covered |
 |---|---|
-| [overview.md](architecture/overview.md) | **系統全貌白皮書**：八大術數體系「程序排盤 + LLM 解盤」雙軌機制、四大架構不變量、機緣（Karma）點數原子預扣與賬本架構。 |
-| [streaming-divination.md](architecture/streaming-divination.md) | **流式解讀架構**：SSE 協議、字符級 JSON 流式狀態機 (FSM)、15s 心跳保持、RAF 60fps 節流與超長調用進度漸進。 |
-| [master-interaction-features.md](architecture/master-interaction-features.md) | **大師互動機制**：全局狀態機、防抖連發（1500ms）、在途打斷與追問、CTA 反轉、閒置反思（75-120s）與激活續接。 |
-| [master-portrait-system.md](architecture/master-portrait-system.md) | **大師記憶系統**：三層記憶架構圖（原始對話、60K Token 滑動壓縮、雙軸畫像提取）、個性化 Prompt 快取與 GDPR 隱私邊界。 |
-| [start-funnel.md](architecture/start-funnel.md) | **廣告獲客漏斗**：`/start` 5-View 漏斗狀態轉移圖、無感試用排盤、Funnel Cookie 鑑權與試用轉正防刷機制。 |
+| [overview.md](architecture/overview.md) | **System Whitepaper**: 8 Chinese divination systems, dual-track deterministic paipan + LLM interpretation, architectural invariants, atomic Karma credit reservations, and ledger audit. |
+| [streaming-divination.md](architecture/streaming-divination.md) | **Streaming Architecture**: SSE transport protocol, character-level JSON streaming FSM, 15s keep-alive heartbeat, RAF 60fps throttling, and long-call progressive feedback. |
+| [master-interaction-features.md](architecture/master-interaction-features.md) | **Master Interaction Engine**: Global state machine, burst debouncing (1500ms), in-flight interruption, CTA reversal, idle reflection (75-120s), and activation resume. |
+| [master-portrait-system.md](architecture/master-portrait-system.md) | **Master Memory System**: Three-layer memory hierarchy (raw chat log, 60K token sliding window summarizer, dual-axis profile extraction), personalized prompt caching, and GDPR boundaries. |
+| [start-funnel.md](architecture/start-funnel.md) | **Acquisition Funnel**: `/start` 5-view funnel state transitions, frictionless trial paipan, signed funnel cookie auth, and abuse-resistant trial conversion. |
 
 ---
 
-## 2. 領域參考與範例庫 (`references/`)
+## 2. Domain References & Benchmarks (`references/`)
 
-改動提示詞（Prompt）、調整輸出 Schema 或對齊專家期望時查閱：
+Reference material for modifying LLM prompts, tuning output schemas, or aligning with metaphysical domain requirements:
 
-| 文檔 | 核心用途 |
+| Document | Primary Purpose |
 |---|---|
-| [bazi-gold-standard-example.md](references/bazi-gold-standard-example.md) | 八字 V2 標竿輸出範例與 **架構級四維度質檢規約 (Evaluation Rubric)**。 |
-| [ziwei-gold-standard-example.md](references/ziwei-gold-standard-example.md) | 紫微斗數 V2 標竿輸出範例與 **星曜四化因果鏈評測規約 (Evaluation Rubric)**。 |
-| [dayun-reference.md](references/dayun-reference.md) | **大運算法工程規格書**：天文節氣交節標準、高精度折算數學公式、極端邊界處理與代碼映射。 |
-| [master-chat-scenarios.md](references/master-chat-scenarios.md) | **大師實戰話術庫**：22 個真實 WeChat 對話樣本、五階對話控制模型、四大安全紅線與 LLM-as-a-Judge 評測指標。 |
+| [bazi-gold-standard-example.md](references/bazi-gold-standard-example.md) | BaZi V2 gold standard output benchmark and **4-dimension architectural evaluation rubric**. |
+| [ziwei-gold-standard-example.md](references/ziwei-gold-standard-example.md) | Zi Wei Dou Shu V2 gold standard output benchmark and **star mutagen causal chain evaluation rubric**. |
+| [dayun-reference.md](references/dayun-reference.md) | **Decadal Fortune Algorithmic Spec**: Astronomical solar term criteria, high-precision conversion equations, edge boundaries, and code mappings. |
+| [master-chat-scenarios.md](references/master-chat-scenarios.md) | **Master Consultation Corpus**: 22 authentic WeChat dialogue samples, 5-stage conversation control model, 4 safety boundaries, and LLM-as-a-Judge scoring rubric. |
 
 ---
 
-## 3. 當前專項與規劃 (`260912/` & `planning/`)
+## 3. Active Planning & Sprints (`260912/` & `planning/`)
 
-記錄正在進行或本期迭代的產品設計與技術審計：
+Ongoing product designs and technical audit tracks:
 
-| 目錄 / 文檔 | 狀態 / 說明 |
+| Directory / Document | Status / Description |
 |---|---|
-| [docs/260912/](260912/) | **當前主線專項**：包含競品深度分析、Sprint 衝刺計畫、東方美學與去 AI 模板化 UI/UX 重構方案。 |
-| [planning/audit-2026-09-round2.md](planning/audit-2026-09-round2.md) | **第二輪深度技術審計報告**：計費併發競態修復、安全加固、數據庫索引優化、以及 P1~P14 延後待辦清單。 |
+| [docs/260912/](260912/) | **Primary Active Sprint**: Competitive teardown, sprint execution roadmap, Oriental sanctuary aesthetics, and de-AI template UI/UX refactor. |
+| [planning/audit-2026-09-round2.md](planning/audit-2026-09-round2.md) | **Technical Audit Round 2**: Concurrency race fixes for billing, security hardening, database index tuning, and P1~P14 deferred task backlog. |
+| [planning/audit-2026-10.md](planning/audit-2026-10.md) | **Full Spectrum Technical Audit**: Complete audit covering W0~W8 findings and ISS-01 to ISS-28 resolutions. |
+| [planning/ui-restyle-2026-10.md](planning/ui-restyle-2026-10.md) | **UI Restyle Plan**: Visual token consolidation, mobile responsiveness, and layout architecture. |
 
 ---
 
-## 4. 歷史歸檔 (`archive/`)
+## 4. Historical Archives (`archive/`)
 
-已 100% 落地、已被新版本取代或僅保留歷史決策脈絡的檔案，**不再日常維護**：
+Fully delivered, superseded, or contextual historical records maintained for architectural lineage:
 
-| 文檔 | 原用途與歸檔理由 |
+| Document | Original Purpose & Archival Reason |
 |---|---|
-| [changelog-2026-06.md](archive/changelog-2026-06.md) | 整合 2026-06 重構衝刺（Phase 0~2、UIX W0~W5）全部 11 份變更記錄。 |
-| [prisma-migrations-recovery-202606.md](archive/prisma-migrations-recovery-202606.md) | 2026-06 數據庫 Drift 調和歷史手冊（生產庫已完全調和，保留排查參考）。 |
-| [deferred-evaluation-tasks-202606.md](archive/deferred-evaluation-tasks-202606.md) | 6 月延後項評估分析（術數神煞傳統對齊已入庫，Bcrypt 恒時性已修復）。 |
-| [activation-resume-design-2026-04-27.md](archive/activation-resume-design-2026-04-27.md) | 大師激活續接機制原始提案（已上線，現行架構見 `architecture/`）。 |
-| [divination-skill-roadmap-2026-04-27.md](archive/divination-skill-roadmap-2026-04-27.md) | 大師技能擴展路線圖（星命合參等 Tier 1/2 技能已在 `src/lib/master/skills/` 實作）。 |
-| [hci-audit-2026-04-27.md](archive/hci-audit-2026-04-27.md) | 4 月 HCI 審計報告（P0/P1/P2 優化項已全部實現）。 |
-| [uix-hci-audit-2026-06-12.md](archive/uix-hci-audit-2026-06-12.md) | 6 月 UIX 審計報告（W0~W5 已全部實現）。 |
-| [ziwei-upgrade-plan.md](archive/ziwei-upgrade-plan.md) | 早期紫微解盤 V2 升級計畫（已全面上線）。 |
+| [changelog-2026-06.md](archive/changelog-2026-06.md) | Consolidated changelog covering all 11 change records from the 2026-06 refactor sprint (Phase 0~2, UIX W0~W5). |
+| [prisma-migrations-recovery-202606.md](archive/prisma-migrations-recovery-202606.md) | 2026-06 Database drift reconciliation runbook (production schema is fully reconciled). |
+| [deferred-evaluation-tasks-202606.md](archive/deferred-evaluation-tasks-202606.md) | June deferred item evaluation (Shensha metaphysical alignment completed; constant-time bcrypt implemented). |
+| [activation-resume-design-2026-04-27.md](archive/activation-resume-design-2026-04-27.md) | Initial Master activation resume mechanism proposal (implemented; active spec in `architecture/`). |
+| [divination-skill-roadmap-2026-04-27.md](archive/divination-skill-roadmap-2026-04-27.md) | Master skill expansion roadmap (Tier 1/2 skills implemented in `src/lib/master/skills/`). |
+| [hci-audit-2026-04-27.md](archive/hci-audit-2026-04-27.md) | April HCI audit report (P0/P1/P2 optimizations fully implemented). |
+| [uix-hci-audit-2026-06-12.md](archive/uix-hci-audit-2026-06-12.md) | June UIX audit report (W0~W5 optimizations fully implemented). |
+| [ziwei-upgrade-plan.md](archive/ziwei-upgrade-plan.md) | Early Zi Wei V2 upgrade roadmap (fully deployed). |
 
 ---
 
-## 運行時 LLM 提示詞模版 (`divination-refs/`)
+## Runtime LLM Prompt Templates (`divination-refs/`)
 
-根目錄下的 `divination-refs/` 檔案由 `src/lib/llm/prompts.ts` 與 `src/lib/master/systemPrompt/persona.ts` 在**服務運行時動態載入**：
+Markdown files in the root `divination-refs/` directory are **dynamically loaded at runtime** by `src/lib/llm/prompts.ts` and `src/lib/master/systemPrompt/persona.ts`:
 
-| 檔案 | 載入模組 | 作用 |
+| File | Loaded By | Function |
 |---|---|---|
-| `master.md` | `persona.ts` | 玄機大師人設、語氣規則（Voice）、能力邊界、打斷與反思行為準則。 |
-| `bazi.md` | `prompts.ts` | 八字命理解讀框架：旺衰論、調候用神、格局、十神喜忌。 |
-| `ziwei.md` | `prompts.ts` | 紫微斗數解讀框架：十二宮格局、四化飛星、吉凶星耀互涉。 |
-| `iching.md` | `prompts.ts` | 周易六十四卦卦辭、爻辭解讀體系。 |
-| `liuyao.md` | `prompts.ts` | 京房六爻納甲、世應、六親取用神法則。 |
-| `qimen.md` | `prompts.ts` | 奇門遁甲天地盤、九星、八門、八神吉凶格局。 |
-| `fengshui.md` | `prompts.ts` | 陽宅風水四獸、八宅與形法調理。 |
-| `others.md` | `prompts.ts` | 梅花易數、六壬起卦與體用生剋。 |
+| `master.md` | `persona.ts` | Master persona, tone rules (Voice), capability limits, and interruption/reflection heuristics. |
+| `bazi.md` | `prompts.ts` | BaZi interpretation framework: strength analysis, climatic regulation, structure, and Ten Gods. |
+| `ziwei.md` | `prompts.ts` | Zi Wei Dou Shu interpretation framework: Twelve Palaces, Si Hua flying stars, and star interactions. |
+| `iching.md` | `prompts.ts` | I Ching sixty-four hexagram statements and line judgements. |
+| `liuyao.md` | `prompts.ts` | Jing Fang Liu Yao Najia, Shi/Ying lines, and Six Relatives useful god selection rules. |
+| `qimen.md` | `prompts.ts` | Qi Men Dun Jia Heaven/Earth plates, Nine Stars, Eight Gates, and Eight Deities. |
+| `fengshui.md` | `prompts.ts` | Residential Feng Shui Four Celestial Animals, Eight Mansions, and form adjustments. |
+| `others.md` | `prompts.ts` | Plum Blossom Divination, Liu Ren divination methods, and host/guest interaction dynamics. |
 
-> ⚠️ **修改提示**：變更 `divination-refs/` 內的 Markdown 檔案將**直接影響線上大模型推理與生成風格**，請務必先在測試環境或配合標竿評測驗證。
+> Warning: Modifying Markdown files in `divination-refs/` directly affects production LLM inference and tone. Validate any changes in staging or against gold standard benchmark suites before deploying.
