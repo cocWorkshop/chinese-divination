@@ -77,6 +77,10 @@ export default function MasterChatWidget() {
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password'
   if (!enabled || isAuthPage) return null
 
+  // Hide the collapsed entrance (bottom-right FAB or bar) on /divination because
+  // the page already features the docked MasterEntryCard as its primary entrance.
+  const isDivinationHub = pathname === '/divination'
+
   const resolveGate = async (action: 'enable' | 'decline') => {
     const intent = gateIntent
     if (action === 'enable') {
@@ -105,7 +109,8 @@ export default function MasterChatWidget() {
         // Default collapsed entry is a compact bottom-right FAB. The
         // informative full-width bar is reserved for the active-reading
         // handoff (pendingReading), where its return-to-form text matters.
-        pendingReading ? (
+        // On /divination, hide the collapsed FAB since the docked card serves as the entry.
+        isDivinationHub ? null : pendingReading ? (
           <CollapsedBar needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} focusOnMount={returnedFromExpanded} />
         ) : (
           <MasterFab needsMemoryGate={needsMemoryGate} onRequestGate={setGateIntent} focusOnMount={returnedFromExpanded} />

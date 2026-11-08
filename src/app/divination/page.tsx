@@ -58,7 +58,8 @@ export default function DivinationPage() {
   return (
     <div className="relative flex-1 bg-background">
       <StarField />
-      <div className="relative z-10 py-6 sm:py-10 px-3 sm:px-4 max-w-6xl mx-auto">
+      {/* Scrollable Oracle Cards Container with bottom padding for the fixed dock */}
+      <div className="relative z-10 py-5 sm:py-8 px-3 sm:px-4 max-w-6xl mx-auto pb-32 sm:pb-36">
         <AnimatePresence mode="wait">
           <motion.div
             key="services-grid"
@@ -66,25 +67,18 @@ export default function DivinationPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="flex flex-col"
           >
-            {/* Master Xuanji Entrance: Top on mobile, Bottom on desktop (md:) */}
-            <div className="order-1 md:order-3 w-full">
-              <MasterEntryCard />
-            </div>
-
-            {/* Subtle Divider between Master & Classical Divination Systems */}
-            <div className="order-2 flex items-center gap-3 my-3 sm:my-6 max-w-4xl mx-auto w-full">
+            {/* Subtle Divider / Section Header */}
+            <div className="flex items-center gap-3 mb-4 sm:mb-6 max-w-4xl mx-auto w-full">
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
-              <span className="text-[11px] sm:text-xs text-foreground/40 font-serif tracking-widest uppercase select-none text-center">
-                <span className="md:hidden">{T(lang, '自選術數起盤', 'Classical Systems')}</span>
-                <span className="hidden md:inline">{T(lang, '或向玄機大師請益', 'Or Consult Master Xuanji')}</span>
+              <span className="text-[11px] sm:text-xs text-foreground/45 font-serif tracking-widest uppercase select-none text-center">
+                {T(lang, '正統術數 · 自選起盤', 'Classical Divination Systems')}
               </span>
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />
             </div>
 
-            {/* Oracle Cards Grid: 2 columns on mobile (order-3), 3 columns on desktop (order-1) */}
-            <div className="order-3 md:order-1 w-full grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-5">
+            {/* Oracle Cards Grid: 2 columns on mobile, 3 columns on desktop */}
+            <div className="w-full grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-5">
               {visibleServices.map((svc, i) => (
                 <motion.div
                   key={svc.id}
@@ -138,6 +132,13 @@ export default function DivinationPage() {
 
           </motion.div>
         </AnimatePresence>
+      </div>
+
+      {/* Master Xuanji Entrance: Fixed at the bottom of viewport across all screen sizes, layered on top (z-30) */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none pb-2 sm:pb-3 pt-6 px-3 sm:px-4 bg-gradient-to-t from-[var(--bg-primary,#070b14)] via-[var(--bg-primary,#070b14)]/95 to-transparent">
+        <div className="max-w-4xl mx-auto pointer-events-auto">
+          <MasterEntryCard />
+        </div>
       </div>
     </div>
   )

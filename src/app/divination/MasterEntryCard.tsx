@@ -101,7 +101,7 @@ export default function MasterEntryCard() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="mb-6 max-w-4xl mx-auto"
+      className="mb-1 sm:mb-2 max-w-4xl mx-auto w-full"
     >
       <div className="card-mystic-featured p-3 sm:p-4.5 relative overflow-hidden group">
         {/* Subtle warm glow behind */}
