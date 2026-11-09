@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -15,6 +15,28 @@ import { T } from '@/lib/i18n'
 export default function HomePage() {
   const { lang } = useLang()
   const { data: session } = useSession()
+  const [userRealm, setUserRealm] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!session?.user) {
+      setUserRealm(null)
+      return
+    }
+    fetch('/api/user/growth')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.currentRealm?.name) {
+          setUserRealm(
+            T(
+              lang,
+              data.currentRealm.name['zh-TW'] || data.currentRealm.name.zh,
+              data.currentRealm.name.en
+            )
+          )
+        }
+      })
+      .catch(() => {})
+  }, [session, lang])
 
   // Daily Almanac data
   const almanac = useMemo(() => getDailyAlmanac(), [])
@@ -135,7 +157,7 @@ export default function HomePage() {
   return (
     <div className="flex-1 bg-background text-foreground selection:bg-gold/20 selection:text-gold-light relative overflow-x-hidden">
       {/* ─── Hero Section ─── */}
-      <section className="relative min-h-[85vh] sm:min-h-[88vh] flex flex-col items-center justify-center overflow-hidden px-4 pt-16 pb-12 sm:pt-20 sm:pb-16">
+      <section className="relative min-h-[58vh] sm:min-h-[64vh] flex flex-col items-center justify-center overflow-hidden px-4 pt-16 pb-8 sm:pt-20 sm:pb-10">
         <StarField />
 
         {/* Dynamic Concentric Armillary Sphere Orbits */}
@@ -161,14 +183,14 @@ export default function HomePage() {
               <span>
                 {T(
                   lang,
-                  `歡迎歸位，${session.user.name || '道友'}`,
-                  `Welcome back, ${session.user.name || 'Friend'}`
+                  `歡迎，${session.user.name || '道友'}`,
+                  `Welcome, ${session.user.name || 'Friend'}`
                 )}
               </span>
               <span className="text-gold/50">·</span>
-              <span className="text-gold font-serif">{T(lang, '玄門修行中', 'Cultivating')}</span>
-              <Link href="/divination" className="text-gold underline ml-1 hover:text-gold-light">
-                {T(lang, '我的命盤簿 →', 'Readings →')}
+              <span className="text-gold font-serif">{userRealm || T(lang, '初探玄門', 'Novice Seeker')}</span>
+              <Link href="/divination" className="text-gold underline ml-1 hover:text-gold-light font-serif">
+                {T(lang, '開始占卜 →', 'Start Divination →')}
               </Link>
             </motion.div>
           )}
@@ -188,84 +210,17 @@ export default function HomePage() {
               玄機
             </h1>
             <p className="text-xs sm:text-sm uppercase tracking-[0.35em] text-gold/70 mb-3 font-sans font-light">
-              XuanJi · Modern Metaphysics
+              XuanJi
             </p>
-            <p className="text-lg sm:text-xl md:text-2xl text-foreground/90 font-serif font-light mb-3">
+            <p className="text-lg sm:text-xl md:text-2xl text-foreground/90 font-serif font-light mb-2">
               {T(lang, '古法智慧 · 當代精算', 'Ancient Wisdom, Contemporary Calculation')}
             </p>
-            <p className="text-sm sm:text-base text-foreground/60 max-w-xl mx-auto leading-relaxed font-light mb-8">
-              {T(
-                lang,
-                '「不論是一生大運起伏，還是當下一事之惑，皆有數可循。」',
-                '“Whether charting the arc of a lifetime or resolving an immediate crossroad, every fate has its number.”'
-              )}
-            </p>
-          </motion.div>
-
-          {/* Quick Oracle Inquiries (叩問天機引導條) */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            className="card-quiet rounded-2xl p-4 sm:p-5 border border-gold/25 max-w-2xl mx-auto mb-10 shadow-lg backdrop-blur-xl"
-          >
-            <div className="flex items-center justify-between text-xs text-gold/80 mb-3 px-1">
-              <span className="flex items-center gap-1.5 font-serif">
-                <span className="text-gold">✧</span>
-                <span>{T(lang, '今日心有所惑？叩問天機', 'Have a question? Inquire the Oracle')}</span>
-              </span>
-              <span className="text-[11px] text-foreground/40 font-serif">
-                {T(lang, '點選意向直達專屬術數', 'Select intent for direct divination')}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <Link
-                href="/divination/bazi"
-                className="p-3 rounded-xl bg-gold/[0.05] dark:bg-gold/[0.06] hover:bg-gold/[0.12] border border-gold/15 hover:border-gold/40 text-center transition-all group"
-              >
-                <div className="mb-1.5 group-hover:scale-110 transition-transform flex items-center justify-center">
-                  <DivinationIcon type="bazi" size={26} className="text-gold" />
-                </div>
-                <div className="text-xs font-serif font-medium text-gold-light">{T(lang, '觀命定盤', 'Life Blueprint')}</div>
-                <div className="text-[10px] text-foreground/40 mt-0.5 font-serif">{T(lang, '終生大運流年', 'BaZi Chart')}</div>
-              </Link>
-              <Link
-                href="/divination/liuyao"
-                className="p-3 rounded-xl bg-gold/[0.05] dark:bg-gold/[0.06] hover:bg-gold/[0.12] border border-gold/15 hover:border-gold/40 text-center transition-all group"
-              >
-                <div className="mb-1.5 group-hover:scale-110 transition-transform flex items-center justify-center">
-                  <DivinationIcon type="liuyao" size={26} className="text-gold" />
-                </div>
-                <div className="text-xs font-serif font-medium text-gold-light">{T(lang, '當下決疑', 'Immediate Doubt')}</div>
-                <div className="text-[10px] text-foreground/40 mt-0.5 font-serif">{T(lang, '搖卦斷吉凶', 'Liu Yao Oracle')}</div>
-              </Link>
-              <Link
-                href="/divination/ziwei"
-                className="p-3 rounded-xl bg-gold/[0.05] dark:bg-gold/[0.06] hover:bg-gold/[0.12] border border-gold/15 hover:border-gold/40 text-center transition-all group"
-              >
-                <div className="mb-1.5 group-hover:scale-110 transition-transform flex items-center justify-center">
-                  <DivinationIcon type="ziwei" size={26} className="text-gold" />
-                </div>
-                <div className="text-xs font-serif font-medium text-gold-light">{T(lang, '星曜行度', 'Star Palaces')}</div>
-                <div className="text-[10px] text-foreground/40 mt-0.5 font-serif">{T(lang, '十二宮主星', 'Zi Wei Astrology')}</div>
-              </Link>
-              <Link
-                href="/divination/qimen"
-                className="p-3 rounded-xl bg-gold/[0.05] dark:bg-gold/[0.06] hover:bg-gold/[0.12] border border-gold/15 hover:border-gold/40 text-center transition-all group"
-              >
-                <div className="mb-1.5 group-hover:scale-110 transition-transform flex items-center justify-center">
-                  <DivinationIcon type="qimen" size={26} className="text-gold" />
-                </div>
-                <div className="text-xs font-serif font-medium text-gold-light">{T(lang, '時空擇吉', 'Timing & Place')}</div>
-                <div className="text-[10px] text-foreground/40 mt-0.5 font-serif">{T(lang, '出行商務奇門', 'Qi Men Strategy')}</div>
-              </Link>
-            </div>
           </motion.div>
         </div>
       </section>
 
       {/* ─── Daily Almanac & Hexagram Section (今日黃曆與天機卦) ─── */}
-      <section className="py-8 px-4 max-w-5xl mx-auto -mt-6 sm:-mt-8 relative z-20">
+      <section className="py-8 px-4 max-w-5xl mx-auto relative z-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -381,23 +336,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── Six Core Metaphysical Arts Portal Grid (六大古法術數現代化專區) ─── */}
-      <section className="py-12 sm:py-16 px-4 max-w-5xl mx-auto">
-        <div className="text-center mb-10">
-          <p className="text-xs uppercase tracking-[0.25em] text-gold/70 font-sans mb-1">
-            {T(lang, '六派源流 · 現代演繹', 'Six Classical Systems')}
-          </p>
-          <h2 className="text-2xl sm:text-3xl font-serif text-gold-light font-medium">
-            {T(lang, '六大正統術數門戶', 'The Six Divination Portals')}
-          </h2>
-          <p className="text-xs sm:text-sm text-foreground/50 max-w-lg mx-auto mt-2 font-light">
-            {T(
-              lang,
-              '依據不同時空維度與問事焦點，自由切換最契合的古法推演體系。',
-              'Switch seamlessly between classical systems tailored to destiny, immediate choices, or spatial flow.'
-            )}
-          </p>
-        </div>
-
+      <section className="py-8 sm:py-12 px-4 max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {divinationPortals.map((p) => (
             <motion.div
@@ -451,7 +390,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── Xuanji Master Teahouse Consultation Section ─── */}
-      <section className="py-10 sm:py-16 px-4 max-w-4xl mx-auto">
+      <section className="py-8 sm:py-12 px-4 max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -465,31 +404,22 @@ export default function HomePage() {
           </div>
 
           <div className="max-w-xl">
-            <p className="text-xs uppercase tracking-[0.25em] text-gold/70 font-sans mb-2">
-              {T(lang, '名師對坐 · 知無不言', 'Personal Master Consultation')}
-            </p>
-            <h2 className="text-2xl sm:text-3xl font-serif text-gold-light mb-3">
-              {T(lang, '玄機大師 · 深度陪伴', 'Master Xuanji')}
+            <h2 className="text-2xl sm:text-3xl font-serif text-gold-light mb-4">
+              {T(lang, '玄機大師 · 深度陪伴', 'Master Xuanji · Deep Companionship')}
             </h2>
-            <p className="text-sm sm:text-base text-foreground/70 leading-relaxed font-light mb-5">
-              {T(
-                lang,
-                '不只是靜態的排盤紙。大師以古籍源流為本、結合現代推演，能調取您的本命星盤、逐段深入解讀、追溯節氣流年，為您解答心中的連環之惑。',
-                'Far beyond a static chart. Master Xuanji recalls your previous readings, traces seasonal rhythms, and answers your follow-up questions like sitting with a true sage.'
-              )}
-            </p>
 
             {/* Quick Consultation Starters */}
             <div className="space-y-1.5 mb-6">
               <p className="text-[11px] text-gold/80 font-serif">{T(lang, '常問天機示例：', 'Common Inquiries:')}</p>
               {masterInquiryPrompts.map((prompt, i) => (
-                <div
+                <Link
                   key={i}
-                  className="px-3 py-1.5 rounded-lg bg-foreground/[0.04] border border-gold/15 text-xs text-foreground/70 hover:border-gold/40 hover:text-gold-light transition-colors flex items-center gap-2 cursor-pointer font-serif"
+                  href={session ? '/divination' : `/login?next=${encodeURIComponent('/divination')}`}
+                  className="px-3 py-1.5 rounded-lg bg-foreground/[0.04] border border-gold/15 text-xs text-foreground/70 hover:border-gold/40 hover:text-gold-light transition-colors flex items-center gap-2 cursor-pointer font-serif block"
                 >
                   <span className="text-gold/70 text-[10px]">✧</span>
                   <span>{T(lang, prompt.textZh, prompt.textEn)}</span>
-                </div>
+                </Link>
               ))}
             </div>
 
@@ -501,22 +431,19 @@ export default function HomePage() {
                 <span>{T(lang, '開始與大師品茗對話', 'Converse with Master')}</span>
                 <span>→</span>
               </Link>
-              <span className="text-xs text-foreground/40 font-serif">
-                {T(lang, '隨時在排盤結果中直接追問', 'Available on any reading result')}
-              </span>
             </div>
           </div>
         </motion.div>
       </section>
 
-      {/* ─── Cultivation & Nine Realms Banner (玄門九境) ─── */}
-      <section className="py-10 px-4 max-w-4xl mx-auto">
+      {/* ─── Cultivation & Nine Realms Banner (玄機九層) ─── */}
+      <section className="py-8 sm:py-12 px-4 max-w-4xl mx-auto">
         <div className="oriental-sanctuary-card rounded-2xl p-6 sm:p-8 border border-gold/25 text-center relative overflow-hidden">
           <div className="mb-3 flex items-center justify-center">
             <YinYangIcon size={32} className="text-gold" />
           </div>
           <h3 className="text-lg sm:text-xl font-serif text-gold mb-2">
-            {T(lang, '玄門九境 · 術數修為體系', 'The Nine Metaphysical Realms')}
+            {T(lang, '玄機九層 · 術數修為體系', 'The Nine Tiers of XuanJi · Metaphysical Cultivation')}
           </h3>
           <p className="text-xs sm:text-sm text-foreground/60 max-w-md mx-auto mb-6 font-light font-serif">
             {T(
@@ -533,16 +460,16 @@ export default function HomePage() {
                 className="p-2 rounded-xl bg-foreground/5 border border-line/10 hover:border-gold/30 transition-all flex flex-col items-center"
               >
                 <div className="text-base mb-1">{tier.badge}</div>
-                <div className="text-[10px] font-serif text-foreground/80 line-clamp-1">{tier.name[lang as 'zh' | 'zh-TW' | 'en'] || tier.name.zh}</div>
+                <div className="text-[10px] font-serif text-foreground/80 line-clamp-1">{T(lang, tier.name['zh-TW'] || tier.name.zh, tier.name.en)}</div>
               </div>
             ))}
           </div>
 
           <Link
-            href="/start"
+            href={session ? '/profile?tab=growth' : `/login?next=${encodeURIComponent('/profile?tab=growth')}`}
             className="inline-flex items-center gap-1.5 px-6 py-2.5 min-h-[44px] rounded-xl border border-gold/40 text-gold text-xs font-serif hover:bg-gold/10 hover:border-gold transition-colors"
           >
-            <span>{T(lang, '探索玄門九境修為指南', 'Explore Cultivation Guide')}</span>
+            <span>{T(lang, '探索玄機九層修為指南', 'Explore Nine Tiers Cultivation Guide')}</span>
             <span>→</span>
           </Link>
         </div>
@@ -554,7 +481,7 @@ export default function HomePage() {
           <YinYangIcon size={18} />
           <span className="font-serif text-sm text-gold/80">玄機 · XuanJi</span>
         </div>
-        <p className="mb-2">玄機 XuanJi · 古法智慧，當代傳承</p>
+        <p className="mb-2">玄機 XuanJi · {T(lang, '古法智慧，當代精算', 'Ancient Wisdom, Contemporary Calculation')}</p>
         <p className="text-foreground/30 max-w-lg mx-auto leading-relaxed">
           {T(
             lang,
