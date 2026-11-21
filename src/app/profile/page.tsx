@@ -405,14 +405,14 @@ export default function ProfilePage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex rounded-xl overflow-hidden mb-6 border border-gold/20 p-1 bg-surface/60 backdrop-blur-md">
+      <div className="flex rounded-xl overflow-hidden mb-6 border border-gold/20 p-1 bg-surface/80 dark:bg-surface/60 backdrop-blur-md">
         {TABS.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`flex-1 py-2.5 px-2 text-xs sm:text-sm font-serif font-medium transition-all rounded-lg text-center flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 ${
               activeTab === tab.key
-                ? 'bg-gold text-navy-950 shadow-md shadow-gold/10'
+                ? 'bg-gradient-to-r from-[#e5bf69] via-[#f0d38c] to-[#d4a853] dark:from-[#d4a853] dark:via-[#e5be6a] dark:to-[#c99738] text-[#241807] font-semibold shadow-sm border border-[#c89b3c]/40'
                 : 'text-foreground/60 hover:text-gold hover:bg-foreground/[0.03]'
             }`}
           >

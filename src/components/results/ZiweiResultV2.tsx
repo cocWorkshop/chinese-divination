@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -13,9 +13,9 @@ import SectionDrawer from './SectionDrawer'
 import StreamingKeyPredictions from './StreamingKeyPredictions'
 import StreamingKeyAdvice from './StreamingKeyAdvice'
 import StreamingLuckyInfo from './StreamingLuckyInfo'
-import { useDragScroll } from '@/hooks/useDragScroll'
 import type { DivinationResultProps, AnnualFortuneYear, DetailedAnnualFortunesMap } from '@/types/divination'
 import { T } from '@/lib/i18n'
+import { isDaYunUnlocked, FREE_DAYUN_LIMIT } from '@/lib/baziCalculator'
 import {
   ZiWeiIcon,
   PersonalityIcon,
@@ -27,6 +27,8 @@ import {
   KeyPredictionIcon,
   SparkleIcon,
   ScrollIcon,
+  LockSealIcon,
+  UnlockSealIcon,
   CloseIcon,
   RefreshIcon,
   MasterSageIcon,
@@ -85,7 +87,6 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
   // Reveal the Xuanji Q&A only after streaming completes (the 3 auto-generated
   // suggested questions are ready by then); hide it during streaming.
   const qaReady = !streaming
-  const liuNianScroll = useDragScroll<HTMLDivElement>()
 
   const chart = d.ziweiChart || {}
   const formation = d.formation as { name: string; level: string; analysis: string } | undefined
@@ -96,10 +97,79 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
   const [detailedFortunes, setDetailedFortunes] = useState<DetailedAnnualFortunesMap>(() => {
     return (d.detailedAnnualFortunes || {}) as DetailedAnnualFortunesMap
   })
+  const [unlockedDecades, setUnlockedDecades] = useState<number[]>(() => {
+    const fromData = Array.isArray(d.unlockedDecades) ? d.unlockedDecades : []
+    return Array.from(new Set([0, 1, 2, ...fromData]))
+  })
+  const [freeDaYunLimit, setFreeDaYunLimit] = useState<number>(FREE_DAYUN_LIMIT)
+  const [unlockCost, setUnlockCost] = useState<number>(1)
+
+  useEffect(() => {
+    fetch('/api/credits')
+      .then(r => (r.ok ? r.json() : null))
+      .then(info => {
+        if (typeof info?.rules?.freeDaYunLimit === 'number') setFreeDaYunLimit(info.rules.freeDaYunLimit)
+        if (typeof info?.rules?.costDayunUnlock === 'number') setUnlockCost(info.rules.costDayunUnlock)
+        else if (typeof info?.costs?.dayun_unlock === 'number') setUnlockCost(info.costs.dayun_unlock)
+      })
+      .catch(() => {})
+  }, [])
+
   const [generatingDecade, setGeneratingDecade] = useState<number | null>(null)
   const [activeDecadeYear, setActiveDecadeYear] = useState<{ decadeIdx: number; year: number } | null>(null)
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null)
   const masterChat = useMasterChatActions()
+
+  // Build full 8-step 大限 list from deterministic decadalSiHua (or palace.decadal) merged with LLM daYunAnalysis
+  const fullDaXianList: AnyData[] = useMemo(() => {
+    const decadalFromRoot = Array.isArray(d.decadalSiHua) ? d.decadalSiHua : (Array.isArray(chart.decadalSiHua) ? chart.decadalSiHua : [])
+    let baseDecades: { heavenlyStem: string; earthlyBranch: string; range: number[]; mutagen?: string[] }[] = decadalFromRoot
+      .filter((dec: AnyData) => Array.isArray(dec?.range) && (dec.range[0] > 0 || dec.range[1] > 0))
+      .sort((a: AnyData, b: AnyData) => a.range[0] - b.range[0])
+
+    if (baseDecades.length === 0 && d.palaces) {
+      const palaceList = Array.isArray(d.palaces) ? d.palaces : Object.values(d.palaces as Record<string, AnyData>)
+      baseDecades = palaceList
+        .filter((p: AnyData) => Array.isArray(p?.decadal?.range) && (p.decadal.range[0] > 0 || p.decadal.range[1] > 0))
+        .map((p: AnyData) => ({
+          heavenlyStem: p.decadal.heavenlyStem || '',
+          earthlyBranch: p.decadal.earthlyBranch || p.earthlyBranch || '',
+          range: p.decadal.range,
+        }))
+        .sort((a, b) => a.range[0] - b.range[0])
+    }
+
+    const analysisList = Array.isArray(daYunAnalysis) ? daYunAnalysis : []
+    if (baseDecades.length === 0) return analysisList
+
+    return baseDecades.slice(0, 8).map((dec, idx) => {
+      const ageRange = `${dec.range[0]}-${dec.range[1]}`
+      const matched = analysisList.find((a: AnyData) =>
+        a?.ageRange === ageRange ||
+        (a?.heavenlyStem === dec.heavenlyStem && a?.earthlyBranch === dec.earthlyBranch)
+      ) || analysisList[idx] || {}
+      return {
+        ...matched,
+        heavenlyStem: dec.heavenlyStem || matched.heavenlyStem || '',
+        earthlyBranch: dec.earthlyBranch || matched.earthlyBranch || '',
+        ageRange,
+        startAge: dec.range[0],
+        endAge: dec.range[1],
+        mutagen: dec.mutagen,
+      }
+    })
+  }, [d.decadalSiHua, chart.decadalSiHua, d.palaces, daYunAnalysis])
+
+  const [selectedDaXianIndex, setSelectedDaXianIndex] = useState<number>(() => {
+    const currentYear = new Date().getFullYear()
+    const currentAge = (liuNian || []).find(l => l.year === currentYear)?.age
+    if (!currentAge || fullDaXianList.length === 0) return 0
+    const idx = fullDaXianList.findIndex((dy: AnyData) => {
+      const [s, e] = (dy.ageRange || '').split('-').map((v: string) => parseInt(v.trim(), 10))
+      return s && e && currentAge >= s && currentAge <= e
+    })
+    return idx >= 0 ? idx : 0
+  })
 
   const GRID_POSITIONS = useMemo(() => [
     { row: 0, col: 0, branch: '巳' },
@@ -154,6 +224,34 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
     masterChat.sendMessage(prompt)
   }
 
+  const handleAskMasterAboutDaXian = (decadeIdx: number, dy: AnyData) => {
+    if (!masterChat.enabled) {
+      toast.error(T(lang, '請先登入後向玄機大師深度解盤', 'Please sign in to consult Master Xuanji'))
+      return
+    }
+    const prompt = T(
+      lang,
+      `請玄機大師為我詳批紫微命盤第 ${decadeIdx + 1} 大限【${dy.heavenlyStem || ''}${dy.earthlyBranch || ''}】（${dy.ageRange || ''}歲）。此十年大限四化引動、三方四正吉凶轉折與應對進退為何？`,
+      `Master Xuanji, please provide an in-depth reading of my Zi Wei Dou Shu Decade ${decadeIdx + 1} 【${dy.heavenlyStem || ''}${dy.earthlyBranch || ''}】 (ages ${dy.ageRange || ''}). What are the major SiHua transformations, turning points, and guidance for this 10-year cycle?`,
+    )
+    masterChat.setShape('expanded')
+    masterChat.sendMessage(prompt)
+  }
+
+  const handleAskMasterAboutZiweiLiuNian = (year: number, age: number, branch: string, dy: AnyData) => {
+    if (!masterChat.enabled) {
+      toast.error(T(lang, '請先登入後向玄機大師深度解盤', 'Please sign in to consult Master Xuanji'))
+      return
+    }
+    const prompt = T(
+      lang,
+      `請玄機大師為我詳批紫微命盤【${year}年（${age}歲，流年命宮在${branch}宮）】的流年運勢（所處大限：${dy.heavenlyStem || ''}${dy.earthlyBranch || ''}，${dy.ageRange || ''}歲）。該年在事業、財運、感情與健康上有何四化疊引與吉凶應期？`,
+      `Master Xuanji, please analyze my Zi Wei Dou Shu annual fortune for 【${year} (age ${age}, Palace ${branch})】 during the ${dy.heavenlyStem || ''}${dy.earthlyBranch || ''} decade. What are the key career, wealth, relationship, and health dynamics for this year?`,
+    )
+    masterChat.setShape('expanded')
+    masterChat.sendMessage(prompt)
+  }
+
   const handleGenerateAnnualFortune = async (decadeIdx: number, dy: AnyData) => {
     if (generatingDecade !== null) return
     if (!readingId) {
@@ -167,6 +265,34 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
     const endYear = decadeYears[decadeYears.length - 1]?.year || (startYear + 9)
 
     try {
+      // Auto-unlock with credits if decade >= freeDaYunLimit and not yet unlocked
+      if (!isDaYunUnlocked(decadeIdx, unlockedDecades, freeDaYunLimit)) {
+        const unlockRes = await fetch('/api/credits/consume', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'dayun_unlock',
+            decadeIndex: decadeIdx,
+            readingId,
+          }),
+        })
+        if (!unlockRes.ok) {
+          if (unlockRes.status === 402) {
+            toast.error(T(lang, '機緣點不足，請獲取更多機緣後重試', 'Insufficient Karma credits. Please acquire more credits.'))
+          } else {
+            toast.error(T(lang, '解鎖大限流年失敗，請稍後重試', 'Unlock failed. Please retry.'))
+          }
+          return
+        }
+        const unlockData = await unlockRes.json()
+        if (!unlockData.success) {
+          toast.error(T(lang, '解鎖大限流年失敗，請稍後重試', 'Unlock failed. Please retry.'))
+          return
+        }
+        const nextUnlocked = unlockData.unlockedDecades || Array.from(new Set([...unlockedDecades, decadeIdx]))
+        setUnlockedDecades(nextUnlocked)
+      }
+
       const res = await fetch(`/api/readings/${readingId}/annual-fortune`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -651,52 +777,164 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
         }
       `}</style>
 
-      {/* ═══ STRUCTURED DA YUN ANALYSIS ═══ */}
-      {daYunAnalysis && daYunAnalysis.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <h3 className="text-gold font-serif text-base mb-2 flex items-center gap-2">
-            <KeyPredictionIcon size={16} className="text-gold" />
-            <span>{T(lang, '大限精批', 'Decade Fortune')}</span>
-          </h3>
-          <div className="space-y-2">
-            {daYunAnalysis.map((dy, i) => {
-              const stemEl = charElement(dy.heavenlyStem || '')
-              const currentYear = new Date().getFullYear()
-              const currentAge = (liuNian || []).find(l => l.year === currentYear)?.age
-              const [startAge, endAge] = (dy.ageRange || '').split('-').map((s: string) => parseInt(s.trim(), 10))
-              const isCurrentDecade = currentAge && startAge && endAge ? (currentAge >= startAge && currentAge <= endAge) : false
+      {/* ═══ DA XIAN & 10-YEAR ANNUAL FORTUNE (BaZi-Unified 8-Step Selector & 10-Year Inspector) ═══ */}
+      {fullDaXianList && fullDaXianList.length > 0 && (() => {
+        const i = selectedDaXianIndex < fullDaXianList.length ? selectedDaXianIndex : 0
+        const dy = fullDaXianList[i] || fullDaXianList[0]
+        const stemEl = charElement(dy.heavenlyStem || '')
+        const currentYear = new Date().getFullYear()
+        const currentAge = (liuNian || []).find(l => l.year === currentYear)?.age
+        const [startAge, endAge] = (dy.ageRange || '').split('-').map((s: string) => parseInt(s.trim(), 10))
+        const birthYear = (liuNian && liuNian[0]) ? (liuNian[0].year - liuNian[0].age) : (currentYear - 30)
+        const startYear = birthYear + (startAge || 0)
+        const endYear = birthYear + (endAge || (startAge || 0) + 9)
 
-              return (
-                <details
-                  key={i}
-                  className={`card-quiet rounded-xl border transition-colors group ${
-                    isCurrentDecade ? 'border-gold/40 ring-1 ring-gold/25' : 'border-gold/20'
-                  }`}
-                  open
-                >
-                  <summary className="flex items-center gap-3 px-3 py-2.5 cursor-pointer list-none">
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <span className={`text-lg font-serif font-bold ${elClr[stemEl] || ''}`}>{dy.heavenlyStem}{dy.earthlyBranch}</span>
-                    </div>
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <div className="text-[var(--text-muted)] text-[11px]">{dy.ageRange}{T(lang, '歲', '')}</div>
-                      {isCurrentDecade && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-gold/15 border border-gold/30 text-gold font-serif font-medium">
-                          ✦ {T(lang, '當前大限', 'Current Decade')}
+        const decadeKey = `decade_${i}`
+        const hasAiFortunes = Boolean(detailedFortunes[decadeKey] && detailedFortunes[decadeKey].length > 0)
+        const isGeneratingThisDecade = generatingDecade === i
+        const isDecadeUnlocked = isDaYunUnlocked(i, unlockedDecades, freeDaYunLimit)
+        const palaceEntry = branchToPalaceMap[dy.earthlyBranch]
+        const palaceName = palaceEntry?.name || ''
+
+        const YEAR_STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
+        const YEAR_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+        const rawDecadeYears = (liuNian || []).filter(ln => (startAge && endAge ? ln.age >= startAge && ln.age <= endAge : false))
+
+        const fullDecadeYears = Array.from({ length: 10 }, (_, idx) => {
+          const age = (startAge || 20) + idx
+          const existingLn = rawDecadeYears.find(ln => ln.age === age)
+          const aiYear = detailedFortunes[decadeKey]?.find(f => f.age === age || (existingLn && f.year === existingLn.year))
+          const year = existingLn?.year || aiYear?.year || (birthYear + age)
+          const yrStem = YEAR_STEMS[((year - 4) % 10 + 10) % 10]
+          const yrBranch = YEAR_BRANCHES[((year - 4) % 12 + 12) % 12]
+
+          return {
+            year,
+            age,
+            earthlyBranch: existingLn?.earthlyBranch || yrBranch,
+            ganZhi: aiYear?.ganZhi || `${yrStem}${yrBranch}`,
+            yearlyMutagen: existingLn?.yearlyMutagen || [],
+            huaLuPalace: existingLn?.huaLuPalace || '',
+            huaJiPalace: existingLn?.huaJiPalace || '',
+            isLucky: aiYear?.isLucky ?? existingLn?.isLucky ?? null,
+          }
+        })
+
+        return (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <h3 className="text-gold font-serif text-base flex items-center gap-2">
+                <KeyPredictionIcon size={16} className="text-gold" />
+                <span>{T(lang, '大限排盤（點擊任一步大限展開十年流年）', 'Da Xian (Click decade to expand 10-yr annual fortunes)')}</span>
+              </h3>
+            </div>
+
+            <div className="card-quiet rounded-xl p-3 sm:p-4 border border-gold/20 space-y-3">
+              {/* Horizontal DaXian Selection Strip (8 Decades, identical to BaZi) */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-2 px-2 pt-2.5 pb-2.5">
+                {fullDaXianList.map((dec: AnyData, idx: number) => {
+                  const decStemEl = charElement(dec.heavenlyStem || '')
+                  const [dStartAge, dEndAge] = (dec.ageRange || '').split('-').map((s: string) => parseInt(s.trim(), 10))
+                  const isCurrent = Boolean(currentAge && dStartAge && dEndAge && currentAge >= dStartAge && currentAge <= dEndAge)
+                  const isSelected = idx === i
+                  const isUnlocked = isDaYunUnlocked(idx, unlockedDecades, freeDaYunLimit)
+                  const dStartYear = birthYear + (dStartAge || 0)
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDaXianIndex(idx)
+                        setActiveDecadeYear(null)
+                      }}
+                      className={`flex-shrink-0 text-center px-3 py-2 rounded-lg border transition-all min-w-[68px] relative cursor-pointer ${
+                        isSelected
+                          ? 'border-gold ring-2 ring-gold/60 bg-gold/20 shadow-md scale-105 z-10'
+                          : isCurrent
+                          ? 'border-gold/60 ring-1 ring-gold/30 bg-gold/10'
+                          : 'border-gold/15 bg-gold/5 hover:border-gold/35'
+                      }`}
+                    >
+                      <div className="text-[var(--text-muted)] text-[10px]">
+                        {dec.ageRange}{T(lang, '歲', '')}
+                      </div>
+                      <div className="my-0.5">
+                        <span className={`text-sm font-serif font-bold ${elClr[decStemEl] || 'text-gold'}`}>{dec.heavenlyStem}</span>
+                        <span className="text-sm font-serif font-bold text-gold">{dec.earthlyBranch}</span>
+                      </div>
+                      <div className="text-[var(--text-muted)] text-[9px]">{dStartYear}</div>
+                      {/* Status tag */}
+                      <div className="mt-0.5">
+                        {idx < freeDaYunLimit ? (
+                          <span className="text-[8px] text-emerald-400">免</span>
+                        ) : isUnlocked ? (
+                          <span className="inline-flex items-center justify-center text-gold"><UnlockSealIcon size={11} color="#d4a853" /></span>
+                        ) : (
+                          <span className="inline-flex items-center justify-center text-amber-400"><LockSealIcon size={10} color="#e5c07b" /></span>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* ═══ INTERACTIVE DECADE CONTAINER (Full-Width Vertical Flow) ═══ */}
+              {dy && (
+                <div className="pt-3 border-t border-gold/15 space-y-3">
+                  {/* Decade Header Banner */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-gold/5 p-2.5 rounded-lg border border-gold/15">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm sm:text-base font-serif font-bold text-gold">
+                        {T(lang, `第 ${i + 1} 步大限：`, `Decade ${i + 1}: `)}
+                        <span className={elClr[stemEl] || ''}>{dy.heavenlyStem}</span>
+                        <span>{dy.earthlyBranch}</span>
+                      </span>
+                      {palaceName && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold/15 border border-gold/30 text-gold font-serif">
+                          {palaceName}
                         </span>
                       )}
+                      <span className="text-xs text-[var(--text-muted)]">
+                        {startYear}-{endYear}年 ({dy.ageRange}{T(lang, '歲', '')})
+                      </span>
                     </div>
-                    <motion.span className="text-gold text-xs flex-shrink-0 group-open:rotate-180 transition-transform">▼</motion.span>
-                  </summary>
-                  <div className="px-3 pb-3 space-y-2 border-t border-gold/10 pt-2.5">
-                    {dy.theme && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAskMasterAboutDaXian(i, dy)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] bg-gold/15 hover:bg-gold/25 text-gold border border-gold/30 transition-all cursor-pointer font-serif font-medium"
+                        title={T(lang, '向大師追問此大限十年格局', 'Consult Master on this decade')}
+                      >
+                        <MasterSageIcon size={12} color="var(--gold)" />
+                        <span>{T(lang, '追問此大限', 'Ask Master')}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Full-Width Decade Overview */}
+                  <div className="space-y-2 px-0.5">
+                    {dy.theme ? (
                       <p className="text-[var(--text-secondary)] text-sm leading-relaxed font-serif">{dy.theme}</p>
-                    )}
-                    {dy.siHuaOverlay && (
-                      <p className="text-[var(--text-muted)] text-xs leading-relaxed">
-                        <span className="text-gold">四化疊加：</span>{dy.siHuaOverlay}
+                    ) : (
+                      <p className="text-[var(--text-secondary)] text-sm leading-relaxed font-serif">
+                        {T(
+                          lang,
+                          `此步大限行至「${dy.heavenlyStem}${dy.earthlyBranch}」${palaceName ? `（${palaceName}）` : ''}，管轄 ${dy.ageRange} 歲十年氣運，引動大限四化與三方四正星曜交會。`,
+                          `Decade cycle in ${dy.heavenlyStem}${dy.earthlyBranch}${palaceName ? ` (${palaceName})` : ''}, governing ages ${dy.ageRange}.`
+                        )}
                       </p>
                     )}
+                    {dy.siHuaOverlay ? (
+                      <p className="text-[var(--text-muted)] text-xs leading-relaxed">
+                        <span className="text-gold">{T(lang, '四化疊加：', 'SiHua Overlay: ')}</span>{dy.siHuaOverlay}
+                      </p>
+                    ) : Array.isArray(dy.mutagen) && dy.mutagen.filter(Boolean).length === 4 ? (
+                      <p className="text-[var(--text-muted)] text-xs leading-relaxed">
+                        <span className="text-gold">{T(lang, '大限四化：', 'Decade SiHua: ')}</span>
+                        {`${dy.heavenlyStem}干引動 ${dy.mutagen[0]}化祿、${dy.mutagen[1]}化權、${dy.mutagen[2]}化科、${dy.mutagen[3]}化忌`}
+                      </p>
+                    ) : null}
                     {dy.keyEvents && dy.keyEvents.length > 0 && (
                       <div className="space-y-1">
                         <div className="text-[var(--text-muted)] text-xs font-medium">{T(lang, '關鍵事件', 'Key Events')}:</div>
@@ -714,315 +952,239 @@ export default function ZiweiResultV2({ data, isShared, rawResult, readingId, ch
                         <span className="text-[var(--text-secondary)] text-sm leading-relaxed">{dy.advice}</span>
                       </div>
                     )}
+                  </div>
 
-                    {/* ═══ 10-YEAR ANNUAL FORTUNE FOR THIS DECADE ═══ */}
-                    {(() => {
-                      const decadeKey = `decade_${i}`
-                      const hasAiFortunes = Boolean(detailedFortunes[decadeKey] && detailedFortunes[decadeKey].length > 0)
-                      const isGeneratingThisDecade = generatingDecade === i
+                  {/* ═══ 10-YEAR ANNUAL FORTUNE FOR THIS DECADE ═══ */}
+                  <div className="mt-3 pt-3 border-t border-gold/15 space-y-2.5">
+                    {/* 10-Year Section Subheader Bar: Single Entry Point for Generating 10-Year Fortunes */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                      <span className="text-xs font-serif text-gold font-medium flex items-center gap-1.5">
+                        <ScrollIcon size={13} className="text-gold flex-shrink-0" />
+                        <span>{T(lang, '本大限十年流年（點選年份查看）', '10-Year Annual Fortunes (Click year to inspect)')}</span>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {hasAiFortunes ? (
+                          <>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-serif font-medium">
+                              <SparkleIcon size={11} color="currentColor" className="text-emerald-400 flex-shrink-0" />
+                              <span>{T(lang, '十年流年精批已就緒', '10-Yr Fortunes Ready')}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleGenerateAnnualFortune(i, dy)}
+                              disabled={isGeneratingThisDecade}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] text-[var(--text-muted)] hover:text-gold border border-gold/20 hover:border-gold/40 flex-shrink-0 whitespace-nowrap transition-colors cursor-pointer"
+                              title={T(lang, '重新調用大模型推演此十年流年', 'Re-channel 10-year annual fortunes')}
+                            >
+                              <RefreshIcon size={10} />
+                              <span>{T(lang, '重新推演', 'Re-channel')}</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateAnnualFortune(i, dy)}
+                            disabled={isGeneratingThisDecade}
+                            className="group pl-2.5 pr-1.5 py-1 rounded-lg bg-gradient-to-r from-[#d4a853] via-[#e5be6a] to-[#c99738] text-navy-950 hover:brightness-110 active:scale-[0.99] transition-all text-[11px] font-serif font-semibold inline-flex items-center gap-1.5 shadow-sm shadow-gold/20 border border-[#f3d794]/50 flex-shrink-0 cursor-pointer disabled:opacity-50"
+                          >
+                            {isGeneratingThisDecade ? (
+                              <span className="flex items-center gap-1.5 px-1">
+                                <span className="w-2.5 h-2.5 border-2 border-navy-950 border-t-transparent rounded-full animate-spin" />
+                                <span>{T(lang, '天機推演中…', 'Channeling…')}</span>
+                              </span>
+                            ) : (
+                              <>
+                                <SparkleIcon size={11} color="currentColor" className="transition-transform duration-300 group-hover:rotate-12 flex-shrink-0" />
+                                <span>{T(lang, '生成十年流年精批', 'Generate 10-Yr Fortune')}</span>
+                                <span className="px-1.5 py-0.2 rounded bg-black/15 border border-black/15 text-[10px] font-serif font-bold tracking-tight whitespace-nowrap">
+                                  {isDecadeUnlocked
+                                    ? T(lang, '免費 · 0點', 'Free · 0 pt')
+                                    : T(lang, `✧ ${unlockCost}點機緣`, `✧ ${unlockCost} pt`)}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
 
-                      const YEAR_STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
-                      const YEAR_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
-                      const rawDecadeYears = (liuNian || []).filter(ln => (startAge && endAge ? ln.age >= startAge && ln.age <= endAge : false))
+                    {/* 10-Year Buttons Grid */}
+                    <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 pt-2.5 pb-2.5 px-1.5">
+                      {fullDecadeYears.map((ln) => {
+                        const isCurrentYear = ln.year === currentYear
+                        const isSelected = activeDecadeYear?.decadeIdx === i && activeDecadeYear?.year === ln.year
+                        const luckyBadge = ln.isLucky === true ? 'border-emerald-400 text-emerald-300' : ln.isLucky === false ? 'border-rose-400 text-rose-300' : 'border-gray-500 text-gray-300'
+                        const hasAiFortune = Boolean(detailedFortunes[decadeKey]?.some(f => f.year === ln.year))
 
-                      const fullDecadeYears = Array.from({ length: 10 }, (_, idx) => {
-                        const age = (startAge || 20) + idx
-                        const existingLn = rawDecadeYears.find(ln => ln.age === age)
-                        const aiYear = detailedFortunes[decadeKey]?.find(f => f.age === age || (existingLn && f.year === existingLn.year))
-                        const birthYear = (liuNian && liuNian[0]) ? (liuNian[0].year - liuNian[0].age) : (currentYear - 30)
-                        const year = existingLn?.year || aiYear?.year || (birthYear + age)
-                        const yrStem = YEAR_STEMS[((year - 4) % 10 + 10) % 10]
-                        const yrBranch = YEAR_BRANCHES[((year - 4) % 12 + 12) % 12]
+                        return (
+                          <button
+                            key={ln.year}
+                            onClick={() => setActiveDecadeYear(isSelected ? null : { decadeIdx: i, year: ln.year })}
+                            className={`p-1.5 rounded-lg border text-center transition-all relative ${
+                              isSelected
+                                ? 'border-gold ring-2 ring-gold bg-gold/25 shadow-md scale-105 z-10'
+                                : isCurrentYear
+                                ? 'border-gold/60 bg-gold/10'
+                                : 'border-gold/15 hover:border-gold/35 bg-gold/5'
+                            }`}
+                          >
+                            {hasAiFortune && (
+                              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" title="精批已就绪" />
+                            )}
+                            <div className="text-[9px] text-[var(--text-muted)]">{ln.year}</div>
+                            <div className="text-xs font-serif font-bold my-0.5 text-gold">
+                              {ln.earthlyBranch}宮
+                            </div>
+                            <div className="text-[8px] text-[var(--text-muted)]">{ln.age}{T(lang, '歲', '')}</div>
+                            <div className={`text-[8px] px-0.5 rounded border mt-0.5 ${luckyBadge}`}>
+                              {ln.isLucky === true ? '禄' : ln.isLucky === false ? '忌' : '平'}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
 
-                        return {
-                          year,
-                          age,
-                          earthlyBranch: existingLn?.earthlyBranch || yrBranch,
-                          ganZhi: aiYear?.ganZhi || `${yrStem}${yrBranch}`,
-                          yearlyMutagen: existingLn?.yearlyMutagen || [],
-                          huaLuPalace: existingLn?.huaLuPalace || '',
-                          huaJiPalace: existingLn?.huaJiPalace || '',
-                          isLucky: aiYear?.isLucky ?? existingLn?.isLucky ?? null,
-                        }
-                      })
+                    {/* Active Year Detailed Fortune Inspector */}
+                    {activeDecadeYear?.decadeIdx === i && (() => {
+                      const ln = fullDecadeYears.find(y => y.year === activeDecadeYear.year)
+                      const aiFortune = detailedFortunes[decadeKey]?.find(f => f.year === activeDecadeYear.year)
+                      if (!ln && !aiFortune) return null
+
+                      const displayYear = aiFortune?.year || ln?.year || currentYear
+                      const displayAge = aiFortune?.age || ln?.age || 0
+                      const displayBranch = ln?.earthlyBranch || ''
 
                       return (
-                        <div className="mt-3 pt-3 border-t border-gold/15 space-y-2.5">
-                          {/* Generation Trigger / Status Banner */}
-                          {hasAiFortunes ? (
-                            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-[11px]">
-                              <span className="text-emerald-400 font-serif flex items-center gap-1">
-                                <SparkleIcon size={12} className="text-emerald-400" />
-                                <span>{T(lang, '✦ 本大限十年流年精批已就緒（點選下方年份查看詳批）', '✦ Decade 10-Year Annual Fortunes Ready (Click year below)')}</span>
+                        <div className="p-3.5 rounded-lg bg-gold/10 border border-gold/30 space-y-3 animate-fadeIn">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold/20 pb-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-gold font-serif font-bold text-sm">
+                                {displayYear}年 ({displayAge}{T(lang, '歲', '')}) · {aiFortune?.ganZhi || (ln ? `${ln.earthlyBranch}宮` : '')}
                               </span>
+                              {ln && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold/20 text-gold font-medium">
+                                  {T(lang, '流年命宮', 'Palace')}: {ln.earthlyBranch}
+                                </span>
+                              )}
+                              {aiFortune ? (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-medium">
+                                  ✦ {T(lang, '玄機深度精批', 'Master Channeled')}
+                                </span>
+                              ) : (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-gold/10 border border-gold/20 text-gold/80">
+                                  {T(lang, '星曜概覽', 'Overview')}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
                               <button
-                                onClick={() => handleGenerateAnnualFortune(i, dy)}
-                                disabled={isGeneratingThisDecade}
-                                className="text-[10px] text-[var(--text-muted)] hover:text-gold flex items-center gap-1 transition-colors cursor-pointer"
-                                title={T(lang, '重新調用大模型推演此十年流年', 'Re-channel 10-year annual fortunes')}
+                                onClick={() => handleAskMasterAboutZiweiLiuNian(displayYear, displayAge, displayBranch, dy)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] bg-gold/15 hover:bg-gold/25 text-gold border border-gold/30 transition-all cursor-pointer font-serif font-medium"
+                                title={T(lang, `向玄機大師追問 ${displayYear} 流年`, `Ask Master about ${displayYear}`)}
                               >
-                                <RefreshIcon size={10} />
-                                <span>{T(lang, '重新推演', 'Re-channel')}</span>
+                                <MasterSageIcon size={11} color="var(--gold)" />
+                                <span>{T(lang, `追問 ${displayYear} 流年`, `Ask ${displayYear}`)}</span>
+                              </button>
+                              <button
+                                onClick={() => setActiveDecadeYear(null)}
+                                className="text-xs text-[var(--text-muted)] hover:text-gold px-1 cursor-pointer"
+                              >
+                                <CloseIcon size={12} />
                               </button>
                             </div>
-                          ) : (
-                            <div className="p-2.5 rounded-lg bg-gold/5 border border-gold/25 flex flex-col sm:flex-row items-center justify-between gap-2">
-                              <div className="space-y-0.5 text-left w-full sm:w-auto">
-                                <div className="text-xs font-serif font-bold text-gold flex items-center gap-1.5">
-                                  <SparkleIcon size={13} className="text-gold" />
-                                  <span>{T(lang, '玄機深度精批：本大限十年流年逐年詳批', 'Deep Fortune: 10-Year Decadal Annual Reading')}</span>
-                                </div>
-                                <div className="text-[10px] text-[var(--text-muted)]">
-                                  {T(lang, '推演此十年中每一年的流年命宮、三代四化疊引、官祿財帛與健康宜忌', 'Channel detailed annual predictions for all 10 years including SiHua overlays & career')}
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => handleGenerateAnnualFortune(i, dy)}
-                                disabled={isGeneratingThisDecade}
-                                className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-gold text-navy-950 hover:bg-gold-light transition-all text-xs font-serif font-medium flex items-center justify-center gap-1.5 shadow-sm shadow-gold/20 flex-shrink-0 cursor-pointer disabled:opacity-50"
-                              >
-                                {isGeneratingThisDecade ? (
-                                  <>
-                                    <div className="w-3 h-3 border-2 border-navy-950 border-t-transparent rounded-full animate-spin" />
-                                    <span>{T(lang, '天機推演中…', 'Channeling…')}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <SparkleIcon size={12} />
-                                    <span>{T(lang, '生成本十年每一年的精批', 'Generate 10-Year Annual Fortune')}</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          )}
-
-                          {/* 10-Year Buttons Grid */}
-                          <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 pt-2.5 pb-2 px-1">
-                            {fullDecadeYears.map((ln) => {
-                              const isCurrentYear = ln.year === currentYear
-                              const isSelected = activeDecadeYear?.decadeIdx === i && activeDecadeYear?.year === ln.year
-                              const luckyBadge = ln.isLucky === true ? 'border-emerald-400 text-emerald-300' : ln.isLucky === false ? 'border-rose-400 text-rose-300' : 'border-gray-500 text-gray-300'
-                              const hasAiFortune = Boolean(detailedFortunes[decadeKey]?.some(f => f.year === ln.year))
-
-                              return (
-                                <button
-                                  key={ln.year}
-                                  onClick={() => setActiveDecadeYear(isSelected ? null : { decadeIdx: i, year: ln.year })}
-                                  className={`p-1.5 rounded-lg border text-center transition-all relative ${
-                                    isSelected
-                                      ? 'border-gold ring-2 ring-gold bg-gold/25 shadow-md scale-105 z-10'
-                                      : isCurrentYear
-                                      ? 'border-gold/60 bg-gold/10'
-                                      : 'border-gold/15 hover:border-gold/35 bg-gold/5'
-                                  }`}
-                                >
-                                  {hasAiFortune && (
-                                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" title="精批已就绪" />
-                                  )}
-                                  <div className="text-[9px] text-[var(--text-muted)]">{ln.year}</div>
-                                  <div className="text-xs font-serif font-bold my-0.5 text-gold">
-                                    {ln.earthlyBranch}宮
-                                  </div>
-                                  <div className="text-[8px] text-[var(--text-muted)]">{ln.age}{T(lang, '歲', '')}</div>
-                                  <div className={`text-[8px] px-0.5 rounded border mt-0.5 ${luckyBadge}`}>
-                                    {ln.isLucky === true ? '禄' : ln.isLucky === false ? '忌' : '平'}
-                                  </div>
-                                </button>
-                              )
-                            })}
                           </div>
 
-                          {/* Active Year Detailed Fortune Inspector */}
-                          {activeDecadeYear?.decadeIdx === i && (() => {
-                            const ln = fullDecadeYears.find(y => y.year === activeDecadeYear.year)
-                            const aiFortune = detailedFortunes[decadeKey]?.find(f => f.year === activeDecadeYear.year)
-                            if (!ln && !aiFortune) return null
-
-                            const displayYear = aiFortune?.year || ln?.year
-                            const displayAge = aiFortune?.age || ln?.age
-
-                            return (
-                              <div className="p-3.5 rounded-lg bg-gold/10 border border-gold/30 space-y-3 animate-fadeIn">
-                                <div className="flex items-center justify-between border-b border-gold/20 pb-2">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <span className="text-gold font-serif font-bold text-sm">
-                                      {displayYear}年 ({displayAge}{T(lang, '歲', '')}) · {aiFortune?.ganZhi || (ln ? `${ln.earthlyBranch}宮` : '')}
-                                    </span>
-                                    {ln && (
-                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold/20 text-gold font-medium">
-                                        {T(lang, '流年命宮', 'Palace')}: {ln.earthlyBranch}
-                                      </span>
-                                    )}
-                                    {aiFortune ? (
-                                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-medium">
-                                        ✦ {T(lang, '玄機深度精批', 'Master Channeled')}
-                                      </span>
-                                    ) : (
-                                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-gold/10 border border-gold/20 text-gold/80">
-                                        {T(lang, '星曜概覽', 'Overview')}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <button
-                                    onClick={() => setActiveDecadeYear(null)}
-                                    className="text-xs text-[var(--text-muted)] hover:text-gold px-1 cursor-pointer"
-                                  >
-                                    <CloseIcon size={12} />
-                                  </button>
+                          {aiFortune ? (
+                            /* ═══ FULL AI-CHANNELED ZIWEI ANNUAL FORTUNE ═══ */
+                            <div className="space-y-3 text-xs">
+                              {/* Theme & Overall Fortune */}
+                              <div className="space-y-1.5 p-2.5 rounded-lg bg-[var(--accent-bg)] border border-gold/20">
+                                <div className="text-gold font-serif font-bold text-xs flex items-center gap-1.5">
+                                  <SparkleIcon size={12} className="text-gold" />
+                                  <span>{aiFortune.theme}</span>
                                 </div>
+                                <p className="text-[var(--text-secondary)] leading-relaxed text-[12px] font-serif">
+                                  {aiFortune.fortune}
+                                </p>
+                              </div>
 
-                                {aiFortune ? (
-                                  /* ═══ FULL AI-CHANNELED ZIWEI ANNUAL FORTUNE ═══ */
-                                  <div className="space-y-3 text-xs">
-                                    {/* Theme & Overall Fortune */}
-                                    <div className="space-y-1.5 p-2.5 rounded-lg bg-[var(--accent-bg)] border border-gold/20">
-                                      <div className="text-gold font-serif font-bold text-xs flex items-center gap-1.5">
-                                        <SparkleIcon size={12} className="text-gold" />
-                                        <span>{aiFortune.theme}</span>
-                                      </div>
-                                      <p className="text-[var(--text-secondary)] leading-relaxed text-[12px] font-serif">
-                                        {aiFortune.fortune}
-                                      </p>
+                              {/* 4 Pillars of Life: Career, Wealth, Romance, Health */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {aiFortune.career && (
+                                  <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
+                                    <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
+                                      <CareerIcon size={12} className="text-gold" />
+                                      <span>{T(lang, '事業官祿', 'Career')}</span>
                                     </div>
-
-                                    {/* 4 Pillars of Life: Career, Wealth, Romance, Health */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                      {aiFortune.career && (
-                                        <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
-                                          <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
-                                            <CareerIcon size={12} className="text-gold" />
-                                            <span>{T(lang, '事業官祿', 'Career')}</span>
-                                          </div>
-                                          <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.career}</p>
-                                        </div>
-                                      )}
-                                      {aiFortune.wealth && (
-                                        <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
-                                          <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
-                                            <WealthIcon size={12} className="text-gold" />
-                                            <span>{T(lang, '財帛營謀', 'Wealth')}</span>
-                                          </div>
-                                          <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.wealth}</p>
-                                        </div>
-                                      )}
-                                      {aiFortune.romance && (
-                                        <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
-                                          <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
-                                            <MarriageIcon size={12} className="text-gold" />
-                                            <span>{T(lang, '夫妻姻緣', 'Romance')}</span>
-                                          </div>
-                                          <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.romance}</p>
-                                        </div>
-                                      )}
-                                      {aiFortune.health && (
-                                        <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
-                                          <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
-                                            <HealthIcon size={12} className="text-gold" />
-                                            <span>{T(lang, '疾厄身心', 'Health')}</span>
-                                          </div>
-                                          <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.health}</p>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* SiHua Overlay Interaction & Advice */}
-                                    {aiFortune.interaction && (
-                                      <div className="flex items-start gap-1.5 text-[11px]">
-                                        <span className="text-gold font-medium flex-shrink-0">{T(lang, '【四化疊引】', 'SiHua Overlay')}:</span>
-                                        <span className="text-[var(--text-muted)] leading-relaxed">{aiFortune.interaction}</span>
-                                      </div>
-                                    )}
-                                    {aiFortune.advice && (
-                                      <div className="p-2 rounded bg-gold/10 border border-gold/25 text-[11px] text-gold leading-relaxed flex items-start gap-1.5">
-                                        <ScrollIcon size={13} className="text-gold flex-shrink-0 mt-0.5" />
-                                        <span>{aiFortune.advice}</span>
-                                      </div>
-                                    )}
+                                    <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.career}</p>
                                   </div>
-                                ) : (
-                                  /* ═══ BASIC OVERVIEW FALLBACK ═══ */
-                                  <div className="space-y-2 text-xs">
-                                    <div className="p-2.5 rounded bg-[var(--accent-bg)] border border-gold/15 space-y-1.5">
-                                      <div className="text-[var(--text-secondary)]">
-                                        {T(lang,
-                                          `此年流年命宮落在「${ln?.earthlyBranch || ''}」宮，化祿入${ln?.huaLuPalace || '三方'}，化忌入${ln?.huaJiPalace || '四正'}。`,
-                                          `Annual life palace resides in ${ln?.earthlyBranch || ''}, Hua Lu in ${ln?.huaLuPalace || ''}, Hua Ji in ${ln?.huaJiPalace || ''}.`
-                                        )}
-                                      </div>
+                                )}
+                                {aiFortune.wealth && (
+                                  <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
+                                    <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
+                                      <WealthIcon size={12} className="text-gold" />
+                                      <span>{T(lang, '財帛營謀', 'Wealth')}</span>
                                     </div>
-                                    <div className="pt-1 flex items-center justify-between">
-                                      <span className="text-[10px] text-[var(--text-muted)]">
-                                        {T(lang, '點擊按鈕推演此十年完整的流年詳批', 'Click button to reveal the complete 10-year fortune')}
-                                      </span>
-                                      <button
-                                        onClick={() => handleGenerateAnnualFortune(i, dy)}
-                                        disabled={isGeneratingThisDecade}
-                                        className="text-[11px] text-gold hover:underline font-medium cursor-pointer"
-                                      >
-                                        {T(lang, '生成玄機深度精批 →', 'Generate Deep Fortune →')}
-                                      </button>
+                                    <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.wealth}</p>
+                                  </div>
+                                )}
+                                {aiFortune.romance && (
+                                  <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
+                                    <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
+                                      <MarriageIcon size={12} className="text-gold" />
+                                      <span>{T(lang, '夫妻姻緣', 'Romance')}</span>
                                     </div>
+                                    <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.romance}</p>
+                                  </div>
+                                )}
+                                {aiFortune.health && (
+                                  <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
+                                    <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
+                                      <HealthIcon size={12} className="text-gold" />
+                                      <span>{T(lang, '疾厄身心', 'Health')}</span>
+                                    </div>
+                                    <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.health}</p>
                                   </div>
                                 )}
                               </div>
-                            )
-                          })()}
+
+                              {/* SiHua Overlay Interaction & Advice */}
+                              {aiFortune.interaction && (
+                                <div className="flex items-start gap-1.5 text-[11px]">
+                                  <span className="text-gold font-medium flex-shrink-0">{T(lang, '【四化疊引】', 'SiHua Overlay')}:</span>
+                                  <span className="text-[var(--text-muted)] leading-relaxed">{aiFortune.interaction}</span>
+                                </div>
+                              )}
+                              {aiFortune.advice && (
+                                <div className="p-2 rounded bg-gold/10 border border-gold/25 text-[11px] text-gold leading-relaxed flex items-start gap-1.5">
+                                  <ScrollIcon size={13} className="text-gold flex-shrink-0 mt-0.5" />
+                                  <span>{aiFortune.advice}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            /* ═══ BASIC OVERVIEW FALLBACK ═══ */
+                            <div className="space-y-2 text-xs">
+                              <div className="p-2.5 rounded bg-[var(--accent-bg)] border border-gold/15 space-y-1.5">
+                                <div className="text-[var(--text-secondary)]">
+                                  {T(lang,
+                                    `此年流年命宮落在「${ln?.earthlyBranch || ''}」宮，化祿入${ln?.huaLuPalace || '三方'}，化忌入${ln?.huaJiPalace || '四正'}。`,
+                                    `Annual life palace resides in ${ln?.earthlyBranch || ''}, Hua Lu in ${ln?.huaLuPalace || ''}, Hua Ji in ${ln?.huaJiPalace || ''}.`
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )
                     })()}
                   </div>
-                </details>
-              )
-            })}
-          </div>
-        </motion.div>
-      )}
-
-      {/* ═══ LIU NIAN TIMELINE ═══ */}
-      {liuNian && liuNian.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}>
-          <h3 className="text-gold font-serif text-base mb-2">{T(lang, '流年一覽', 'Annual Fortune')}</h3>
-          <div className="card-quiet rounded-xl p-3 border border-gold/20 overflow-hidden">
-            <div ref={liuNianScroll.ref} onMouseDown={liuNianScroll.onMouseDown}
-              className="overflow-x-auto scrollbar-hide cursor-grab">
-              <div className="flex gap-0.5 min-w-max">
-                {liuNian.map((ln, i) => {
-                  const currentYear = new Date().getFullYear()
-                  const isCurrent = ln.year === currentYear
-                  const dotColor = ln.isLucky === true ? 'bg-emerald-400' : ln.isLucky === false ? 'bg-rose-400' : 'bg-gray-500'
-                  const borderStyle = isCurrent ? 'border-gold ring-1 ring-gold/50' : 'border-transparent'
-                  return (
-                    <div key={i} {...(isCurrent ? { 'data-scroll-target': true } : {})}
-                      className={`group relative flex flex-col items-center px-1 py-1 rounded ${isCurrent ? 'bg-gold/10' : ''}`}>
-                      <div className={`w-2.5 h-2.5 rounded-full ${dotColor} border ${borderStyle}`} />
-                      {(ln.year % 5 === 0 || isCurrent) ? (
-                        <div className={`text-[8px] mt-0.5 ${isCurrent ? 'text-gold font-bold' : 'text-[var(--text-muted)]'}`}>
-                          {ln.year}
-                        </div>
-                      ) : <div className="h-[12px]" />}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1.5 bg-surface border border-gold/30 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap">
-                        <div className="text-[10px] text-gold font-bold">{ln.year} ({ln.age}{T(lang, '歲', '')})</div>
-                        <div className="text-[9px] text-[var(--text-muted)]">
-                          {T(lang, '流年命宮', 'Annual')}: {ln.earthlyBranch} |
-                          {ln.isLucky === true ? ' ✓ 化禄入关键宫' : ln.isLucky === false ? ' ✗ 化忌入关键宫' : ' — 中性'}
-                        </div>
-                        <div className="text-[9px] text-[var(--text-muted)]">
-                          {T(lang, '禄', 'Lu')}: {ln.huaLuPalace} | {T(lang, '忌', 'Ji')}: {ln.huaJiPalace}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                </div>
+              )}
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 pt-2 border-t border-gold/10">
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /><span className="text-[9px] text-[var(--text-muted)]">{T(lang, '化禄入命/財/官', 'Lucky')}</span></div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-rose-400" /><span className="text-[9px] text-[var(--text-muted)]">{T(lang, '化忌入命/財/官/夫妻', 'Caution')}</span></div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-gray-500" /><span className="text-[9px] text-[var(--text-muted)]">{T(lang, '中性', 'Neutral')}</span></div>
-            </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )
+      })()}
 
       {/* ═══ KEY PREDICTIONS ═══ */}
       <StreamingKeyPredictions predictions={keyPredictions} streaming={streaming} delay={0.1} />

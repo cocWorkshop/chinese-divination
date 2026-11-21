@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { getPosterConfig } from '@/components/reading/fatePosterConfig'
+import { extractCleanReadingExcerpt } from './socialShare'
 import { T } from '@/lib/i18n'
 
 /**
@@ -31,11 +32,8 @@ export async function generateReadingMetadata(token: string): Promise<Metadata> 
     const config = getPosterConfig(reading.type)
     const lang = reading.language || 'zh-TW'
 
-    // Clean markdown characters for crisp openGraph description
-    const plainText = reading.result
-      ? reading.result.replace(/[#*`_\[\]()\-]/g, ' ').replace(/\s+/g, ' ').trim()
-      : ''
-    const summary = plainText.slice(0, 110)
+    // Clean markdown / JSON structure for crisp openGraph description
+    const summary = extractCleanReadingExcerpt(reading.result, 110).replace(/\.\.\.$/, '')
 
     const title = T(
       lang,

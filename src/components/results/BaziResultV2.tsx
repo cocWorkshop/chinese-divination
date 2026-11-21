@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -12,13 +12,13 @@ import SectionDrawer from './SectionDrawer'
 import StreamingKeyPredictions from './StreamingKeyPredictions'
 import StreamingKeyAdvice from './StreamingKeyAdvice'
 import StreamingLuckyInfo from './StreamingLuckyInfo'
-import { useDragScroll } from '@/hooks/useDragScroll'
 import type { DivinationResultProps, BaziDataV2, ShenShaEntry, LiuNianEntry, AnnualFortuneYear, DetailedAnnualFortunesMap } from '@/types/divination'
 import { T } from '@/lib/i18n'
 import {
   isDaYunUnlocked,
   FREE_DAYUN_LIMIT,
   generateLiuNianAnalysis,
+  evaluateLiuNianLuck,
 } from '@/lib/baziCalculator'
 import { useMasterChatActions } from '@/components/master/MasterChatContext'
 import {
@@ -31,6 +31,7 @@ import {
   KeyPredictionIcon,
   SparkleIcon,
   LockSealIcon,
+  UnlockSealIcon,
   CloseIcon,
   RefreshIcon,
   MasterSageIcon,
@@ -74,7 +75,6 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
   // Reveal the Xuanji Q&A only after streaming completes (the 3 auto-generated
   // suggested questions are ready by then); hide it during streaming.
   const qaReady = !streaming
-  const liuNianScroll = useDragScroll<HTMLDivElement>()
 
   const [selectedDaYunIndex, setSelectedDaYunIndex] = useState<number>(() => {
     if (!d.daYun || d.daYun.length === 0) return 0
@@ -87,6 +87,19 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
     const fromData = Array.isArray(d.unlockedDecades) ? d.unlockedDecades : []
     return Array.from(new Set([0, 1, 2, ...fromData]))
   })
+  const [freeDaYunLimit, setFreeDaYunLimit] = useState<number>(FREE_DAYUN_LIMIT)
+  const [unlockCost, setUnlockCost] = useState<number>(1)
+
+  useEffect(() => {
+    fetch('/api/credits')
+      .then(r => (r.ok ? r.json() : null))
+      .then(info => {
+        if (typeof info?.rules?.freeDaYunLimit === 'number') setFreeDaYunLimit(info.rules.freeDaYunLimit)
+        if (typeof info?.rules?.costDayunUnlock === 'number') setUnlockCost(info.rules.costDayunUnlock)
+        else if (typeof info?.costs?.dayun_unlock === 'number') setUnlockCost(info.costs.dayun_unlock)
+      })
+      .catch(() => {})
+  }, [])
 
   const [activeLiuNianYear, setActiveLiuNianYear] = useState<number | null>(null)
   const [detailedFortunes, setDetailedFortunes] = useState<DetailedAnnualFortunesMap>(() => {
@@ -135,6 +148,34 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
     }
     setGeneratingDecade(decadeIdx)
     try {
+      // Auto-unlock with credits if decade >= freeDaYunLimit and not yet unlocked
+      if (!isDaYunUnlocked(decadeIdx, unlockedDecades, freeDaYunLimit)) {
+        const unlockRes = await fetch('/api/credits/consume', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'dayun_unlock',
+            decadeIndex: decadeIdx,
+            readingId,
+          }),
+        })
+        if (!unlockRes.ok) {
+          if (unlockRes.status === 402) {
+            toast.error(T(lang, '機緣點不足，請獲取更多機緣後重試', 'Insufficient Karma credits. Please acquire more credits.'))
+          } else {
+            toast.error(T(lang, '解鎖大運流年失敗，請稍後重試', 'Unlock failed. Please retry.'))
+          }
+          return
+        }
+        const unlockData = await unlockRes.json()
+        if (!unlockData.success) {
+          toast.error(T(lang, '解鎖大運流年失敗，請稍後重試', 'Unlock failed. Please retry.'))
+          return
+        }
+        const nextUnlocked = unlockData.unlockedDecades || Array.from(new Set([...unlockedDecades, decadeIdx]))
+        setUnlockedDecades(nextUnlocked)
+      }
+
       const res = await fetch(`/api/readings/${readingId}/annual-fortune`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -168,48 +209,10 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
         : data.fortunes[0]?.year
       if (targetYear) setActiveLiuNianYear(targetYear)
       toast.success(T(lang, '本步大運十年流年深度精批已生成！', '10-Year annual fortunes channeled!'))
-    } catch (err) {
+    } catch {
       toast.error(T(lang, '推演十年流年精批失敗，請稍後重試', 'Failed to generate annual fortunes. Please retry.'))
     } finally {
       setGeneratingDecade(null)
-    }
-  }
-
-  const [unlockingDecade, setUnlockingDecade] = useState<number | null>(null)
-
-  const handleUnlockDecade = async (decadeIdx: number) => {
-    if (unlockingDecade !== null) return
-    setUnlockingDecade(decadeIdx)
-    try {
-      const res = await fetch('/api/credits/consume', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'dayun_unlock',
-          decadeIndex: decadeIdx,
-          readingId: readingId || undefined,
-        }),
-      })
-      if (!res.ok) {
-        if (res.status === 402) {
-          toast.error(T(lang, '機緣點不足，請獲取更多機緣後重試', 'Insufficient Karma credits. Please acquire more credits.'))
-        } else {
-          toast.error(T(lang, '解鎖失敗，請稍後重試', 'Unlock failed. Please retry.'))
-        }
-        return
-      }
-      const data = await res.json()
-      if (!data.success) {
-        toast.error(T(lang, '解鎖失敗，請稍後重試', 'Unlock failed. Please retry.'))
-        return
-      }
-      const next = data.unlockedDecades || Array.from(new Set([...unlockedDecades, decadeIdx]))
-      setUnlockedDecades(next)
-      toast.success(T(lang, '已成功解鎖該步大運十年流年深度精批！', 'Decade annual fortune unlocked!'))
-    } catch {
-      toast.error(T(lang, '網絡異常，請檢查網絡後重試', 'Network error. Please try again.'))
-    } finally {
-      setUnlockingDecade(null)
     }
   }
 
@@ -523,467 +526,23 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
             </div>
           </motion.div>
 
-          {/* Da Yun + Xiao Yun — shown directly (no collapse) */}
-          <div className="space-y-3">
-              {d.daYun && d.daYun.length > 0 && (() => {
-                const activeDaYun = d.daYun[selectedDaYunIndex] || d.daYun[0]
-                const activeDaYunAnalysis = d.daYunAnalysis?.[selectedDaYunIndex]
-                const isDecadeUnlocked = isDaYunUnlocked(selectedDaYunIndex, unlockedDecades)
-                const decadeYears = (d.liuNian || []).filter((ln: LiuNianEntry) => activeDaYun && ln.year >= activeDaYun.startYear && ln.year <= activeDaYun.endYear)
-
-                return (
-                  <div className="card-quiet rounded-xl p-3 sm:p-4 border border-gold/20 space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="text-gold font-serif text-xs flex items-center gap-2">
-                        <KeyPredictionIcon size={14} className="text-gold" />
-                        <span>{T(lang, '大運排盤（點擊任一步大運展開十年流年）', 'Da Yun (Click decade to expand 10-yr annual fortunes)')}</span>
-                        {d.qiYun && (
-                          <span className="text-[var(--text-muted)] text-[10px] font-normal">
-                            {d.qiYun.direction} · {T(
-                              lang,
-                              `虛歲${d.daYun?.[0]?.startAge}起運（實歲${d.qiYun.startAgeLabel}）`,
-                              `starts 虛歲 ${d.daYun?.[0]?.startAge} (≈${d.qiYun.startAgeLabel})`,
-                            )}
-                          </span>
-                        )}
-                      </h3>
-                      <div className="text-[10px] text-[var(--text-muted)]">
-                        {T(lang, '前3步免費 · 第4步起依大運階梯以機緣解鎖', 'First 3 decades free · Unlock subsequent via Karma')}
-                      </div>
+          {/* Xiao Yun (pre-DaYun years, shown directly in chart drawer if present) */}
+          {d.xiaoYun && d.xiaoYun.length > 0 && (
+            <div className="card-quiet rounded-xl p-3 border border-gold/20">
+              <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '小運（起運前）', 'Xiao Yun')}</h3>
+              <div className="flex flex-wrap gap-1">
+                {d.xiaoYun.map((xy, i) => (
+                  <div key={i} className="px-2 py-1.5 rounded border border-gold/20 bg-gold/5 text-center">
+                    <div className="text-[var(--text-muted)] text-[10px]">{xy.age}{T(lang, '歲', '')}</div>
+                    <div className="text-sm font-serif">
+                      <span className={elClr[charElement(xy.stem)] || ''}>{xy.stem}</span>
+                      <span className={elClr[charElement(xy.branch)] || ''}>{xy.branch}</span>
                     </div>
-
-                    {/* Horizontal DaYun Selection Strip */}
-                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
-                      {d.daYun.map((dy, i) => {
-                        const currentYear = new Date().getFullYear()
-                        const isCurrent = currentYear >= dy.startYear && currentYear <= dy.endYear
-                        const isSelected = i === selectedDaYunIndex
-                        const isUnlocked = isDaYunUnlocked(i, unlockedDecades)
-
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => {
-                              setSelectedDaYunIndex(i)
-                              setActiveLiuNianYear(null)
-                            }}
-                            className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg border text-center min-w-[3.5rem] transition-all relative ${
-                              isSelected
-                                ? 'border-gold ring-2 ring-gold/60 bg-gold/20 shadow-md scale-105'
-                                : isCurrent
-                                ? 'border-gold/60 ring-1 ring-gold/40 bg-gold/10 hover:bg-gold/15'
-                                : 'border-gold/20 bg-foreground/5 hover:border-gold/40 hover:bg-foreground/10'
-                            }`}
-                          >
-                            <div className="text-[var(--text-muted)] text-[10px]">{dy.startAge}-{dy.endAge}{T(lang, '歲', '')}</div>
-                            <div className="text-sm font-serif font-bold">
-                              <span className={elClr[charElement(dy.stem)] || ''}>{dy.stem}</span>
-                              <span className={elClr[charElement(dy.branch)] || ''}>{dy.branch}</span>
-                            </div>
-                            <div className="text-[var(--text-muted)] text-[9px]">{dy.startYear}</div>
-                            {/* Status tag */}
-                            <div className="mt-0.5">
-                              {i < FREE_DAYUN_LIMIT ? (
-                                <span className="text-[8px] text-emerald-400">免</span>
-                              ) : isUnlocked ? (
-                                <span className="text-[8px] text-gold">開</span>
-                              ) : (
-                                <span className="inline-flex items-center justify-center text-amber-400"><LockSealIcon size={10} color="#e5c07b" /></span>
-                              )}
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-
-                    {/* ═══ INTERACTIVE DECADE CONTAINER (Decadal Gating Style) ═══ */}
-                    {activeDaYun && (
-                      <div className="pt-3 border-t border-gold/15 space-y-3">
-                        {/* Decade Header Banner */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 bg-gold/5 p-2.5 rounded-lg border border-gold/15">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm sm:text-base font-serif font-bold text-gold">
-                              {T(lang, `第 ${selectedDaYunIndex + 1} 步大運：`, `Decade ${selectedDaYunIndex + 1}: `)}
-                              <span className={elClr[charElement(activeDaYun.stem)] || ''}>{activeDaYun.stem}</span>
-                              <span className={elClr[charElement(activeDaYun.branch)] || ''}>{activeDaYun.branch}</span>
-                            </span>
-                            <span className="text-xs text-[var(--text-muted)]">
-                              {activeDaYun.nayin} · {activeDaYun.startYear}-{activeDaYun.endYear}年 ({activeDaYun.startAge}-{activeDaYun.endAge}{T(lang, '歲', '')})
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {selectedDaYunIndex < FREE_DAYUN_LIMIT ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium">
-                                {T(lang, '大運·免費流年精批', 'Free Annual Fortune')}
-                              </span>
-                            ) : isDecadeUnlocked ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] bg-gold/10 border border-gold/30 text-gold font-medium">
-                                {T(lang, '已解鎖流年精批', 'Unlocked')}
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded text-[10px] bg-amber-500/10 border border-amber-500/30 text-amber-400 font-medium">
-                                {T(lang, '待解鎖流年', 'Locked')}
-                              </span>
-                            )}
-                            <button
-                              onClick={() => handleAskMasterAboutDaYun(selectedDaYunIndex, activeDaYun)}
-                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] bg-gold/15 hover:bg-gold/25 text-gold border border-gold/30 transition-all cursor-pointer font-medium"
-                              title={T(lang, '向大師追問此大運十年格局', 'Consult Master on this decade')}
-                            >
-                              <MasterSageIcon size={12} color="var(--gold)" />
-                              <span>{T(lang, '追問此大運', 'Ask Master')}</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Dual Column Layout: Left = Overview & Warnings, Right = 10 LiuNian Years */}
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-                          {/* Left Column (5 cols): Decade Theme & Highlights */}
-                          <div className="md:col-span-5 p-3 rounded-lg bg-[var(--accent-bg)] border border-gold/15 space-y-2">
-                            <div className="text-xs font-serif text-gold flex items-center gap-1.5 font-bold">
-                              <ScrollIcon size={14} className="text-gold" />
-                              <span>{T(lang, '本步運勢總論與提醒', 'Decade Overview & Warnings')}</span>
-                            </div>
-                            {activeDaYunAnalysis?.theme && (
-                              <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-serif">
-                                {activeDaYunAnalysis.theme}
-                              </p>
-                            )}
-                            {activeDaYunAnalysis?.interactions && (
-                              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                                {activeDaYunAnalysis.interactions}
-                              </p>
-                            )}
-                            {!activeDaYunAnalysis && (
-                              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                                {T(lang,
-                                  `此步大運逢「${activeDaYun.stem}${activeDaYun.branch}」主事，納音屬${activeDaYun.nayin}，管轄十年人生格局氣數，引動五行生克流通。`,
-                                  `Under ${activeDaYun.stem}${activeDaYun.branch} (${activeDaYun.nayin}), governing 10 years of personal transformation.`
-                                )}
-                              </p>
-                            )}
-                            {activeDaYunAnalysis?.advice && (
-                              <div className="p-2 rounded bg-gold/5 border border-gold/15 text-[11px] text-gold/90 leading-relaxed">
-                                {activeDaYunAnalysis.advice}
-                              </div>
-                            )}
-                            {activeDaYunAnalysis?.keyYears && activeDaYunAnalysis.keyYears.length > 0 && (
-                              <div className="pt-2 border-t border-line/5 space-y-1">
-                                <div className="text-[10px] text-gold/80 font-medium">{T(lang, '關鍵注意年份：', 'Key Attention Years:')}</div>
-                                {activeDaYunAnalysis.keyYears.map((ky, j) => (
-                                  <div key={j} className="text-[10px] text-[var(--text-muted)] flex gap-1.5 items-start">
-                                    <span className="text-gold font-mono flex-shrink-0">{ky.year}</span>
-                                    <span className="text-[var(--text-secondary)] font-serif flex-shrink-0">{ky.ganZhi}</span>
-                                    <span>{ky.event}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Right Column (7 cols): Interactive 10 LiuNian Years Grid */}
-                          <div className="md:col-span-7 p-3 rounded-lg bg-[var(--accent-bg)] border border-gold/15 space-y-2.5">
-                            <div className="flex items-center justify-between">
-                              <div className="text-xs font-serif text-gold flex items-center gap-1.5 font-bold">
-                                <ScrollIcon size={14} className="text-gold" />
-                                <span>{T(lang, '對應 10 個流年（點擊展開精批）', '10 Annual Fortunes (Click to inspect)')}</span>
-                              </div>
-                              <span className="text-[10px] text-[var(--text-muted)]">
-                                {activeLiuNianYear ? T(lang, '已選中精批', 'Inspecting') : T(lang, '點選年份查看', 'Select year')}
-                              </span>
-                            </div>
-
-                            {isDecadeUnlocked ? (
-                              <div className="space-y-2.5">
-                                {/* AI 10-Year Fortune Trigger & Status Banner */}
-                                {detailedFortunes[`decade_${selectedDaYunIndex}`] ? (
-                                  <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-[11px]">
-                                    <span className="text-emerald-400 font-serif flex items-center gap-1">
-                                      <SparkleIcon size={12} className="text-emerald-400" />
-                                      <span>{T(lang, '✦ 本步大運十年流年精批已就緒（點選年份查看）', '✦ 10-Year Annual Fortunes Ready (Click year below)')}</span>
-                                    </span>
-                                    <button
-                                      onClick={() => handleGenerateAnnualFortune(selectedDaYunIndex, activeDaYun)}
-                                      disabled={generatingDecade === selectedDaYunIndex}
-                                      className="text-[10px] text-[var(--text-muted)] hover:text-gold flex items-center gap-1 transition-colors cursor-pointer"
-                                      title={T(lang, '重新調用大模型推演本十年流年', 'Re-channel 10-year annual fortunes')}
-                                    >
-                                      <RefreshIcon size={10} />
-                                      <span>{T(lang, '重新推演', 'Re-channel')}</span>
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="p-2.5 rounded-lg bg-gold/5 border border-gold/25 flex flex-col sm:flex-row items-center justify-between gap-2">
-                                    <div className="space-y-0.5 text-left w-full sm:w-auto">
-                                      <div className="text-xs font-serif font-bold text-gold flex items-center gap-1.5">
-                                        <SparkleIcon size={13} className="text-gold" />
-                                        <span>{T(lang, '玄機深度精批：本步大運十年逐年詳批', 'Deep Fortune: 10-Year Detailed Annual Reading')}</span>
-                                      </div>
-                                      <div className="text-[10px] text-[var(--text-muted)]">
-                                        {T(lang, '點擊按鈕為此步大運的每一年推演事業、財運、姻緣、健康與歲運生克', 'Generate detailed fortune for each year including career, wealth, love & health')}
-                                      </div>
-                                    </div>
-                                    <button
-                                      onClick={() => handleGenerateAnnualFortune(selectedDaYunIndex, activeDaYun)}
-                                      disabled={generatingDecade === selectedDaYunIndex}
-                                      className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-gold text-navy-950 hover:bg-gold-light transition-all text-xs font-serif font-medium flex items-center justify-center gap-1.5 shadow-sm shadow-gold/20 flex-shrink-0 cursor-pointer disabled:opacity-50"
-                                    >
-                                      {generatingDecade === selectedDaYunIndex ? (
-                                        <>
-                                          <div className="w-3 h-3 border-2 border-navy-950 border-t-transparent rounded-full animate-spin" />
-                                          <span>{T(lang, '天機推演中…', 'Channeling…')}</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <SparkleIcon size={12} />
-                                          <span>{T(lang, '生成本十年每一年的精批', 'Generate 10-Year Annual Fortune')}</span>
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
-                                )}
-
-                                {/* 10 LiuNian Grid */}
-                                <div className="grid grid-cols-5 gap-1.5 pt-2.5 pb-2 px-1">
-                                  {decadeYears.map((ln: LiuNianEntry) => {
-                                    const isCurrentYear = ln.year === new Date().getFullYear()
-                                    const isSelectedYear = activeLiuNianYear === ln.year
-                                    const luckyBadge = ln.isLucky === true ? 'border-emerald-400 text-emerald-300' : ln.isLucky === false ? 'border-rose-400 text-rose-300' : 'border-gray-500 text-gray-300'
-                                    const hasAiFortune = Boolean(detailedFortunes[`decade_${selectedDaYunIndex}`]?.some(f => f.year === ln.year))
-
-                                    return (
-                                      <button
-                                        key={ln.year}
-                                        onClick={() => setActiveLiuNianYear(isSelectedYear ? null : ln.year)}
-                                        className={`p-1.5 rounded-lg border text-center transition-all relative ${
-                                          isSelectedYear
-                                            ? 'border-gold ring-2 ring-gold bg-gold/25 shadow-md scale-105 z-10'
-                                            : isCurrentYear
-                                            ? 'border-gold/60 bg-gold/10'
-                                            : 'border-gold/15 hover:border-gold/35 bg-gold/5'
-                                        }`}
-                                      >
-                                        {hasAiFortune && (
-                                          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" title="精批已就绪" />
-                                        )}
-                                        <div className="text-[9px] text-[var(--text-muted)]">{ln.year}</div>
-                                        <div className="text-xs font-serif font-bold my-0.5">
-                                          <span className={elClr[charElement(ln.stem)] || ''}>{ln.stem}</span>
-                                          <span className={elClr[charElement(ln.branch)] || ''}>{ln.branch}</span>
-                                        </div>
-                                        <div className="text-[8px] text-gold/90 truncate">{ln.tenGod}</div>
-                                        <div className={`text-[8px] px-0.5 rounded border mt-0.5 ${luckyBadge}`}>
-                                          {ln.isLucky === true ? '喜' : ln.isLucky === false ? '忌' : '平'}
-                                        </div>
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-
-                                {/* Expanded Annual Prediction Card */}
-                                {activeLiuNianYear && (() => {
-                                  const ln = decadeYears.find((y: LiuNianEntry) => y.year === activeLiuNianYear)
-                                  if (!ln) return null
-                                  const decadeKey = `decade_${selectedDaYunIndex}`
-                                  const aiFortune = detailedFortunes[decadeKey]?.find(f => f.year === activeLiuNianYear)
-                                  const forecast = generateLiuNianAnalysis(d.dayMaster?.stem || '', ln, activeDaYun)
-
-                                  return (
-                                    <div className="p-3.5 rounded-lg bg-gold/10 border border-gold/30 space-y-3 animate-fadeIn">
-                                      <div className="flex items-center justify-between border-b border-gold/20 pb-2">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <span className="text-gold font-serif font-bold text-sm">
-                                            {ln.year}年 ({ln.age}{T(lang, '歲', '')}) · {ln.stem}{ln.branch}
-                                          </span>
-                                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold/20 text-gold font-medium">
-                                            {ln.tenGod}
-                                          </span>
-                                          <span className="text-[10px] text-[var(--text-muted)]">{ln.nayin}</span>
-                                          {aiFortune ? (
-                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-medium">
-                                              ✦ {T(lang, '玄機深度精批', 'Master Channeled')}
-                                            </span>
-                                          ) : (
-                                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-gold/10 border border-gold/20 text-gold/80">
-                                              {T(lang, '基礎運勢', 'Basic')}
-                                            </span>
-                                          )}
-                                        </div>
-                                        <button
-                                          onClick={() => setActiveLiuNianYear(null)}
-                                          className="text-xs text-[var(--text-muted)] hover:text-gold px-1 cursor-pointer"
-                                        >
-                                          <CloseIcon size={12} />
-                                        </button>
-                                      </div>
-
-                                      {aiFortune ? (
-                                        /* ═══ FULL AI-CHANNELED ANNUAL FORTUNE ═══ */
-                                        <div className="space-y-3 text-xs">
-                                          {/* Theme & Overall Fortune */}
-                                          <div className="space-y-1.5 p-2.5 rounded-lg bg-[var(--accent-bg)] border border-gold/20">
-                                            <div className="text-gold font-serif font-bold text-xs flex items-center gap-1.5">
-                                              <SparkleIcon size={12} className="text-gold" />
-                                              <span>{aiFortune.theme}</span>
-                                            </div>
-                                            <p className="text-[var(--text-secondary)] leading-relaxed text-[12px] font-serif">
-                                              {aiFortune.fortune}
-                                            </p>
-                                          </div>
-
-                                          {/* 4 Pillars of Life: Career, Wealth, Romance, Health */}
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {aiFortune.career && (
-                                              <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
-                                                <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
-                                                  <CareerIcon size={12} className="text-gold" />
-                                                  <span>{T(lang, '事業考運', 'Career & Study')}</span>
-                                                </div>
-                                                <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.career}</p>
-                                              </div>
-                                            )}
-                                            {aiFortune.wealth && (
-                                              <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
-                                                <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
-                                                  <WealthIcon size={12} className="text-gold" />
-                                                  <span>{T(lang, '財帛營謀', 'Wealth & Finance')}</span>
-                                                </div>
-                                                <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.wealth}</p>
-                                              </div>
-                                            )}
-                                            {aiFortune.romance && (
-                                              <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
-                                                <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
-                                                  <MarriageIcon size={12} className="text-gold" />
-                                                  <span>{T(lang, '姻緣人際', 'Love & Relationships')}</span>
-                                                </div>
-                                                <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.romance}</p>
-                                              </div>
-                                            )}
-                                            {aiFortune.health && (
-                                              <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
-                                                <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
-                                                  <HealthIcon size={12} className="text-gold" />
-                                                  <span>{T(lang, '健康氣血', 'Health & Wellness')}</span>
-                                                </div>
-                                                <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.health}</p>
-                                              </div>
-                                            )}
-                                          </div>
-
-                                          {/* Interactions & Advice */}
-                                          {aiFortune.interaction && (
-                                            <div className="flex items-start gap-1.5 text-[11px]">
-                                              <span className="text-gold font-medium flex-shrink-0">{T(lang, '【歲運生克】', 'Interactions')}:</span>
-                                              <span className="text-[var(--text-muted)] leading-relaxed">{aiFortune.interaction}</span>
-                                            </div>
-                                          )}
-                                          {aiFortune.advice && (
-                                            <div className="p-2 rounded bg-gold/10 border border-gold/25 text-[11px] text-gold leading-relaxed flex items-start gap-1.5">
-                                              <ScrollIcon size={13} className="text-gold flex-shrink-0 mt-0.5" />
-                                              <span>{aiFortune.advice}</span>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        /* ═══ RULE-BASED FALLBACK (When AI fortune not yet generated) ═══ */
-                                        <div className="space-y-2 text-xs">
-                                          <div className="space-y-1.5">
-                                            <div className="flex items-start gap-1.5">
-                                              <span className="text-gold font-medium flex-shrink-0">{T(lang, '【年度重點】', 'Focus')}:</span>
-                                              <span className="text-[var(--text-secondary)]">{forecast.focus}</span>
-                                            </div>
-                                            <div className="flex items-start gap-1.5">
-                                              <span className="text-gold font-medium flex-shrink-0">{T(lang, '【歲運生克】', 'Interaction')}:</span>
-                                              <span className="text-[var(--text-muted)]">{forecast.stemBranchInteraction}</span>
-                                            </div>
-                                            <div className="p-2 rounded bg-[var(--accent-bg)] border border-gold/15 text-[var(--text-secondary)] leading-relaxed">
-                                              {forecast.forecast}
-                                            </div>
-                                            <div className="text-xs text-gold/90 flex items-start gap-1">
-                                              <span>{forecast.advice}</span>
-                                            </div>
-                                          </div>
-                                          <div className="pt-2 border-t border-gold/15 flex items-center justify-between">
-                                            <span className="text-[10px] text-[var(--text-muted)]">
-                                              {T(lang, '以上為基礎排盤推演，點擊下方按鈕解鎖十年玄機深度精批', 'Basic fortune shown. Click below to channel the full 10-year reading')}
-                                            </span>
-                                            <button
-                                              onClick={() => handleGenerateAnnualFortune(selectedDaYunIndex, activeDaYun)}
-                                              disabled={generatingDecade === selectedDaYunIndex}
-                                              className="text-[11px] text-gold hover:underline font-medium cursor-pointer"
-                                            >
-                                              {T(lang, '生成玄機深度精批 →', 'Generate Deep Fortune →')}
-                                            </button>
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {/* Master 1-Click Consultation on this LiuNian */}
-                                      <div className="pt-2.5 mt-2 border-t border-gold/20 flex items-center justify-between flex-wrap gap-2">
-                                        <span className="text-[10px] text-[var(--text-muted)] font-serif">
-                                          {T(lang, '欲深入解析該流年歲運引動、吉凶轉折與月令應期？', "Ask Master about this year's planetary transit?")}
-                                        </span>
-                                        <button
-                                          onClick={() => handleAskMasterAboutLiuNian(ln, activeDaYun)}
-                                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-serif font-medium shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                                          style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}
-                                        >
-                                          <MasterSageIcon size={12} />
-                                          <span>{T(lang, `向玄機大師追問【${ln.year}年】`, `Ask Master about ${ln.year}`)}</span>
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )
-                                })()}
-                              </div>
-                            ) : (
-                              /* Locked Card for Decades >= 3 */
-                              <div className="p-5 rounded-lg bg-[var(--accent-bg)] border border-gold/20 text-center space-y-2.5 relative overflow-hidden">
-                                <div className="flex justify-center mb-1"><LockSealIcon size={26} color="var(--gold)" /></div>
-                                <h4 className="text-xs sm:text-sm font-serif text-gold font-bold">
-                                  {T(lang, '大運階梯 · 流年精批待啟', 'Decadal Gating · Annual Fortunes Locked')}
-                                </h4>
-                                <p className="text-[11px] text-[var(--text-muted)] max-w-sm mx-auto leading-relaxed">
-                                  {T(lang,
-                                    '遵三十年立命輪轉之規：前三步大運（凡三十年，求學立命之程）完全免費開示；自第四步大運及之後，結付 1 機緣即可啟動本步十年流年逐年精批、歲運星度與吉凶宜忌。',
-                                    'Per Decadal Gating Rule: The first 3 decades (30 years) are freely revealed. Decade 4 onwards requires 1 Karma credit to unlock 10-year annual fortunes, interactions, and forecasts.'
-                                  )}
-                                </p>
-                                <div className="pt-1">
-                                  <button
-                                    onClick={() => handleUnlockDecade(selectedDaYunIndex)}
-                                    className="px-4 py-2 rounded-xl bg-gold text-navy-950 font-medium text-xs hover:bg-gold-light transition-all shadow-md shadow-gold/20 inline-flex items-center gap-1.5 cursor-pointer"
-                                  >
-                                    <span>{T(lang, '結付 1 機緣解鎖本步流年精批', 'Unlock 10-Year Annual Fortune (1 Karma Credit)')}</span>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
-                )
-              })()}
-              {d.xiaoYun && d.xiaoYun.length > 0 && (
-                <div className="card-quiet rounded-xl p-3 border border-gold/20">
-                  <h3 className="text-gold font-serif text-xs mb-2">{T(lang, '小運（起運前）', 'Xiao Yun')}</h3>
-                  <div className="flex flex-wrap gap-1">
-                    {d.xiaoYun.map((xy, i) => (
-                      <div key={i} className="px-2 py-1.5 rounded border border-gold/20 bg-gold/5 text-center">
-                        <div className="text-[var(--text-muted)] text-[10px]">{xy.age}{T(lang, '歲', '')}</div>
-                        <div className="text-sm font-serif">
-                          <span className={elClr[charElement(xy.stem)] || ''}>{xy.stem}</span>
-                          <span className={elClr[charElement(xy.branch)] || ''}>{xy.branch}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-          </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </SectionDrawer>
 
@@ -1091,59 +650,392 @@ export default function BaziResultV2({ data, isShared, rawResult, readingId, cha
 
 
 
-      {/* ═══ LIU NIAN TIMELINE ═══ */}
-      {d.liuNian && d.liuNian.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }}>
-          <h3 className="text-gold font-serif text-base mb-2">{T(lang, '流年一覽', 'Annual Fortune')}</h3>
-          <div className="card-quiet rounded-xl p-3 border border-gold/20 overflow-hidden">
-            <div ref={liuNianScroll.ref} onMouseDown={liuNianScroll.onMouseDown}
-              className="overflow-x-auto scrollbar-hide cursor-grab">
-              <div className="flex gap-0.5 min-w-max">
-                {d.liuNian.map((ln: LiuNianEntry, i: number) => {
+      {/* ═══ DA YUN & 10-YEAR ANNUAL FORTUNE ═══ */}
+      {d.daYun && d.daYun.length > 0 && (() => {
+        const activeDaYun = d.daYun[selectedDaYunIndex] || d.daYun[0]
+        const activeDaYunAnalysis = d.daYunAnalysis?.[selectedDaYunIndex]
+        const isDecadeUnlocked = isDaYunUnlocked(selectedDaYunIndex, unlockedDecades, freeDaYunLimit)
+        const luckyEls = d.luckyElements || []
+        const avoidEls = d.avoidElements || []
+        const dayBranch = d.pillars?.day?.branch || ''
+        const decadeYears = (d.liuNian || [])
+          .filter((ln: LiuNianEntry) => activeDaYun && ln.year >= activeDaYun.startYear && ln.year <= activeDaYun.endYear)
+          .map((ln: LiuNianEntry) => ({
+            ...ln,
+            isLucky: (luckyEls.length > 0 || avoidEls.length > 0)
+              ? evaluateLiuNianLuck(ln.stem, ln.branch, luckyEls, avoidEls, activeDaYun, dayBranch)
+              : ln.isLucky,
+          }))
+
+        return (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <h3 className="text-gold font-serif text-base flex items-center gap-2">
+                <KeyPredictionIcon size={16} className="text-gold" />
+                <span>{T(lang, '大運排盤（點擊任一步大運展開十年流年）', 'Da Yun (Click decade to expand 10-yr annual fortunes)')}</span>
+                {d.qiYun && (
+                  <span className="text-[var(--text-muted)] text-xs font-normal">
+                    {d.qiYun.direction} · {T(
+                      lang,
+                      `虛歲${d.daYun?.[0]?.startAge}起運（實歲${d.qiYun.startAgeLabel}）`,
+                      `starts 虛歲 ${d.daYun?.[0]?.startAge} (≈${d.qiYun.startAgeLabel})`,
+                    )}
+                  </span>
+                )}
+              </h3>
+            </div>
+
+            <div className="card-quiet rounded-xl p-3 sm:p-4 border border-gold/20 space-y-3">
+              {/* Horizontal DaYun Selection Strip */}
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-2 px-2 pt-2.5 pb-2.5">
+                {d.daYun.map((dy, i) => {
                   const currentYear = new Date().getFullYear()
-                  const isCurrent = ln.year === currentYear
-                  const dotColor = ln.isLucky === true ? 'bg-emerald-400' : ln.isLucky === false ? 'bg-rose-400' : 'bg-gray-500'
-                  const borderStyle = isCurrent ? 'border-gold ring-1 ring-gold/50' : 'border-transparent'
+                  const isCurrent = currentYear >= dy.startYear && currentYear <= dy.endYear
+                  const isSelected = i === selectedDaYunIndex
+                  const isUnlocked = isDaYunUnlocked(i, unlockedDecades, freeDaYunLimit)
+
                   return (
-                    <div key={i} {...(isCurrent ? { 'data-scroll-target': true } : {})}
-                      className={`group relative flex flex-col items-center px-1 py-1 rounded ${isCurrent ? 'bg-gold/10' : ''}`}>
-                      {/* Dot */}
-                      <div className={`w-2.5 h-2.5 rounded-full ${dotColor} border ${borderStyle}`} />
-                      {/* Year label (show every 5 years + current) */}
-                      {(ln.year % 5 === 0 || isCurrent) ? (
-                        <div className={`text-[8px] mt-0.5 ${isCurrent ? 'text-gold font-bold' : 'text-[var(--text-muted)]'}`}>
-                          {ln.year}
-                        </div>
-                      ) : (
-                        <div className="h-[12px]" />
-                      )}
-                      {/* Tooltip on hover */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-[var(--bg-surface)] border border-gold/30 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap">
-                        <div className="text-[10px] text-gold font-bold">{ln.year} ({ln.age}{T(lang, '歲', '')})</div>
-                        <div className="text-[10px] font-serif">
-                          <span className={elClr[charElement(ln.stem)] || ''}>{ln.stem}</span>
-                          <span className={elClr[charElement(ln.branch)] || ''}>{ln.branch}</span>
-                          <span className="text-[var(--text-muted)] ml-1">{ln.nayin}</span>
-                        </div>
-                        <div className="text-[9px] text-[var(--text-muted)]">
-                          {ln.tenGod} · {ln.isLucky === true ? '✓ 喜用' : ln.isLucky === false ? '✗ 忌神' : '— 中性'}
-                        </div>
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setSelectedDaYunIndex(i)
+                        setActiveLiuNianYear(null)
+                      }}
+                      className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg border text-center min-w-[3.5rem] transition-all relative ${
+                        isSelected
+                          ? 'border-gold ring-2 ring-gold/60 bg-gold/20 shadow-md scale-105 z-10'
+                          : isCurrent
+                          ? 'border-gold/60 ring-1 ring-gold/40 bg-gold/10 hover:bg-gold/15'
+                          : 'border-gold/20 bg-foreground/5 hover:border-gold/40 hover:bg-foreground/10'
+                      }`}
+                    >
+                      <div className="text-[var(--text-muted)] text-[10px]">{dy.startAge}-{dy.endAge}{T(lang, '歲', '')}</div>
+                      <div className="text-sm font-serif font-bold">
+                        <span className={elClr[charElement(dy.stem)] || ''}>{dy.stem}</span>
+                        <span className={elClr[charElement(dy.branch)] || ''}>{dy.branch}</span>
                       </div>
-                    </div>
+                      <div className="text-[var(--text-muted)] text-[9px]">{dy.startYear}</div>
+                      {/* Status tag */}
+                      <div className="mt-0.5">
+                        {i < freeDaYunLimit ? (
+                          <span className="text-[8px] text-emerald-400">免</span>
+                        ) : isUnlocked ? (
+                          <span className="inline-flex items-center justify-center text-gold"><UnlockSealIcon size={11} color="#d4a853" /></span>
+                        ) : (
+                          <span className="inline-flex items-center justify-center text-amber-400"><LockSealIcon size={10} color="#e5c07b" /></span>
+                        )}
+                      </div>
+                    </button>
                   )
                 })}
               </div>
+
+              {/* ═══ INTERACTIVE DECADE CONTAINER (Full-Width ZiWei-Style Vertical Flow) ═══ */}
+              {activeDaYun && (
+                <div className="pt-3 border-t border-gold/15 space-y-3">
+                  {/* Decade Header Banner (Strictly Decade-Level Title & Master Inquiry) */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-gold/5 p-2.5 rounded-lg border border-gold/15">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm sm:text-base font-serif font-bold text-gold">
+                        {T(lang, `第 ${selectedDaYunIndex + 1} 步大運：`, `Decade ${selectedDaYunIndex + 1}: `)}
+                        <span className={elClr[charElement(activeDaYun.stem)] || ''}>{activeDaYun.stem}</span>
+                        <span className={elClr[charElement(activeDaYun.branch)] || ''}>{activeDaYun.branch}</span>
+                      </span>
+                      <span className="text-xs text-[var(--text-muted)]">
+                        {activeDaYun.nayin} · {activeDaYun.startYear}-{activeDaYun.endYear}年 ({activeDaYun.startAge}-{activeDaYun.endAge}{T(lang, '歲', '')})
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => handleAskMasterAboutDaYun(selectedDaYunIndex, activeDaYun)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] bg-gold/15 hover:bg-gold/25 text-gold border border-gold/30 transition-all cursor-pointer font-serif font-medium"
+                        title={T(lang, '向大師追問此大運十年格局', 'Consult Master on this decade')}
+                      >
+                        <MasterSageIcon size={12} color="var(--gold)" />
+                        <span>{T(lang, '追問此大運', 'Ask Master')}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Full-Width Decade Overview */}
+                  <div className="space-y-2 px-0.5">
+                    {activeDaYunAnalysis?.theme ? (
+                      <p className="text-[var(--text-secondary)] text-sm leading-relaxed font-serif">
+                        {activeDaYunAnalysis.theme}
+                      </p>
+                    ) : (
+                      <p className="text-[var(--text-secondary)] text-sm leading-relaxed font-serif">
+                        {T(
+                          lang,
+                          `此步大運逢「${activeDaYun.stem}${activeDaYun.branch}」主事，納音屬${activeDaYun.nayin}，管轄十年人生格局氣數，引動五行生克流通。`,
+                          `Under ${activeDaYun.stem}${activeDaYun.branch} (${activeDaYun.nayin}), governing 10 years of personal transformation.`
+                        )}
+                      </p>
+                    )}
+                    {activeDaYunAnalysis?.interactions && (
+                      <p className="text-[var(--text-muted)] text-xs leading-relaxed">
+                        <span className="text-gold">{T(lang, '歲運生克：', 'Interactions: ')}</span>
+                        {activeDaYunAnalysis.interactions}
+                      </p>
+                    )}
+                    {activeDaYunAnalysis?.keyYears && activeDaYunAnalysis.keyYears.length > 0 && (
+                      <div className="space-y-1">
+                        <div className="text-[var(--text-muted)] text-xs font-medium">
+                          {T(lang, '關鍵注意年份', 'Key Attention Years')}:
+                        </div>
+                        {activeDaYunAnalysis.keyYears.map((ky, j) => (
+                          <div key={j} className="flex gap-2 items-start">
+                            <span className="text-gold text-xs font-mono flex-shrink-0">{ky.year}</span>
+                            <span className="text-[var(--text-secondary)] text-xs font-serif flex-shrink-0">{ky.ganZhi}</span>
+                            <span className="text-[var(--text-secondary)] text-xs">{ky.event}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {activeDaYunAnalysis?.advice && (
+                      <div className="mt-1 px-2.5 py-2 rounded-lg bg-gold/5 border border-gold/20">
+                        <span className="text-[var(--text-secondary)] text-sm leading-relaxed">
+                          {activeDaYunAnalysis.advice}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ═══ 10-YEAR ANNUAL FORTUNE FOR THIS DECADE ═══ */}
+                  <div className="mt-3 pt-3 border-t border-gold/15 space-y-2.5">
+                    {/* 10-Year Section Subheader Bar: Single Entry Point for Generating 10-Year Fortunes */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                      <span className="text-xs font-serif text-gold font-medium flex items-center gap-1.5">
+                        <ScrollIcon size={13} className="text-gold flex-shrink-0" />
+                        <span>{T(lang, '本大運十年流年（點選年份查看）', '10-Year Annual Fortunes (Click year to inspect)')}</span>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {detailedFortunes[`decade_${selectedDaYunIndex}`] ? (
+                          <>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-serif font-medium">
+                              <SparkleIcon size={11} color="currentColor" className="text-emerald-400 flex-shrink-0" />
+                              <span>{T(lang, '十年流年精批已就緒', '10-Yr Fortunes Ready')}</span>
+                            </span>
+                            <button
+                              onClick={() => handleGenerateAnnualFortune(selectedDaYunIndex, activeDaYun)}
+                              disabled={generatingDecade === selectedDaYunIndex}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] text-[var(--text-muted)] hover:text-gold border border-gold/20 hover:border-gold/40 flex-shrink-0 whitespace-nowrap transition-colors cursor-pointer"
+                              title={T(lang, '重新調用大模型推演本十年流年', 'Re-channel 10-year annual fortunes')}
+                            >
+                              <RefreshIcon size={10} />
+                              <span>{T(lang, '重新推演', 'Re-channel')}</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleGenerateAnnualFortune(selectedDaYunIndex, activeDaYun)}
+                            disabled={generatingDecade === selectedDaYunIndex}
+                            className="group pl-2.5 pr-1.5 py-1 rounded-lg bg-gradient-to-r from-[#d4a853] via-[#e5be6a] to-[#c99738] text-navy-950 hover:brightness-110 active:scale-[0.99] transition-all text-[11px] font-serif font-semibold inline-flex items-center gap-1.5 shadow-sm shadow-gold/20 border border-[#f3d794]/50 flex-shrink-0 cursor-pointer disabled:opacity-50"
+                          >
+                            {generatingDecade === selectedDaYunIndex ? (
+                              <span className="flex items-center gap-1.5 px-1">
+                                <span className="w-2.5 h-2.5 border-2 border-navy-950 border-t-transparent rounded-full animate-spin" />
+                                <span>{T(lang, '天機推演中…', 'Channeling…')}</span>
+                              </span>
+                            ) : (
+                              <>
+                                <SparkleIcon size={11} color="currentColor" className="transition-transform duration-300 group-hover:rotate-12 flex-shrink-0" />
+                                <span>{T(lang, '生成十年流年精批', 'Generate 10-Yr Fortune')}</span>
+                                <span className="px-1.5 py-0.2 rounded bg-black/15 border border-black/15 text-[10px] font-serif font-bold tracking-tight whitespace-nowrap">
+                                  {isDecadeUnlocked
+                                    ? T(lang, '免費 · 0點', 'Free · 0 pt')
+                                    : T(lang, `✧ ${unlockCost}點機緣`, `✧ ${unlockCost} pt`)}
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 10-Year Buttons Grid (10 columns in one row on sm+, 5x2 on mobile) */}
+                    <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 pt-2.5 pb-2.5 px-1.5">
+                      {decadeYears.map((ln: LiuNianEntry) => {
+                        const isCurrentYear = ln.year === new Date().getFullYear()
+                        const isSelectedYear = activeLiuNianYear === ln.year
+                        const luckyBadge = ln.isLucky === true ? 'border-emerald-400 text-emerald-300' : ln.isLucky === false ? 'border-rose-400 text-rose-300' : 'border-gray-500 text-gray-300'
+                        const hasAiFortune = Boolean(detailedFortunes[`decade_${selectedDaYunIndex}`]?.some(f => f.year === ln.year))
+
+                        return (
+                          <button
+                            key={ln.year}
+                            onClick={() => setActiveLiuNianYear(isSelectedYear ? null : ln.year)}
+                            className={`p-1.5 rounded-lg border text-center transition-all relative ${
+                              isSelectedYear
+                                ? 'border-gold ring-2 ring-gold bg-gold/25 shadow-md scale-105 z-10'
+                                : isCurrentYear
+                                ? 'border-gold/60 bg-gold/10'
+                                : 'border-gold/15 hover:border-gold/35 bg-gold/5'
+                            }`}
+                          >
+                            {hasAiFortune && (
+                              <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" title="精批已就绪" />
+                            )}
+                            <div className="text-[9px] text-[var(--text-muted)]">{ln.year}</div>
+                            <div className="text-xs font-serif font-bold my-0.5">
+                              <span className={elClr[charElement(ln.stem)] || ''}>{ln.stem}</span>
+                              <span className={elClr[charElement(ln.branch)] || ''}>{ln.branch}</span>
+                            </div>
+                            <div className="text-[8px] text-gold/90 truncate">{ln.tenGod}</div>
+                            <div className={`text-[8px] px-0.5 rounded border mt-0.5 ${luckyBadge}`}>
+                              {ln.isLucky === true ? '喜' : ln.isLucky === false ? '忌' : '平'}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Expanded Annual Prediction Card (Full-Width below the 10-year row) */}
+                    {activeLiuNianYear && (() => {
+                      const ln = decadeYears.find((y: LiuNianEntry) => y.year === activeLiuNianYear)
+                      if (!ln) return null
+                      const decadeKey = `decade_${selectedDaYunIndex}`
+                      const aiFortune = detailedFortunes[decadeKey]?.find(f => f.year === activeLiuNianYear)
+                      const forecast = generateLiuNianAnalysis(d.dayMaster?.stem || '', ln, activeDaYun)
+
+                      return (
+                        <div className="p-3.5 rounded-lg bg-gold/10 border border-gold/30 space-y-3 animate-fadeIn">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gold/20 pb-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-gold font-serif font-bold text-sm">
+                                {ln.year}年 ({ln.age}{T(lang, '歲', '')}) · {ln.stem}{ln.branch}
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gold/20 text-gold font-medium">
+                                {ln.tenGod}
+                              </span>
+                              <span className="text-[10px] text-[var(--text-muted)]">{ln.nayin}</span>
+                              {aiFortune ? (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-medium">
+                                  ✦ {T(lang, '玄機深度精批', 'Master Channeled')}
+                                </span>
+                              ) : (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-gold/10 border border-gold/20 text-gold/80">
+                                  {T(lang, '基礎運勢', 'Basic')}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleAskMasterAboutLiuNian(ln, activeDaYun)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] bg-gold/15 hover:bg-gold/25 text-gold border border-gold/30 transition-all cursor-pointer font-serif font-medium"
+                                title={T(lang, `向玄機大師追問 ${ln.year} 流年`, `Ask Master about ${ln.year}`)}
+                              >
+                                <MasterSageIcon size={11} color="var(--gold)" />
+                                <span>{T(lang, `追問 ${ln.year} 流年`, `Ask ${ln.year}`)}</span>
+                              </button>
+                              <button
+                                onClick={() => setActiveLiuNianYear(null)}
+                                className="text-xs text-[var(--text-muted)] hover:text-gold px-1 cursor-pointer"
+                              >
+                                <CloseIcon size={12} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {aiFortune ? (
+                            /* ═══ FULL AI-CHANNELED ANNUAL FORTUNE ═══ */
+                            <div className="space-y-3 text-xs">
+                              {/* Theme & Overall Fortune */}
+                              <div className="space-y-1.5 p-2.5 rounded-lg bg-[var(--accent-bg)] border border-gold/20">
+                                <div className="text-gold font-serif font-bold text-xs flex items-center gap-1.5">
+                                  <SparkleIcon size={12} className="text-gold" />
+                                  <span>{aiFortune.theme}</span>
+                                </div>
+                                <p className="text-[var(--text-secondary)] leading-relaxed text-[12px] font-serif">
+                                  {aiFortune.fortune}
+                                </p>
+                              </div>
+
+                              {/* 4 Pillars of Life: Career, Wealth, Romance, Health */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {aiFortune.career && (
+                                  <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
+                                    <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
+                                      <CareerIcon size={12} className="text-gold" />
+                                      <span>{T(lang, '事業考運', 'Career & Study')}</span>
+                                    </div>
+                                    <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.career}</p>
+                                  </div>
+                                )}
+                                {aiFortune.wealth && (
+                                  <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
+                                    <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
+                                      <WealthIcon size={12} className="text-gold" />
+                                      <span>{T(lang, '財帛營謀', 'Wealth & Finance')}</span>
+                                    </div>
+                                    <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.wealth}</p>
+                                  </div>
+                                )}
+                                {aiFortune.romance && (
+                                  <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
+                                    <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
+                                      <MarriageIcon size={12} className="text-gold" />
+                                      <span>{T(lang, '姻緣人際', 'Love & Relationships')}</span>
+                                    </div>
+                                    <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.romance}</p>
+                                  </div>
+                                )}
+                                {aiFortune.health && (
+                                  <div className="p-2 rounded bg-gold/5 border border-gold/15 space-y-1">
+                                    <div className="text-gold font-serif font-medium flex items-center gap-1 text-[11px]">
+                                      <HealthIcon size={12} className="text-gold" />
+                                      <span>{T(lang, '健康氣血', 'Health & Wellness')}</span>
+                                    </div>
+                                    <p className="text-[var(--text-secondary)] leading-relaxed text-[11px]">{aiFortune.health}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Interactions & Advice */}
+                              {aiFortune.interaction && (
+                                <div className="flex items-start gap-1.5 text-[11px]">
+                                  <span className="text-gold font-medium flex-shrink-0">{T(lang, '【歲運生克】', 'Interactions')}:</span>
+                                  <span className="text-[var(--text-muted)] leading-relaxed">{aiFortune.interaction}</span>
+                                </div>
+                              )}
+                              {aiFortune.advice && (
+                                <div className="p-2 rounded bg-gold/10 border border-gold/25 text-[11px] text-gold leading-relaxed flex items-start gap-1.5">
+                                  <ScrollIcon size={13} className="text-gold flex-shrink-0 mt-0.5" />
+                                  <span>{aiFortune.advice}</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            /* ═══ RULE-BASED FALLBACK (When AI fortune not yet generated) ═══ */
+                            <div className="space-y-2 text-xs">
+                              <div className="p-2.5 rounded bg-[var(--accent-bg)] border border-gold/15 space-y-1.5">
+                                <div className="flex items-start gap-1.5">
+                                  <span className="text-gold font-medium flex-shrink-0">{T(lang, '【年度重點】', 'Focus')}:</span>
+                                  <span className="text-[var(--text-secondary)]">{forecast.focus}</span>
+                                </div>
+                                <div className="flex items-start gap-1.5">
+                                  <span className="text-gold font-medium flex-shrink-0">{T(lang, '【歲運生克】', 'Interaction')}:</span>
+                                  <span className="text-[var(--text-muted)]">{forecast.stemBranchInteraction}</span>
+                                </div>
+                                <div className="text-[var(--text-secondary)] leading-relaxed pt-0.5">
+                                  {forecast.forecast}
+                                </div>
+                                <div className="text-xs text-gold/90">
+                                  {forecast.advice}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
-            {/* Legend */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 pt-2 border-t border-gold/10">
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /><span className="text-[9px] text-[var(--text-muted)]">{T(lang, '喜用年', 'Lucky')}</span></div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-rose-400" /><span className="text-[9px] text-[var(--text-muted)]">{T(lang, '忌神年', 'Avoid')}</span></div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-gray-500" /><span className="text-[9px] text-[var(--text-muted)]">{T(lang, '中性', 'Neutral')}</span></div>
-              <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full border border-gold ring-1 ring-gold/50" /><span className="text-[9px] text-[var(--text-muted)]">{T(lang, '今年', 'This year')}</span></div>
-            </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )
+      })()}
 
       {/* ═══ KEY PREDICTIONS ═══ */}
       <StreamingKeyPredictions predictions={d.keyPredictions} streaming={streaming} delay={0.1} />

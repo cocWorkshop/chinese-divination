@@ -66,9 +66,8 @@ export default function GrowthTab() {
         {/* Badge Avatar — single seal-character in TC serif */}
         <div className="relative inline-block mb-4">
           <div
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-4xl sm:text-5xl font-serif font-bold shadow-lg transition-transform duration-500 hover:scale-105"
+            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-4xl sm:text-5xl font-serif font-bold shadow-lg transition-transform duration-500 hover:scale-105 bg-gold/10 dark:bg-black/40 text-gold"
             style={{
-              background: `radial-gradient(circle, rgba(255,255,255,0.08), rgba(0,0,0,0.6))`,
               border: `2px solid ${current.color}`,
               boxShadow: `0 0 25px ${current.color}40`,
             }}
@@ -168,14 +167,15 @@ export default function GrowthTab() {
       </div>
 
       {/* ── 3. Master Xuanji Realm Greeting ── */}
-      <div
-        className="oriental-sanctuary-card rounded-2xl p-5 border border-gold/30 relative flex items-start gap-4"
-        style={{ background: 'linear-gradient(135deg, rgba(212,168,83,0.08), rgba(10,17,40,0.7))' }}
-      >
-        <div className="w-12 h-12 rounded-full flex-shrink-0 bg-gold/15 border border-gold/30 flex items-center justify-center text-gold">
+      <div className="oriental-sanctuary-card rounded-2xl p-5 border border-gold/30 relative overflow-hidden flex items-start gap-4">
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-gold/[0.08] via-transparent to-transparent"
+          aria-hidden="true"
+        />
+        <div className="relative w-12 h-12 rounded-full flex-shrink-0 bg-gold/15 border border-gold/30 flex items-center justify-center text-gold">
           <MasterSageIcon size={24} />
         </div>
-        <div className="flex-1">
+        <div className="relative flex-1">
           <div className="text-xs font-serif text-gold tracking-wide">
             {T(lang, '玄機大師 · 應修為寄語', 'Master Xuanji · Realm Reflection')}
           </div>

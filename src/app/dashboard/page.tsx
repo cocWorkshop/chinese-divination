@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import type { UserGrowthProfile } from '@/lib/growth/types'
 import { publish } from '@/lib/events'
 import YinYangIcon from '@/components/YinYangIcon'
-import { DivinationIcon, AlertIcon } from '@/components/DivinationIcons'
+import { DivinationIcon, AlertIcon, PlusIcon } from '@/components/DivinationIcons'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '@/components/LanguageContext'
 import MysticalLoader from '@/components/MysticalLoader'
@@ -245,15 +245,15 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-serif text-gold">
             {T(lang, '占卜歷史', 'Reading History')}
           </h1>
-          <a
+          <Link
             href="/divination"
-            className="px-4 py-2 rounded-lg text-xs font-medium transition-all hover:shadow-[0_0_12px_rgba(212,175,55,0.3)]"
-            style={{ background: 'var(--gold)', color: '#000' }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-serif font-semibold bg-gradient-to-r from-[#e5bf69] via-[#f0d38c] to-[#d4a853] dark:from-[#d4a853] dark:via-[#e5be6a] dark:to-[#c99738] text-[#241807] border border-[#c89b3c]/60 dark:border-[#f3d794]/50 shadow-sm hover:brightness-105 hover:shadow-md hover:shadow-gold/20 active:scale-[0.98] transition-all"
           >
-            {T(lang, '+ 新占卜', '+ New Reading')}
-          </a>
+            <PlusIcon size={13} />
+            <span>{T(lang, '新占卜', 'New Reading')}</span>
+          </Link>
         </div>
-        <p className="text-foreground/50 text-sm mb-4">
+        <p className="text-secondary text-sm mb-4">
           {T(
             lang,
             `共 ${readings.length} 條記錄${activeTypeFilter ? ` · 篩選：${typeLabels[activeTypeFilter]?.['zh-TW'] ?? activeTypeFilter}` : ''}`,
@@ -261,27 +261,30 @@ export default function DashboardPage() {
           )}
         </p>
 
-        {/* Cultivation Realm Progress Ribbon */}
+        {/* Cultivation Realm Progress Ribbon (Dual-Theme Sanctuary Card) */}
         {growth && (
           <Link
             href="/profile?tab=growth"
-            className="mb-4 p-3.5 sm:p-4 rounded-xl card-quiet flex items-center justify-between border border-gold/25 hover:border-gold/50 transition-all group"
-            style={{ background: 'linear-gradient(90deg, rgba(212,168,83,0.1), rgba(10,17,40,0.6))' }}
+            className="oriental-sanctuary-card relative overflow-hidden mb-4 p-3.5 sm:p-4 rounded-xl flex items-center justify-between gap-3 border border-gold/25 hover:border-gold/50 transition-all group"
           >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl sm:text-3xl w-10 h-10 rounded-lg bg-gold/15 border border-gold/30 flex items-center justify-center flex-shrink-0">
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-r from-gold/[0.08] via-gold/[0.02] to-transparent dark:from-gold/[0.14] dark:via-gold/[0.04] dark:to-transparent"
+              aria-hidden="true"
+            />
+            <div className="relative flex items-center gap-3 min-w-0">
+              <span className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gold/10 dark:bg-gold/15 border border-gold/30 flex items-center justify-center flex-shrink-0 font-serif text-gold text-xl sm:text-2xl shadow-sm">
                 {growth.currentRealm.badge}
               </span>
-              <div>
-                <div className="flex items-center gap-2">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-serif text-gold text-sm sm:text-base font-semibold">
                     {growth.currentRealm.title[langKey(lang)]}
                   </span>
-                  <span className="text-[10px] text-foreground/60 bg-foreground/10 px-1.5 py-0.5 rounded font-mono">
+                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-gold/10 border border-gold/25 text-gold">
                     {growth.xp} XP
                   </span>
                 </div>
-                <p className="text-xs text-foreground/70 mt-0.5 font-sans">
+                <p className="text-xs text-secondary mt-0.5 font-sans">
                   {growth.nextRealm
                     ? T(
                         lang,
@@ -292,9 +295,9 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <span className="text-xs text-gold/80 group-hover:text-gold flex items-center gap-1 font-serif flex-shrink-0">
+            <span className="relative inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gold/10 border border-gold/20 group-hover:bg-gold/20 group-hover:border-gold/40 text-xs text-gold transition-all font-serif flex-shrink-0">
               <span className="hidden sm:inline">{T(lang, '修為圖譜', 'Mastery')}</span>
-              <span>→</span>
+              <span className="group-hover:translate-x-0.5 transition-transform">→</span>
             </span>
           </Link>
         )}
@@ -302,12 +305,11 @@ export default function DashboardPage() {
         <div className="flex gap-2 overflow-x-auto lg:flex-wrap pb-2 scrollbar-hide -mx-1 px-1">
           <button
             onClick={() => { setActiveTypeFilter(null); setVisibleCount(15) }}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0"
-            style={{
-              background: !activeTypeFilter ? 'var(--gold)' : 'transparent',
-              color: !activeTypeFilter ? '#000' : 'var(--text-muted)',
-              border: `1px solid ${!activeTypeFilter ? 'var(--gold)' : 'var(--card-border)'}`,
-            }}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-serif transition-all whitespace-nowrap flex-shrink-0 cursor-pointer border ${
+              !activeTypeFilter
+                ? 'bg-gold/15 dark:bg-gold/20 border-gold text-gold font-semibold shadow-sm ring-1 ring-gold/25'
+                : 'bg-surface/80 dark:bg-surface/40 border-[var(--card-border)] text-secondary hover:border-gold/40 hover:text-foreground font-medium'
+            }`}
           >
             {T(lang, '全部', 'All')}
           </button>
@@ -320,16 +322,15 @@ export default function DashboardPage() {
                 <button
                   key={key}
                   onClick={() => { setActiveTypeFilter(active ? null : key); setVisibleCount(15) }}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 font-serif"
-                  style={{
-                    background: active ? 'var(--gold)' : 'transparent',
-                    color: active ? '#000' : 'var(--text-muted)',
-                    border: `1px solid ${active ? 'var(--gold)' : 'var(--card-border)'}`,
-                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-serif transition-all whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 cursor-pointer border ${
+                    active
+                      ? 'bg-gold/15 dark:bg-gold/20 border-gold text-gold font-semibold shadow-sm ring-1 ring-gold/25'
+                      : 'bg-surface/80 dark:bg-surface/40 border-[var(--card-border)] text-secondary hover:border-gold/40 hover:text-foreground font-medium'
+                  }`}
                 >
-                  <DivinationIcon type={key} size={14} className={active ? 'text-navy-950' : 'text-gold'} />
+                  <DivinationIcon type={key} size={14} className="text-gold" />
                   <span>{T(lang, label['zh-TW'], label.en)}</span>
-                  <span style={{ opacity: 0.6 }}>({count})</span>
+                  <span className={active ? 'opacity-80' : 'opacity-60'}>({count})</span>
                 </button>
               )
             })}
@@ -346,8 +347,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => router.push('/divination')}
-            className="mt-5 px-6 py-2.5 rounded-lg font-medium text-sm transition-all hover:opacity-90"
-            style={{ backgroundColor: 'var(--gold)', color: '#0a0f1e' }}
+            className="mt-5 px-6 py-2.5 rounded-xl font-serif font-semibold text-sm bg-gradient-to-r from-[#e5bf69] via-[#f0d38c] to-[#d4a853] dark:from-[#d4a853] dark:via-[#e5be6a] dark:to-[#c99738] text-[#241807] border border-[#c89b3c]/60 dark:border-[#f3d794]/50 shadow-sm hover:brightness-105 transition-all cursor-pointer"
           >
             {T(lang, '開始占卜 →', 'Start a reading →')}
           </button>

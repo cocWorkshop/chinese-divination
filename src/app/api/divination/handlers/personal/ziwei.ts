@@ -268,14 +268,21 @@ ${birth.birthEnvironment ? `- 出生环境：${birth.birthEnvironment}` : ''}
     if (chart.liuNian) llmResult.liuNian = chart.liuNian
     if (chart.decadalSiHua) llmResult.decadalSiHua = chart.decadalSiHua
 
-    // Merge da yun stem/branch into daYunAnalysis if LLM provided it
-    if (Array.isArray(llmResult.daYunAnalysis) && chart.decadalSiHua) {
-      const analysis = llmResult.daYunAnalysis as Record<string, unknown>[]
-      for (let i = 0; i < analysis.length && i < chart.decadalSiHua.length; i++) {
-        analysis[i].heavenlyStem = chart.decadalSiHua[i].heavenlyStem
-        analysis[i].earthlyBranch = chart.decadalSiHua[i].earthlyBranch
-        analysis[i].ageRange = `${chart.decadalSiHua[i].range[0]}-${chart.decadalSiHua[i].range[1]}`
-      }
+    // Ensure daYunAnalysis covers at least 8 decades by merging LLM analysis onto deterministic decadalSiHua
+    if (chart.decadalSiHua && chart.decadalSiHua.length > 0) {
+      const rawAnalysis = Array.isArray(llmResult.daYunAnalysis)
+        ? (llmResult.daYunAnalysis as Record<string, unknown>[])
+        : []
+      const targetDecades = chart.decadalSiHua.slice(0, 8)
+      llmResult.daYunAnalysis = targetDecades.map((dec, i) => {
+        const existing = rawAnalysis[i] || {}
+        return {
+          ...existing,
+          heavenlyStem: dec.heavenlyStem,
+          earthlyBranch: dec.earthlyBranch,
+          ageRange: `${dec.range[0]}-${dec.range[1]}`,
+        }
+      })
     }
   },
 

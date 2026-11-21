@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import {
+  calculateBazi,
   calculateTaiYuan,
   calculateMingGong,
   calculateShenGong,
   generateLiuNianAnalysis,
+  evaluateLiuNianLuck,
   isDaYunUnlocked,
   FREE_DAYUN_LIMIT,
 } from '../baziCalculator'
@@ -97,5 +99,28 @@ describe('BaZi LiuNian Annual Prediction Engine (Issue #134)', () => {
     expect(forecast.stemBranchInteraction).toBeDefined()
     expect(forecast.focus.length).toBeGreaterThan(0)
     expect(forecast.forecast.length).toBeGreaterThan(10)
+  })
+
+  it('evaluates LiuNian luck using both stem and branch plus DaYun interactions so 10-year patterns vary across decades', () => {
+    // Same heavenly stem 甲, different earthly branches (甲寅 wood/wood vs 甲戌 wood/earth vs 甲申 wood/metal)
+    const lucky = ['木', '火']
+    const avoid = ['土', '金', '水']
+
+    // 甲寅: stem 木(lucky) + branch 寅(lucky) -> true (喜)
+    expect(evaluateLiuNianLuck('甲', '寅', lucky, avoid)).toBe(true)
+    // 甲戌: stem 木(lucky, +0.4) + branch 戌(土 avoid, -0.6) = -0.2 -> null (平)
+    expect(evaluateLiuNianLuck('甲', '戌', lucky, avoid)).toBe(null)
+    // 戊戌: stem 土(avoid, -0.4) + branch 戌(土 avoid, -0.6) = -1.0 -> false (忌)
+    expect(evaluateLiuNianLuck('戊', '戌', lucky, avoid)).toBe(false)
+
+    // Verify across an actual chart's 8 DaYun decades that the 10-year isLucky sequence is NOT identical across every decade
+    const chart = calculateBazi('1990-05-15', 'zi', 'Beijing', 'male')
+    const decadePatterns = chart.daYun.slice(0, 5).map(dy => {
+      const yrs = (chart.liuNian || []).filter(ln => ln.year >= dy.startYear && ln.year <= dy.endYear)
+      return yrs.map(y => (y.isLucky === true ? '喜' : y.isLucky === false ? '忌' : '平')).join('')
+    })
+    const uniquePatterns = new Set(decadePatterns)
+    // Because earthly branches shift by 10 mod 12 (-2 branches) every decade and DaYun changes, decades have distinct patterns
+    expect(uniquePatterns.size).toBeGreaterThan(1)
   })
 })

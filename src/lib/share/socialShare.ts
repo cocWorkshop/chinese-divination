@@ -54,6 +54,49 @@ export interface ShareCopyParams {
 }
 
 /**
+ * Extracts human-readable divination summary prose from either a V2 JSON payload
+ * (`sections.overview`, `sectionSummaries.overview`, `interpretation`, etc.) or plain markdown.
+ * Never leaks raw JSON keys like `{"version":2,"pillars":...}` onto the poster canvas or social copy.
+ */
+export function extractCleanReadingExcerpt(rawResult: string | null | undefined, maxLen = 110): string {
+  if (!rawResult) return ''
+  const trimmed = rawResult.trim()
+  let candidate = ''
+
+  if (trimmed.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>
+      const sections = parsed.sections as Record<string, string> | undefined
+      const sectionSummaries = parsed.sectionSummaries as Record<string, string> | undefined
+      const formation = parsed.formation as { analysis?: string } | undefined
+      candidate =
+        sectionSummaries?.overview ||
+        sections?.overview ||
+        formation?.analysis ||
+        (typeof parsed.interpretation === 'string' ? parsed.interpretation : '') ||
+        (typeof parsed.summary === 'string' ? parsed.summary : '') ||
+        (typeof parsed.overallAnalysis === 'string' ? parsed.overallAnalysis : '') ||
+        (Array.isArray(parsed.keyPredictions) && (parsed.keyPredictions[0] as { event?: string })?.event
+          ? String((parsed.keyPredictions[0] as { event?: string }).event)
+          : '') ||
+        (Array.isArray(parsed.keyAdvice) && parsed.keyAdvice[0] ? String(parsed.keyAdvice[0]) : '')
+    } catch {
+      candidate = ''
+    }
+  } else {
+    candidate = trimmed
+  }
+
+  const clean = candidate
+    .replace(/[#*`_\[\]()\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  if (!clean) return ''
+  return clean.length > maxLen ? `${clean.slice(0, maxLen)}...` : clean
+}
+
+/**
  * Builds the Line direct sharing URL scheme.
  * Opens the Line app on mobile or desktop with prefilled text & URL.
  */

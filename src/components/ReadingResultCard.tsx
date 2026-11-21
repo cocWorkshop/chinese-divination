@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import ResultRenderer from '@/components/results/ResultRenderer'
@@ -9,11 +8,11 @@ import ShareResultButton from '@/components/ShareResultButton'
 import InContextMasterPrompt from '@/components/reading/InContextMasterPrompt'
 import GoldenRippleStyle from '@/components/GoldenRippleStyle'
 import FullPageFlameEffect from '@/components/reading/FullPageFlameEffect'
-import { DivinationIcon, ScrollIcon } from '@/components/DivinationIcons'
+import { DivinationIcon } from '@/components/DivinationIcons'
 import { T } from '@/lib/i18n'
 import { langKey } from '@/lib/i18n'
 
-const FatePosterModal = dynamic(() => import('@/components/reading/FatePosterModal'), { ssr: false })
+const FatePosterSection = dynamic(() => import('@/components/reading/FatePosterModal'), { ssr: false })
 
 const typeLabels: Record<string, { 'zh-TW': string; en: string }> = {
   bazi: { 'zh-TW': '八字命理', en: 'BaZi' },
@@ -72,13 +71,12 @@ export default function ReadingResultCard({
   targetType, familyMember, shareToken, rating, streaming = false,
 }: ReadingResultCardProps) {
   const canShare = !!readingId && !streaming
-  const [showPoster, setShowPoster] = useState(false)
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`card-quiet rounded-2xl p-4 sm:p-8 w-full max-w-full transition-all duration-1000 ${streaming ? 'golden-ripple-active overflow-visible' : 'overflow-x-auto'}`}
+      className={`card-quiet relative rounded-2xl p-4 sm:p-8 w-full max-w-full transition-all duration-1000 ${streaming ? 'golden-ripple-active overflow-visible' : 'overflow-x-clip'}`}
     >
       {streaming && <GoldenRippleStyle />}
       <FullPageFlameEffect streaming={streaming} lang={lang} />
@@ -103,19 +101,6 @@ export default function ReadingResultCard({
         </div>
         {canShare && (
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={() => setShowPoster(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-lg transition-colors flex-shrink-0 cursor-pointer font-serif"
-              style={{
-                backgroundColor: 'rgba(212, 168, 83, 0.12)',
-                color: 'var(--gold)',
-                border: '1px solid rgba(212, 168, 83, 0.3)',
-              }}
-              title={T(lang, '生成東方典藏命理籤卡', 'Generate aesthetic fortune poster')}
-            >
-              <ScrollIcon size={13} className="text-gold" />
-              <span>{T(lang, '命理籤卡', 'Fate Poster')}</span>
-            </button>
             <ShareResultButton readingId={readingId!} shareToken={shareToken} lang={lang} variant="inline" />
           </div>
         )}
@@ -169,17 +154,16 @@ export default function ReadingResultCard({
         </div>
       )}
 
-      {/* Aesthetic Oriental Fate Poster Modal */}
-      {canShare && showPoster && (
-        <FatePosterModal
-          isOpen={showPoster}
-          onClose={() => setShowPoster(false)}
+      {/* Collapsible Fate Poster & Social Share Section — directly below Feedback, collapsed by default */}
+      {canShare && (
+        <FatePosterSection
           readingId={readingId!}
           shareToken={shareToken}
           divinationType={type}
           subjectName={subjectName}
           result={result}
           lang={lang}
+          defaultOpen={false}
         />
       )}
     </motion.div>

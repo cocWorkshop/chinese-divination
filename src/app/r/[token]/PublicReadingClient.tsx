@@ -122,7 +122,6 @@ export default function PublicReadingClient({ token: initialToken }: { token?: s
 
   return (
     <div className="flex-1 py-6 sm:py-8 px-3 sm:px-4">
-      <FullPageFlameEffect lang={lang} />
       <div className="max-w-3xl mx-auto">
         {/* Top Control Bar (Issue #146 Theme Switching) */}
         <div className="flex items-center justify-between py-2 px-1 mb-4">
@@ -177,7 +176,8 @@ export default function PublicReadingClient({ token: initialToken }: { token?: s
         </div>
 
         {/* Result */}
-        <div className="oriental-sanctuary-card rounded-2xl p-4 sm:p-8 mb-6">
+        <div className="oriental-sanctuary-card relative rounded-2xl p-4 sm:p-8 mb-6">
+          <FullPageFlameEffect lang={lang} />
           <ResultRenderer type={data.type} result={resultString} isShared chatMessages={data.chatMessages} />
         </div>
 

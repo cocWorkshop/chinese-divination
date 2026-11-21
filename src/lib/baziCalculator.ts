@@ -633,8 +633,6 @@ export function calculateBazi(
   // own SixtyCycleYear (立春-correct) for both the year number and its 干支;
   // this also gives the correct year (no manual `year + age` off-by-one).
   const liuNian: LiuNianPillar[] = []
-  const luckySet = new Set(luckyElements.filter(Boolean))
-  const avoidSet = new Set(avoidElements.filter(Boolean))
   const totalLiuNianCount = Math.min(opts.liuNianCount, 80)
   for (let i = 0; i < totalLiuNianCount; i++) {
     const f = Fortune.fromChildLimit(childLimit, i)
@@ -642,17 +640,23 @@ export function calculateBazi(
     const sc = scy.getSixtyCycle()
     const stemName = sc.getHeavenStem().getName()
     const branchName = sc.getEarthBranch().getName()
-    const stemElement = STEM_ELEMENT[stemName]
-    let isLucky: boolean | null = null
-    if (luckySet.has(stemElement)) isLucky = true
-    else if (avoidSet.has(stemElement)) isLucky = false
+    const yr = scy.getYear()
+    const matchingDaYun = daYun.find(dy => yr >= dy.startYear && yr <= dy.endYear)
+    const isLucky = evaluateLiuNianLuck(
+      stemName,
+      branchName,
+      luckyElements,
+      avoidElements,
+      matchingDaYun,
+      dBranch,
+    )
 
     liuNian.push({
       stem: stemName,
       branch: branchName,
       nayin: sc.getSound().getName(),
       age: f.getAge(),
-      year: scy.getYear(),
+      year: yr,
       tenGod: tenGod(dStem, stemName),
       isLucky,
     })
@@ -876,6 +880,89 @@ export function calculateShenGong(yearStem: string, monthBranch: string, hourBra
     nayin = ''
   }
   return { stem, branch, pillar, nayin }
+}
+
+const BRANCH_CLASH_MAP: Record<string, string> = {
+  '子': '午', '午': '子', '丑': '未', '未': '丑', '寅': '申', '申': '寅',
+  '卯': '酉', '酉': '卯', '辰': '戌', '戌': '辰', '巳': '亥', '亥': '巳',
+}
+const BRANCH_COMBINE_MAP: Record<string, string> = {
+  '子': '丑', '丑': '子', '寅': '亥', '亥': '寅', '卯': '戌', '戌': '卯',
+  '辰': '酉', '酉': '辰', '巳': '申', '申': '巳', '午': '未', '未': '午',
+}
+const BRANCH_MAIN_ELEMENT: Record<string, string> = {
+  '子': '水', '丑': '土', '寅': '木', '卯': '木', '辰': '土', '巳': '火',
+  '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水',
+}
+
+/**
+ * 正統子平流年喜忌綜合評估：
+ * 摒棄「僅看流年天干」導致每個十年循環出現完全相同喜忌排列的缺陷，
+ * 綜合考量：
+ * 1. 流年地支（太歲本氣，權重 0.60）與流年天干（權重 0.40）的喜用/忌神加權；
+ * 2. 與所處大運干支的「歲運相合 / 歲運逢沖 / 天克地沖 / 歲運並臨」動態修正；
+ * 3. 與原局日支（夫妻宮/根基）的沖合修正。
+ */
+export function evaluateLiuNianLuck(
+  stem: string,
+  branch: string,
+  luckyElements: string[] = [],
+  avoidElements: string[] = [],
+  daYun?: { stem: string; branch: string },
+  dayBranch?: string,
+): boolean | null {
+  const luckySet = new Set(luckyElements.filter(Boolean))
+  const avoidSet = new Set(avoidElements.filter(Boolean))
+  if (luckySet.size === 0 && avoidSet.size === 0) return null
+
+  const stemEl = STEM_ELEMENT[stem] || ''
+  const branchEl = BRANCH_MAIN_ELEMENT[branch] || STEM_ELEMENT[(HIDDEN_STEMS[branch] || [])[0] || ''] || ''
+
+  const elScore = (el: string): number => {
+    if (!el) return 0
+    if (luckySet.has(el)) return 1
+    if (avoidSet.has(el)) return -1
+    return 0
+  }
+
+  // 1. Base score: Heaven Stem (40%) + Earth Branch TaiSui Main Qi (60%)
+  let score = elScore(stemEl) * 0.4 + elScore(branchEl) * 0.6
+
+  // 2. Dynamic DaYun (歲運) interaction modifier so different decades with the same stem produce distinct luck outcomes
+  if (daYun && daYun.stem && daYun.branch) {
+    const dyBranchEl = BRANCH_MAIN_ELEMENT[daYun.branch] || ''
+    const isBranchClash = BRANCH_CLASH_MAP[branch] === daYun.branch
+    const isBranchCombine = BRANCH_COMBINE_MAP[branch] === daYun.branch
+    const isStemClash = Boolean(stemEl && STEM_ELEMENT[daYun.stem] && isKe(stemEl, STEM_ELEMENT[daYun.stem]) || isKe(STEM_ELEMENT[daYun.stem] || '', stemEl))
+
+    if (daYun.stem === stem && daYun.branch === branch) {
+      // 歲運並臨：若為忌神則凶性倍增，若為喜用亦防物極必反
+      score += elScore(branchEl) >= 0 ? -0.15 : -0.45
+    } else if (isBranchClash && isStemClash) {
+      // 天克地沖：歲運劇烈震盪
+      score -= 0.45
+    } else if (isBranchClash) {
+      // 歲運逢沖：若沖去大運忌神反主轉機(+0.15)，若沖傷大運喜用則主破耗(-0.35)
+      score += avoidSet.has(dyBranchEl) && luckySet.has(branchEl) ? 0.15 : -0.35
+    } else if (isBranchCombine) {
+      // 歲運相合：合神為喜則錦上添花(+0.25)，合神為忌則略減動盪(+0.1)
+      score += luckySet.has(branchEl) || luckySet.has(dyBranchEl) ? 0.25 : 0.1
+    }
+  }
+
+  // 3. Day Branch (日支根基) interaction modifier
+  if (dayBranch) {
+    if (BRANCH_CLASH_MAP[branch] === dayBranch) {
+      score -= 0.25
+    } else if (BRANCH_COMBINE_MAP[branch] === dayBranch) {
+      score += 0.15
+    }
+  }
+
+  // Thresholds: clear auspicious (>= 0.35), clear inauspicious (<= -0.35), balanced/mixed -> neutral (平)
+  if (score >= 0.35) return true
+  if (score <= -0.35) return false
+  return null
 }
 
 /**

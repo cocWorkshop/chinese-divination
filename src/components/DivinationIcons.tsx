@@ -227,6 +227,18 @@ export function LockSealIcon({ size = 16, className = '', color }: IconProps) {
   )
 }
 
+// 金石啟印 / 已解鎖（右側鎖樑向上彈開，與 LockSealIcon 成對）
+export function UnlockSealIcon({ size = 16, className = '', color }: IconProps) {
+  const stroke = color || '#d4a853'
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round" className={`inline-block ${className}`} style={{ verticalAlign: 'middle' }}>
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 7.6-1.7" />
+      <circle cx="12" cy="16" r="1.5" fill={stroke} />
+    </svg>
+  )
+}
+
 // 灵光星芒 — Sparkle / Inspiration
 export function SparkleIcon({ size = 16, className = '', color }: IconProps) {
   const stroke = color || '#d4a853'

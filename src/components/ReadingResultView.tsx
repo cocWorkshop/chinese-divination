@@ -24,7 +24,7 @@ export default function ReadingResultView({
   onBack, backHref, backFallbackHref, ...card
 }: ReadingResultViewProps) {
   return (
-    <div className="flex-1 py-8 sm:py-12 px-3 sm:px-4 max-w-4xl mx-auto w-full overflow-x-hidden">
+    <div className="flex-1 py-8 sm:py-12 px-3 sm:px-4 max-w-4xl mx-auto w-full overflow-x-clip">
       <div className="mb-4">
         <BackButton onClick={onBack} href={backHref} fallbackHref={backFallbackHref} />
       </div>
